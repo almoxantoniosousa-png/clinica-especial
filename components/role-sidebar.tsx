@@ -47,8 +47,12 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
         <div>
           <div className="px-5 py-5 border-b border-slate-100">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-900 flex items-center justify-center text-white font-black text-sm flex-shrink-0">
-                CA
+              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-slate-100 border border-slate-200">
+                <img
+                  src="/logo.png"
+                  alt="Logo Clínica Abraço"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <p className="font-bold text-slate-800 text-sm leading-tight">Clínica Abraço</p>
