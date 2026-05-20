@@ -17,6 +17,9 @@ export default function FinanceiroPage() {
   // Modal de confirmação de pagamento
   const [confirmando, setConfirmando] = useState<{ id: string; nome: string } | null>(null);
 
+  // Tabela retrátil
+  const [tabelaAberta, setTabelaAberta] = useState(false);
+
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
     setTimeout(() => setFeedback(null), 4000);
@@ -274,58 +277,80 @@ export default function FinanceiroPage() {
       {/* TABELA DE REGISTROS */}
       {!loadingDados && registros.length > 0 && (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50">
-            <h3 className="font-semibold text-slate-700 text-sm">Registros detalhados</h3>
-          </div>
 
-          {/* Scroll horizontal no mobile */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Data</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Atendente</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Criança</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Local</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {registros.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50 transition">
-                    <td className="px-5 py-3 text-slate-600 whitespace-nowrap">
-                      {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}
-                    </td>
-                    <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap">
-                      {r.atendentes?.nome || "Não identificado"}
-                    </td>
-                    <td className="px-5 py-3 text-slate-600 whitespace-nowrap">
-                      {r.crianca || "---"}
-                    </td>
-                    <td className="px-5 py-3 text-slate-600 capitalize whitespace-nowrap">
-                      {r.local}
-                    </td>
-                    <td className="px-5 py-3 font-semibold text-slate-800 whitespace-nowrap">
-                      R$ {Number(r.valor_total).toFixed(2)}
-                    </td>
-                    <td className="px-5 py-3 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
-                        ${r.status === "pendente"
-                          ? "bg-amber-50 text-amber-700 border border-amber-100"
-                          : "bg-emerald-50 text-emerald-700 border border-emerald-100"}`}>
-                        {r.status === "pendente" ? "Pendente" : "Pago"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {/* Cabeçalho clicável */}
+          <button
+            onClick={() => setTabelaAberta(!tabelaAberta)}
+            className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left border-b border-slate-100"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-slate-700 text-sm">Registros detalhados</h3>
+              <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">
+                {registros.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400">{tabelaAberta ? "Retrair" : "Expandir"}</span>
+              <svg
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${tabelaAberta ? "rotate-180" : ""}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+          </button>
 
-          <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
-            <p className="text-xs text-slate-400">{registros.length} registro{registros.length !== 1 ? "s" : ""} no período</p>
-          </div>
+          {/* Conteúdo retrátil */}
+          {tabelaAberta && (
+            <div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Data</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Atendente</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Criança</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Local</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {registros.map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-50 transition">
+                        <td className="px-5 py-3 text-slate-600 whitespace-nowrap">
+                          {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}
+                        </td>
+                        <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap">
+                          {r.atendentes?.nome || "Não identificado"}
+                        </td>
+                        <td className="px-5 py-3 text-slate-600 whitespace-nowrap">
+                          {r.crianca || "---"}
+                        </td>
+                        <td className="px-5 py-3 text-slate-600 capitalize whitespace-nowrap">
+                          {r.local}
+                        </td>
+                        <td className="px-5 py-3 font-semibold text-slate-800 whitespace-nowrap">
+                          R$ {Number(r.valor_total).toFixed(2)}
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+                            ${r.status === "pendente"
+                              ? "bg-amber-50 text-amber-700 border border-amber-100"
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-100"}`}>
+                            {r.status === "pendente" ? "Pendente" : "Pago"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
+                <p className="text-xs text-slate-400">{registros.length} registro{registros.length !== 1 ? "s" : ""} no período</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
