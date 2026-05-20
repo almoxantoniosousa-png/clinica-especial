@@ -82,7 +82,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
                     : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
-                👶 Cadastrar Crianças
+                👶 Cadastrar Criança
               </Link>
             </>
           )}
