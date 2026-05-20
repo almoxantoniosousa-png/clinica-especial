@@ -1,35 +1,51 @@
 "use client";
 
-// Importação da logo (dando dois passos para trás até a pasta public)
-import logoClinica from "../../public/logo.png";
-
-// 🟢 CAMINHO DEFINITIVO: Dois passos para trás sai de 'login', sai de 'app' e entra em 'components'
 import { LoginForm } from "../../components/login-form";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-blue-100 p-4">
-      
-      {/* CARD BRANCO */}
-      <div className="w-full max-w-[360px] bg-white p-8 rounded-[32px] shadow-lg flex flex-col items-center">
-        
-        {/* LOGO DA CLÍNICA */}
-        <div className="mb-4 w-[200px] h-[200px] flex items-center justify-center overflow-hidden">
-          <img 
-            src={logoClinica.src} 
-            alt="Logo Clínica Abraço" 
-            className="w-full h-full object-contain"
+    <div className="min-h-screen w-full flex items-center justify-center bg-slate-100 p-4">
+
+      {/* FUNDO DECORATIVO */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-200 rounded-full opacity-30 blur-3xl"/>
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-200 rounded-full opacity-30 blur-3xl"/>
+      </div>
+
+      {/* CARD */}
+      <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center gap-6">
+
+        {/* LOGO */}
+        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md">
+          <img
+            src="/logo.png"
+            alt="Logo Clínica Abraço"
+            className="w-full h-full object-cover"
           />
         </div>
 
-        {/* TÍTULO PRINCIPAL */}
-        <h1 className="text-3xl font-bold text-slate-800 mb-6 tracking-tight text-center">
-          Clínica Abraço
-        </h1>
+        {/* TÍTULO */}
+        <div className="text-center space-y-1">
+          <h1 className="text-2xl font-bold text-blue-900 tracking-tight">
+            Clínica Abraço
+          </h1>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+            ABA — Núcleo de Intervenção Comportamental
+          </p>
+        </div>
 
-        {/* FORMULÁRIO PADRÃO RETORNADO */}
-        <LoginForm />
+        {/* DIVISOR */}
+        <div className="w-full h-px bg-slate-100"/>
 
+        {/* FORMULÁRIO */}
+        <div className="w-full">
+          <LoginForm />
+        </div>
+
+        {/* RODAPÉ */}
+        <p className="text-xs text-slate-400 text-center">
+          Sistema exclusivo para uso interno da clínica.
+        </p>
       </div>
     </div>
   );
