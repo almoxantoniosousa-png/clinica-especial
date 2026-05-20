@@ -35,11 +35,11 @@ export default function AtendimentoForm() {
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        // Busca nome do atendente automaticamente
+        // Busca nome do atendente automaticamente pelo email
         const { data: perfil } = await supabase
           .from('atendentes')
           .select('nome')
-          .eq('id', user.id)
+          .eq('email', user.email)
           .maybeSingle()
         if (perfil?.nome) setNomeAtendente(perfil.nome)
 
@@ -156,18 +156,22 @@ export default function AtendimentoForm() {
       {/* FORMULÁRIO */}
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-5">
 
-        {/* ATENDENTE (automático) */}
+        {/* ATENDENTE (automático, editável se necessário) */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
             Atendente
           </label>
-          <div className="flex items-center gap-3 h-12 px-4 rounded-xl bg-slate-50 border border-slate-200">
+          <div className="flex items-center gap-3 h-12 px-4 rounded-xl bg-slate-50 border border-slate-200 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition">
             <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs flex-shrink-0">
               {nomeAtendente ? nomeAtendente.charAt(0).toUpperCase() : '?'}
             </div>
-            <span className="text-sm font-medium text-slate-700">
-              {nomeAtendente || 'Carregando...'}
-            </span>
+            <input
+              type="text"
+              value={nomeAtendente}
+              onChange={(e) => setNomeAtendente(e.target.value)}
+              placeholder="Nome do atendente..."
+              className="flex-1 bg-transparent text-sm font-medium text-slate-700 focus:outline-none placeholder:text-slate-400"
+            />
           </div>
         </div>
 
