@@ -52,7 +52,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
               </Link>
 
               <Link
-                href="/adm/atendentes/novo"
+                href="/adm/atendentes"
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   pathname === "/adm/atendentes/novo"
                     ? "bg-blue-50 text-blue-700 font-bold"
@@ -82,7 +82,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
                     : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
-                👶 Crianças
+                👶 Cadastrar Crianças
               </Link>
             </>
           )}
