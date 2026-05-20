@@ -46,13 +46,9 @@ export function AppSidebar({ role }: { role: Role }) {
 
   useEffect(() => {
     async function obterUsuario() {
-      // Puxa a sessão atual direto do Supabase
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Tentativa 1: Nome completo nos metadados
-        // Tentativa 2: Nome do usuário cadastrado antes do @ no email
-        // Tentativa 3: O próprio e-mail completo se os outros falharem
         const nomeMetadados = user.user_metadata?.full_name || user.user_metadata?.nome;
         const parteEmail = user.email ? user.email.split('@')[0] : '';
         const nomeFinal = nomeMetadados || parteEmail || user.email || role;
@@ -67,11 +63,10 @@ export function AppSidebar({ role }: { role: Role }) {
     obterUsuario();
   }, [role]);
 
-  // Função para deslogar e limpar o cache da sessão
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push("/login");
-    router.refresh(); // Força o Next.js a limpar o estado das páginas
+    router.refresh();
   }
 
   return (
@@ -90,7 +85,7 @@ export function AppSidebar({ role }: { role: Role }) {
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
-        {/* Card Superior Modificado */}
+        {/* Card Superior */}
         <div className="mb-6 rounded-lg bg-blue-900 p-4 text-white shadow-md">
           <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest">Painel {role === 'adm' ? 'Administrador' : 'Atendente'}</p>
           <h1 className="text-lg font-black tracking-tight">Clínica ABRAÇO</h1>
@@ -99,7 +94,9 @@ export function AppSidebar({ role }: { role: Role }) {
         <nav className="space-y-1">
           {menu.map((item) => {
             const Icon = item.icon;
-            const active = pathname === item.href || pathname.startsWith(item.href + "/");
+            
+            // 🟢 CORRIGIDO: Validação exata do link para evitar que o Next.js busque subpastas (/novo)
+            const active = pathname === item.href;
             
             return (
               <Link
@@ -120,7 +117,7 @@ export function AppSidebar({ role }: { role: Role }) {
           })}
         </nav>
 
-        {/* RODAPÉ DE PERFIL COM BOTÃO DE LOGOUT INTERATIVO */}
+        {/* RODAPÉ DE PERFIL */}
         <div className="absolute bottom-4 left-4 right-4 space-y-2">
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm uppercase shadow-sm shrink-0">
@@ -133,7 +130,6 @@ export function AppSidebar({ role }: { role: Role }) {
               </p>
             </div>
             
-            {/* Botão de Sair Embutido no Card */}
             <button 
               onClick={handleLogout}
               className="text-slate-400 hover:text-red-600 transition-colors p-1 rounded-md hover:bg-red-50"

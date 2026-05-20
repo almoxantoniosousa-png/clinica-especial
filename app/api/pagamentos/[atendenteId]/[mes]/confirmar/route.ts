@@ -3,10 +3,11 @@ import { supabase } from '@/lib/supabaseClient'
 
 export async function PUT(
   req: Request,
-  { params }: { params: { atendenteId: string, mes: string } }
+  { params }: { params: Promise<{ atendenteId: string; mes: string }> }
 ) {
   try {
-    const { atendenteId, mes } = params
+    // Aguarda os parâmetros resolverem (exigência do Next.js)
+    const { atendenteId, mes } = await params
     const { dataPagamento } = await req.json()
 
     // mes vem no formato "2026/05"
@@ -61,7 +62,7 @@ export async function PUT(
       total_valor: totalValor,
       status_pagamento: 'Pago',
       data_pagamento: dataPagamento ?? new Date().toISOString(),
-      registros // agora retorna também os registros atualizados
+      registros
     }
 
     return NextResponse.json(resultado)
