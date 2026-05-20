@@ -23,8 +23,8 @@ type Role = "adm" | "atendente";
 const menuByRole = {
   adm: [
     { href: "/adm/dashboard", label: "Dashboard", icon: Home },
-    { href: "/adm/dashboard/atendentes", label: "Gestão Atendentes", icon: Users },
-    { href: "/adm/criancas", label: "Gestão Crianças", icon: Baby }, 
+    { href: "/adm/atendentes", label: "Cadastrar Atendente", icon: Users },
+    { href: "/adm/criancas", label: "Cadastrar Criança", icon: Baby }, 
     { href: "/adm/financeiro", label: "Financeiro / Faturamento", icon: Wallet },
     { href: "/chat", label: "Chat", icon: MessageCircle },
   ],
