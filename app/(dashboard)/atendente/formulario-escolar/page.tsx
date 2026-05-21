@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
 const ETAPAS = [
@@ -12,7 +12,7 @@ const ETAPAS = [
 ];
 
 export default function FormularioEscolarPage() {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  
   const router = useRouter();
   const [etapa, setEtapa] = useState(1);
   const [salvando, setSalvando] = useState(false);
