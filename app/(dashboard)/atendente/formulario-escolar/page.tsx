@@ -48,7 +48,8 @@ export default function FormularioEscolarPage() {
           .from("atendentes").select("nome").eq("email", user.email).maybeSingle();
         if (perfil?.nome) setAtNome(perfil.nome);
       }
-      const { data } = await supabase.from("criancas").select("id, nome, foto_url").order("nome");
+      const { data, error } = await supabase.from("criancas").select("id, nome, foto_url").order("nome");
+      console.log("CRIANCAS:", data, "ERRO:", error);
       setCriancas(data || []);
     }
     inicializar();
