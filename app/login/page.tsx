@@ -1,5 +1,6 @@
 "use client";
 
+import logoClinica from "../../public/logo.png";
 import { LoginForm } from "../../components/login-form";
 
 export default function LoginPage() {
@@ -16,11 +17,12 @@ export default function LoginPage() {
       <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center gap-6">
 
         {/* LOGO */}
-        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md">
+        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md bg-slate-100">
           <img
-            src="/logo.png"
+            src={logoClinica.src}
             alt="Logo Clínica Abraço"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         </div>
 
