@@ -48,6 +48,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/atendente/novo-registro",     label: "Novo Registro",     icon: "📝" },
     { href: "/atendente/meus-atendimentos", label: "Meus Atendimentos", icon: "📋" },
     { href: "/adm/mural",                   label: "Mural",             icon: "📢" },
+    { href: "/atendente/formulario-escolar", label: "Comunicado Diário", icon: "📋" },
   ];
 
   const menu = isAdmin ? menuAdmin : menuAtendente;
