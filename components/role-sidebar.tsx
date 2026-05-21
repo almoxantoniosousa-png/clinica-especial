@@ -41,11 +41,13 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/adm/financeiro", label: "Financeiro",  icon: "💰" },
     { href: "/adm/atendentes", label: "Atendentes",  icon: "👤" },
     { href: "/adm/criancas",   label: "Crianças",    icon: "👶" },
+    { href: "/adm/mural",      label: "Mural",       icon: "📢" },
   ];
 
   const menuAtendente = [
     { href: "/atendente/novo-registro",     label: "Novo Registro",     icon: "📝" },
     { href: "/atendente/meus-atendimentos", label: "Meus Atendimentos", icon: "📋" },
+    { href: "/adm/mural",                   label: "Mural",             icon: "📢" },
   ];
 
   const menu = isAdmin ? menuAdmin : menuAtendente;
