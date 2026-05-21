@@ -148,7 +148,7 @@ export default function FinanceiroPage() {
             value={mesAno}
             onChange={(e) => setMesAno(e.target.value)}
             className="h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-700
-              focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white"
+              focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white w-44"
           />
           <div className="relative">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
