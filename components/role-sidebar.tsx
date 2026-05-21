@@ -18,11 +18,11 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
 
   const role = userRole ? userRole.trim().toLowerCase() : "";
   const isAdmin = role === "adm" || role === "admin";
+  const isSupervisora = role === "supervisora";
+  const isGestao = role === "gestao";
 
-  // Fecha o menu ao trocar de página
   useEffect(() => { setMenuAberto(false); }, [pathname]);
 
-  // Bloqueia scroll do body quando menu mobile aberto
   useEffect(() => {
     if (menuAberto) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "";
@@ -45,17 +45,37 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   ];
 
   const menuAtendente = [
-    { href: "/atendente/novo-registro",     label: "Novo Registro",     icon: "📝" },
-    { href: "/atendente/meus-atendimentos", label: "Meus Atendimentos", icon: "📋" },
-    { href: "/adm/mural",                   label: "Mural",             icon: "📢" },
-    { href: "/atendente/formulario-escolar", label: "Comunicado Diário", icon: "📋" },
+    { href: "/atendente/novo-registro",       label: "Novo Registro",     icon: "📝" },
+    { href: "/atendente/meus-atendimentos",   label: "Meus Atendimentos", icon: "📋" },
+    { href: "/atendente/formulario-escolar",  label: "Comunicado Diário", icon: "📄" },
+    { href: "/adm/mural",                     label: "Mural",             icon: "📢" },
   ];
 
-  const menu = isAdmin ? menuAdmin : menuAtendente;
+  const menuSupervisora = [
+    { href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" },
+    { href: "/adm/mural",               label: "Mural",       icon: "📢" },
+  ];
+
+  const menuGestao = [
+    { href: "/gestao/dashboard",  label: "Dashboard",  icon: "📊" },
+    { href: "/gestao/criancas",   label: "Crianças",   icon: "👶" },
+    { href: "/gestao/agenda",     label: "Agenda",     icon: "📅" },
+    { href: "/adm/mural",         label: "Mural",      icon: "📢" },
+    { href: "/gestao/relatorios", label: "Relatórios", icon: "📈" },
+  ];
+
+  const menu = isAdmin ? menuAdmin
+    : isSupervisora ? menuSupervisora
+    : isGestao ? menuGestao
+    : menuAtendente;
+
+  const roleLabel = isAdmin ? "Administrador"
+    : isSupervisora ? "Supervisora"
+    : isGestao ? "Gestão"
+    : "Atendente";
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full justify-between">
-      {/* TOPO */}
       <div>
         <div className="px-5 py-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
@@ -64,12 +84,11 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
             </div>
             <div>
               <p className="font-bold text-slate-800 text-sm leading-tight">Clínica Abraço</p>
-              <p className="text-xs text-slate-400 capitalize">{isAdmin ? "Administrador" : "Atendente"}</p>
+              <p className="text-xs text-slate-400 capitalize">{roleLabel}</p>
             </div>
           </div>
         </div>
 
-        {/* MENU */}
         <nav className="px-3 py-4 space-y-1">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-3">Menu</p>
           {menu.map((item) => {
@@ -92,7 +111,6 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
         </nav>
       </div>
 
-      {/* RODAPÉ */}
       <div className="px-3 pb-5">
         <div className="border-t border-slate-100 pt-4">
           <button
@@ -112,14 +130,11 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
 
   return (
     <>
-      {/* ======= SIDEBAR DESKTOP (hidden no mobile) ======= */}
       <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 min-h-screen flex-col">
         <SidebarContent />
       </aside>
 
-      {/* ======= TOPBAR MOBILE ======= */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
-        {/* Logo + nome */}
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
             <img src="/logo.png" alt="Logo" className="w-full h-full object-cover"/>
@@ -127,7 +142,6 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
           <span className="font-bold text-blue-900 text-sm">Clínica Abraço</span>
         </div>
 
-        {/* Botão hamburguer */}
         <button
           onClick={() => setMenuAberto(!menuAberto)}
           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 transition"
@@ -145,21 +159,16 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
         </button>
       </div>
 
-      {/* ESPAÇADOR para o conteúdo não ficar atrás da topbar mobile */}
       <div className="md:hidden h-16"/>
 
-      {/* ======= DRAWER MOBILE ======= */}
       {menuAberto && (
         <>
-          {/* Overlay */}
           <div
             className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
             onClick={() => setMenuAberto(false)}
           />
 
-          {/* Drawer lateral */}
           <div className="md:hidden fixed top-0 left-0 h-full w-72 z-50 bg-white shadow-xl flex flex-col">
-            {/* Header do drawer */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200">
@@ -167,7 +176,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
                 </div>
                 <div>
                   <p className="font-bold text-slate-800 text-sm">Clínica Abraço</p>
-                  <p className="text-xs text-slate-400">{isAdmin ? "Administrador" : "Atendente"}</p>
+                  <p className="text-xs text-slate-400">{roleLabel}</p>
                 </div>
               </div>
               <button
@@ -180,7 +189,6 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
               </button>
             </div>
 
-            {/* Links */}
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-3">Menu</p>
               {menu.map((item) => {
@@ -202,7 +210,6 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
               })}
             </nav>
 
-            {/* Sair */}
             <div className="px-3 pb-6 border-t border-slate-100 pt-4">
               <button
                 onClick={() => { setMenuAberto(false); setConfirmandoSaida(true); }}
@@ -219,7 +226,6 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
         </>
       )}
 
-      {/* MODAL CONFIRMAÇÃO SAÍDA */}
       {confirmandoSaida && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
