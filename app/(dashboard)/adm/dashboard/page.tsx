@@ -92,8 +92,8 @@ export default function AdmDashboardPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-200 shadow-sm">
-            <img src="/logo.png" alt="Logo Clínica Abraço" className="w-full h-full object-cover"/>
+          <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-md bg-white p-0.5">
+            <img src="/logo.png" alt="Logo Clínica Abraço" className="w-full h-full object-contain"/>
           </div>
           <div>
             <div className="flex items-center gap-2">
