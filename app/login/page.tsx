@@ -17,12 +17,11 @@ export default function LoginPage() {
       <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center gap-6">
 
         {/* LOGO */}
-        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md bg-slate-100">
+        <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-md bg-white flex items-center justify-center p-2">
           <img
             src={logoClinica.src}
             alt="Logo Clínica Abraço"
             className="w-full h-full object-contain"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         </div>
 
