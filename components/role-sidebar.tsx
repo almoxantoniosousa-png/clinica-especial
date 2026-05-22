@@ -23,16 +23,13 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   const isEspecialista = role === "especialista";
   const isGestao = role === "gestao";
 
-  // Sempre mobile a menos que seja explicitamente desktop
+  // Usar matchMedia — mais confiável que innerWidth no Android
   useEffect(() => {
-    function check() {
-      // Considera mobile se innerWidth < outerWidth * 0.8 OU se for menor que 1100px
-      const w = Math.min(window.innerWidth, window.outerWidth, window.screen.width / (window.devicePixelRatio || 1));
-      setIsMobile(w < 1100);
-    }
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    const mq = window.matchMedia("(max-width: 1024px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
   useEffect(() => { setMenuAberto(false); }, [pathname]);
