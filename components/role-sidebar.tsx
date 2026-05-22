@@ -25,7 +25,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   // Detectar mobile via JS — mais confiável que CSS breakpoints
   useEffect(() => {
     function checkMobile() {
-      setIsMobile(window.innerWidth < 1280);
+      setIsMobile(window.innerWidth < 768);
     }
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -125,7 +125,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     <>
       {/* SIDEBAR — apenas desktop */}
       {!isMobile && (
-        <aside className="w-64 bg-white border-r border-slate-200 min-h-screen flex flex-col justify-between flex-shrink-0">
+        <aside className="w-56 bg-white border-r border-slate-200 min-h-screen flex flex-col justify-between flex-shrink-0">
           <div>
             <div className="px-5 py-5 border-b border-slate-100">
               <div className="flex items-center gap-3">
