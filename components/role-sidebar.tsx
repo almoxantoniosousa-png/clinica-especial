@@ -20,6 +20,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   const role = userRole ? userRole.trim().toLowerCase() : "";
   const isAdmin = role === "adm" || role === "admin";
   const isSupervisora = role === "supervisora";
+  const isEspecialista = role === "especialista";
   const isGestao = role === "gestao";
 
   // Detectar se é desktop (largura > 1024px)
@@ -68,6 +69,13 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/adm/mural",               label: "Mural",       icon: "📢" },
   ];
 
+  const menuEspecialista = [
+    { href: "/especialista/agenda",     label: "Minha Agenda",  icon: "📅" },
+    { href: "/especialista/prontuarios",label: "Prontuários",   icon: "📋" },
+    { href: "/especialista/relatorios", label: "Relatórios",    icon: "📝" },
+    { href: "/adm/mural",               label: "Mural",         icon: "📢" },
+  ];
+
   const menuGestao = [
     { href: "/gestao/dashboard",  label: "Dashboard",  icon: "📊" },
     { href: "/gestao/criancas",   label: "Crianças",   icon: "👶" },
@@ -79,11 +87,13 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   const menu = isAdmin ? menuAdmin
     : isSupervisora ? menuSupervisora
     : isGestao ? menuGestao
+    : isEspecialista ? menuEspecialista
     : menuAtendente;
 
   const roleLabel = isAdmin ? "Administrador"
     : isSupervisora ? "Supervisora"
     : isGestao ? "Gestão"
+    : isEspecialista ? "Especialista"
     : "Atendente";
 
   const MenuLinks = () => (
