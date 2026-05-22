@@ -158,6 +158,11 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
         </aside>
       )}
 
+      {/* DEBUG — mostrar largura temporariamente */}
+      <div style={{position:"fixed",bottom:0,left:0,background:"red",color:"white",padding:"4px 8px",fontSize:"10px",zIndex:9999}}>
+        w:{typeof window !== "undefined" ? window.innerWidth : "?"} | mq:{typeof window !== "undefined" ? window.matchMedia("(max-width:1024px)").matches.toString() : "?"} | mobile:{isMobile.toString()}
+      </div>
+
       {/* TOPBAR — apenas mobile */}
       {isMobile && (
         <>
