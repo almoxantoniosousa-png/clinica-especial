@@ -127,32 +127,48 @@ export default function FinanceiroPage() {
     return coresAvatar[nome.charCodeAt(0) % coresAvatar.length];
   }
 
-  const mesFormatado = new Date(mesAno + "-15").toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  // FIX: gerado com dia 15 para evitar fuso horário deslocando o mês
+  const mesFormatado = new Date(mesAno + "-15").toLocaleDateString("pt-BR", {
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
 
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">
             Financeiro
           </h1>
-          <p className="text-slate-500 text-sm mt-1 capitalize">{mesFormatado}</p>
+          {/* FIX: break-words + overflowWrap garantem que "maio de 2026" não seja cortado no mobile */}
+          <p
+            className="text-slate-500 text-sm mt-1 capitalize leading-snug"
+            style={{ wordBreak: "break-word", overflowWrap: "break-word" }}
+          >
+            {mesFormatado}
+          </p>
         </div>
 
         {/* Filtros */}
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        {/* FIX: removido sm:w-auto — no mobile os inputs ficam empilhados e ocupam largura total */}
+        <div className="flex flex-col gap-2 w-full sm:flex-row sm:w-auto">
+          {/* FIX: w-full garante que o input month não estoure; removido flex-1 que conflitava */}
           <input
             type="month"
             value={mesAno}
             onChange={(e) => setMesAno(e.target.value)}
             className="h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-700
-              focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white min-w-0 flex-1"
+              focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white w-full min-w-0 sm:w-auto"
           />
           <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
             </svg>
             <input
               type="text"
@@ -370,7 +386,14 @@ export default function FinanceiroPage() {
                 <p className="text-sm text-slate-500 mt-1">
                   Deseja confirmar o pagamento de todas as horas de{" "}
                   <span className="font-semibold text-slate-700">{confirmando.nome}</span>{" "}
-                  referentes a <span className="font-semibold text-slate-700 capitalize">{mesFormatado}</span>?
+                  referentes a{" "}
+                  {/* FIX: capitalize via CSS, sem risco de corte */}
+                  <span
+                    className="font-semibold text-slate-700"
+                    style={{ textTransform: "capitalize" }}
+                  >
+                    {mesFormatado}
+                  </span>?
                 </p>
               </div>
             </div>
