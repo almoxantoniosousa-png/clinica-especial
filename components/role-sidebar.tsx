@@ -15,7 +15,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   const [confirmandoSaida, setConfirmandoSaida] = useState(false);
   const [saindo, setSaindo] = useState(false);
   const [menuAberto, setMenuAberto] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(true); // começa como true (mobile first)
 
   const role = userRole ? userRole.trim().toLowerCase() : "";
   const isAdmin = role === "adm" || role === "admin";
@@ -25,7 +25,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   // Detectar mobile via JS — mais confiável que CSS breakpoints
   useEffect(() => {
     function checkMobile() {
-      setIsMobile(window.innerWidth < 1024);
+      setIsMobile(window.innerWidth < 1280);
     }
     checkMobile();
     window.addEventListener("resize", checkMobile);
