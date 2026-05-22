@@ -83,13 +83,13 @@ export default function FormularioEscolarPage() {
       idas_banheiro: idasBanheiro, evacuou, socializacao, atencao,
       lanche, comeu_tudo: comeuTudo, atividades_sala: atividadesSala,
       tarefa_casa: tarefaCasa, materiais_pedir: materiaisPedir,
-      obs_gerais: obsGerais, enviado_supervisora: true, enviado_familia: false,
+      obs_gerais: obsGerais, enviado_supervisora: true, enviado_familia: false, status: 'aguardando',
     }]);
     setSalvando(false);
     if (error) {
       mostrarFeedback("erro", "Erro ao enviar: " + error.message);
     } else {
-      mostrarFeedback("sucesso", "Comunicado enviado para a supervisora!");
+      mostrarFeedback("sucesso", "Comunicado enviado! Aguardando aprovação da supervisora.");
       setTimeout(() => router.push("/atendente/meus-atendimentos"), 2000);
     }
   }

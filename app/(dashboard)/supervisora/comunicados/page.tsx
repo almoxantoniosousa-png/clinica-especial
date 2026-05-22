@@ -36,7 +36,7 @@ export default function SupervisoraPage() {
     const { error } = await supabase
       .from("formularios_escolares")
       .update({
-        enviado_familia: true,
+        status: 'aprovado',
         obs_supervisora: obs,
       })
       .eq("id", id);
@@ -44,7 +44,7 @@ export default function SupervisoraPage() {
     if (error) {
       mostrarFeedback("erro", "Erro ao aprovar: " + error.message);
     } else {
-      mostrarFeedback("sucesso", "Comunicado aprovado e liberado para a família!");
+      mostrarFeedback("sucesso", "Comunicado aprovado! A AT já pode enviar para a família.");
       setDetalhe(null);
       setObs("");
       carregar();
@@ -52,8 +52,8 @@ export default function SupervisoraPage() {
   }
 
   const filtrados = formularios.filter(f => {
-    if (filtro === "pendentes") return f.enviado_supervisora && !f.enviado_familia;
-    if (filtro === "aprovados") return f.enviado_familia;
+    if (filtro === "pendentes") return f.status === 'aguardando';
+    if (filtro === "aprovados") return f.status === 'aprovado' || f.status === 'enviado';
     return true;
   });
 
@@ -183,10 +183,12 @@ export default function SupervisoraPage() {
 
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className={"text-xs font-bold px-2.5 py-1 rounded-full border " +
-                    (f.enviado_familia
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                      : "bg-amber-50 text-amber-700 border-amber-100")}>
-                    {f.enviado_familia ? "✓ Aprovado" : "⏳ Pendente"}
+                    (f.status === 'aguardando'
+                      ? "bg-amber-50 text-amber-700 border-amber-100"
+                      : f.status === 'aprovado'
+                      ? "bg-blue-50 text-blue-700 border-blue-100"
+                      : "bg-emerald-50 text-emerald-700 border-emerald-100")}>
+                    {f.status === 'aguardando' ? "⏳ Aguardando" : f.status === 'aprovado' ? "✓ Aprovado" : "📨 Enviado"}
                   </span>
                   <span className="text-slate-300 text-lg">›</span>
                 </div>
@@ -335,7 +337,7 @@ export default function SupervisoraPage() {
                 </div>
               )}
 
-              {detalhe.obs_supervisora && detalhe.enviado_familia && (
+              {detalhe.obs_supervisora && detalhe.status !== 'aguardando' && (
                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
                   <p className="text-xs text-blue-600 font-bold">Sua observação:</p>
                   <p className="text-sm text-slate-700 mt-1">{detalhe.obs_supervisora}</p>
@@ -345,7 +347,7 @@ export default function SupervisoraPage() {
 
             {/* Botões */}
             <div className="px-5 py-4 border-t border-slate-100 flex-shrink-0">
-              {!detalhe.enviado_familia ? (
+              {detalhe.status === 'aguardando' ? (
                 <div className="flex gap-3">
                   <button onClick={() => setDetalhe(null)}
                     className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
