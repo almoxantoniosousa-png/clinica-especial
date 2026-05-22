@@ -22,14 +22,20 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   const isSupervisora = role === "supervisora";
   const isGestao = role === "gestao";
 
-  // Detectar mobile via JS — mais confiável que CSS breakpoints
+  // Detectar mobile via JS — usa screen.width que é mais confiável
   useEffect(() => {
     function checkMobile() {
-      setIsMobile(window.innerWidth < 900);
+      const largura = window.screen.width;
+      const orientacaoVertical = window.screen.height > window.screen.width;
+      setIsMobile(largura < 1024 || orientacaoVertical);
     }
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    window.addEventListener("orientationchange", checkMobile);
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+      window.removeEventListener("orientationchange", checkMobile);
+    };
   }, []);
 
   useEffect(() => { setMenuAberto(false); }, [pathname]);
