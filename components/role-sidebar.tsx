@@ -15,27 +15,21 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   const [confirmandoSaida, setConfirmandoSaida] = useState(false);
   const [saindo, setSaindo] = useState(false);
   const [menuAberto, setMenuAberto] = useState(false);
-  const [isMobile, setIsMobile] = useState(true); // começa como true (mobile first)
+  const [isMobile, setIsMobile] = useState(true);
 
   const role = userRole ? userRole.trim().toLowerCase() : "";
   const isAdmin = role === "adm" || role === "admin";
   const isSupervisora = role === "supervisora";
   const isGestao = role === "gestao";
 
-  // Detectar mobile via JS — usa screen.width que é mais confiável
+  // Detectar se é desktop (largura > 1024px)
   useEffect(() => {
-    function checkMobile() {
-      const largura = window.screen.width;
-      const orientacaoVertical = window.screen.height > window.screen.width;
-      setIsMobile(largura < 1024 || orientacaoVertical);
+    function check() {
+      setIsMobile(window.outerWidth < 1024);
     }
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    window.addEventListener("orientationchange", checkMobile);
-    return () => {
-      window.removeEventListener("resize", checkMobile);
-      window.removeEventListener("orientationchange", checkMobile);
-    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   useEffect(() => { setMenuAberto(false); }, [pathname]);
