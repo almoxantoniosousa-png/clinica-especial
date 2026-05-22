@@ -25,7 +25,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   // Detectar mobile via JS — mais confiável que CSS breakpoints
   useEffect(() => {
     function checkMobile() {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 900);
     }
     checkMobile();
     window.addEventListener("resize", checkMobile);
