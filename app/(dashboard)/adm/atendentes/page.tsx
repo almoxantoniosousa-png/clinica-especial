@@ -20,6 +20,9 @@ export default function CadastrarAtendentePage() {
   // Feedback inline
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
 
+  // Lista expandida/retraída
+  const [listaAberta, setListaAberta] = useState(true);
+
   // Modal de edição
   const [editando, setEditando] = useState<any | null>(null);
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
@@ -258,8 +261,28 @@ export default function CadastrarAtendentePage() {
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
 
         {/* Cabeçalho com busca */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50">
-          <h3 className="font-semibold text-slate-700 text-sm">Lista de Profissionais</h3>
+        <button
+          onClick={() => setListaAberta(!listaAberta)}
+          className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left border-b border-slate-100"
+        >
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-slate-700 text-sm">Lista de Profissionais</h3>
+            <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">
+              {atendentes.length}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400">{listaAberta ? "Retrair" : "Expandir"}</span>
+            <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${listaAberta ? "rotate-180" : ""}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+        </button>
+
+        {listaAberta && (
+        <>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 border-b border-slate-100 bg-slate-50">
           <div className="relative w-full sm:w-60">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
@@ -355,6 +378,8 @@ export default function CadastrarAtendentePage() {
               Mostrando {atendenteFiltrados.length} de {atendentes.length} profissional{atendentes.length !== 1 ? "is" : ""}
             </p>
           </div>
+        )}
+        </>
         )}
       </div>
 
