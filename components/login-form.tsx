@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { loginWithPassword } from "@/app/actions";
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
@@ -8,7 +9,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 const initialState = { error: null };
 
 export function LoginForm() {
-  const [state, formAction] = useFormState(loginWithPassword, initialState);
+  const [state, formAction] = useActionState(loginWithPassword, initialState);
   const [emailRecuperacao, setEmailRecuperacao] = useState("");
   const [enviandoRecuperacao, setEnviandoRecuperacao] = useState(false);
   const [feedbackRecuperacao, setFeedbackRecuperacao] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
