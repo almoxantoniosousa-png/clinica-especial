@@ -130,11 +130,11 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
 
   return (
     <>
-      <aside className="hidden sm:flex w-64 bg-white border-r border-slate-200 min-h-screen flex-col bg-white border-r border-slate-200 min-h-screen flex-col">
+      <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 min-h-screen flex-col bg-white border-r border-slate-200 min-h-screen flex-col">
         <SidebarContent />
       </aside>
 
-      <div className="sm:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
             <img src="/logo.png" alt="Logo" className="w-full h-full object-cover"/>
@@ -159,16 +159,16 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
         </button>
       </div>
 
-      <div className="sm:hidden h-16"/>
+      <div className="md:hidden h-16"/>
 
       {menuAberto && (
         <>
           <div
-            className="sm:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
             onClick={() => setMenuAberto(false)}
           />
 
-          <div className="sm:hidden fixed top-0 left-0 h-full w-72 z-50 bg-white shadow-xl flex flex-col">
+          <div className="md:hidden fixed top-0 left-0 h-full w-72 z-50 bg-white shadow-xl flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200">

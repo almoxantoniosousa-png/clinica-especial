@@ -18,37 +18,21 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
-/* =============================================
-   SIDEBAR RESPONSIVA — funciona em qualquer celular
-   ============================================= */
-
-/* Desktop — sidebar visível, topbar escondida */
-@media (min-width: 1024px) {
-  .sidebar-desktop {
-    display: flex;
-    width: 16rem;
-    background: white;
-    border-right: 1px solid #e2e8f0;
-    min-height: 100vh;
-    flex-direction: column;
+/* Forçar topbar em celulares — breakpoint fixo em 900px */
+@media screen and (max-width: 900px) {
+  .md\:hidden {
+    display: flex !important;
   }
-  .topbar-mobile,
-  .spacer-mobile,
-  .overlay-mobile,
-  .drawer-mobile {
+  .md\:flex {
     display: none !important;
   }
 }
 
-/* Mobile/Tablet — topbar visível, sidebar escondida */
-@media (max-width: 1023px) {
-  .sidebar-desktop {
+@media screen and (min-width: 901px) {
+  .md\:hidden {
     display: none !important;
   }
-  .topbar-mobile {
+  .md\:flex {
     display: flex !important;
-  }
-  .spacer-mobile {
-    display: block !important;
   }
 }
