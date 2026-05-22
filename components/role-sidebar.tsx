@@ -48,9 +48,9 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/atendente/novo-registro",       label: "Novo Registro",     icon: "📝" },
     { href: "/atendente/meus-atendimentos",   label: "Meus Atendimentos", icon: "📋" },
     { href: "/atendente/formulario-escolar",  label: "Comunicado Diário", icon: "📄" },
+    { href: "/atendente/meus-comunicados",    label: "Meus Comunicados",  icon: "📬" },
     { href: "/adm/mural",                     label: "Mural",             icon: "📢" },
   ];
-
   const menuSupervisora = [
     { href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" },
     { href: "/adm/mural",               label: "Mural",       icon: "📢" },
