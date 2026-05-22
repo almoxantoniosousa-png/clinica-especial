@@ -23,10 +23,12 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   const isEspecialista = role === "especialista";
   const isGestao = role === "gestao";
 
-  // Detectar se é desktop (largura > 1024px)
+  // Sempre mobile a menos que seja explicitamente desktop
   useEffect(() => {
     function check() {
-      setIsMobile(window.outerWidth < 1024);
+      // Considera mobile se innerWidth < outerWidth * 0.8 OU se for menor que 1100px
+      const w = Math.min(window.innerWidth, window.outerWidth, window.screen.width / (window.devicePixelRatio || 1));
+      setIsMobile(w < 1100);
     }
     check();
     window.addEventListener("resize", check);
