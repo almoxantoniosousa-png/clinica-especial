@@ -23,7 +23,6 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   const isEspecialista = role === "especialista";
   const isGestao = role === "gestao";
 
-  // Usar matchMedia — mais confiável que innerWidth no Android
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 1400px)");
     setIsMobile(mq.matches);
@@ -69,10 +68,10 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   ];
 
   const menuEspecialista = [
-    { href: "/especialista/agenda",     label: "Minha Agenda",  icon: "📅" },
-    { href: "/especialista/prontuarios",label: "Prontuários",   icon: "📋" },
-    { href: "/especialista/relatorios", label: "Relatórios",    icon: "📝" },
-    { href: "/adm/mural",               label: "Mural",         icon: "📢" },
+    { href: "/especialista/agenda",      label: "Minha Agenda", icon: "📅" },
+    { href: "/especialista/prontuarios", label: "Prontuários",  icon: "📋" },
+    { href: "/especialista/relatorios",  label: "Relatórios",   icon: "📝" },
+    { href: "/adm/mural",                label: "Mural",        icon: "📢" },
   ];
 
   const menuGestao = [
@@ -130,6 +129,21 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     </button>
   );
 
+  // Componente reutilizável de logo para evitar repetição e garantir consistência
+  const Logo = ({ size }: { size: "sm" | "md" }) => {
+    const dim = size === "sm" ? "w-9 h-9" : "w-10 h-10";
+    return (
+      <div className={`${dim} rounded-full overflow-hidden flex-shrink-0 bg-white border border-slate-200 flex items-center justify-center`}>
+        {/* FIX: object-contain evita corte em logos não-quadradas */}
+        <img
+          src="/logo.png"
+          alt="Logo Clínica Abraço"
+          className="w-full h-full object-contain"
+        />
+      </div>
+    );
+  };
+
   return (
     <>
       {/* SIDEBAR — apenas desktop */}
@@ -138,9 +152,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
           <div>
             <div className="px-5 py-5 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-slate-100 border border-slate-200">
-                  <img src="/logo.png" alt="Logo" className="w-full h-full object-cover"/>
-                </div>
+                <Logo size="md" />
                 <div>
                   <p className="font-bold text-slate-800 text-sm leading-tight">Clínica Abraço</p>
                   <p className="text-xs text-slate-400">{roleLabel}</p>
@@ -163,9 +175,8 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
         <>
           <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
-                <img src="/logo.png" alt="Logo" className="w-full h-full object-cover"/>
-              </div>
+              {/* FIX: Logo size="sm" usa object-contain e w-9 h-9 — sem corte */}
+              <Logo size="sm" />
               <span className="font-bold text-blue-900 text-sm">Clínica Abraço</span>
             </div>
             <button
@@ -194,9 +205,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
           <div className="fixed top-0 left-0 h-full w-72 z-50 bg-white shadow-xl flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200">
-                  <img src="/logo.png" alt="Logo" className="w-full h-full object-cover"/>
-                </div>
+                <Logo size="md" />
                 <div>
                   <p className="font-bold text-slate-800 text-sm">Clínica Abraço</p>
                   <p className="text-xs text-slate-400">{roleLabel}</p>
