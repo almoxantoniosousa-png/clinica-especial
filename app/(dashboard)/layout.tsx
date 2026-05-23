@@ -1,4 +1,5 @@
 import { RoleSidebar } from "@/components/role-sidebar";
+import { FloatingContact } from "@/components/floating-contact";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 
@@ -12,7 +13,6 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Busca primeiro pelo id, depois pelo email
   let atendente = null;
 
   const { data: porId } = await supabase
@@ -33,7 +33,7 @@ export default async function DashboardLayout({
   }
 
   if (!atendente) {
-    console.log("Usuário não encontrado na tabela atendentes:", user.email);
+    console.log("Usuario nao encontrado na tabela atendentes:", user.email);
     redirect("/login");
   }
 
@@ -50,6 +50,7 @@ export default async function DashboardLayout({
           </div>
         </main>
       </div>
+      <FloatingContact />
     </div>
   );
 }
