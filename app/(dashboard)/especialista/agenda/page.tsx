@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
@@ -18,7 +18,6 @@ export default function AgendaEspecialistaPage() {
   const [criancas, setCriancas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [diaSelecionado, setDiaSelecionado] = useState(() => new Date().toISOString().slice(0, 10));
-
   const [modalAberto, setModalAberto] = useState(false);
   const [novoHora, setNovoHora] = useState("08:00");
   const [novoCriancaId, setNovoCriancaId] = useState("");
@@ -135,7 +134,6 @@ export default function AgendaEspecialistaPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-5">
-
       <div className="flex items-center gap-3">
         <button onClick={() => router.back()}
           className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition">
@@ -166,11 +164,7 @@ export default function AgendaEspecialistaPage() {
           {diasSemana.map(dia => (
             <button key={dia} onClick={() => setDiaSelecionado(dia)}
               className={`flex-shrink-0 flex flex-col items-center gap-1 w-12 py-2 rounded-xl transition
-                ${dia === diaSelecionado
-                  ? "bg-blue-900 text-white"
-                  : isHoje(dia)
-                    ? "bg-blue-50 text-blue-700 border border-blue-200"
-                    : "text-slate-500 hover:bg-slate-50"}`}>
+                ${dia === diaSelecionado ? "bg-blue-900 text-white" : isHoje(dia) ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-slate-500 hover:bg-slate-50"}`}>
               <span className="text-xs font-semibold uppercase">{nomeDia(dia)}</span>
               <span className="text-lg font-black">{numeroDia(dia)}</span>
             </button>
@@ -183,10 +177,6 @@ export default function AgendaEspecialistaPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-12 gap-3">
-          <svg className="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-          </svg>
           <p className="text-sm text-slate-400">Carregando agenda...</p>
         </div>
       ) : agendamentos.length === 0 ? (
@@ -209,9 +199,7 @@ export default function AgendaEspecialistaPage() {
               <div className="w-px bg-slate-100"/>
               <div className="flex-1 min-w-0 space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold text-slate-800 text-sm truncate">
-                    {ag.criancas?.nome || "Nao identificado"}
-                  </p>
+                  <p className="font-semibold text-slate-800 text-sm truncate">{ag.criancas?.nome || "Nao identificado"}</p>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border flex-shrink-0 ${corStatus(ag.status)}`}>
                     {ag.status === "agendado" ? "Agendado" : ag.status === "realizado" ? "Realizado" : "Cancelado"}
                   </span>
@@ -240,9 +228,6 @@ export default function AgendaEspecialistaPage() {
           onClick={e => { if (e.target === e.currentTarget) setModalAberto(false); }}>
           <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <h3 className="font-bold text-slate-800">Novo Agendamento</h3>
-            <p className="text-xs text-slate-400 -mt-2">
-              {new Date(diaSelecionado + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
-            </p>
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Crianca</label>
