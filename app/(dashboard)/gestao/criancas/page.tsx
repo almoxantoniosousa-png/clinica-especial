@@ -2,73 +2,103 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
-export default function GestaoCriancasPage() {
-  const [criancas, setCriancas] = useState<any[]>([]);
+export default function GestaoRelatoriosPage() {
+  const router = useRouter();
+  const [relatorios, setRelatorios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aberto, setAberto] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
 
   useEffect(() => {
     async function carregar() {
       setLoading(true);
       const { data } = await supabase
-        .from("criancas")
-        .select("*")
-        .order("nome");
-      setCriancas(data || []);
+        .from("prontuarios")
+        .select("*, criancas(nome), atendentes(nome)")
+        .eq("tipo", "relatorio_diario")
+        .order("created_at", { ascending: false });
+      setRelatorios(data || []);
       setLoading(false);
     }
     carregar();
   }, []);
 
-  const filtradas = criancas.filter(c =>
-    c.nome?.toLowerCase().includes(busca.toLowerCase())
+  const filtrados = relatorios.filter(r =>
+    r.criancas?.nome?.toLowerCase().includes(busca.toLowerCase()) ||
+    r.atendentes?.nome?.toLowerCase().includes(busca.toLowerCase())
   );
+
+  function parseConteudo(p: any) {
+    try { return JSON.parse(p.conteudo); } catch { return null; }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-blue-900">Criancas</h1>
-        <p className="text-xs text-slate-400 mt-1">Visao geral dos estudantes</p>
+      <div className="flex items-center gap-3">
+        <button onClick={() => router.back()}
+          className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition">
+          <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-blue-900">Relatorios</h1>
+          <p className="text-xs text-slate-400 mt-1">Todos os relatorios diarios da equipe</p>
+        </div>
       </div>
 
-      <input
-        type="text"
-        placeholder="Buscar crianca..."
-        value={busca}
-        onChange={e => setBusca(e.target.value)}
-        className="w-full h-10 px-4 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+      <input type="text" placeholder="Buscar por crianca ou especialista..."
+        value={busca} onChange={e => setBusca(e.target.value)}
+        className="w-full h-10 px-4 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <p className="text-sm text-slate-400">Carregando...</p>
+          <p className="text-sm text-slate-400">Carregando relatorios...</p>
         </div>
-      ) : filtradas.length === 0 ? (
+      ) : filtrados.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-slate-200">
-          <span className="text-4xl">👶</span>
-          <p className="text-sm text-slate-400 mt-2">Nenhuma crianca encontrada.</p>
+          <span className="text-4xl">📋</span>
+          <p className="text-sm text-slate-400 mt-2">Nenhum relatorio encontrado.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtradas.map(c => (
-            <div key={c.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700 flex-shrink-0">
-                  {c.nome?.charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-slate-800 text-sm truncate">{c.nome}</p>
-                  <p className="text-xs text-slate-400">{c.idade ? `${c.idade} anos` : ""} {c.serie ? `· Serie ${c.serie}` : ""}</p>
-                </div>
+        <div className="space-y-3">
+          {filtrados.map(r => {
+            const conteudo = parseConteudo(r);
+            const estaAberto = aberto === r.id;
+            return (
+              <div key={r.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <button onClick={() => setAberto(estaAberto ? null : r.id)}
+                  className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 transition">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-800 text-sm truncate">{r.criancas?.nome}</p>
+                    <p className="text-xs text-slate-400">{r.atendentes?.nome} · {new Date(r.created_at).toLocaleDateString("pt-BR")}</p>
+                  </div>
+                  <svg className={`w-4 h-4 text-slate-400 flex-shrink-0 ml-2 transition-transform duration-200 ${estaAberto ? "rotate-180" : ""}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </button>
+                {estaAberto && conteudo && (
+                  <div className="border-t border-slate-100 px-5 py-4 space-y-3">
+                    {[
+                      { key: "avaliacao",   label: "Avaliacao",   badge: "bg-blue-100 text-blue-700" },
+                      { key: "resultado",   label: "Resultados",  badge: "bg-amber-100 text-amber-700" },
+                      { key: "intervencao", label: "Intervencao", badge: "bg-purple-100 text-purple-700" },
+                      { key: "avancos",     label: "Avancos",     badge: "bg-emerald-100 text-emerald-700" },
+                      { key: "conclusao",   label: "Conclusao",   badge: "bg-slate-100 text-slate-700" },
+                    ].map(campo => conteudo[campo.key] ? (
+                      <div key={campo.key}>
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${campo.badge}`}>{campo.label}</span>
+                        <p className="text-sm text-slate-700 mt-2">{conteudo[campo.key]}</p>
+                      </div>
+                    ) : null)}
+                  </div>
+                )}
               </div>
-              <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 space-y-1">
-                {c.diagnostico && <p>Diagnostico: <span className="text-slate-700 font-medium">{c.diagnostico}</span></p>}
-                {c.modalidade && <p>Modalidade: <span className="text-slate-700 font-medium">{c.modalidade}</span></p>}
-                <p>Status: <span className={`font-semibold ${c.ativo ? "text-emerald-600" : "text-red-500"}`}>{c.ativo ? "Ativo" : "Inativo"}</span></p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
