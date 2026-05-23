@@ -70,7 +70,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   const menuEspecialista = [
     { href: "/especialista/agenda",      label: "Minha Agenda", icon: "📅" },
     { href: "/especialista/prontuarios", label: "Prontuários",  icon: "📋" },
-    { href: "/especialista/relatorios",  label: "Relatórios",   icon: "📝" },
+    { href: "/especialista/relatorio",  label: "Relatório",   icon: "📝" },
     { href: "/adm/mural",                label: "Mural",        icon: "📢" },
   ];
 
