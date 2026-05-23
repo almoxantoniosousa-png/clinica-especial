@@ -78,7 +78,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/gestao/dashboard",  label: "Dashboard",  icon: "📊" },
     { href: "/gestao/criancas",   label: "Crianças",   icon: "👶" },
     { href: "/gestao/agenda",     label: "Agenda",     icon: "📅" },
-    { href: "/adm/mural",         label: "Mural",      icon: "📢" },
+    { href: "/gestao/mural",         label: "Mural",      icon: "📢" },
     { href: "/gestao/relatorios", label: "Relatórios", icon: "📈" },
   ];
 
