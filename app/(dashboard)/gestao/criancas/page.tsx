@@ -25,10 +25,10 @@ export default function GestaoCriancasPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-5">
+    <div className="min-h-screen bg-slate-50 px-4 pt-4 pb-6 md:px-8 md:py-10 space-y-5">
       <div className="flex items-center gap-3">
         <button onClick={() => router.push("/gestao/dashboard")}
-          className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition">
+          className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition flex-shrink-0">
           <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
           </svg>
