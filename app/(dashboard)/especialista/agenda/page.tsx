@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
@@ -176,7 +176,7 @@ export default function AgendaEspecialistaPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12 gap-3">
+        <div className="flex items-center justify-center py-12">
           <p className="text-sm text-slate-400">Carregando agenda...</p>
         </div>
       ) : agendamentos.length === 0 ? (
