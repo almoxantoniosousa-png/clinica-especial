@@ -3,12 +3,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 
-export default function CadastrarAtendentePage() {
+export default function EspecialistasPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const [loading, setLoading] = useState(false);
   const [loadingLista, setLoadingLista] = useState(true);
-  const [atendentes, setAtendentes] = useState<any[]>([]);
+  const [especialistas, setEspecialistas] = useState<any[]>([]);
   const [busca, setBusca] = useState("");
   const [listaAberta, setListaAberta] = useState(true);
   const [editando, setEditando] = useState<any | null>(null);
@@ -30,14 +30,14 @@ export default function CadastrarAtendentePage() {
     setTimeout(() => setFeedback(null), 3500);
   }
 
-  const carregarAtendentes = async () => {
+  const carregarEspecialistas = async () => {
     setLoadingLista(true);
-    const { data } = await supabase.from("atendentes").select("*").eq("role", "atendente").order("nome");
-    setAtendentes(data || []);
+    const { data } = await supabase.from("atendentes").select("*").eq("role", "especialista").order("nome");
+    setEspecialistas(data || []);
     setLoadingLista(false);
   };
 
-  useEffect(() => { carregarAtendentes(); }, [supabase]);
+  useEffect(() => { carregarEspecialistas(); }, [supabase]);
 
   const handleCadastrar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,15 +48,15 @@ export default function CadastrarAtendentePage() {
       cpf, rg,
       data_nascimento: dataNascimento || null,
       endereco,
-      role: "atendente",
+      role: "especialista",
     }]);
     if (error) {
       mostrarFeedback("erro", "Erro ao cadastrar: " + error.message);
     } else {
-      mostrarFeedback("sucesso", "Acompanhante cadastrado com sucesso!");
+      mostrarFeedback("sucesso", "Especialista cadastrado com sucesso!");
       setNome(""); setEmail(""); setWhatsapp(""); setEspecialidade("");
       setRegistro(""); setCpf(""); setRg(""); setDataNascimento(""); setEndereco("");
-      carregarAtendentes();
+      carregarEspecialistas();
     }
     setLoading(false);
   };
@@ -79,25 +79,25 @@ export default function CadastrarAtendentePage() {
       mostrarFeedback("erro", "Erro ao editar: " + error.message);
     } else {
       setEditando(null);
-      carregarAtendentes();
-      mostrarFeedback("sucesso", "Acompanhante atualizado com sucesso!");
+      carregarEspecialistas();
+      mostrarFeedback("sucesso", "Especialista atualizado com sucesso!");
     }
   }
 
-  async function excluirAtendente(id: string, nome: string) {
-    if (!confirm(`Remover "${nome}" da lista?`)) return;
+  async function excluir(id: string, nome: string) {
+    if (!confirm(`Remover "${nome}"?`)) return;
     const { error } = await supabase.from("atendentes").delete().eq("id", id);
     if (error) {
       mostrarFeedback("erro", "Erro ao excluir: " + error.message);
     } else {
-      carregarAtendentes();
-      mostrarFeedback("sucesso", "Acompanhante removido.");
+      carregarEspecialistas();
+      mostrarFeedback("sucesso", "Especialista removido.");
     }
   }
 
-  const atendenteFiltrados = atendentes.filter((a) =>
-    a.nome.toLowerCase().includes(busca.toLowerCase()) ||
-    (a.especialidade || "").toLowerCase().includes(busca.toLowerCase())
+  const filtrados = especialistas.filter((e) =>
+    e.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    (e.especialidade || "").toLowerCase().includes(busca.toLowerCase())
   );
 
   function iniciais(nome: string) {
@@ -105,8 +105,8 @@ export default function CadastrarAtendentePage() {
   }
 
   const coresAvatar = [
-    "bg-emerald-100 text-emerald-700", "bg-blue-100 text-blue-700",
-    "bg-purple-100 text-purple-700", "bg-amber-100 text-amber-700",
+    "bg-purple-100 text-purple-700", "bg-blue-100 text-blue-700",
+    "bg-teal-100 text-teal-700", "bg-amber-100 text-amber-700",
     "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700",
   ];
 
@@ -114,7 +114,7 @@ export default function CadastrarAtendentePage() {
     return coresAvatar[nome.charCodeAt(0) % coresAvatar.length];
   }
 
-  const inputClass = "w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400 transition";
+  const inputClass = "w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-slate-400 transition";
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
@@ -122,12 +122,12 @@ export default function CadastrarAtendentePage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Gestão de Acompanhantes</h1>
-          <p className="text-slate-500 text-sm mt-1">Cadastre e gerencie os Acompanhantes Terapeuticos da clinica.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Gestao de Especialistas</h1>
+          <p className="text-slate-500 text-sm mt-1">Cadastre e gerencie os especialistas da clinica.</p>
         </div>
-        <span className="self-start sm:self-auto inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-          {atendentes.length} profissionais
+        <span className="self-start sm:self-auto inline-flex items-center gap-1.5 bg-purple-50 border border-purple-100 text-purple-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+          <span className="w-2 h-2 rounded-full bg-purple-500 inline-block"></span>
+          {especialistas.length} especialistas
         </span>
       </div>
 
@@ -143,24 +143,21 @@ export default function CadastrarAtendentePage() {
       {/* FORMULÁRIO */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 md:p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-slate-800">Novo Acompanhante Terapeutico</h2>
-          <span className="text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full font-medium">Cadastro rapido</span>
+          <h2 className="text-base font-semibold text-slate-800">Novo Especialista</h2>
+          <span className="text-xs bg-purple-50 text-purple-600 px-2.5 py-1 rounded-full font-medium">Cadastro rapido</span>
         </div>
 
         <form onSubmit={handleCadastrar} className="space-y-4">
-          {/* Nome e Email */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nome completo *</label>
-              <input type="text" required placeholder="Ex: Ana Paula Silva" value={nome} onChange={(e) => setNome(e.target.value)} className={inputClass} />
+              <input type="text" required placeholder="Ex: Dra. Ana Paula Silva" value={nome} onChange={(e) => setNome(e.target.value)} className={inputClass} />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">E-mail *</label>
               <input type="email" required placeholder="Ex: ana@clinica.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
             </div>
           </div>
-
-          {/* CPF e RG */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CPF</label>
@@ -171,40 +168,33 @@ export default function CadastrarAtendentePage() {
               <input type="text" placeholder="Ex: 00.000.000-00" value={rg} onChange={(e) => setRg(e.target.value)} className={inputClass} />
             </div>
           </div>
-
-          {/* Data Nascimento e WhatsApp */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Data de Nascimento</label>
               <input type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} className={inputClass} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">WhatsApp</label>
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">WhatsApp / Telefone</label>
               <input type="text" placeholder="Ex: (71) 99999-9999" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={inputClass} />
             </div>
           </div>
-
-          {/* Especialidade e Registro */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Especialidade</label>
-              <input type="text" placeholder="Ex: Pedagoga" value={especialidade} onChange={(e) => setEspecialidade(e.target.value)} className={inputClass} />
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Area de Atuacao *</label>
+              <input type="text" required placeholder="Ex: Psicologia, Fonoaudiologia..." value={especialidade} onChange={(e) => setEspecialidade(e.target.value)} className={inputClass} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Registro Profissional</label>
-              <input type="text" placeholder="Ex: CRP 06/123456" value={registro} onChange={(e) => setRegistro(e.target.value)} className={inputClass} />
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Registro (CRP/CRM/CREFONO)</label>
+              <input type="text" placeholder="Ex: CRP 03/12345" value={registro} onChange={(e) => setRegistro(e.target.value)} className={inputClass} />
             </div>
           </div>
-
-          {/* Endereço */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Endereco</label>
             <input type="text" placeholder="Ex: Rua das Flores, 123 - Bairro - Salvador/BA" value={endereco} onChange={(e) => setEndereco(e.target.value)} className={inputClass} />
           </div>
-
           <button type="submit" disabled={loading}
-            className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 shadow-sm">
-            {loading ? "Cadastrando..." : "Cadastrar Acompanhante"}
+            className="w-full h-12 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 shadow-sm">
+            {loading ? "Cadastrando..." : "Cadastrar Especialista"}
           </button>
         </form>
       </div>
@@ -214,8 +204,8 @@ export default function CadastrarAtendentePage() {
         <button onClick={() => setListaAberta(!listaAberta)}
           className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-slate-700 text-sm">Lista de Acompanhantes Terapeuticos</h3>
-            <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">{atendentes.length}</span>
+            <h3 className="font-semibold text-slate-700 text-sm">Lista de Especialistas</h3>
+            <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">{especialistas.length}</span>
           </div>
           <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${listaAberta ? "rotate-180" : ""}`}
             fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -226,45 +216,46 @@ export default function CadastrarAtendentePage() {
         {listaAberta && (
           <>
             <div className="px-5 py-3 border-b border-slate-100 bg-slate-50">
-              <input type="text" placeholder="Buscar por nome ou especialidade..." value={busca}
+              <input type="text" placeholder="Buscar por nome ou area..." value={busca}
                 onChange={(e) => setBusca(e.target.value)}
-                className="w-full sm:w-60 pl-3 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400 transition" />
+                className="w-full sm:w-60 pl-3 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-slate-400 transition" />
             </div>
 
             {loadingLista ? (
               <div className="flex items-center justify-center py-16"><p className="text-sm text-slate-400">Carregando...</p></div>
-            ) : atendenteFiltrados.length === 0 ? (
+            ) : filtrados.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
-                <span className="text-4xl">👩‍⚕️</span>
-                <p className="text-sm text-slate-400 font-medium">{busca ? "Nenhum acompanhante encontrado." : "Nenhum acompanhante cadastrado ainda."}</p>
+                <span className="text-4xl">🩺</span>
+                <p className="text-sm text-slate-400 font-medium">{busca ? "Nenhum especialista encontrado." : "Nenhum especialista cadastrado ainda."}</p>
               </div>
             ) : (
               <ul className="divide-y divide-slate-100">
-                {atendenteFiltrados.map((at) => (
-                  <li key={at.id} className="px-5 py-4 hover:bg-slate-50 transition">
+                {filtrados.map((esp) => (
+                  <li key={esp.id} className="px-5 py-4 hover:bg-slate-50 transition">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm ${corAvatar(at.nome)}`}>
-                          {iniciais(at.nome)}
+                        <div className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm ${corAvatar(esp.nome)}`}>
+                          {iniciais(esp.nome)}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold text-slate-800 text-sm truncate">{at.nome}</p>
-                          <p className="text-xs text-slate-500 truncate">{at.email}</p>
+                          <p className="font-semibold text-slate-800 text-sm truncate">{esp.nome}</p>
+                          <p className="text-xs text-slate-500 truncate">{esp.email}</p>
                           <div className="flex flex-wrap gap-1.5 mt-1.5">
-                            {at.especialidade && <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">{at.especialidade}</span>}
-                            {at.cpf && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">CPF: {at.cpf}</span>}
-                            {at.data_nascimento && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">Nasc: {new Date(at.data_nascimento).toLocaleDateString("pt-BR")}</span>}
-                            {at.whatsapp && <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">{at.whatsapp}</span>}
+                            {esp.especialidade && <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-medium">{esp.especialidade}</span>}
+                            {esp.registro_profissional && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">{esp.registro_profissional}</span>}
+                            {esp.cpf && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">CPF: {esp.cpf}</span>}
+                            {esp.data_nascimento && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">Nasc: {new Date(esp.data_nascimento).toLocaleDateString("pt-BR")}</span>}
+                            {esp.whatsapp && <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">{esp.whatsapp}</span>}
                           </div>
-                          {at.endereco && <p className="text-xs text-slate-400 mt-1 truncate">📍 {at.endereco}</p>}
+                          {esp.endereco && <p className="text-xs text-slate-400 mt-1 truncate">📍 {esp.endereco}</p>}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <button onClick={() => setEditando({ ...at })}
+                        <button onClick={() => setEditando({ ...esp })}
                           className="h-9 px-3 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95 rounded-lg border border-blue-100 transition-all">
                           Editar
                         </button>
-                        <button onClick={() => excluirAtendente(at.id, at.nome)}
+                        <button onClick={() => excluir(esp.id, esp.nome)}
                           className="h-9 px-3 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 rounded-lg border border-red-100 transition-all">
                           Excluir
                         </button>
@@ -275,9 +266,9 @@ export default function CadastrarAtendentePage() {
               </ul>
             )}
 
-            {!loadingLista && atendenteFiltrados.length > 0 && (
+            {!loadingLista && filtrados.length > 0 && (
               <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
-                <p className="text-xs text-slate-400">Mostrando {atendenteFiltrados.length} de {atendentes.length} acompanhante{atendentes.length !== 1 ? "s" : ""}</p>
+                <p className="text-xs text-slate-400">Mostrando {filtrados.length} de {especialistas.length} especialista{especialistas.length !== 1 ? "s" : ""}</p>
               </div>
             )}
           </>
@@ -290,7 +281,7 @@ export default function CadastrarAtendentePage() {
           onClick={(e) => { if (e.target === e.currentTarget) setEditando(null); }}>
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-slate-800 text-base">Editar Acompanhante</h3>
+              <h3 className="font-semibold text-slate-800 text-base">Editar Especialista</h3>
               <button onClick={() => setEditando(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition">✕</button>
             </div>
             <div className="space-y-3">
@@ -298,47 +289,47 @@ export default function CadastrarAtendentePage() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nome</label>
                   <input type="text" value={editando.nome} autoFocus onChange={(e) => setEditando({ ...editando, nome: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">WhatsApp</label>
                   <input type="text" value={editando.whatsapp || ""} onChange={(e) => setEditando({ ...editando, whatsapp: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CPF</label>
                   <input type="text" value={editando.cpf || ""} onChange={(e) => setEditando({ ...editando, cpf: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">RG</label>
                   <input type="text" value={editando.rg || ""} onChange={(e) => setEditando({ ...editando, rg: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Data Nascimento</label>
                   <input type="date" value={editando.data_nascimento || ""} onChange={(e) => setEditando({ ...editando, data_nascimento: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Especialidade</label>
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Area de Atuacao</label>
                   <input type="text" value={editando.especialidade || ""} onChange={(e) => setEditando({ ...editando, especialidade: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition" />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Registro Profissional</label>
                 <input type="text" value={editando.registro_profissional || ""} onChange={(e) => setEditando({ ...editando, registro_profissional: e.target.value })}
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Endereco</label>
                 <input type="text" value={editando.endereco || ""} onChange={(e) => setEditando({ ...editando, endereco: e.target.value })}
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition" />
               </div>
             </div>
             <div className="flex gap-3 pt-1">
@@ -347,7 +338,7 @@ export default function CadastrarAtendentePage() {
                 Cancelar
               </button>
               <button onClick={salvarEdicao} disabled={salvandoEdicao || !editando.nome?.trim()}
-                className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold active:scale-95 transition disabled:opacity-50">
+                className="flex-1 h-11 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold active:scale-95 transition disabled:opacity-50">
                 {salvandoEdicao ? "Salvando..." : "Salvar"}
               </button>
             </div>

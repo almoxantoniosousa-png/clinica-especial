@@ -45,7 +45,8 @@ export default async function DashboardLayout({
       <div className="flex min-h-screen">
         <RoleSidebar key={user.id} userRole={roleFinal} />
         <main className="flex-1 min-w-0 min-h-screen overflow-y-auto overflow-x-hidden bg-white">
-          <div className="max-w-5xl mx-auto p-4 md:p-8">
+          {/* ✅ h-full adicionado para o chat ocupar tela cheia */}
+          <div className="max-w-5xl mx-auto p-4 md:p-8 h-full">
             {children}
           </div>
         </main>

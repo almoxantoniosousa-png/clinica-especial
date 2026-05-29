@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { carregarDadosDashboard } from "@/app/actions";
+import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Line, Pie, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -22,16 +23,16 @@ ChartJS.register(
 );
 
 export default function AdmDashboardPage() {
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+
   const [metricas, setMetricas] = useState({
-    totalDia: 0,
-    pendentes: 0,
-    receitaMes: 0,
-    pagos: 0,
+    totalDia: 0, pendentes: 0, receitaMes: 0, pagos: 0,
   });
   const [graficoLinha, setGraficoLinha] = useState<any>(null);
   const [graficoPizza, setGraficoPizza] = useState<any>(null);
   const [graficoBarras, setGraficoBarras] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [aniversariantes, setAniversariantes] = useState<any[]>([]);
 
   useEffect(() => {
     async function inicializar() {
@@ -43,14 +44,52 @@ export default function AdmDashboardPage() {
         setGraficoPizza(res.graficoPizza);
         setGraficoBarras(res.graficoBarras);
       }
+      await carregarAniversariantes();
       setLoading(false);
     }
     inicializar();
   }, []);
 
+  async function carregarAniversariantes() {
+    const mesAtual = new Date().getMonth() + 1;
+    const hoje = new Date().getDate();
+
+    // Busca de atendentes (ATs + especialistas)
+    const { data: atendentes } = await supabase
+      .from("atendentes")
+      .select("nome, data_nascimento, role")
+      .not("data_nascimento", "is", null);
+
+    // Busca de colaboradoras internas
+    const { data: internas } = await supabase
+      .from("colaboradoras_internas")
+      .select("nome, data_nascimento, cargo")
+      .not("data_nascimento", "is", null);
+
+    const todos = [
+      ...(atendentes || []).map((a: any) => ({ ...a, tipo: a.role === "especialista" ? "Especialista" : "Acompanhante" })),
+      ...(internas || []).map((i: any) => ({ ...i, tipo: i.cargo })),
+    ];
+
+    // Filtra quem faz aniversário no mês atual
+    const doMes = todos.filter(p => {
+      const data = new Date(p.data_nascimento);
+      return data.getMonth() + 1 === mesAtual;
+    }).map(p => {
+      const data = new Date(p.data_nascimento);
+      const dia = data.getDate();
+      const diff = dia - hoje;
+      return { ...p, dia, diff };
+    }).sort((a, b) => a.dia - b.dia);
+
+    setAniversariantes(doMes);
+  }
+
   const hoje = new Date().toLocaleDateString("pt-BR", {
     weekday: "long", day: "numeric", month: "long", year: "numeric"
   });
+
+  const mesNome = new Date().toLocaleDateString("pt-BR", { month: "long" });
 
   const chartOptions = {
     responsive: true,
@@ -116,7 +155,6 @@ export default function AdmDashboardPage() {
 
       {/* CARDS MÉTRICAS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-blue-400">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Hoje</p>
@@ -172,7 +210,65 @@ export default function AdmDashboardPage() {
         </div>
       </div>
 
-      {/* GRÁFICOS — linha e pizza */}
+      {/* CARD ANIVERSARIANTES */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+            🎂 Aniversariantes de {mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}
+          </h2>
+          <span className="text-xs bg-pink-50 text-pink-600 px-2.5 py-1 rounded-full font-medium">
+            {aniversariantes.length} este mês
+          </span>
+        </div>
+
+        {aniversariantes.length === 0 ? (
+          <p className="text-sm text-slate-400 text-center py-4">Nenhum aniversariante este mês 🎉</p>
+        ) : (
+          <div className="space-y-2">
+            {aniversariantes.map((p, i) => {
+              const isHoje = p.diff === 0;
+              const isProximo = p.diff > 0 && p.diff <= 7;
+              return (
+                <div key={i} className={`flex items-center justify-between px-3 py-2.5 rounded-xl ${
+                  isHoje ? "bg-pink-50 border border-pink-200" :
+                  isProximo ? "bg-amber-50 border border-amber-100" :
+                  "bg-slate-50 border border-slate-100"
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      isHoje ? "bg-pink-200 text-pink-800" :
+                      isProximo ? "bg-amber-200 text-amber-800" :
+                      "bg-slate-200 text-slate-700"
+                    }`}>
+                      {p.nome.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className={`text-sm font-semibold ${isHoje ? "text-pink-800" : "text-slate-700"}`}>
+                        {p.nome} {isHoje && "🎉"}
+                      </p>
+                      <p className="text-xs text-slate-400">{p.tipo}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm font-bold ${
+                      isHoje ? "text-pink-600" :
+                      isProximo ? "text-amber-600" :
+                      "text-slate-500"
+                    }`}>
+                      dia {p.dia}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {isHoje ? "Hoje! 🎂" : isProximo ? `em ${p.diff} dias` : `dia ${p.dia}`}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* GRÁFICOS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -203,7 +299,6 @@ export default function AdmDashboardPage() {
         </div>
       </div>
 
-      {/* GRÁFICO BARRAS — largura total */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-bold text-slate-700">Atendimentos por semana</h2>
