@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect, useTransition, useRef } from "react";
+import { useState, useEffect, useTransition, useRef, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { createCrianca } from "@/app/actions";
+import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 
 export default function AdmCriancasPage() {
+  const supabaseClient = useMemo(() => createSupabaseBrowserClient(), []);
   const [criancas, setCriancas] = useState<any[]>([]);
+  const [escolas, setEscolas] = useState<any[]>([]);
   const [nome, setNome] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
   const [responsavel, setResponsavel] = useState("");
+  const [escolaId, setEscolaId] = useState("");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
@@ -18,10 +21,10 @@ export default function AdmCriancasPage() {
   const [uploadingFoto, setUploadingFoto] = useState(false);
   const inputFotoRef = useRef<HTMLInputElement>(null);
 
-  // Modal de edição
   const [editando, setEditando] = useState<any | null>(null);
   const [nomeEditado, setNomeEditado] = useState("");
   const [responsavelEditado, setResponsavelEditado] = useState("");
+  const [escolaIdEditado, setEscolaIdEditado] = useState("");
   const [fotoEditFile, setFotoEditFile] = useState<File | null>(null);
   const [fotoEditPreview, setFotoEditPreview] = useState<string | null>(null);
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
@@ -34,18 +37,19 @@ export default function AdmCriancasPage() {
     setTimeout(() => setFeedback(null), 3500);
   }
 
-  async function carregarCriancas() {
+  async function carregarDados() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("criancas")
-      .select("*")
-      .order("nome", { ascending: true });
+    const [{ data: criancasData, error }, { data: escolasData }] = await Promise.all([
+      supabase.from("criancas").select("*, escolas(nome)").order("nome", { ascending: true }),
+      supabaseClient.from("escolas").select("id, nome").order("nome"),
+    ]);
     if (error) mostrarFeedback("erro", "Erro ao carregar: " + error.message);
-    if (data) setCriancas(data);
+    if (criancasData) setCriancas(criancasData);
+    if (escolasData) setEscolas(escolasData);
     setLoading(false);
   }
 
-  useEffect(() => { carregarCriancas(); }, []);
+  useEffect(() => { carregarDados(); }, []);
 
   function selecionarFoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -64,9 +68,7 @@ export default function AdmCriancasPage() {
   async function uploadFoto(file: File, criancaId: string): Promise<string | null> {
     const ext = file.name.split(".").pop();
     const path = `${criancaId}.${ext}`;
-    const { error } = await supabase.storage
-      .from("fotos-criancas")
-      .upload(path, file, { upsert: true });
+    const { error } = await supabase.storage.from("fotos-criancas").upload(path, file, { upsert: true });
     if (error) return null;
     const { data } = supabase.storage.from("fotos-criancas").getPublicUrl(path);
     return data.publicUrl;
@@ -78,13 +80,13 @@ export default function AdmCriancasPage() {
     setUploadingFoto(true);
 
     startTransition(async () => {
-      // 1. Inserir criança
       const { data: nova, error } = await supabase
         .from("criancas")
         .insert([{
           nome: nome.trim(),
           data_nascimento: dataNascimento || null,
           responsavel: responsavel.trim() || null,
+          escola_id: escolaId || null,
         }])
         .select()
         .single();
@@ -95,18 +97,15 @@ export default function AdmCriancasPage() {
         return;
       }
 
-      // 2. Upload da foto se selecionada
       if (fotoFile) {
         const url = await uploadFoto(fotoFile, nova.id);
-        if (url) {
-          await supabase.from("criancas").update({ foto_url: url }).eq("id", nova.id);
-        }
+        if (url) await supabase.from("criancas").update({ foto_url: url }).eq("id", nova.id);
       }
 
-      setNome(""); setDataNascimento(""); setResponsavel("");
+      setNome(""); setDataNascimento(""); setResponsavel(""); setEscolaId("");
       setFotoFile(null); setFotoPreview(null);
       setUploadingFoto(false);
-      carregarCriancas();
+      carregarDados();
       mostrarFeedback("sucesso", "Criança cadastrada com sucesso!");
     });
   }
@@ -115,6 +114,7 @@ export default function AdmCriancasPage() {
     setEditando(crianca);
     setNomeEditado(crianca.nome);
     setResponsavelEditado(crianca.responsavel || "");
+    setEscolaIdEditado(crianca.escola_id || "");
     setFotoEditPreview(crianca.foto_url || null);
     setFotoEditFile(null);
   }
@@ -124,21 +124,17 @@ export default function AdmCriancasPage() {
     setSalvandoEdicao(true);
 
     let foto_url = editando.foto_url;
-
-    // Upload nova foto se selecionada
     if (fotoEditFile) {
       const url = await uploadFoto(fotoEditFile, editando.id);
       if (url) foto_url = url;
     }
 
-    const { error } = await supabase
-      .from("criancas")
-      .update({
-        nome: nomeEditado.trim(),
-        responsavel: responsavelEditado.trim() || null,
-        foto_url,
-      })
-      .eq("id", editando.id);
+    const { error } = await supabase.from("criancas").update({
+      nome: nomeEditado.trim(),
+      responsavel: responsavelEditado.trim() || null,
+      escola_id: escolaIdEditado || null,
+      foto_url,
+    }).eq("id", editando.id);
 
     setSalvandoEdicao(false);
     setEditando(null);
@@ -148,7 +144,7 @@ export default function AdmCriancasPage() {
     if (error) {
       mostrarFeedback("erro", "Erro ao editar: " + error.message);
     } else {
-      carregarCriancas();
+      carregarDados();
       mostrarFeedback("sucesso", "Criança atualizada com sucesso!");
     }
   }
@@ -159,14 +155,15 @@ export default function AdmCriancasPage() {
     if (error) {
       mostrarFeedback("erro", "Erro ao excluir: " + error.message);
     } else {
-      carregarCriancas();
+      carregarDados();
       mostrarFeedback("sucesso", "Criança removida.");
     }
   }
 
   const criancasFiltradas = criancas.filter((c) =>
     c.nome.toLowerCase().includes(busca.toLowerCase()) ||
-    (c.responsavel || "").toLowerCase().includes(busca.toLowerCase())
+    (c.responsavel || "").toLowerCase().includes(busca.toLowerCase()) ||
+    (c.escolas?.nome || "").toLowerCase().includes(busca.toLowerCase())
   );
 
   function iniciais(nome: string) {
@@ -174,12 +171,9 @@ export default function AdmCriancasPage() {
   }
 
   const coresAvatar = [
-    "bg-blue-100 text-blue-700",
-    "bg-purple-100 text-purple-700",
-    "bg-emerald-100 text-emerald-700",
-    "bg-amber-100 text-amber-700",
-    "bg-rose-100 text-rose-700",
-    "bg-cyan-100 text-cyan-700",
+    "bg-blue-100 text-blue-700", "bg-purple-100 text-purple-700",
+    "bg-emerald-100 text-emerald-700", "bg-amber-100 text-amber-700",
+    "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700",
   ];
 
   function corAvatar(nome: string) {
@@ -196,18 +190,16 @@ export default function AdmCriancasPage() {
     return `${anos} anos`;
   }
 
+  const inputClass = "w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400";
+
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
 
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">
-            Gestão de Crianças
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Cadastre e gerencie as crianças atendidas pela clínica.
-          </p>
+          <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Gestão de Crianças</h1>
+          <p className="text-slate-500 text-sm mt-1">Cadastre e gerencie as crianças atendidas pela clínica.</p>
         </div>
         <span className="self-start sm:self-auto inline-flex items-center gap-1.5 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full">
           <span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>
@@ -218,35 +210,26 @@ export default function AdmCriancasPage() {
       {/* FEEDBACK */}
       {feedback && (
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
-          ${feedback.tipo === "sucesso"
-            ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-            : "bg-red-50 border-red-200 text-red-800"}`}>
+          ${feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
           <span>{feedback.tipo === "sucesso" ? "✓" : "✕"}</span>
           {feedback.msg}
         </div>
       )}
 
-      {/* FORMULÁRIO DE CADASTRO */}
+      {/* FORMULÁRIO */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 md:p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold text-slate-800">Nova Criança</h2>
-          <span className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-medium">
-            Cadastro completo
-          </span>
+          <span className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-medium">Cadastro completo</span>
         </div>
 
         <form onSubmit={salvarCrianca} className="space-y-4">
-
-          {/* FOTO + NOME */}
           <div className="flex items-start gap-4">
-            {/* Upload de foto */}
+            {/* Foto */}
             <div className="flex flex-col items-center gap-2 flex-shrink-0">
-              <div
-                onClick={() => inputFotoRef.current?.click()}
+              <div onClick={() => inputFotoRef.current?.click()}
                 className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-400
-                  flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50
-                  hover:bg-blue-50 transition group relative"
-              >
+                  flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 hover:bg-blue-50 transition group">
                 {fotoPreview ? (
                   <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover"/>
                 ) : (
@@ -256,61 +239,34 @@ export default function AdmCriancasPage() {
                   </div>
                 )}
               </div>
-              <input
-                ref={inputFotoRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={selecionarFoto}
-              />
+              <input ref={inputFotoRef} type="file" accept="image/*" className="hidden" onChange={selecionarFoto}/>
               {fotoPreview && (
-                <button
-                  type="button"
-                  onClick={() => { setFotoFile(null); setFotoPreview(null); }}
-                  className="text-xs text-red-500 hover:text-red-700 transition"
-                >
-                  Remover
-                </button>
+                <button type="button" onClick={() => { setFotoFile(null); setFotoPreview(null); }}
+                  className="text-xs text-red-500 hover:text-red-700 transition">Remover</button>
               )}
             </div>
 
-            {/* Campos de texto */}
+            {/* Campos */}
             <div className="flex-1 space-y-3">
-              <input
-                type="text"
-                required
-                placeholder="Nome completo da criança *"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm
-                  focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"
-              />
+              <input type="text" required placeholder="Nome completo da criança *" value={nome}
+                onChange={(e) => setNome(e.target.value)} className={inputClass}/>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  type="date"
-                  value={dataNascimento}
-                  onChange={(e) => setDataNascimento(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                />
-                <input
-                  type="text"
-                  placeholder="Nome do responsável"
-                  value={responsavel}
-                  onChange={(e) => setResponsavel(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"
-                />
+                <input type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} className={inputClass}/>
+                <input type="text" placeholder="Nome do responsável" value={responsavel}
+                  onChange={(e) => setResponsavel(e.target.value)} className={inputClass}/>
               </div>
+              {/* ✅ DROPDOWN DE ESCOLA */}
+              <select value={escolaId} onChange={(e) => setEscolaId(e.target.value)} className={inputClass}>
+                <option value="">Selecione a escola (opcional)</option>
+                {escolas.map((escola) => (
+                  <option key={escola.id} value={escola.id}>{escola.nome}</option>
+                ))}
+              </select>
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isPending || uploadingFoto || !nome.trim()}
-            className="w-full h-12 bg-blue-900 hover:bg-blue-800 active:scale-95 text-white font-semibold
-              text-sm rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-          >
+          <button type="submit" disabled={isPending || uploadingFoto || !nome.trim()}
+            className="w-full h-12 bg-blue-900 hover:bg-blue-800 active:scale-95 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 shadow-sm">
             {isPending || uploadingFoto ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -326,15 +282,11 @@ export default function AdmCriancasPage() {
 
       {/* LISTA */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <button
-          onClick={() => setListaAberta(!listaAberta)}
-          className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left border-b border-slate-100"
-        >
+        <button onClick={() => setListaAberta(!listaAberta)}
+          className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left border-b border-slate-100">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-slate-700 text-sm">Crianças cadastradas</h3>
-            <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">
-              {criancas.length}
-            </span>
+            <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">{criancas.length}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-400">{listaAberta ? "Retrair" : "Expandir"}</span>
@@ -346,121 +298,105 @@ export default function AdmCriancasPage() {
         </button>
 
         {listaAberta && (
-        <>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 border-b border-slate-100 bg-slate-50">
-          <div className="relative w-full sm:w-56">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="Buscar por nome ou responsável..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200
-                focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"
-            />
-          </div>
-        </div>
+          <>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 border-b border-slate-100 bg-slate-50">
+              <div className="relative w-full sm:w-56">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+                </svg>
+                <input type="text" placeholder="Buscar por nome, responsável ou escola..." value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
+              </div>
+            </div>
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <svg className="animate-spin h-6 w-6 text-blue-500" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-            </svg>
-            <p className="text-sm text-slate-400">Carregando...</p>
-          </div>
-        ) : criancasFiltradas.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-2">
-            <span className="text-4xl">👶</span>
-            <p className="text-sm text-slate-400 font-medium">
-              {busca ? "Nenhuma criança encontrada." : "Nenhuma criança cadastrada ainda."}
-            </p>
-          </div>
-        ) : (
-          <ul className="divide-y divide-slate-100">
-            {criancasFiltradas.map((c) => (
-              <li key={c.id} className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-slate-50 transition">
-                <div className="flex items-center gap-3 min-w-0">
-                  {/* Avatar com foto ou iniciais */}
-                  <div className="w-11 h-11 flex-shrink-0 rounded-full overflow-hidden border border-slate-200">
-                    {c.foto_url ? (
-                      <img src={c.foto_url} alt={c.nome} className="w-full h-full object-cover"/>
-                    ) : (
-                      <div className={`w-full h-full flex items-center justify-center font-bold text-sm ${corAvatar(c.nome)}`}>
-                        {iniciais(c.nome)}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <svg className="animate-spin h-6 w-6 text-blue-500" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                <p className="text-sm text-slate-400">Carregando...</p>
+              </div>
+            ) : criancasFiltradas.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-2">
+                <span className="text-4xl">👶</span>
+                <p className="text-sm text-slate-400 font-medium">
+                  {busca ? "Nenhuma criança encontrada." : "Nenhuma criança cadastrada ainda."}
+                </p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {criancasFiltradas.map((c) => (
+                  <li key={c.id} className="flex items-center justify-between gap-3 px-5 py-4 hover:bg-slate-50 transition">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 flex-shrink-0 rounded-full overflow-hidden border border-slate-200">
+                        {c.foto_url ? (
+                          <img src={c.foto_url} alt={c.nome} className="w-full h-full object-cover"/>
+                        ) : (
+                          <div className={`w-full h-full flex items-center justify-center font-bold text-sm ${corAvatar(c.nome)}`}>
+                            {iniciais(c.nome)}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-800 text-sm truncate">{c.nome}</p>
-                    <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                      {c.data_nascimento && (
-                        <span className="text-xs text-slate-400">
-                          {calcularIdade(c.data_nascimento)}
-                        </span>
-                      )}
-                      {c.responsavel && (
-                        <span className="text-xs text-slate-400">· {c.responsavel}</span>
-                      )}
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-800 text-sm truncate">{c.nome}</p>
+                        <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                          {c.data_nascimento && (
+                            <span className="text-xs text-slate-400">{calcularIdade(c.data_nascimento)}</span>
+                          )}
+                          {c.responsavel && (
+                            <span className="text-xs text-slate-400">· {c.responsavel}</span>
+                          )}
+                          {/* ✅ ESCOLA NA LISTA */}
+                          {c.escolas?.nome && (
+                            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+                              🏫 {c.escolas.nome}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => abrirEdicao(c)}
-                    className="h-9 px-3 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100
-                      active:scale-95 rounded-lg border border-blue-100 transition-all"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => excluirCrianca(c.id, c.nome)}
-                    className="h-9 px-3 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100
-                      active:scale-95 rounded-lg border border-red-100 transition-all"
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => abrirEdicao(c)}
+                        className="h-9 px-3 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95 rounded-lg border border-blue-100 transition-all">
+                        Editar
+                      </button>
+                      <button onClick={() => excluirCrianca(c.id, c.nome)}
+                        className="h-9 px-3 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 rounded-lg border border-red-100 transition-all">
+                        Excluir
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-        {!loading && criancasFiltradas.length > 0 && (
-          <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
-            <p className="text-xs text-slate-400">
-              Mostrando {criancasFiltradas.length} de {criancas.length} criança{criancas.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-        )}
-        </>
+            {!loading && criancasFiltradas.length > 0 && (
+              <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
+                <p className="text-xs text-slate-400">
+                  Mostrando {criancasFiltradas.length} de {criancas.length} criança{criancas.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* MODAL DE EDIÇÃO */}
+      {/* MODAL EDIÇÃO */}
       {editando && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
-          onClick={(e) => { if (e.target === e.currentTarget) setEditando(null); }}
-        >
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+          onClick={(e) => { if (e.target === e.currentTarget) setEditando(null); }}>
           <div className="w-full sm:max-w-md bg-white rounded-2xl shadow-xl p-6 space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-slate-800 text-base">Editar criança</h3>
               <button onClick={() => setEditando(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition">
-                ✕
-              </button>
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition">✕</button>
             </div>
 
-            {/* Foto de edição */}
             <div className="flex items-center gap-4">
-              <div
-                onClick={() => inputFotoEditRef.current?.click()}
-                className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-400
-                  flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 transition"
-              >
+              <div onClick={() => inputFotoEditRef.current?.click()}
+                className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-400 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 transition">
                 {fotoEditPreview ? (
                   <img src={fotoEditPreview} alt="Preview" className="w-full h-full object-cover"/>
                 ) : (
@@ -472,9 +408,7 @@ export default function AdmCriancasPage() {
                 <p className="text-xs text-slate-500">Clique na foto para alterar</p>
                 {fotoEditPreview && fotoEditFile && (
                   <button type="button" onClick={() => { setFotoEditFile(null); setFotoEditPreview(editando.foto_url || null); }}
-                    className="text-xs text-red-500 hover:text-red-700">
-                    Desfazer alteração
-                  </button>
+                    className="text-xs text-red-500 hover:text-red-700">Desfazer alteração</button>
                 )}
               </div>
             </div>
@@ -483,27 +417,34 @@ export default function AdmCriancasPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nome completo</label>
                 <input type="text" value={nomeEditado} onChange={(e) => setNomeEditado(e.target.value)} autoFocus
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Responsável</label>
                 <input type="text" value={responsavelEditado} onChange={(e) => setResponsavelEditado(e.target.value)}
                   placeholder="Nome do responsável"
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
+              </div>
+              {/* ✅ ESCOLA NA EDIÇÃO */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Escola</label>
+                <select value={escolaIdEditado} onChange={(e) => setEscolaIdEditado(e.target.value)}
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                  <option value="">Sem escola vinculada</option>
+                  {escolas.map((escola) => (
+                    <option key={escola.id} value={escola.id}>{escola.nome}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
             <div className="flex gap-3">
               <button onClick={() => setEditando(null)}
-                className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold
-                  hover:bg-slate-50 active:scale-95 transition">
+                className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 active:scale-95 transition">
                 Cancelar
               </button>
               <button onClick={salvarEdicao} disabled={salvandoEdicao || !nomeEditado.trim()}
-                className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold
-                  active:scale-95 transition disabled:opacity-50">
+                className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold active:scale-95 transition disabled:opacity-50">
                 {salvandoEdicao ? "Salvando..." : "Salvar"}
               </button>
             </div>
