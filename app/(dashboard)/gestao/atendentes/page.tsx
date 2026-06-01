@@ -3,11 +3,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 
+const POR_PAGINA = 8;
+
 export default function GestaoAcompanhantesPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [acompanhantes, setAcompanhantes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
+  const [visiveis, setVisiveis] = useState(POR_PAGINA);
 
   useEffect(() => {
     const carregar = async () => {
@@ -19,10 +22,16 @@ export default function GestaoAcompanhantesPage() {
     carregar();
   }, []);
 
+  // Reset paginação ao buscar
+  useEffect(() => { setVisiveis(POR_PAGINA); }, [busca]);
+
   const filtrados = acompanhantes.filter((a) =>
     a.nome.toLowerCase().includes(busca.toLowerCase()) ||
     (a.especialidade || "").toLowerCase().includes(busca.toLowerCase())
   );
+
+  const exibidos = filtrados.slice(0, visiveis);
+  const temMais = visiveis < filtrados.length;
 
   function iniciais(nome: string) {
     return nome.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
@@ -51,9 +60,14 @@ export default function GestaoAcompanhantesPage() {
         </span>
       </div>
 
-      <input type="text" placeholder="Buscar por nome ou especialidade..." value={busca}
-        onChange={(e) => setBusca(e.target.value)}
-        className="w-full sm:w-72 rounded-xl border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+      <div className="flex items-center gap-3 flex-wrap">
+        <input type="text" placeholder="Buscar por nome ou especialidade..." value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="w-full sm:w-72 rounded-xl border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+        {busca && (
+          <span className="text-xs text-slate-400">{filtrados.length} resultado{filtrados.length !== 1 ? "s" : ""}</span>
+        )}
+      </div>
 
       {loading ? (
         <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
@@ -63,27 +77,42 @@ export default function GestaoAcompanhantesPage() {
           <p className="text-sm mt-2">Nenhum acompanhante encontrado.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtrados.map((at) => (
-            <div key={at.id} className="bg-white rounded-xl border border-slate-200 p-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm ${corAvatar(at.nome)}`}>
-                  {iniciais(at.nome)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-slate-800 text-sm">{at.nome}</p>
-                  <p className="text-xs text-slate-500">{at.email}</p>
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {at.especialidade && <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">{at.especialidade}</span>}
-                    {at.whatsapp && <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">📱 {at.whatsapp}</span>}
-                    {at.data_nascimento && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">Nasc: {new Date(at.data_nascimento).toLocaleDateString("pt-BR")}</span>}
+        <>
+          <div className="space-y-3">
+            {exibidos.map((at) => (
+              <div key={at.id} className="bg-white rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm ${corAvatar(at.nome)}`}>
+                    {iniciais(at.nome)}
                   </div>
-                  {at.endereco && <p className="text-xs text-slate-400 mt-1">📍 {at.endereco}</p>}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-800 text-sm">{at.nome}</p>
+                    <p className="text-xs text-slate-500">{at.email}</p>
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {at.especialidade && <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">{at.especialidade}</span>}
+                      {at.whatsapp && <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">📱 {at.whatsapp}</span>}
+                      {at.data_nascimento && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">Nasc: {new Date(at.data_nascimento).toLocaleDateString("pt-BR")}</span>}
+                    </div>
+                    {at.endereco && <p className="text-xs text-slate-400 mt-1">📍 {at.endereco}</p>}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          {/* VER MAIS / CONTADOR */}
+          <div className="flex flex-col items-center gap-2 pt-2">
+            <p className="text-xs text-slate-400">
+              Mostrando {exibidos.length} de {filtrados.length}
+            </p>
+            {temMais && (
+              <button onClick={() => setVisiveis(v => v + POR_PAGINA)}
+                className="px-6 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-700 transition">
+                Ver mais {Math.min(POR_PAGINA, filtrados.length - visiveis)} →
+              </button>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
