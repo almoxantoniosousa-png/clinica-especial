@@ -87,6 +87,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/adm/mural",        label: "Mural",     icon: "📢" },
     { href: "/chat",             label: "Chat",      icon: "💬" },
     { href: "/escala",           label: "Escala",    icon: "📅" },
+    { href: "/adm/auditoria",    label: "Auditoria", icon: "🔍" },
   ];
 
   const menuGestao = [

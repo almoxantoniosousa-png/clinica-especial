@@ -3,6 +3,7 @@
 import { useState, useEffect, useTransition, useRef, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
+import { registrarLog } from "@/lib/auditoria";
 
 export default function AdmCriancasPage() {
   const supabaseClient = useMemo(() => createSupabaseBrowserClient(), []);
@@ -17,7 +18,6 @@ export default function AdmCriancasPage() {
   const inputFotoRef = useRef<HTMLInputElement>(null);
   const inputFotoEditRef = useRef<HTMLInputElement>(null);
 
-  // Formulário cadastro
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -27,7 +27,6 @@ export default function AdmCriancasPage() {
     diagnostico: "", cid: "", alergias: "", medicamentos: "", observacoes: "",
   });
 
-  // Modal edição
   const [editando, setEditando] = useState<any | null>(null);
   const [formEdit, setFormEdit] = useState<any>({});
   const [fotoEditFile, setFotoEditFile] = useState<File | null>(null);
@@ -37,6 +36,11 @@ export default function AdmCriancasPage() {
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
     setTimeout(() => setFeedback(null), 3500);
+  }
+
+  async function getUsuarioLogado() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
   }
 
   async function carregarDados() {
@@ -90,10 +94,22 @@ export default function AdmCriancasPage() {
         setUploadingFoto(false);
         return;
       }
+
       if (fotoFile) {
         const url = await uploadFoto(fotoFile, nova.id);
         if (url) await supabase.from("criancas").update({ foto_url: url }).eq("id", nova.id);
       }
+
+      // ✅ LOG DE AUDITORIA
+      const user = await getUsuarioLogado();
+      await registrarLog({
+        usuario_email: user?.email || "desconhecido",
+        acao: "Criou",
+        tabela: "criancas",
+        registro_id: nova.id,
+        descricao: `Cadastrou a criança: ${form.nome.trim()}`,
+      });
+
       setForm({ nome: "", cpf: "", data_nascimento: "", sexo: "", responsavel: "", telefone_responsavel: "", email_responsavel: "", escola_id: "", plano_saude: "", numero_processo: "", diagnostico: "", cid: "", alergias: "", medicamentos: "", observacoes: "" });
       setFotoFile(null); setFotoPreview(null);
       setUploadingFoto(false);
@@ -139,6 +155,19 @@ export default function AdmCriancasPage() {
       escola_id: formEdit.escola_id || null,
       foto_url,
     }).eq("id", editando.id);
+
+    if (!error) {
+      // ✅ LOG DE AUDITORIA
+      const user = await getUsuarioLogado();
+      await registrarLog({
+        usuario_email: user?.email || "desconhecido",
+        acao: "Editou",
+        tabela: "criancas",
+        registro_id: editando.id,
+        descricao: `Editou o prontuário de: ${formEdit.nome.trim()}`,
+      });
+    }
+
     setSalvandoEdicao(false);
     setEditando(null);
     if (error) mostrarFeedback("erro", "Erro ao editar: " + error.message);
@@ -148,6 +177,19 @@ export default function AdmCriancasPage() {
   async function excluirCrianca(id: string, nome: string) {
     if (!confirm(`Remover "${nome}"?`)) return;
     const { error } = await supabase.from("criancas").delete().eq("id", id);
+
+    if (!error) {
+      // ✅ LOG DE AUDITORIA
+      const user = await getUsuarioLogado();
+      await registrarLog({
+        usuario_email: user?.email || "desconhecido",
+        acao: "Excluiu",
+        tabela: "criancas",
+        registro_id: id,
+        descricao: `Removeu a criança: ${nome}`,
+      });
+    }
+
     if (error) mostrarFeedback("erro", "Erro: " + error.message);
     else { carregarDados(); mostrarFeedback("sucesso", "Criança removida."); }
   }
@@ -191,7 +233,6 @@ export default function AdmCriancasPage() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
 
-      {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Gestão de Crianças</h1>
@@ -203,7 +244,6 @@ export default function AdmCriancasPage() {
         </span>
       </div>
 
-      {/* FEEDBACK */}
       {feedback && (
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
           ${feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
@@ -212,7 +252,6 @@ export default function AdmCriancasPage() {
         </div>
       )}
 
-      {/* FORMULÁRIO PRONTUÁRIO */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="bg-blue-900 px-6 py-4 flex items-center justify-between">
           <div>
@@ -223,11 +262,8 @@ export default function AdmCriancasPage() {
         </div>
 
         <form onSubmit={salvarCrianca} className="p-6 space-y-8">
-
-          {/* FOTO + IDENTIFICAÇÃO */}
           <Secao titulo="Identificação" icone="🪪">
             <div className="flex items-start gap-6">
-              {/* Foto */}
               <div className="flex flex-col items-center gap-2 flex-shrink-0">
                 <div onClick={() => inputFotoRef.current?.click()}
                   className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-400 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 hover:bg-blue-50 transition group">
@@ -277,7 +313,6 @@ export default function AdmCriancasPage() {
             </div>
           </Secao>
 
-          {/* RESPONSÁVEL */}
           <Secao titulo="Responsável" icone="👨‍👩‍👧">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
@@ -295,7 +330,6 @@ export default function AdmCriancasPage() {
             </div>
           </Secao>
 
-          {/* SAÚDE */}
           <Secao titulo="Informações de Saúde" icone="🏥">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -345,7 +379,6 @@ export default function AdmCriancasPage() {
         </form>
       </div>
 
-      {/* LISTA */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <button onClick={() => setListaAberta(!listaAberta)}
           className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left border-b border-slate-100">
@@ -422,7 +455,6 @@ export default function AdmCriancasPage() {
         )}
       </div>
 
-      {/* MODAL EDIÇÃO */}
       {editando && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
           onClick={(e) => { if (e.target === e.currentTarget) setEditando(null); }}>
@@ -433,7 +465,6 @@ export default function AdmCriancasPage() {
             </div>
 
             <div className="p-6 space-y-8">
-              {/* Foto */}
               <div className="flex items-center gap-4">
                 <div onClick={() => inputFotoEditRef.current?.click()}
                   className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-400 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 transition">
@@ -444,7 +475,6 @@ export default function AdmCriancasPage() {
                 <p className="text-xs text-slate-500">Clique para alterar a foto</p>
               </div>
 
-              {/* Identificação */}
               <Secao titulo="Identificação" icone="🪪">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
@@ -477,7 +507,6 @@ export default function AdmCriancasPage() {
                 </div>
               </Secao>
 
-              {/* Responsável */}
               <Secao titulo="Responsável" icone="👨‍👩‍👧">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
@@ -495,7 +524,6 @@ export default function AdmCriancasPage() {
                 </div>
               </Secao>
 
-              {/* Saúde */}
               <Secao titulo="Informações de Saúde" icone="🏥">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
