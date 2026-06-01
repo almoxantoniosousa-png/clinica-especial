@@ -5,6 +5,18 @@ import { supabase } from "@/lib/supabaseClient";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
 
+function Secao({ titulo, icone, children }: { titulo: string; icone: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+        <span className="text-base">{icone}</span>
+        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">{titulo}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 export default function AdmCriancasPage() {
   const supabaseClient = useMemo(() => createSupabaseBrowserClient(), []);
   const [criancas, setCriancas] = useState<any[]>([]);
@@ -39,7 +51,7 @@ export default function AdmCriancasPage() {
   }
 
   async function getUsuarioLogado() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseClient.auth.getUser();
     return user;
   }
 
@@ -68,54 +80,54 @@ export default function AdmCriancasPage() {
 
   async function salvarCrianca(e: React.FormEvent) {
     e.preventDefault();
+    console.log("salvarCrianca chamado!", form.nome);
     if (!form.nome.trim()) return;
     setUploadingFoto(true);
-    startTransition(async () => {
-      const { data: nova, error } = await supabase.from("criancas").insert([{
-        nome: form.nome.trim(),
-        cpf: form.cpf || null,
-        data_nascimento: form.data_nascimento || null,
-        sexo: form.sexo || null,
-        responsavel: form.responsavel || null,
-        telefone_responsavel: form.telefone_responsavel || null,
-        email_responsavel: form.email_responsavel || null,
-        escola_id: form.escola_id || null,
-        plano_saude: form.plano_saude || null,
-        numero_processo: form.numero_processo || null,
-        diagnostico: form.diagnostico || null,
-        cid: form.cid || null,
-        alergias: form.alergias || null,
-        medicamentos: form.medicamentos || null,
-        observacoes: form.observacoes || null,
-      }]).select().single();
 
-      if (error || !nova) {
-        mostrarFeedback("erro", "Erro ao cadastrar: " + error?.message);
-        setUploadingFoto(false);
-        return;
-      }
+    const { data: nova, error } = await supabase.from("criancas").insert([{
+      nome: form.nome.trim(),
+      cpf: form.cpf || null,
+      data_nascimento: form.data_nascimento || null,
+      sexo: form.sexo || null,
+      responsavel: form.responsavel || null,
+      telefone_responsavel: form.telefone_responsavel || null,
+      email_responsavel: form.email_responsavel || null,
+      escola_id: form.escola_id || null,
+      plano_saude: form.plano_saude || null,
+      numero_processo: form.numero_processo || null,
+      diagnostico: form.diagnostico || null,
+      cid: form.cid || null,
+      alergias: form.alergias || null,
+      medicamentos: form.medicamentos || null,
+      observacoes: form.observacoes || null,
+    }]).select().single();
 
-      if (fotoFile) {
-        const url = await uploadFoto(fotoFile, nova.id);
-        if (url) await supabase.from("criancas").update({ foto_url: url }).eq("id", nova.id);
-      }
-
-      // ✅ LOG DE AUDITORIA
-      const user = await getUsuarioLogado();
-      await registrarLog({
-        usuario_email: user?.email || "desconhecido",
-        acao: "Criou",
-        tabela: "criancas",
-        registro_id: nova.id,
-        descricao: `Cadastrou a criança: ${form.nome.trim()}`,
-      });
-
-      setForm({ nome: "", cpf: "", data_nascimento: "", sexo: "", responsavel: "", telefone_responsavel: "", email_responsavel: "", escola_id: "", plano_saude: "", numero_processo: "", diagnostico: "", cid: "", alergias: "", medicamentos: "", observacoes: "" });
-      setFotoFile(null); setFotoPreview(null);
+    if (error || !nova) {
+      mostrarFeedback("erro", "Erro ao cadastrar: " + error?.message);
       setUploadingFoto(false);
-      carregarDados();
-      mostrarFeedback("sucesso", "Criança cadastrada com sucesso!");
+      return;
+    }
+
+    if (fotoFile) {
+      const url = await uploadFoto(fotoFile, nova.id);
+      if (url) await supabase.from("criancas").update({ foto_url: url }).eq("id", nova.id);
+    }
+
+    // ✅ LOG DE AUDITORIA
+    const user = await getUsuarioLogado();
+    await registrarLog(supabaseClient, {
+      usuario_email: user?.email || "desconhecido",
+      acao: "Criou",
+      tabela: "criancas",
+      registro_id: nova.id,
+      descricao: `Cadastrou a criança: ${form.nome.trim()}`,
     });
+
+    setForm({ nome: "", cpf: "", data_nascimento: "", sexo: "", responsavel: "", telefone_responsavel: "", email_responsavel: "", escola_id: "", plano_saude: "", numero_processo: "", diagnostico: "", cid: "", alergias: "", medicamentos: "", observacoes: "" });
+    setFotoFile(null); setFotoPreview(null);
+    setUploadingFoto(false);
+    carregarDados();
+    mostrarFeedback("sucesso", "Criança cadastrada com sucesso!");
   }
 
   function abrirEdicao(crianca: any) {
@@ -159,7 +171,7 @@ export default function AdmCriancasPage() {
     if (!error) {
       // ✅ LOG DE AUDITORIA
       const user = await getUsuarioLogado();
-      await registrarLog({
+      await registrarLog(supabaseClient, {
         usuario_email: user?.email || "desconhecido",
         acao: "Editou",
         tabela: "criancas",
@@ -181,7 +193,7 @@ export default function AdmCriancasPage() {
     if (!error) {
       // ✅ LOG DE AUDITORIA
       const user = await getUsuarioLogado();
-      await registrarLog({
+      await registrarLog(supabaseClient, {
         usuario_email: user?.email || "desconhecido",
         acao: "Excluiu",
         tabela: "criancas",
@@ -219,16 +231,6 @@ export default function AdmCriancasPage() {
 
   const inputClass = "w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 bg-white";
   const labelClass = "block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1";
-
-  const Secao = ({ titulo, icone, children }: { titulo: string; icone: string; children: React.ReactNode }) => (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-        <span className="text-base">{icone}</span>
-        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">{titulo}</h3>
-      </div>
-      {children}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
