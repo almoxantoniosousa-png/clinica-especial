@@ -40,7 +40,8 @@ export async function loginWithPassword(
   console.log("Erro usuario:", userError);
 
   if (usuario) {
-    const role = (usuario.role || usuario.user_role)?.trim().toLowerCase();
+    const role = usuario.role?.toString().trim().toLowerCase();
+    console.log("Usuario role:", role);
     revalidatePath("/", "layout");
 
     if (role === "adm" || role === "admin") redirect("/adm/dashboard");
@@ -49,6 +50,7 @@ export async function loginWithPassword(
     if (role === "especialista") redirect("/especialista/agenda");
     if (role === "familia") redirect("/familia");
     if (role === "financeiro") redirect("/adm/financeiro");
+    if (role === "at" || role === "atendente") redirect("/atendente/meus-atendimentos");
 
     redirect("/adm/dashboard");
   }
@@ -61,13 +63,15 @@ export async function loginWithPassword(
     .maybeSingle();
 
   if (atendente) {
-    const role = (atendente.role || atendente.user_role)?.trim().toLowerCase();
+    const role = atendente.role?.toString().trim().toLowerCase();
+    console.log("Atendente role:", role);
     revalidatePath("/", "layout");
 
     if (role === "adm" || role === "admin") redirect("/adm/dashboard");
     if (role === "gestao") redirect("/gestao/dashboard");
     if (role === "supervisora") redirect("/supervisora/comunicados");
     if (role === "especialista") redirect("/especialista/agenda");
+    if (role === "at" || role === "atendente") redirect("/atendente/meus-atendimentos");
 
     redirect("/atendente/meus-atendimentos");
   }

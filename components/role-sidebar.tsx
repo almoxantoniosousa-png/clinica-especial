@@ -90,14 +90,15 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   ];
 
   const menuGestao = [
-    { href: "/gestao/dashboard",  label: "Dashboard",  icon: "📊" },
-    { href: "/gestao/criancas",   label: "Crianças",   icon: "👶" },
-    { href: "/gestao/escolas",    label: "Escolas",    icon: "🏫" },
-    { href: "/gestao/agenda",     label: "Agenda",     icon: "📅" },
-    { href: "/adm/mural",         label: "Mural",      icon: "📢" },
-    { href: "/gestao/relatorios", label: "Relatórios", icon: "📈" },
-    { href: "/chat",              label: "Chat",       icon: "💬" },
-    { href: "/gestao/escala",     label: "Escala",     icon: "📅" },
+    { href: "/gestao/dashboard",   label: "Dashboard",  icon: "📊" },
+    { href: "/gestao/criancas",    label: "Crianças",   icon: "👶" },
+    { href: "/gestao/escolas",     label: "Escolas",    icon: "🏫" },
+    { href: "/gestao/agenda",      label: "Agenda",     icon: "📅" },
+    { href: "/adm/mural",          label: "Mural",      icon: "📢" },
+    { href: "/gestao/relatorios",  label: "Relatórios", icon: "📈" },
+    { href: "/chat",               label: "Chat",       icon: "💬" },
+    { href: "/gestao/escala",      label: "Escala",     icon: "📅" },
+    { href: "/gestao/comunicados", label: "Família",    icon: "💬" },
   ];
 
   const menuFamilia = [
