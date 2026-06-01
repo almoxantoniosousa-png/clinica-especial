@@ -25,6 +25,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   const isSupervisora = role === "supervisora";
   const isEspecialista = role === "especialista";
   const isGestao = role === "gestao";
+  const isFamilia = role === "familia";
 
   useEffect(() => {
     if (
@@ -61,14 +62,12 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     router.push("/login");
   }
 
-  // ✅ Submenu ADM — com botões de edição
   const subMenuColaboradoresAdm = [
     { href: "/adm/atendentes",    label: "Acompanhantes", icon: "👤" },
     { href: "/adm/especialistas", label: "Especialistas",  icon: "🩺" },
     { href: "/adm/internas",      label: "Internas",       icon: "🏠" },
   ];
 
-  // ✅ Submenu GESTÃO — somente leitura (rotas próprias)
   const subMenuColaboradoresGestao = [
     { href: "/gestao/atendentes",    label: "Acompanhantes", icon: "👤" },
     { href: "/gestao/especialistas", label: "Especialistas",  icon: "🩺" },
@@ -81,12 +80,13 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   ];
 
   const menuAdmin = [
-    { href: "/adm/dashboard", label: "Dashboard", icon: "📊" },
-    { href: "/adm/criancas",  label: "Crianças",  icon: "👶" },
-    { href: "/adm/escolas",   label: "Escolas",   icon: "🏫" },
-    { href: "/adm/mural",     label: "Mural",     icon: "📢" },
-    { href: "/chat",          label: "Chat",      icon: "💬" },
-    { href: "/escala",        label: "Escala",    icon: "📅" },
+    { href: "/adm/dashboard",    label: "Dashboard", icon: "📊" },
+    { href: "/adm/criancas",     label: "Crianças",  icon: "👶" },
+    { href: "/adm/escolas",      label: "Escolas",   icon: "🏫" },
+    { href: "/adm/responsaveis", label: "Família",   icon: "👨‍👩‍👧" },
+    { href: "/adm/mural",        label: "Mural",     icon: "📢" },
+    { href: "/chat",             label: "Chat",      icon: "💬" },
+    { href: "/escala",           label: "Escala",    icon: "📅" },
   ];
 
   const menuGestao = [
@@ -98,6 +98,10 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/gestao/relatorios", label: "Relatórios", icon: "📈" },
     { href: "/chat",              label: "Chat",       icon: "💬" },
     { href: "/gestao/escala",     label: "Escala",     icon: "📅" },
+  ];
+
+  const menuFamilia = [
+    { href: "/familia", label: "Meu Portal", icon: "🏠" },
   ];
 
   const menuAtendente = [
@@ -127,12 +131,14 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     : isSupervisora ? menuSupervisora
     : isGestao ? menuGestao
     : isEspecialista ? menuEspecialista
+    : isFamilia ? menuFamilia
     : menuAtendente;
 
   const roleLabel = isAdmin ? "Administrador"
     : isSupervisora ? "Supervisora"
     : isGestao ? "Gestão"
     : isEspecialista ? "Especialista"
+    : isFamilia ? "Família"
     : "Atendente";
 
   const Logo = ({ size }: { size: "sm" | "md" }) => {
@@ -197,7 +203,6 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
             );
           })}
 
-          {/* ✅ Accordion com rotas corretas por perfil */}
           <Accordion
             label="Colaboradores" icon="👥"
             subItems={isAdmin ? subMenuColaboradoresAdm : subMenuColaboradoresGestao}
@@ -205,7 +210,6 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
             onToggle={() => setColaboradoresAberto(!colaboradoresAberto)}
           />
 
-          {/* Financeiro — só Adm */}
           {isAdmin && (
             <Accordion
               label="Financeiro" icon="💰"

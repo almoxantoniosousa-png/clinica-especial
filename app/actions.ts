@@ -29,30 +29,50 @@ export async function loginWithPassword(
     return { error: "E-mail ou senha incorretos." };
   }
 
-  const { data: atendentes, error: profileError } = await supabase
-    .from("atendentes")
+  // 1. Busca na tabela usuarios (familia, gestao, adm, etc)
+  const { data: usuario, error: userError } = await supabase
+    .from("usuarios")
     .select("*")
-    .eq("email", email) 
+    .eq("email", email)
     .maybeSingle();
 
-  if (profileError) {
-    console.error("Erro ao buscar atendente:", profileError.message);
-    return { error: "Erro ao validar atendentes no banco de dados." };
+  console.log("Usuario encontrado:", usuario);
+  console.log("Erro usuario:", userError);
+
+  if (usuario) {
+    const role = (usuario.role || usuario.user_role)?.trim().toLowerCase();
+    revalidatePath("/", "layout");
+
+    if (role === "adm" || role === "admin") redirect("/adm/dashboard");
+    if (role === "gestao") redirect("/gestao/dashboard");
+    if (role === "supervisora") redirect("/supervisora/comunicados");
+    if (role === "especialista") redirect("/especialista/agenda");
+    if (role === "familia") redirect("/familia");
+    if (role === "financeiro") redirect("/adm/financeiro");
+
+    redirect("/adm/dashboard");
   }
 
-  if (!atendentes) {
-    return { error: "Acesso negado: Usuário não cadastrado como atendente." };
+  // 2. Busca na tabela atendentes (ATs e especialistas)
+  const { data: atendente } = await supabase
+    .from("atendentes")
+    .select("*")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (atendente) {
+    const role = (atendente.role || atendente.user_role)?.trim().toLowerCase();
+    revalidatePath("/", "layout");
+
+    if (role === "adm" || role === "admin") redirect("/adm/dashboard");
+    if (role === "gestao") redirect("/gestao/dashboard");
+    if (role === "supervisora") redirect("/supervisora/comunicados");
+    if (role === "especialista") redirect("/especialista/agenda");
+
+    redirect("/atendente/meus-atendimentos");
   }
 
-  const role = (atendentes.role || atendentes.user_role)?.trim().toLowerCase();
-
-  revalidatePath("/", "layout");
-
-  if (role === "adm" || role === "admin") {
-    redirect("/adm/financeiro");
-  }
-
-  redirect("/atendente/meus-atendimentos");
+  return { error: "Acesso negado: Usuário não encontrado no sistema." };
 }
 
 // ============================
@@ -67,25 +87,23 @@ export async function createAtendimento(input: any) {
   }
 
   const local = input.local?.toLowerCase().includes("escola") ? "escola" : "casa";
-  const valorHora = 30.00; 
+  const valorHora = 30.00;
   const horas = Number(input.horas ?? 0);
   const valorTotal = horas * valorHora;
 
   const { data, error } = await supabase
     .from("atendimentos")
-    .insert([
-      {
-        atendente_id: user.id,
-        crianca_id: input.crianca_id,
-        data: input.data,
-        horas,
-        local,
-        valor_hora: valorHora,
-        valor_total: valorTotal,
-        ocorrencia: String(input.ocorrencia ?? "").trim(),
-        status: "pendente",
-      },
-    ])
+    .insert([{
+      atendente_id: user.id,
+      crianca_id: input.crianca_id,
+      data: input.data,
+      horas,
+      local,
+      valor_hora: valorHora,
+      valor_total: valorTotal,
+      ocorrencia: String(input.ocorrencia ?? "").trim(),
+      status: "pendente",
+    }])
     .select()
     .single();
 
@@ -95,33 +113,31 @@ export async function createAtendimento(input: any) {
 
   const { error: finError } = await supabase
     .from("financeiro")
-    .insert([
-      {
-        atendimento_id: data.id,
-        atendente_id: user.id,
-        data: input.data,
-        local,
-        horas,
-        valor: valorHora,
-        valor_total: valorTotal,
-        status: "pendente",
-        crianca: input.nome_crianca || "Não informada", 
-      },
-    ]);
+    .insert([{
+      atendimento_id: data.id,
+      atendente_id: user.id,
+      data: input.data,
+      local,
+      horas,
+      valor: valorHora,
+      valor_total: valorTotal,
+      status: "pendente",
+      crianca: input.nome_crianca || "Não informada",
+    }]);
 
   if (finError) {
     console.error("Erro ao inserir no financeiro:", finError.message);
   }
 
   revalidatePath("/adm/financeiro");
-  revalidatePath("/adm/dashboard"); 
+  revalidatePath("/adm/dashboard");
   revalidatePath("/atendente/meus-atendimentos");
 
   return data;
 }
 
 // ============================
-// CARREGAR DADOS DO DASHBOARD (ATUALIZADO PARA STATUS 'PAGO')
+// CARREGAR DADOS DO DASHBOARD
 // ============================
 export async function carregarDadosDashboard() {
   try {
@@ -139,15 +155,11 @@ export async function carregarDadosDashboard() {
     let totalDia = 0;
     let pendentes = 0;
     let pagos = 0;
-    let despesaTotalPaga = 0; 
+    let despesaTotalPaga = 0;
 
     const despesaPorDia: Record<string, number> = {};
     const atendimentosPorSemana: Record<string, number> = {
-      "Semana 1": 0,
-      "Semana 2": 0,
-      "Semana 3": 0,
-      "Semana 4": 0,
-      "Semana 5": 0,
+      "Semana 1": 0, "Semana 2": 0, "Semana 3": 0, "Semana 4": 0, "Semana 5": 0,
     };
 
     if (atendimentos) {
@@ -159,7 +171,6 @@ export async function carregarDadosDashboard() {
 
         if (dataFormatada === hojeStr) totalDia++;
 
-        // 🟢 Filtra dinamicamente tudo o que está como pago no banco
         if (statusNormalizado === "pago" || statusNormalizado === "confirmado") {
           pagos++;
           despesaTotalPaga += valorTotal;
@@ -176,50 +187,38 @@ export async function carregarDadosDashboard() {
 
     const labelsLinha = Object.keys(despesaPorDia).sort();
     const valoresLinha = labelsLinha.map((d) => despesaPorDia[d]);
-
     const labelsBarras = Object.keys(atendimentosPorSemana);
     const valoresBarras = labelsBarras.map((s) => atendimentosPorSemana[s]);
 
     return {
       success: true,
-      metricas: { 
-        totalDia, 
-        pendentes, 
-        receitaMes: despesaTotalPaga, 
-        pagos 
-      },
+      metricas: { totalDia, pendentes, receitaMes: despesaTotalPaga, pagos },
       graficoLinha: {
         labels: labelsLinha.length > 0 ? labelsLinha.map(l => l.split("-").reverse().slice(0, 2).join("/")) : ["Sem pagamentos"],
-        datasets: [
-          {
-            label: "Despesa Paga (R$)",
-            data: valoresLinha.length > 0 ? valoresLinha : [0],
-            borderColor: "rgb(16, 185, 129)",
-            backgroundColor: "rgba(16, 185, 129, 0.1)",
-            tension: 0.3,
-            fill: true,
-          },
-        ],
+        datasets: [{
+          label: "Despesa Paga (R$)",
+          data: valoresLinha.length > 0 ? valoresLinha : [0],
+          borderColor: "rgb(16, 185, 129)",
+          backgroundColor: "rgba(16, 185, 129, 0.1)",
+          tension: 0.3,
+          fill: true,
+        }],
       },
       graficoPizza: {
         labels: ["Pendentes", "Pagos"],
-        datasets: [
-          {
-            data: [pendentes, pagos],
-            backgroundColor: ["#f97316", "#10b981"],
-            hoverOffset: 6,
-          },
-        ],
+        datasets: [{
+          data: [pendentes, pagos],
+          backgroundColor: ["#f97316", "#10b981"],
+          hoverOffset: 6,
+        }],
       },
       graficoBarras: {
         labels: labelsBarras,
-        datasets: [
-          {
-            label: "Quantidade de Atendimentos",
-            data: valoresBarras,
-            backgroundColor: "rgba(59, 130, 246, 0.6)",
-          },
-        ],
+        datasets: [{
+          label: "Quantidade de Atendimentos",
+          data: valoresBarras,
+          backgroundColor: "rgba(59, 130, 246, 0.6)",
+        }],
       },
     };
   } catch (err: any) {
