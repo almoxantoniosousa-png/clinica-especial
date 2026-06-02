@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
+import { registrarLog } from "@/lib/auditoria";
 
 export default function EspecialistasPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -30,6 +31,11 @@ export default function EspecialistasPage() {
     setTimeout(() => setFeedback(null), 3500);
   }
 
+  async function getUsuarioLogado() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  }
+
   const carregarEspecialistas = async () => {
     setLoadingLista(true);
     const { data } = await supabase.from("atendentes").select("*").eq("role", "especialista").order("nome");
@@ -42,17 +48,26 @@ export default function EspecialistasPage() {
   const handleCadastrar = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.from("atendentes").insert([{
+    const { data: novo, error } = await supabase.from("atendentes").insert([{
       nome, email, whatsapp, especialidade,
       registro_profissional: registro,
       cpf, rg,
       data_nascimento: dataNascimento || null,
       endereco,
       role: "especialista",
-    }]);
+    }]).select().single();
+
     if (error) {
       mostrarFeedback("erro", "Erro ao cadastrar: " + error.message);
     } else {
+      const user = await getUsuarioLogado();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Criou",
+        tabela: "atendentes",
+        registro_id: novo?.id,
+        descricao: `Cadastrou o especialista: ${nome}`,
+      });
       mostrarFeedback("sucesso", "Especialista cadastrado com sucesso!");
       setNome(""); setEmail(""); setWhatsapp(""); setEspecialidade("");
       setRegistro(""); setCpf(""); setRg(""); setDataNascimento(""); setEndereco("");
@@ -74,6 +89,18 @@ export default function EspecialistasPage() {
       data_nascimento: editando.data_nascimento || null,
       endereco: editando.endereco,
     }).eq("id", editando.id);
+
+    if (!error) {
+      const user = await getUsuarioLogado();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Editou",
+        tabela: "atendentes",
+        registro_id: editando.id,
+        descricao: `Editou o especialista: ${editando.nome}`,
+      });
+    }
+
     setSalvandoEdicao(false);
     if (error) {
       mostrarFeedback("erro", "Erro ao editar: " + error.message);
@@ -84,9 +111,19 @@ export default function EspecialistasPage() {
     }
   }
 
-  async function excluir(id: string, nome: string) {
-    if (!confirm(`Remover "${nome}"?`)) return;
+  async function excluir(id: string, nomeEsp: string) {
+    if (!confirm(`Remover "${nomeEsp}"?`)) return;
     const { error } = await supabase.from("atendentes").delete().eq("id", id);
+    if (!error) {
+      const user = await getUsuarioLogado();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Excluiu",
+        tabela: "atendentes",
+        registro_id: id,
+        descricao: `Removeu o especialista: ${nomeEsp}`,
+      });
+    }
     if (error) {
       mostrarFeedback("erro", "Erro ao excluir: " + error.message);
     } else {
@@ -118,8 +155,6 @@ export default function EspecialistasPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
-
-      {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Gestao de Especialistas</h1>
@@ -131,7 +166,6 @@ export default function EspecialistasPage() {
         </span>
       </div>
 
-      {/* FEEDBACK */}
       {feedback && (
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
           ${feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
@@ -140,13 +174,11 @@ export default function EspecialistasPage() {
         </div>
       )}
 
-      {/* FORMULÁRIO */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 md:p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold text-slate-800">Novo Especialista</h2>
           <span className="text-xs bg-purple-50 text-purple-600 px-2.5 py-1 rounded-full font-medium">Cadastro rapido</span>
         </div>
-
         <form onSubmit={handleCadastrar} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -199,7 +231,6 @@ export default function EspecialistasPage() {
         </form>
       </div>
 
-      {/* LISTA */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <button onClick={() => setListaAberta(!listaAberta)}
           className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left border-b border-slate-100">
@@ -212,7 +243,6 @@ export default function EspecialistasPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
-
         {listaAberta && (
           <>
             <div className="px-5 py-3 border-b border-slate-100 bg-slate-50">
@@ -220,7 +250,6 @@ export default function EspecialistasPage() {
                 onChange={(e) => setBusca(e.target.value)}
                 className="w-full sm:w-60 pl-3 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-slate-400 transition" />
             </div>
-
             {loadingLista ? (
               <div className="flex items-center justify-center py-16"><p className="text-sm text-slate-400">Carregando...</p></div>
             ) : filtrados.length === 0 ? (
@@ -265,7 +294,6 @@ export default function EspecialistasPage() {
                 ))}
               </ul>
             )}
-
             {!loadingLista && filtrados.length > 0 && (
               <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
                 <p className="text-xs text-slate-400">Mostrando {filtrados.length} de {especialistas.length} especialista{especialistas.length !== 1 ? "s" : ""}</p>
@@ -275,7 +303,6 @@ export default function EspecialistasPage() {
         )}
       </div>
 
-      {/* MODAL EDIÇÃO */}
       {editando && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
           onClick={(e) => { if (e.target === e.currentTarget) setEditando(null); }}>

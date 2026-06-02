@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
+import { registrarLog } from "@/lib/auditoria";
 
 export default function CadastrarAtendentePage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -30,6 +31,11 @@ export default function CadastrarAtendentePage() {
     setTimeout(() => setFeedback(null), 3500);
   }
 
+  async function getUsuarioLogado() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  }
+
   const carregarAtendentes = async () => {
     setLoadingLista(true);
     const { data } = await supabase.from("atendentes").select("*").eq("role", "atendente").order("nome");
@@ -42,17 +48,26 @@ export default function CadastrarAtendentePage() {
   const handleCadastrar = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.from("atendentes").insert([{
+    const { data: novo, error } = await supabase.from("atendentes").insert([{
       nome, email, whatsapp, especialidade,
       registro_profissional: registro,
       cpf, rg,
       data_nascimento: dataNascimento || null,
       endereco,
       role: "atendente",
-    }]);
+    }]).select().single();
+
     if (error) {
       mostrarFeedback("erro", "Erro ao cadastrar: " + error.message);
     } else {
+      const user = await getUsuarioLogado();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Criou",
+        tabela: "atendentes",
+        registro_id: novo?.id,
+        descricao: `Cadastrou o acompanhante: ${nome}`,
+      });
       mostrarFeedback("sucesso", "Acompanhante cadastrado com sucesso!");
       setNome(""); setEmail(""); setWhatsapp(""); setEspecialidade("");
       setRegistro(""); setCpf(""); setRg(""); setDataNascimento(""); setEndereco("");
@@ -74,6 +89,18 @@ export default function CadastrarAtendentePage() {
       data_nascimento: editando.data_nascimento || null,
       endereco: editando.endereco,
     }).eq("id", editando.id);
+
+    if (!error) {
+      const user = await getUsuarioLogado();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Editou",
+        tabela: "atendentes",
+        registro_id: editando.id,
+        descricao: `Editou o acompanhante: ${editando.nome}`,
+      });
+    }
+
     setSalvandoEdicao(false);
     if (error) {
       mostrarFeedback("erro", "Erro ao editar: " + error.message);
@@ -84,9 +111,19 @@ export default function CadastrarAtendentePage() {
     }
   }
 
-  async function excluirAtendente(id: string, nome: string) {
-    if (!confirm(`Remover "${nome}" da lista?`)) return;
+  async function excluirAtendente(id: string, nomeAt: string) {
+    if (!confirm(`Remover "${nomeAt}" da lista?`)) return;
     const { error } = await supabase.from("atendentes").delete().eq("id", id);
+    if (!error) {
+      const user = await getUsuarioLogado();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Excluiu",
+        tabela: "atendentes",
+        registro_id: id,
+        descricao: `Removeu o acompanhante: ${nomeAt}`,
+      });
+    }
     if (error) {
       mostrarFeedback("erro", "Erro ao excluir: " + error.message);
     } else {
@@ -118,8 +155,6 @@ export default function CadastrarAtendentePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
-
-      {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Gestão de Acompanhantes</h1>
@@ -131,7 +166,6 @@ export default function CadastrarAtendentePage() {
         </span>
       </div>
 
-      {/* FEEDBACK */}
       {feedback && (
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
           ${feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
@@ -140,15 +174,12 @@ export default function CadastrarAtendentePage() {
         </div>
       )}
 
-      {/* FORMULÁRIO */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 md:p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold text-slate-800">Novo Acompanhante Terapeutico</h2>
           <span className="text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full font-medium">Cadastro rapido</span>
         </div>
-
         <form onSubmit={handleCadastrar} className="space-y-4">
-          {/* Nome e Email */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nome completo *</label>
@@ -159,8 +190,6 @@ export default function CadastrarAtendentePage() {
               <input type="email" required placeholder="Ex: ana@clinica.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
             </div>
           </div>
-
-          {/* CPF e RG */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CPF</label>
@@ -171,8 +200,6 @@ export default function CadastrarAtendentePage() {
               <input type="text" placeholder="Ex: 00.000.000-00" value={rg} onChange={(e) => setRg(e.target.value)} className={inputClass} />
             </div>
           </div>
-
-          {/* Data Nascimento e WhatsApp */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Data de Nascimento</label>
@@ -183,8 +210,6 @@ export default function CadastrarAtendentePage() {
               <input type="text" placeholder="Ex: (71) 99999-9999" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={inputClass} />
             </div>
           </div>
-
-          {/* Especialidade e Registro */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Especialidade</label>
@@ -195,13 +220,10 @@ export default function CadastrarAtendentePage() {
               <input type="text" placeholder="Ex: CRP 06/123456" value={registro} onChange={(e) => setRegistro(e.target.value)} className={inputClass} />
             </div>
           </div>
-
-          {/* Endereço */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Endereco</label>
             <input type="text" placeholder="Ex: Rua das Flores, 123 - Bairro - Salvador/BA" value={endereco} onChange={(e) => setEndereco(e.target.value)} className={inputClass} />
           </div>
-
           <button type="submit" disabled={loading}
             className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 shadow-sm">
             {loading ? "Cadastrando..." : "Cadastrar Acompanhante"}
@@ -209,7 +231,6 @@ export default function CadastrarAtendentePage() {
         </form>
       </div>
 
-      {/* LISTA */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <button onClick={() => setListaAberta(!listaAberta)}
           className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left border-b border-slate-100">
@@ -230,7 +251,6 @@ export default function CadastrarAtendentePage() {
                 onChange={(e) => setBusca(e.target.value)}
                 className="w-full sm:w-60 pl-3 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400 transition" />
             </div>
-
             {loadingLista ? (
               <div className="flex items-center justify-center py-16"><p className="text-sm text-slate-400">Carregando...</p></div>
             ) : atendenteFiltrados.length === 0 ? (
@@ -274,7 +294,6 @@ export default function CadastrarAtendentePage() {
                 ))}
               </ul>
             )}
-
             {!loadingLista && atendenteFiltrados.length > 0 && (
               <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
                 <p className="text-xs text-slate-400">Mostrando {atendenteFiltrados.length} de {atendentes.length} acompanhante{atendentes.length !== 1 ? "s" : ""}</p>
@@ -284,7 +303,6 @@ export default function CadastrarAtendentePage() {
         )}
       </div>
 
-      {/* MODAL EDIÇÃO */}
       {editando && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
           onClick={(e) => { if (e.target === e.currentTarget) setEditando(null); }}>

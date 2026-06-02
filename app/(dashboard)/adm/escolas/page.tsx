@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { School, Plus, Pencil, Trash2, X, Check, MapPin, Phone, User } from "lucide-react";
+import { registrarLog } from "@/lib/auditoria";
 
 const CORES = [
   { bg: "from-blue-500 to-blue-600", light: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
@@ -26,12 +27,18 @@ export default function EscolasPage() {
   const [editando, setEditando] = useState<any | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [deletandoNome, setDeletandoNome] = useState<string>("");
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
   const [form, setForm] = useState({ nome: "", endereco: "", coordenacao: "", telefone: "" });
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
     setTimeout(() => setFeedback(null), 3500);
+  }
+
+  async function getUsuarioLogado() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
   }
 
   const carregarEscolas = async () => {
@@ -58,24 +65,58 @@ export default function EscolasPage() {
   async function salvar() {
     if (!form.nome.trim()) return;
     setSalvando(true);
+    const user = await getUsuarioLogado();
+
     if (editando) {
       const { error } = await supabase.from("escolas").update(form).eq("id", editando.id);
       if (error) mostrarFeedback("erro", error.message);
-      else { mostrarFeedback("sucesso", "Escola atualizada!"); carregarEscolas(); }
+      else {
+        await registrarLog(supabase, {
+          usuario_email: user?.email || "desconhecido",
+          acao: "Editou",
+          tabela: "escolas",
+          registro_id: editando.id,
+          descricao: `Editou a escola: ${form.nome.trim()}`,
+        });
+        mostrarFeedback("sucesso", "Escola atualizada!");
+        carregarEscolas();
+      }
     } else {
-      const { error } = await supabase.from("escolas").insert(form);
+      const { data: nova, error } = await supabase.from("escolas").insert(form).select().single();
       if (error) mostrarFeedback("erro", error.message);
-      else { mostrarFeedback("sucesso", "Escola cadastrada!"); carregarEscolas(); }
+      else {
+        await registrarLog(supabase, {
+          usuario_email: user?.email || "desconhecido",
+          acao: "Criou",
+          tabela: "escolas",
+          registro_id: nova?.id,
+          descricao: `Cadastrou a escola: ${form.nome.trim()}`,
+        });
+        mostrarFeedback("sucesso", "Escola cadastrada!");
+        carregarEscolas();
+      }
     }
     setSalvando(false);
     setModalAberto(false);
   }
 
   async function deletar(id: string) {
+    const user = await getUsuarioLogado();
     const { error } = await supabase.from("escolas").delete().eq("id", id);
     if (error) mostrarFeedback("erro", error.message);
-    else { mostrarFeedback("sucesso", "Escola removida."); carregarEscolas(); }
+    else {
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Excluiu",
+        tabela: "escolas",
+        registro_id: id,
+        descricao: `Removeu a escola: ${deletandoNome}`,
+      });
+      mostrarFeedback("sucesso", "Escola removida.");
+      carregarEscolas();
+    }
     setDeletandoId(null);
+    setDeletandoNome("");
   }
 
   const filtradas = escolas.filter((e) =>
@@ -86,7 +127,6 @@ export default function EscolasPage() {
   return (
     <div className="space-y-6 pb-10">
 
-      {/* HEADER */}
       <div className="bg-gradient-to-r from-blue-900 to-blue-700 rounded-2xl p-6 flex items-center justify-between">
         <div>
           <h1 className="text-white text-2xl font-bold flex items-center gap-2">
@@ -106,7 +146,6 @@ export default function EscolasPage() {
         </button>
       </div>
 
-      {/* FEEDBACK */}
       {feedback && (
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
           ${feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
@@ -115,7 +154,6 @@ export default function EscolasPage() {
         </div>
       )}
 
-      {/* BUSCA */}
       <div className="relative">
         <School className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <input type="text" placeholder="Buscar escola por nome ou coordenação..." value={busca}
@@ -123,7 +161,6 @@ export default function EscolasPage() {
           className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"/>
       </div>
 
-      {/* LISTA */}
       {loading ? (
         <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
       ) : filtradas.length === 0 ? (
@@ -140,7 +177,6 @@ export default function EscolasPage() {
             const cor = corEscola(escola.nome);
             return (
               <div key={escola.id} className={`bg-white rounded-2xl border ${cor.border} overflow-hidden hover:shadow-md transition group`}>
-                {/* Topo colorido */}
                 <div className={`bg-gradient-to-r ${cor.bg} px-5 py-4 flex items-center justify-between`}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -156,31 +192,26 @@ export default function EscolasPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-                    <button onClick={() => abrirEditar(escola)}
-                      className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition">
+                    <button onClick={() => abrirEditar(escola)} className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition">
                       <Pencil className="h-4 w-4 text-white" />
                     </button>
-                    <button onClick={() => setDeletandoId(escola.id)}
+                    <button onClick={() => { setDeletandoId(escola.id); setDeletandoNome(escola.nome); }}
                       className="p-2 bg-white/20 hover:bg-red-500 rounded-lg transition">
                       <Trash2 className="h-4 w-4 text-white" />
                     </button>
                   </div>
                 </div>
-
-                {/* Info */}
                 <div className="px-5 py-3 space-y-2">
                   {escola.endereco ? (
                     <p className="text-xs text-slate-500 flex items-start gap-2">
-                      <MapPin className="h-3.5 w-3.5 text-slate-400 mt-0.5 shrink-0" />
-                      {escola.endereco}
+                      <MapPin className="h-3.5 w-3.5 text-slate-400 mt-0.5 shrink-0" />{escola.endereco}
                     </p>
                   ) : (
                     <p className="text-xs text-slate-300 italic">Endereço não informado</p>
                   )}
                   {escola.telefone && (
                     <p className="text-xs text-slate-500 flex items-center gap-2">
-                      <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                      {escola.telefone}
+                      <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />{escola.telefone}
                     </p>
                   )}
                 </div>
@@ -190,12 +221,10 @@ export default function EscolasPage() {
         </div>
       )}
 
-      {/* MODAL CADASTRAR/EDITAR */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
           onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false); }}>
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-            {/* Header colorido */}
             <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -210,7 +239,6 @@ export default function EscolasPage() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-
             <div className="p-6 space-y-4">
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
@@ -244,7 +272,6 @@ export default function EscolasPage() {
                   onChange={(e) => setForm({ ...form, endereco: e.target.value })}
                   className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-blue-500 text-slate-800 text-sm focus:outline-none transition placeholder:text-slate-400"/>
               </div>
-
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setModalAberto(false)}
                   className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
@@ -261,7 +288,6 @@ export default function EscolasPage() {
         </div>
       )}
 
-      {/* MODAL EXCLUSÃO */}
       {deletandoId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
@@ -275,7 +301,7 @@ export default function EscolasPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setDeletandoId(null)}
+              <button onClick={() => { setDeletandoId(null); setDeletandoNome(""); }}
                 className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
                 Cancelar
               </button>
