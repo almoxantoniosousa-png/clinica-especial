@@ -42,12 +42,10 @@ export default function AuditoriaPage() {
 
   useEffect(() => { setVisiveis(POR_PAGINA); }, [busca, filtroAcao, filtroPeriodo]);
 
-  function dentroDoperiodo(dt: string) {
+  function dentroDoPeriodo(dt: string) {
     const data = new Date(dt);
     const agora = new Date();
-    if (filtroPeriodo === "hoje") {
-      return data.toDateString() === agora.toDateString();
-    }
+    if (filtroPeriodo === "hoje") return data.toDateString() === agora.toDateString();
     if (filtroPeriodo === "semana") {
       const inicio = new Date(agora);
       inicio.setDate(agora.getDate() - 7);
@@ -66,7 +64,7 @@ export default function AuditoriaPage() {
       l.descricao?.toLowerCase().includes(busca.toLowerCase()) ||
       l.tabela?.toLowerCase().includes(busca.toLowerCase());
     const acaoOk = !filtroAcao || l.acao === filtroAcao;
-    const periodoOk = dentroDoperiodo(l.created_at);
+    const periodoOk = dentroDoPeriodo(l.created_at);
     return buscaOk && acaoOk && periodoOk;
   });
 
@@ -74,7 +72,6 @@ export default function AuditoriaPage() {
   const temMais = visiveis < filtrados.length;
   const acoes = Array.from(new Set(logs.map(l => l.acao))).sort();
 
-  // Resumo por usuário
   const resumoPorUsuario = useMemo(() => {
     const map: Record<string, number> = {};
     filtrados.forEach(l => {
@@ -93,6 +90,12 @@ export default function AuditoriaPage() {
 
   function corAcao(acao: string) {
     return ACOES_CORES[acao] || "bg-slate-100 text-slate-700";
+  }
+
+  function filtrarPorUsuario(email: string) {
+    setBusca(email);
+    setMostrarResumo(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const temFiltro = busca || filtroAcao || filtroPeriodo !== "todos";
@@ -165,15 +168,19 @@ export default function AuditoriaPage() {
           {mostrarResumo && (
             <div className="px-5 pb-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
               {resumoPorUsuario.map(([email, total]) => (
-                <div key={email} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-100">
+                <button key={email}
+                  onClick={() => filtrarPorUsuario(email)}
+                  className="flex items-center justify-between bg-slate-50 hover:bg-blue-50 hover:border-blue-200 rounded-xl px-4 py-2.5 border border-slate-100 transition text-left w-full">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs flex-shrink-0">
                       {email.charAt(0).toUpperCase()}
                     </div>
                     <span className="text-xs text-slate-600 truncate">{email}</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-700 ml-2 flex-shrink-0">{total} ação{total !== 1 ? "ões" : ""}</span>
-                </div>
+                  <span className="text-xs font-bold text-slate-700 ml-2 flex-shrink-0">
+                    {total} {total === 1 ? "ação" : "ações"}
+                  </span>
+                </button>
               ))}
             </div>
           )}
@@ -206,9 +213,10 @@ export default function AuditoriaPage() {
                       {log.descricao || `${log.acao} em ${log.tabela || "sistema"}`}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="text-xs text-slate-500">
+                      <button onClick={() => filtrarPorUsuario(log.usuario_email)}
+                        className="text-xs text-blue-600 hover:underline">
                         👤 {log.usuario_nome || log.usuario_email}
-                      </span>
+                      </button>
                       {log.tabela && (
                         <span className="text-xs text-slate-400">· {log.tabela}</span>
                       )}
