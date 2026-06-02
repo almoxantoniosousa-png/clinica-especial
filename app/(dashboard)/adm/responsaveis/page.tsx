@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { Users, Plus, Pencil, Trash2, X, Check } from "lucide-react";
+import { registrarLog } from "@/lib/auditoria";
 
 export default function ResponsaveisPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -14,6 +15,7 @@ export default function ResponsaveisPage() {
   const [editando, setEditando] = useState<any | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [deletandoNome, setDeletandoNome] = useState<string>("");
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
 
   const [form, setForm] = useState({
@@ -23,6 +25,11 @@ export default function ResponsaveisPage() {
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
     setTimeout(() => setFeedback(null), 3500);
+  }
+
+  async function getUsuarioLogado() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
   }
 
   const carregar = async () => {
@@ -60,28 +67,70 @@ export default function ResponsaveisPage() {
       return;
     }
     setSalvando(true);
+    const user = await getUsuarioLogado();
+
     if (editando) {
       const { error } = await supabase.from("responsaveis").update(form).eq("id", editando.id);
       if (error) mostrarFeedback("erro", error.message);
-      else { mostrarFeedback("sucesso", "Responsável atualizado!"); carregar(); }
+      else {
+        await registrarLog(supabase, {
+          usuario_email: user?.email || "desconhecido",
+          acao: "Editou",
+          tabela: "responsaveis",
+          registro_id: editando.id,
+          descricao: `Editou o responsável: ${form.nome.trim()}`,
+        });
+        mostrarFeedback("sucesso", "Responsável atualizado!");
+        carregar();
+      }
     } else {
-      const { error } = await supabase.from("responsaveis").insert(form);
+      const { data: novo, error } = await supabase.from("responsaveis").insert(form).select().single();
       if (error) mostrarFeedback("erro", error.message);
-      else { mostrarFeedback("sucesso", "Responsável cadastrado!"); carregar(); }
+      else {
+        await registrarLog(supabase, {
+          usuario_email: user?.email || "desconhecido",
+          acao: "Criou",
+          tabela: "responsaveis",
+          registro_id: novo?.id,
+          descricao: `Cadastrou o responsável: ${form.nome.trim()} (email: ${form.email})`,
+        });
+        mostrarFeedback("sucesso", "Responsável cadastrado!");
+        carregar();
+      }
     }
     setSalvando(false);
     setModalAberto(false);
   }
 
   async function deletar(id: string) {
+    const user = await getUsuarioLogado();
     const { error } = await supabase.from("responsaveis").delete().eq("id", id);
     if (error) mostrarFeedback("erro", error.message);
-    else { mostrarFeedback("sucesso", "Responsável removido."); carregar(); }
+    else {
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Excluiu",
+        tabela: "responsaveis",
+        registro_id: id,
+        descricao: `Removeu o responsável: ${deletandoNome}`,
+      });
+      mostrarFeedback("sucesso", "Responsável removido.");
+      carregar();
+    }
     setDeletandoId(null);
+    setDeletandoNome("");
   }
 
-  async function toggleAtivo(id: string, ativo: boolean) {
+  async function toggleAtivo(id: string, ativo: boolean, nome: string) {
+    const user = await getUsuarioLogado();
     await supabase.from("responsaveis").update({ ativo: !ativo }).eq("id", id);
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: ativo ? "Desativou" : "Ativou",
+      tabela: "responsaveis",
+      registro_id: id,
+      descricao: `${ativo ? "Desativou" : "Ativou"} o acesso do responsável: ${nome}`,
+    });
     carregar();
   }
 
@@ -101,7 +150,6 @@ export default function ResponsaveisPage() {
   return (
     <div className="space-y-6 pb-10">
 
-      {/* HEADER */}
       <div className="bg-gradient-to-r from-blue-900 to-blue-700 rounded-2xl p-6 flex items-center justify-between">
         <div>
           <h1 className="text-white text-2xl font-bold flex items-center gap-2">
@@ -124,7 +172,6 @@ export default function ResponsaveisPage() {
         </button>
       </div>
 
-      {/* FEEDBACK */}
       {feedback && (
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
           ${feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
@@ -133,12 +180,10 @@ export default function ResponsaveisPage() {
         </div>
       )}
 
-      {/* BUSCA */}
       <input type="text" placeholder="Buscar por nome, email ou criança..." value={busca}
         onChange={(e) => setBusca(e.target.value)}
         className="w-full sm:w-96 px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"/>
 
-      {/* LISTA */}
       {loading ? (
         <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
       ) : filtrados.length === 0 ? (
@@ -184,7 +229,7 @@ export default function ResponsaveisPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={() => toggleAtivo(r.id, r.ativo)}
+                <button onClick={() => toggleAtivo(r.id, r.ativo, r.nome)}
                   className={`h-8 px-3 text-xs font-semibold rounded-lg border transition
                     ${r.ativo ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100" : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"}`}>
                   {r.ativo ? "Desativar" : "Ativar"}
@@ -193,7 +238,7 @@ export default function ResponsaveisPage() {
                   className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
                   <Pencil className="h-4 w-4" />
                 </button>
-                <button onClick={() => setDeletandoId(r.id)}
+                <button onClick={() => { setDeletandoId(r.id); setDeletandoNome(r.nome); }}
                   className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -203,7 +248,6 @@ export default function ResponsaveisPage() {
         </div>
       )}
 
-      {/* MODAL CADASTRAR/EDITAR */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
           onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false); }}>
@@ -222,9 +266,7 @@ export default function ResponsaveisPage() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Criança vinculada */}
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <label className={labelClass}>👶 Criança vinculada *</label>
                 <select value={form.crianca_id} onChange={(e) => setForm({ ...form, crianca_id: e.target.value })}
@@ -233,7 +275,6 @@ export default function ResponsaveisPage() {
                   {criancas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className={labelClass}>Nome completo *</label>
@@ -261,7 +302,6 @@ export default function ResponsaveisPage() {
                     onChange={(e) => setForm({ ...form, endereco: e.target.value })} className={inputClass}/>
                 </div>
               </div>
-
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setModalAberto(false)}
                   className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
@@ -278,7 +318,6 @@ export default function ResponsaveisPage() {
         </div>
       )}
 
-      {/* MODAL EXCLUSÃO */}
       {deletandoId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
@@ -292,7 +331,7 @@ export default function ResponsaveisPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setDeletandoId(null)}
+              <button onClick={() => { setDeletandoId(null); setDeletandoNome(""); }}
                 className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
                 Cancelar
               </button>
