@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { registrarLog } from "@/lib/auditoria";
 
 type Aba = "comunicados" | "momentos" | "evolucao" | "avisos";
 
@@ -24,7 +25,6 @@ export default function SupervisoraPage() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
 
-      {/* HEADER */}
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-md bg-white p-0.5">
           <img src="/logo.png" alt="Logo" className="w-full h-full object-contain"/>
@@ -40,7 +40,6 @@ export default function SupervisoraPage() {
         </div>
       </div>
 
-      {/* FEEDBACK */}
       {feedback && (
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
           ${feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
@@ -49,7 +48,6 @@ export default function SupervisoraPage() {
         </div>
       )}
 
-      {/* ABAS */}
       <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm overflow-x-auto">
         {abas.map(a => (
           <button key={a.id} onClick={() => setAba(a.id as Aba)}
@@ -61,7 +59,6 @@ export default function SupervisoraPage() {
         ))}
       </div>
 
-      {/* CONTEÚDO */}
       {aba === "comunicados" && <AbaComunicadosDiarios mostrarFeedback={mostrarFeedback} />}
       {aba === "momentos"    && <AbaMomentos    mostrarFeedback={mostrarFeedback} />}
       {aba === "evolucao"    && <AbaEvolucao    mostrarFeedback={mostrarFeedback} />}
@@ -71,7 +68,7 @@ export default function SupervisoraPage() {
 }
 
 // =============================================
-// ABA COMUNICADOS DIÁRIOS (original)
+// ABA COMUNICADOS DIÁRIOS
 // =============================================
 function AbaComunicadosDiarios({ mostrarFeedback }: any) {
   const [formularios, setFormularios] = useState<any[]>([]);
@@ -97,6 +94,18 @@ function AbaComunicadosDiarios({ mostrarFeedback }: any) {
   async function aprovar(id: string) {
     setAprovando(true);
     const { error } = await supabase.from("formularios_escolares").update({ status: "aprovado", obs_supervisora: obs }).eq("id", id);
+
+    if (!error) {
+      const { data: { user } } = await supabase.auth.getUser();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Aprovou",
+        tabela: "formularios_escolares",
+        registro_id: id,
+        descricao: `Aprovou comunicado diário de: ${detalhe?.criancas?.nome || "criança"}`,
+      });
+    }
+
     setAprovando(false);
     if (error) mostrarFeedback("erro", "Erro: " + error.message);
     else { mostrarFeedback("sucesso", "Comunicado aprovado!"); setDetalhe(null); setObs(""); carregar(); }
@@ -111,13 +120,6 @@ function AbaComunicadosDiarios({ mostrarFeedback }: any) {
   function iniciais(nome: string) {
     return nome?.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase() || "?";
   }
-
-  const autonomiaLabels: any = {
-    1: { label: "Dependência Total", color: "bg-red-100 text-red-700" },
-    2: { label: "Ajuda Física/Verbal", color: "bg-amber-100 text-amber-700" },
-    3: { label: "Independência Parcial", color: "bg-blue-100 text-blue-700" },
-    4: { label: "Independência Total", color: "bg-emerald-100 text-emerald-700" },
-  };
 
   return (
     <div className="space-y-4">
@@ -213,7 +215,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: any) {
 }
 
 // =============================================
-// ABA MOMENTOS — fotos para a família
+// ABA MOMENTOS
 // =============================================
 function AbaMomentos({ mostrarFeedback }: any) {
   const [momentos, setMomentos] = useState<any[]>([]);
@@ -244,16 +246,28 @@ function AbaMomentos({ mostrarFeedback }: any) {
     if (!criancaId || !fotoFile) { mostrarFeedback("erro", "Selecione a criança e uma foto."); return; }
     setSalvando(true);
 
-    // Upload foto
     const ext = fotoFile.name.split(".").pop();
     const path = `momentos/${criancaId}_${Date.now()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from("fotos-criancas").upload(path, fotoFile);
     if (uploadError) { mostrarFeedback("erro", "Erro no upload: " + uploadError.message); setSalvando(false); return; }
     const { data: urlData } = supabase.storage.from("fotos-criancas").getPublicUrl(path);
 
-    const { error } = await supabase.from("portal_momentos").insert({
+    const { data: novo, error } = await supabase.from("portal_momentos").insert({
       crianca_id: criancaId, descricao, imagem_url: urlData.publicUrl,
-    });
+    }).select().single();
+
+    if (!error) {
+      const { data: { user } } = await supabase.auth.getUser();
+      const criancaNome = criancas.find(c => c.id === criancaId)?.nome || "criança";
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Publicou",
+        tabela: "portal_momentos",
+        registro_id: novo?.id,
+        descricao: `Publicou momento para: ${criancaNome}`,
+      });
+    }
+
     setSalvando(false);
     if (error) mostrarFeedback("erro", error.message);
     else {
@@ -379,7 +393,20 @@ function AbaEvolucao({ mostrarFeedback }: any) {
   async function salvar() {
     if (!criancaId || !titulo || !conteudo) { mostrarFeedback("erro", "Preencha todos os campos."); return; }
     setSalvando(true);
-    const { error } = await supabase.from("portal_evolucao").insert({ crianca_id: criancaId, titulo, conteudo });
+    const { data: nova, error } = await supabase.from("portal_evolucao").insert({ crianca_id: criancaId, titulo, conteudo }).select().single();
+
+    if (!error) {
+      const { data: { user } } = await supabase.auth.getUser();
+      const criancaNome = criancas.find(c => c.id === criancaId)?.nome || "criança";
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Publicou",
+        tabela: "portal_evolucao",
+        registro_id: nova?.id,
+        descricao: `Publicou evolução para: ${criancaNome} — ${titulo}`,
+      });
+    }
+
     setSalvando(false);
     if (error) mostrarFeedback("erro", error.message);
     else {
@@ -471,7 +498,7 @@ function AbaEvolucao({ mostrarFeedback }: any) {
 }
 
 // =============================================
-// ABA AVISOS — comunicados gerais para família
+// ABA AVISOS
 // =============================================
 function AbaAvisos({ mostrarFeedback }: any) {
   const [avisos, setAvisos] = useState<any[]>([]);
@@ -499,7 +526,20 @@ function AbaAvisos({ mostrarFeedback }: any) {
   async function salvar() {
     if (!criancaId || !titulo) { mostrarFeedback("erro", "Selecione a criança e preencha o título."); return; }
     setSalvando(true);
-    const { error } = await supabase.from("portal_comunicados").insert({ crianca_id: criancaId, titulo, conteudo });
+    const { data: novo, error } = await supabase.from("portal_comunicados").insert({ crianca_id: criancaId, titulo, conteudo }).select().single();
+
+    if (!error) {
+      const { data: { user } } = await supabase.auth.getUser();
+      const criancaNome = criancas.find(c => c.id === criancaId)?.nome || "criança";
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Publicou",
+        tabela: "portal_comunicados",
+        registro_id: novo?.id,
+        descricao: `Publicou aviso para: ${criancaNome} — ${titulo}`,
+      });
+    }
+
     setSalvando(false);
     if (error) mostrarFeedback("erro", error.message);
     else {
