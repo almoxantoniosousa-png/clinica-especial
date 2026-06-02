@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { DollarSign, Check, Clock, Plus, Pencil, X, ChevronDown, ChevronRight } from "lucide-react";
+import { registrarLog } from "@/lib/auditoria";
 
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
@@ -39,13 +40,17 @@ export default function FolhaPagamentoPage() {
   const [salvando, setSalvando] = useState(false);
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
 
-  // Seções retráteis
   const [pendentesAberto, setPendentesAberto] = useState(true);
   const [pagosAberto, setPagosAberto] = useState(false);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
     setTimeout(() => setFeedback(null), 3500);
+  }
+
+  async function getUsuarioLogado() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
   }
 
   useEffect(() => { carregarDados(); }, [mes, ano]);
@@ -91,14 +96,35 @@ export default function FolhaPagamentoPage() {
       desconto: parseFloat(form.desconto) || 0,
       observacao: form.observacao || null,
     };
+    const profNome = profissionais.find(p => p.id === profSelecionado)?.nome || "profissional";
+    const user = await getUsuarioLogado();
+
     if (editando) {
       const { error } = await supabase.from("folha_pagamento").update(payload).eq("id", editando.id);
       if (error) mostrarFeedback("erro", error.message);
-      else mostrarFeedback("sucesso", "Folha atualizada!");
+      else {
+        await registrarLog(supabase, {
+          usuario_email: user?.email || "desconhecido",
+          acao: "Editou",
+          tabela: "folha_pagamento",
+          registro_id: editando.id,
+          descricao: `Editou folha de ${profNome} — ${MESES[mes-1]}/${ano}`,
+        });
+        mostrarFeedback("sucesso", "Folha atualizada!");
+      }
     } else {
-      const { error } = await supabase.from("folha_pagamento").insert(payload);
+      const { data: nova, error } = await supabase.from("folha_pagamento").insert(payload).select().single();
       if (error) mostrarFeedback("erro", error.message);
-      else mostrarFeedback("sucesso", "Folha cadastrada!");
+      else {
+        await registrarLog(supabase, {
+          usuario_email: user?.email || "desconhecido",
+          acao: "Criou",
+          tabela: "folha_pagamento",
+          registro_id: nova?.id,
+          descricao: `Lançou folha de ${profNome} — ${MESES[mes-1]}/${ano} — R$ ${parseFloat(form.valor_base).toFixed(2)}`,
+        });
+        mostrarFeedback("sucesso", "Folha cadastrada!");
+      }
     }
     setSalvando(false);
     setModalAberto(false);
@@ -110,21 +136,47 @@ export default function FolhaPagamentoPage() {
       status: "pago",
       data_pagamento: new Date().toISOString().split("T")[0],
     }).eq("id", folha.id);
-    if (!error) { mostrarFeedback("sucesso", "Pagamento confirmado!"); carregarDados(); }
+
+    if (!error) {
+      const user = await getUsuarioLogado();
+      const profNome = profissionais.find(p => p.id === folha.profissional_id)?.nome || "profissional";
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Pagou",
+        tabela: "folha_pagamento",
+        registro_id: folha.id,
+        descricao: `Confirmou pagamento de ${profNome} — ${MESES[mes-1]}/${ano} — ${fmt(folha.valor_final)}`,
+      });
+      mostrarFeedback("sucesso", "Pagamento confirmado!");
+      carregarDados();
+    }
   }
 
   async function excluir(id: string) {
     if (!confirm("Remover este lançamento?")) return;
+    const folha = folhas.find(f => f.id === id);
+    const profNome = profissionais.find(p => p.id === folha?.profissional_id)?.nome || "profissional";
     const { error } = await supabase.from("folha_pagamento").delete().eq("id", id);
-    if (!error) { mostrarFeedback("sucesso", "Lançamento removido."); carregarDados(); }
+    if (!error) {
+      const user = await getUsuarioLogado();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Excluiu",
+        tabela: "folha_pagamento",
+        registro_id: id,
+        descricao: `Removeu folha de ${profNome} — ${MESES[mes-1]}/${ano}`,
+      });
+      mostrarFeedback("sucesso", "Lançamento removido.");
+      carregarDados();
+    }
   }
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-  const totalBruto    = folhas.reduce((s, f) => s + Number(f.valor_base), 0);
+  const totalBruto     = folhas.reduce((s, f) => s + Number(f.valor_base), 0);
   const totalDescontos = folhas.reduce((s, f) => s + Number(f.adiantamento) + Number(f.desconto), 0);
-  const totalLiquido  = folhas.reduce((s, f) => s + Number(f.valor_final), 0);
-  const totalPendente = folhas.filter(f => f.status === "pendente").reduce((s, f) => s + Number(f.valor_final), 0);
+  const totalLiquido   = folhas.reduce((s, f) => s + Number(f.valor_final), 0);
+  const totalPendente  = folhas.filter(f => f.status === "pendente").reduce((s, f) => s + Number(f.valor_final), 0);
 
   const profsComFolha = new Set(folhas.map(f => f.profissional_id));
   const profsSemFolha = profissionais.filter(p => !profsComFolha.has(p.id));
@@ -239,7 +291,6 @@ export default function FolhaPagamentoPage() {
   return (
     <div className="space-y-6 pb-10">
 
-      {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
@@ -255,7 +306,6 @@ export default function FolhaPagamentoPage() {
         </button>
       </div>
 
-      {/* FEEDBACK */}
       {feedback && (
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
           ${feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
@@ -264,7 +314,6 @@ export default function FolhaPagamentoPage() {
         </div>
       )}
 
-      {/* SELETOR MÊS/ANO */}
       <div className="flex items-center gap-3 flex-wrap">
         <select value={mes} onChange={(e) => setMes(Number(e.target.value))}
           className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -277,7 +326,6 @@ export default function FolhaPagamentoPage() {
         <span className="text-sm text-slate-400">{folhas.length} lançamento{folhas.length !== 1 ? "s" : ""}</span>
       </div>
 
-      {/* CARDS RESUMO */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Total Bruto",   valor: totalBruto,    cor: "text-slate-800" },
@@ -292,7 +340,6 @@ export default function FolhaPagamentoPage() {
         ))}
       </div>
 
-      {/* ALERTA */}
       {profsSemFolha.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
           <span className="text-amber-500 text-lg">⚠️</span>
@@ -303,7 +350,6 @@ export default function FolhaPagamentoPage() {
         </div>
       )}
 
-      {/* LISTAS RETRÁTEIS */}
       {loading ? (
         <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
       ) : folhas.length === 0 ? (
@@ -313,24 +359,13 @@ export default function FolhaPagamentoPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          <Secao
-            titulo="Pendentes"
-            folhasSecao={folhasPendentes}
-            aberto={pendentesAberto}
-            onToggle={() => setPendentesAberto(!pendentesAberto)}
-            corBadge="bg-orange-100 text-orange-700"
-          />
-          <Secao
-            titulo="Pagos"
-            folhasSecao={folhasPagas}
-            aberto={pagosAberto}
-            onToggle={() => setPagosAberto(!pagosAberto)}
-            corBadge="bg-emerald-100 text-emerald-700"
-          />
+          <Secao titulo="Pendentes" folhasSecao={folhasPendentes} aberto={pendentesAberto}
+            onToggle={() => setPendentesAberto(!pendentesAberto)} corBadge="bg-orange-100 text-orange-700" />
+          <Secao titulo="Pagos" folhasSecao={folhasPagas} aberto={pagosAberto}
+            onToggle={() => setPagosAberto(!pagosAberto)} corBadge="bg-emerald-100 text-emerald-700" />
         </div>
       )}
 
-      {/* MODAL NOVO/EDITAR */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
           onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false); }}>
@@ -341,7 +376,6 @@ export default function FolhaPagamentoPage() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Profissional</label>
@@ -389,7 +423,6 @@ export default function FolhaPagamentoPage() {
                   className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
-
             <div className="flex gap-3 pt-2">
               <button onClick={() => setModalAberto(false)}
                 className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
