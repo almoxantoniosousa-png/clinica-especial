@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Clock, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
+// ─── Dias fixos igual ao banco ────────────────────────────────────────────────
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
 
 type EscalaItem = {
@@ -31,7 +32,7 @@ function getCorServico(servico: string) {
   return "bg-gray-100 text-gray-700 border-gray-200";
 }
 
-export default function EspecialistaEscalaPage() {
+export default function AtendenteEscalaPage() {
   const supabase = createSupabaseBrowserClient();
 
   const [escala, setEscala] = useState<EscalaItem[]>([]);
@@ -54,24 +55,24 @@ export default function EspecialistaEscalaPage() {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError || !userData.user) throw new Error("Usuário não autenticado.");
 
-      const { data: profissional, error: profError } = await supabase
+      const { data: atendente, error: atError } = await supabase
         .from("atendentes")
         .select("id, nome")
         .eq("usuario_id", userData.user.id)
         .single();
 
-      if (profError || !profissional) {
-        setErro("Perfil de especialista não encontrado. Contate o administrador.");
+      if (atError || !atendente) {
+        setErro("Perfil de atendente não encontrado. Contate o administrador.");
         setLoading(false);
         return;
       }
 
-      setProfissionalNome(profissional.nome);
+      setProfissionalNome(atendente.nome);
 
       const { data: escalaData, error: escalaError } = await supabase
         .from("escala")
         .select("id, dia, horario, crianca, servico, profissional_nome")
-        .eq("profissional_id", profissional.id)
+        .eq("profissional_id", atendente.id)
         .order("horario", { ascending: true });
 
       if (escalaError) throw new Error(escalaError.message);
@@ -93,12 +94,12 @@ export default function EspecialistaEscalaPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Calendar className="h-6 w-6 text-purple-600" />
+            <Calendar className="h-6 w-6 text-blue-600" />
             Minha Escala
           </h1>
           {profissionalNome && (
             <p className="text-sm text-slate-400 mt-1">
-              Especialista: <span className="font-medium text-slate-600">{profissionalNome}</span>
+              Atendente: <span className="font-medium text-slate-600">{profissionalNome}</span>
             </p>
           )}
         </div>
@@ -114,7 +115,7 @@ export default function EspecialistaEscalaPage() {
           {DIAS.map((d, i) => (
             <button key={d} onClick={() => setDiaAtivo(i)}
               className={`flex-1 min-w-[80px] py-2 rounded-xl text-sm font-semibold transition-all ${
-                diaAtivo === i ? "bg-purple-600 text-white shadow-md" : "bg-white border border-slate-200 text-slate-600 hover:bg-purple-50"
+                diaAtivo === i ? "bg-blue-600 text-white shadow-md" : "bg-white border border-slate-200 text-slate-600 hover:bg-blue-50"
               }`}>
               {d}
             </button>
@@ -140,7 +141,7 @@ export default function EspecialistaEscalaPage() {
       {!loading && !erro && (
         <div className="rounded-xl border border-slate-200 overflow-hidden">
           <div className="bg-slate-50 px-4 py-2 flex items-center gap-2 border-b border-slate-200">
-            <Clock className="h-4 w-4 text-purple-500" />
+            <Clock className="h-4 w-4 text-blue-500" />
             <span className="text-sm font-semibold text-slate-700">{dia}</span>
             <span className="ml-auto text-xs text-slate-400">
               {slotsDoDia.length} atendimento{slotsDoDia.length !== 1 ? "s" : ""}
@@ -171,8 +172,8 @@ export default function EspecialistaEscalaPage() {
 
       {/* Resumo */}
       {!loading && !erro && escala.length > 0 && (
-        <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
-          <p className="text-sm text-purple-700 font-medium">
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+          <p className="text-sm text-blue-700 font-medium">
             📊 Total na semana: <span className="font-bold">{escala.length}</span> atendimento{escala.length !== 1 ? "s" : ""}
           </p>
         </div>
