@@ -75,8 +75,8 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   ];
 
   const subMenuFinanceiro = [
-    { href: "/adm/financeiro",      label: "Faturamento",        icon: "💰" },
-    { href: "/adm/folha-pagamento", label: "Folha de Pagamento",  icon: "💵" },
+    { href: "/adm/financeiro",      label: "Faturamento",       icon: "💰" },
+    { href: "/adm/folha-pagamento", label: "Folha de Pagamento", icon: "💵" },
   ];
 
   const menuAdmin = [
@@ -111,6 +111,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/atendente/meus-atendimentos",  label: "Meus Atendimentos", icon: "📋" },
     { href: "/atendente/formulario-escolar", label: "Comunicado Diário", icon: "📄" },
     { href: "/atendente/meus-comunicados",   label: "Meus Comunicados",  icon: "📬" },
+    { href: "/atendente/escala",             label: "Minha Escala",      icon: "📅" }, // ← adicionado
     { href: "/adm/mural",                    label: "Mural",             icon: "📢" },
     { href: "/chat",                         label: "Chat",              icon: "💬" },
   ];
@@ -122,7 +123,8 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   ];
 
   const menuEspecialista = [
-    { href: "/especialista/agenda",      label: "Minha Agenda", icon: "📅" },
+    { href: "/especialista/agenda",      label: "Minha Agenda", icon: "🗓️" }, // ← ícone diferenciado
+    { href: "/especialista/escala",      label: "Minha Escala", icon: "📅" }, // ← adicionado
     { href: "/especialista/prontuarios", label: "Prontuários",  icon: "📋" },
     { href: "/especialista/relatorio",   label: "Relatório",    icon: "📝" },
     { href: "/adm/mural",                label: "Mural",        icon: "📢" },

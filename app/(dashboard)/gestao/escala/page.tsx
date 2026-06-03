@@ -15,7 +15,15 @@ const HORARIOS = [
   "17:00 – 18:00",
 ];
 
-type Slot = { id: string; dia: string; horario: string; crianca: string; servico: string };
+// ← adicionado profissional_nome no type
+type Slot = {
+  id: string;
+  dia: string;
+  horario: string;
+  crianca: string;
+  servico: string;
+  profissional_nome: string | null;
+};
 
 function getCorServico(servico: string) {
   const s = servico.toLowerCase();
@@ -141,10 +149,18 @@ export default function GestaoEscalaPage() {
                     <div className="flex flex-wrap gap-2">
                       {slotsHorario.map((slot) => (
                         <div key={slot.id}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium ${getCorServico(slot.servico)}`}>
-                          <span className="font-bold">{slot.crianca}</span>
-                          <span className="opacity-60">·</span>
-                          <span>{slot.servico}</span>
+                          className={`flex flex-col px-3 py-2 rounded-lg border text-xs font-medium ${getCorServico(slot.servico)}`}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold">{slot.crianca}</span>
+                            <span className="opacity-60">·</span>
+                            <span>{slot.servico}</span>
+                          </div>
+                          {/* ← profissional adicionado aqui */}
+                          {slot.profissional_nome && (
+                            <span className="text-xs opacity-70 mt-0.5">
+                              👤 {slot.profissional_nome}
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -161,17 +177,17 @@ export default function GestaoEscalaPage() {
         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Legenda</p>
         <div className="flex flex-wrap gap-2">
           {[
-            { label: "AVD", cor: "bg-orange-100 text-orange-800 border-orange-200" },
-            { label: "Reforço", cor: "bg-purple-100 text-purple-800 border-purple-200" },
-            { label: "TO", cor: "bg-teal-100 text-teal-800 border-teal-200" },
-            { label: "Simone", cor: "bg-pink-100 text-pink-800 border-pink-200" },
-            { label: "Juliana", cor: "bg-blue-100 text-blue-800 border-blue-200" },
-            { label: "João", cor: "bg-green-100 text-green-800 border-green-200" },
+            { label: "AVD",       cor: "bg-orange-100 text-orange-800 border-orange-200" },
+            { label: "Reforço",   cor: "bg-purple-100 text-purple-800 border-purple-200" },
+            { label: "TO",        cor: "bg-teal-100 text-teal-800 border-teal-200" },
+            { label: "Simone",    cor: "bg-pink-100 text-pink-800 border-pink-200" },
+            { label: "Juliana",   cor: "bg-blue-100 text-blue-800 border-blue-200" },
+            { label: "João",      cor: "bg-green-100 text-green-800 border-green-200" },
             { label: "Bia Moura", cor: "bg-red-100 text-red-800 border-red-200" },
-            { label: "Geovana", cor: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+            { label: "Geovana",   cor: "bg-yellow-100 text-yellow-800 border-yellow-200" },
             { label: "Franciele", cor: "bg-indigo-100 text-indigo-800 border-indigo-200" },
-            { label: "Elaine", cor: "bg-cyan-100 text-cyan-800 border-cyan-200" },
-            { label: "Muralha", cor: "bg-slate-100 text-slate-800 border-slate-200" },
+            { label: "Elaine",    cor: "bg-cyan-100 text-cyan-800 border-cyan-200" },
+            { label: "Muralha",   cor: "bg-slate-100 text-slate-800 border-slate-200" },
           ].map((item) => (
             <span key={item.label} className={`px-2 py-1 rounded-md border text-xs font-medium ${item.cor}`}>{item.label}</span>
           ))}
