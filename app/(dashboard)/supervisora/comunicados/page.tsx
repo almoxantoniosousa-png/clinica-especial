@@ -376,6 +376,9 @@ function AbaEvolucao({ mostrarFeedback }: any) {
   const [criancaId, setCriancaId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [conteudo, setConteudo] = useState("");
+  const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [deletandoLabel, setDeletandoLabel] = useState("");
+  const [excluindo, setExcluindo] = useState(false);
 
   const carregar = async () => {
     setLoading(true);
@@ -416,6 +419,17 @@ function AbaEvolucao({ mostrarFeedback }: any) {
     }
   }
 
+  async function deletar() {
+    if (!deletandoId) return;
+    setExcluindo(true);
+    await supabase.from("portal_evolucao").delete().eq("id", deletandoId);
+    setDeletandoId(null);
+    setDeletandoLabel("");
+    setExcluindo(false);
+    mostrarFeedback("sucesso", "Registro removido.");
+    carregar();
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -435,21 +449,55 @@ function AbaEvolucao({ mostrarFeedback }: any) {
       ) : (
         <div className="space-y-3">
           {evolucoes.map(e => (
-            <div key={e.id} className="bg-white rounded-2xl border border-slate-200 p-4 border-l-4 border-l-blue-400">
-              <div className="flex items-center gap-3 mb-2">
+            <div key={e.id} className="bg-white rounded-2xl border border-slate-200 p-4 border-l-4 border-l-blue-400 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
                   {e.criancas?.foto_url
                     ? <img src={e.criancas.foto_url} alt="" className="w-full h-full object-cover"/>
                     : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{e.criancas?.nome?.charAt(0)}</div>}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="font-semibold text-slate-800 text-sm">{e.titulo}</p>
                   <p className="text-xs text-slate-400">{e.criancas?.nome} · {new Date(e.created_at).toLocaleDateString("pt-BR")}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed mt-1 line-clamp-2">{e.conteudo}</p>
                 </div>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed">{e.conteudo}</p>
+              <button onClick={() => { setDeletandoId(e.id); setDeletandoLabel(e.titulo); }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition flex-shrink-0">
+                🗑️
+              </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {deletandoId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-3xl">🗑️</div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Remover registro?</h3>
+                <p className="text-sm text-slate-500 mt-1 font-medium">{deletandoLabel}</p>
+                <p className="text-xs text-slate-400 mt-1">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setDeletandoId(null); setDeletandoLabel(""); }}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={deletar}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {excluindo ? "Removendo..." : "Sim, remover"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -509,6 +557,9 @@ function AbaAvisos({ mostrarFeedback }: any) {
   const [criancaId, setCriancaId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [conteudo, setConteudo] = useState("");
+  const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [deletandoLabel, setDeletandoLabel] = useState("");
+  const [excluindo, setExcluindo] = useState(false);
 
   const carregar = async () => {
     setLoading(true);
@@ -549,6 +600,17 @@ function AbaAvisos({ mostrarFeedback }: any) {
     }
   }
 
+  async function deletar() {
+    if (!deletandoId) return;
+    setExcluindo(true);
+    await supabase.from("portal_comunicados").delete().eq("id", deletandoId);
+    setDeletandoId(null);
+    setDeletandoLabel("");
+    setExcluindo(false);
+    mostrarFeedback("sucesso", "Aviso removido.");
+    carregar();
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -568,21 +630,55 @@ function AbaAvisos({ mostrarFeedback }: any) {
       ) : (
         <div className="space-y-3">
           {avisos.map(a => (
-            <div key={a.id} className="bg-white rounded-2xl border border-slate-200 p-4 border-l-4 border-l-amber-400">
-              <div className="flex items-center gap-3 mb-2">
+            <div key={a.id} className="bg-white rounded-2xl border border-slate-200 p-4 border-l-4 border-l-amber-400 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
                   {a.criancas?.foto_url
                     ? <img src={a.criancas.foto_url} alt="" className="w-full h-full object-cover"/>
                     : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{a.criancas?.nome?.charAt(0)}</div>}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="font-semibold text-slate-800 text-sm">{a.titulo}</p>
                   <p className="text-xs text-slate-400">{a.criancas?.nome} · {new Date(a.created_at).toLocaleDateString("pt-BR")}</p>
+                  {a.conteudo && <p className="text-sm text-slate-600 mt-1 line-clamp-2">{a.conteudo}</p>}
                 </div>
               </div>
-              {a.conteudo && <p className="text-sm text-slate-600">{a.conteudo}</p>}
+              <button onClick={() => { setDeletandoId(a.id); setDeletandoLabel(a.titulo); }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition flex-shrink-0">
+                🗑️
+              </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {deletandoId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-3xl">🗑️</div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Remover aviso?</h3>
+                <p className="text-sm text-slate-500 mt-1 font-medium">{deletandoLabel}</p>
+                <p className="text-xs text-slate-400 mt-1">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setDeletandoId(null); setDeletandoLabel(""); }}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={deletar}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {excluindo ? "Removendo..." : "Sim, remover"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
