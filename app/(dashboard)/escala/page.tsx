@@ -109,8 +109,8 @@ export default function EscalaPage() {
       supabase.from("atendentes").select("id, nome").order("nome"),
     ]);
     setSlots(slotsRes.data ?? []);
-    setCriancas((criancasRes.data ?? []).map((c) => c.nome));
-    setServicos((servicosRes.data ?? []).map((s) => s.nome));
+    setCriancas((criancasRes.data ?? []).map((c: { nome: string }) => c.nome));
+    setServicos((servicosRes.data ?? []).map((s: { nome: string }) => s.nome));
     setAtendentes(atendentesRes.data ?? []);
     setLoading(false);
   }

@@ -84,7 +84,7 @@ export default function EspecialistaEscalaPage() {
       if (escalaRes.error) throw new Error(escalaRes.error.message);
 
       setEscala(escalaRes.data ?? []);
-      setServicos((servicosRes.data ?? []).map((s) => s.nome));
+      setServicos((servicosRes.data ?? []).map((s: { nome: string }) => s.nome));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido.";
       setErro(msg);

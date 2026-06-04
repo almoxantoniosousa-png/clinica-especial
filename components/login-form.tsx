@@ -22,7 +22,7 @@ export function LoginForm() {
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string) => {
       if (event === "PASSWORD_RECOVERY") setModoBloqueio(true);
     });
     return () => subscription.unsubscribe();
