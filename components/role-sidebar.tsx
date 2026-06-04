@@ -111,14 +111,14 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/atendente/meus-atendimentos",  label: "Meus Atendimentos", icon: "📋" },
     { href: "/atendente/formulario-escolar", label: "Comunicado Diário", icon: "📄" },
     { href: "/atendente/meus-comunicados",   label: "Meus Comunicados",  icon: "📬" },
-    { href: "/atendente/escala",             label: "Minha Escala",      icon: "📅" }, // ← adicionado
-    { href: "/adm/mural",                    label: "Mural",             icon: "📢" },
+    { href: "/atendente/escala",             label: "Minha Escala",      icon: "📅" },
+    { href: "/mural",                        label: "Mural",             icon: "📢" },
     { href: "/chat",                         label: "Chat",              icon: "💬" },
   ];
 
   const menuSupervisora = [
     { href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" },
-    { href: "/adm/mural",               label: "Mural",       icon: "📢" },
+    { href: "/mural",                   label: "Mural",       icon: "📢" },
     { href: "/chat",                    label: "Chat",        icon: "💬" },
   ];
 
@@ -127,7 +127,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/especialista/escala",      label: "Minha Escala", icon: "📅" }, // ← adicionado
     { href: "/especialista/prontuarios", label: "Prontuários",  icon: "📋" },
     { href: "/especialista/relatorio",   label: "Relatório",    icon: "📝" },
-    { href: "/adm/mural",                label: "Mural",        icon: "📢" },
+    { href: "/mural",                    label: "Mural",        icon: "📢" },
     { href: "/chat",                     label: "Chat",         icon: "💬" },
   ];
 
