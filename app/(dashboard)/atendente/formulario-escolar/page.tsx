@@ -69,6 +69,10 @@ export default function FormularioEscolarPage() {
       mostrarFeedback("erro", "Selecione a criança antes de continuar.");
       return;
     }
+    if (etapa === 1 && !horaChegada) {
+      mostrarFeedback("erro", "Informe o horário de chegada antes de continuar.");
+      return;
+    }
     if (etapa < 4) setEtapa(etapa + 1);
   }
 

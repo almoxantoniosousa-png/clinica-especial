@@ -265,7 +265,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-500 uppercase">Valor *</label>
-                  <input type="number" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00"
+                  <input type="number" min="0" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00"
                     className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
               </div>
@@ -505,12 +505,12 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-slate-500 uppercase">Sessões *</label>
-                  <input type="number" value={sessoes} onChange={e => setSessoes(e.target.value)} placeholder="0"
+                  <input type="number" min="0" value={sessoes} onChange={e => setSessoes(e.target.value)} placeholder="0"
                     className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-500 uppercase">Valor/Sessão *</label>
-                  <input type="number" value={valorSessao} onChange={e => setValorSessao(e.target.value)} placeholder="0,00"
+                  <input type="number" min="0" value={valorSessao} onChange={e => setValorSessao(e.target.value)} placeholder="0,00"
                     className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
               </div>

@@ -31,6 +31,30 @@ export default function EspecialistasPage() {
     setTimeout(() => setFeedback(null), 3500);
   }
 
+  function mascaraCpf(valor: string): string {
+    return valor
+      .replace(/\D/g, "")
+      .slice(0, 11)
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  }
+
+  function cpfValido(cpf: string): boolean {
+    const n = cpf.replace(/\D/g, "");
+    if (n.length !== 11 || /^(\d)\1+$/.test(n)) return false;
+    let soma = 0;
+    for (let i = 0; i < 9; i++) soma += parseInt(n[i]) * (10 - i);
+    let resto = (soma * 10) % 11;
+    if (resto >= 10) resto = 0;
+    if (resto !== parseInt(n[9])) return false;
+    soma = 0;
+    for (let i = 0; i < 10; i++) soma += parseInt(n[i]) * (11 - i);
+    resto = (soma * 10) % 11;
+    if (resto >= 10) resto = 0;
+    return resto === parseInt(n[10]);
+  }
+
   async function getUsuarioLogado() {
     const { data: { user } } = await supabase.auth.getUser();
     return user;
@@ -47,6 +71,10 @@ export default function EspecialistasPage() {
 
   const handleCadastrar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (cpf && !cpfValido(cpf)) {
+      mostrarFeedback("erro", "CPF inválido. Verifique o número informado.");
+      return;
+    }
     setLoading(true);
     const { data: novo, error } = await supabase.from("atendentes").insert([{
       nome, email, whatsapp, especialidade,
@@ -78,6 +106,10 @@ export default function EspecialistasPage() {
 
   async function salvarEdicao() {
     if (!editando) return;
+    if (editando.cpf && !cpfValido(editando.cpf)) {
+      mostrarFeedback("erro", "CPF inválido. Verifique o número informado.");
+      return;
+    }
     setSalvandoEdicao(true);
     const { error } = await supabase.from("atendentes").update({
       nome: editando.nome,
@@ -193,7 +225,7 @@ export default function EspecialistasPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CPF</label>
-              <input type="text" placeholder="Ex: 000.000.000-00" value={cpf} onChange={(e) => setCpf(e.target.value)} className={inputClass} />
+              <input type="text" placeholder="Ex: 000.000.000-00" value={cpf} onChange={(e) => setCpf(mascaraCpf(e.target.value))} className={inputClass} />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">RG</label>
@@ -327,7 +359,7 @@ export default function EspecialistasPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CPF</label>
-                  <input type="text" value={editando.cpf || ""} onChange={(e) => setEditando({ ...editando, cpf: e.target.value })}
+                  <input type="text" value={editando.cpf || ""} onChange={(e) => setEditando({ ...editando, cpf: mascaraCpf(e.target.value) })}
                     className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition" />
                 </div>
                 <div className="space-y-1.5">
