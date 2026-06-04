@@ -7,7 +7,6 @@ export default function MeusComunicadosPage() {
   const [comunicados, setComunicados] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [atId, setAtId] = useState("");
-  const [enviando, setEnviando] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
@@ -37,33 +36,18 @@ export default function MeusComunicadosPage() {
     inicializar();
   }, []);
 
-  async function enviarParaFamilia(id: string) {
-    setEnviando(id);
-    const { error } = await supabase
-      .from("formularios_escolares")
-      .update({ status: 'enviado', enviado_familia: true })
-      .eq("id", id);
-    setEnviando(null);
-    if (error) {
-      mostrarFeedback("erro", "Erro ao enviar: " + error.message);
-    } else {
-      mostrarFeedback("sucesso", "Comunicado enviado para a família! ✓");
-      carregar(atId);
-    }
-  }
-
   function iniciais(nome: string) {
     return nome?.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase() || "?";
   }
 
   const statusConfig: any = {
-    aguardando: { label: "⏳ Aguardando aprovação", color: "bg-amber-50 text-amber-700 border-amber-200", borda: "border-l-amber-400" },
-    aprovado:   { label: "✓ Aprovado", color: "bg-blue-50 text-blue-700 border-blue-200", borda: "border-l-blue-400" },
-    enviado:    { label: "📨 Enviado para família", color: "bg-emerald-50 text-emerald-700 border-emerald-200", borda: "border-l-emerald-400" },
+    aguardando: { label: "⏳ Em revisão", color: "bg-amber-50 text-amber-700 border-amber-200", borda: "border-l-amber-400" },
+    aprovado:   { label: "⏳ Em revisão", color: "bg-amber-50 text-amber-700 border-amber-200", borda: "border-l-amber-400" },
+    enviado:    { label: "✓ Enviado para família", color: "bg-emerald-50 text-emerald-700 border-emerald-200", borda: "border-l-emerald-400" },
   };
 
-  const pendentes = comunicados.filter(c => c.status === 'aguardando').length;
-  const aprovados = comunicados.filter(c => c.status === 'aprovado').length;
+  const pendentes = comunicados.filter(c => !c.enviado_familia).length;
+  const enviados  = comunicados.filter(c => c.enviado_familia).length;
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
@@ -104,24 +88,15 @@ export default function MeusComunicadosPage() {
           </div>
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm text-center">
             <p className="text-2xl font-black text-amber-600">{pendentes}</p>
-            <p className="text-xs text-amber-500 mt-0.5">Aguardando</p>
+            <p className="text-xs text-amber-500 mt-0.5">Em revisão</p>
           </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 shadow-sm text-center">
-            <p className="text-2xl font-black text-blue-600">{aprovados}</p>
-            <p className="text-xs text-blue-500 mt-0.5">Prontos</p>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 shadow-sm text-center">
+            <p className="text-2xl font-black text-emerald-600">{enviados}</p>
+            <p className="text-xs text-emerald-500 mt-0.5">Enviados</p>
           </div>
         </div>
       )}
 
-      {/* ALERTA se tem aprovados para enviar */}
-      {aprovados > 0 && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl">
-          <span className="text-blue-500 text-lg">📬</span>
-          <p className="text-sm font-semibold text-blue-800">
-            Você tem <span className="font-black">{aprovados}</span> comunicado{aprovados > 1 ? "s" : ""} aprovado{aprovados > 1 ? "s" : ""} pronto{aprovados > 1 ? "s" : ""} para enviar para a família!
-          </p>
-        </div>
-      )}
 
       {/* LISTA */}
       {loading ? (
@@ -176,25 +151,6 @@ export default function MeusComunicadosPage() {
                   </div>
                 )}
 
-                {/* Botão enviar para família — só aparece se aprovado */}
-                {c.status === 'aprovado' && (
-                  <button
-                    onClick={() => enviarParaFamilia(c.id)}
-                    disabled={enviando === c.id}
-                    className="w-full mt-3 h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold
-                      text-sm rounded-xl transition active:scale-95 disabled:opacity-50"
-                  >
-                    {enviando === c.id ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                        </svg>
-                        Enviando...
-                      </span>
-                    ) : "📨 Enviar para a Família"}
-                  </button>
-                )}
               </div>
             );
           })}
