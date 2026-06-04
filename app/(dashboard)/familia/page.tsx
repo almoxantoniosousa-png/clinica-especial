@@ -159,6 +159,8 @@ function AbaDiario({ criancaId }: { criancaId: string }) {
   const [diarios, setDiarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [detalhe, setDetalhe] = useState<any | null>(null);
+  const mesAtual = new Date().toISOString().slice(0, 7); // "2026-06"
+  const [mesesAbertos, setMesesAbertos] = useState<Set<string>>(new Set([mesAtual]));
 
   useEffect(() => {
     const carregar = async () => {
@@ -174,6 +176,32 @@ function AbaDiario({ criancaId }: { criancaId: string }) {
     };
     carregar();
   }, [criancaId]);
+
+  // Agrupa registros por mês "2026-06" → array de diarios
+  const porMes = useMemo(() => {
+    const mapa = new Map<string, any[]>();
+    diarios.forEach(d => {
+      const chave = d.data?.slice(0, 7) || "desconhecido";
+      if (!mapa.has(chave)) mapa.set(chave, []);
+      mapa.get(chave)!.push(d);
+    });
+    return Array.from(mapa.entries()); // [[mes, [diarios]], ...]
+  }, [diarios]);
+
+  function labelMes(mes: string) {
+    const [ano, m] = mes.split("-");
+    const data = new Date(Number(ano), Number(m) - 1, 1);
+    return data.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  }
+
+  function toggleMes(mes: string) {
+    setMesesAbertos(prev => {
+      const novo = new Set(prev);
+      if (novo.has(mes)) novo.delete(mes);
+      else novo.add(mes);
+      return novo;
+    });
+  }
 
   const autonomiaLabel: Record<number, string> = {
     1: "Dependência Total",
@@ -256,36 +284,56 @@ function AbaDiario({ criancaId }: { criancaId: string }) {
   );
 
   return (
-    <div className="space-y-3">
-      {diarios.map(d => {
-        const dataFormatada = new Date(d.data + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
-        const temUrgente = !!d.materiais_pedir;
+    <div className="space-y-4">
+      <p className="text-xs text-slate-400">{diarios.length} comunicado{diarios.length !== 1 ? "s" : ""} no total</p>
+
+      {porMes.map(([mes, registros]) => {
+        const aberto = mesesAbertos.has(mes);
+        const temUrgenteMes = registros.some(d => !!d.materiais_pedir);
         return (
-          <div key={d.id} onClick={() => setDetalhe(d)}
-            className={`bg-white rounded-2xl border shadow-sm p-4 cursor-pointer hover:shadow-md transition border-l-4
-              ${temUrgente ? "border-l-red-400 border-red-200" : "border-l-blue-400 border-slate-200"}`}>
-            <div className="flex items-center justify-between gap-3">
+          <div key={mes} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+
+            {/* Cabeçalho do mês — clicável */}
+            <button onClick={() => toggleMes(mes)}
+              className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition">
               <div className="flex items-center gap-3">
-                <div className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${temUrgente ? "bg-red-100" : "bg-blue-100"}`}>
-                  <span className="text-xl">{temUrgente ? "⚠️" : "📋"}</span>
+                <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-base flex-shrink-0">
+                  📅
                 </div>
-                <div>
-                  <p className="font-semibold text-slate-800 text-sm capitalize">{dataFormatada}</p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    {d.hora_chegada && <span className="text-xs text-slate-400">🕐 {d.hora_chegada}</span>}
-                    {temUrgente && <span className="text-xs font-semibold text-red-600">⚠️ Aviso urgente</span>}
-                  </div>
+                <div className="text-left">
+                  <p className="font-bold text-slate-800 text-sm capitalize">{labelMes(mes)}</p>
+                  <p className="text-xs text-slate-400">{registros.length} comunicado{registros.length !== 1 ? "s" : ""}{temUrgenteMes ? " · ⚠️ aviso urgente" : ""}</p>
                 </div>
               </div>
-              <span className="text-slate-300 text-lg flex-shrink-0">›</span>
-            </div>
+              <span className={`text-slate-400 text-lg transition-transform duration-200 ${aberto ? "rotate-90" : ""}`}>›</span>
+            </button>
 
-            {/* preview das interações */}
-            {d.interacao?.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {(d.interacao as string[]).slice(0, 3).map((i: string) => (
-                  <span key={i} className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">{i}</span>
-                ))}
+            {/* Lista do mês — colapsável */}
+            {aberto && (
+              <div className="border-t border-slate-100 divide-y divide-slate-50">
+                {registros.map(d => {
+                  const dataFormatada = new Date(d.data + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+                  const temUrgente = !!d.materiais_pedir;
+                  return (
+                    <div key={d.id} onClick={() => setDetalhe(d)}
+                      className="flex items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-slate-50 transition">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-base ${temUrgente ? "bg-red-100" : "bg-blue-50"}`}>
+                        {temUrgente ? "⚠️" : "📋"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-800 text-sm capitalize">{dataFormatada}</p>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          {d.hora_chegada && <span className="text-xs text-slate-400">🕐 {d.hora_chegada}</span>}
+                          {temUrgente && <span className="text-xs font-semibold text-red-500">⚠️ Aviso urgente</span>}
+                          {d.interacao?.length > 0 && (
+                            <span className="text-xs text-slate-400 truncate">{(d.interacao as string[]).slice(0,2).join(", ")}</span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-slate-300 text-lg flex-shrink-0">›</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -323,6 +371,24 @@ function AbaDiario({ criancaId }: { criancaId: string }) {
   );
 }
 
+// helper compartilhado
+function labelMes(mes: string) {
+  const [ano, m] = mes.split("-");
+  return new Date(Number(ano), Number(m) - 1, 1)
+    .toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+}
+
+function useMesesAbertos() {
+  const mesAtual = new Date().toISOString().slice(0, 7);
+  const [abertos, setAbertos] = useState<Set<string>>(new Set([mesAtual]));
+  const toggle = (mes: string) => setAbertos(prev => {
+    const n = new Set(prev);
+    n.has(mes) ? n.delete(mes) : n.add(mes);
+    return n;
+  });
+  return { abertos, toggle };
+}
+
 // =============================================
 // ABA AVISOS
 // =============================================
@@ -331,6 +397,7 @@ function AbaAvisos({ criancaId }: { criancaId: string }) {
   const [avisos, setAvisos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [detalhe, setDetalhe] = useState<any | null>(null);
+  const { abertos, toggle } = useMesesAbertos();
 
   useEffect(() => {
     const carregar = async () => {
@@ -343,6 +410,16 @@ function AbaAvisos({ criancaId }: { criancaId: string }) {
     carregar();
   }, [criancaId]);
 
+  const porMes = useMemo(() => {
+    const mapa = new Map<string, any[]>();
+    avisos.forEach(a => {
+      const chave = a.created_at?.slice(0, 7) || "desconhecido";
+      if (!mapa.has(chave)) mapa.set(chave, []);
+      mapa.get(chave)!.push(a);
+    });
+    return Array.from(mapa.entries());
+  }, [avisos]);
+
   if (loading) return <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>;
 
   if (avisos.length === 0) return (
@@ -353,43 +430,63 @@ function AbaAvisos({ criancaId }: { criancaId: string }) {
   );
 
   return (
-    <div className="space-y-3">
-      {avisos.map(a => (
-        <div key={a.id} onClick={() => setDetalhe(a)}
-          className="bg-white rounded-2xl border border-slate-200 p-4 flex items-start gap-3 cursor-pointer hover:border-blue-200 hover:shadow-sm transition border-l-4 border-l-amber-400">
-          <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-lg">📢</span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold text-slate-800 text-sm">{a.titulo}</p>
-            {a.conteudo && <p className="text-xs text-slate-400 mt-0.5 truncate">{a.conteudo}</p>}
-            <p className="text-xs text-slate-300 mt-1">{new Date(a.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</p>
-          </div>
-          <span className="text-slate-300 text-lg flex-shrink-0">›</span>
+    <div className="space-y-4">
+      <p className="text-xs text-slate-400">{avisos.length} aviso{avisos.length !== 1 ? "s" : ""} no total</p>
+
+      {porMes.map(([mes, items]) => (
+        <div key={mes} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <button onClick={() => toggle(mes)}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center text-base flex-shrink-0">📢</div>
+              <div className="text-left">
+                <p className="font-bold text-slate-800 text-sm capitalize">{labelMes(mes)}</p>
+                <p className="text-xs text-slate-400">{items.length} aviso{items.length !== 1 ? "s" : ""}</p>
+              </div>
+            </div>
+            <span className={`text-slate-400 text-lg transition-transform duration-200 ${abertos.has(mes) ? "rotate-90" : ""}`}>›</span>
+          </button>
+
+          {abertos.has(mes) && (
+            <div className="border-t border-slate-100 divide-y divide-slate-50">
+              {items.map(a => (
+                <div key={a.id} onClick={() => setDetalhe(a)}
+                  className="flex items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-slate-50 transition">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-slate-800 text-sm">{a.titulo}</p>
+                    {a.conteudo && <p className="text-xs text-slate-400 mt-0.5 truncate">{a.conteudo}</p>}
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      {new Date(a.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                    </p>
+                  </div>
+                  <span className="text-slate-300 text-lg flex-shrink-0">›</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
 
       {detalhe && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm px-4 pb-4"
           onClick={e => { if (e.target === e.currentTarget) setDetalhe(null); }}>
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                  <span className="text-lg">📢</span>
-                </div>
-                <div>
-                  <p className="font-bold text-slate-800">{detalhe.titulo}</p>
-                  <p className="text-xs text-slate-400">{new Date(detalhe.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</p>
-                </div>
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="bg-amber-500 px-5 py-4 flex items-center justify-between">
+              <div>
+                <p className="font-bold text-white text-sm">{detalhe.titulo}</p>
+                <p className="text-amber-100 text-xs mt-0.5">
+                  {new Date(detalhe.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                </p>
               </div>
-              <button onClick={() => setDetalhe(null)} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+              <button onClick={() => setDetalhe(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 text-white transition">✕</button>
             </div>
-            {detalhe.conteudo && <p className="text-sm text-slate-700 leading-relaxed">{detalhe.conteudo}</p>}
-            <button onClick={() => setDetalhe(null)}
-              className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
-              Fechar
-            </button>
+            <div className="p-5 space-y-4">
+              {detalhe.conteudo && <p className="text-sm text-slate-700 leading-relaxed">{detalhe.conteudo}</p>}
+              <button onClick={() => setDetalhe(null)}
+                className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -405,6 +502,7 @@ function AbaMomentos({ criancaId }: { criancaId: string }) {
   const [momentos, setMomentos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [foto, setFoto] = useState<string | null>(null);
+  const { abertos, toggle } = useMesesAbertos();
 
   useEffect(() => {
     const carregar = async () => {
@@ -417,6 +515,16 @@ function AbaMomentos({ criancaId }: { criancaId: string }) {
     carregar();
   }, [criancaId]);
 
+  const porMes = useMemo(() => {
+    const mapa = new Map<string, any[]>();
+    momentos.forEach(m => {
+      const chave = m.created_at?.slice(0, 7) || "desconhecido";
+      if (!mapa.has(chave)) mapa.set(chave, []);
+      mapa.get(chave)!.push(m);
+    });
+    return Array.from(mapa.entries());
+  }, [momentos]);
+
   if (loading) return <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>;
 
   if (momentos.length === 0) return (
@@ -428,18 +536,42 @@ function AbaMomentos({ criancaId }: { criancaId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        {momentos.map(m => (
-          <div key={m.id} onClick={() => setFoto(m.imagem_url)}
-            className="bg-white rounded-2xl border border-slate-200 overflow-hidden cursor-pointer hover:shadow-md transition">
-            <img src={m.imagem_url} alt="Momento" className="w-full h-40 object-cover"/>
-            <div className="p-2">
-              {m.descricao && <p className="text-xs text-slate-600 truncate">{m.descricao}</p>}
-              <p className="text-xs text-slate-300 mt-0.5">{new Date(m.created_at).toLocaleDateString("pt-BR")}</p>
+      <p className="text-xs text-slate-400">{momentos.length} foto{momentos.length !== 1 ? "s" : ""} no total</p>
+
+      {porMes.map(([mes, items]) => (
+        <div key={mes} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <button onClick={() => toggle(mes)}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-pink-100 flex items-center justify-center text-base flex-shrink-0">📸</div>
+              <div className="text-left">
+                <p className="font-bold text-slate-800 text-sm capitalize">{labelMes(mes)}</p>
+                <p className="text-xs text-slate-400">{items.length} foto{items.length !== 1 ? "s" : ""}</p>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+            <span className={`text-slate-400 text-lg transition-transform duration-200 ${abertos.has(mes) ? "rotate-90" : ""}`}>›</span>
+          </button>
+
+          {abertos.has(mes) && (
+            <div className="border-t border-slate-100 p-3">
+              <div className="grid grid-cols-2 gap-2">
+                {items.map(m => (
+                  <div key={m.id} onClick={() => setFoto(m.imagem_url)}
+                    className="rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition border border-slate-100">
+                    <img src={m.imagem_url} alt="Momento" className="w-full h-36 object-cover"/>
+                    <div className="p-2 bg-white">
+                      {m.descricao && <p className="text-xs text-slate-600 truncate">{m.descricao}</p>}
+                      <p className="text-[10px] text-slate-300 mt-0.5">
+                        {new Date(m.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
 
       {foto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
@@ -459,6 +591,7 @@ function AbaEvolucao({ criancaId }: { criancaId: string }) {
   const [evolucoes, setEvolucoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [detalhe, setDetalhe] = useState<any | null>(null);
+  const { abertos, toggle } = useMesesAbertos();
 
   useEffect(() => {
     const carregar = async () => {
@@ -471,6 +604,16 @@ function AbaEvolucao({ criancaId }: { criancaId: string }) {
     carregar();
   }, [criancaId]);
 
+  const porMes = useMemo(() => {
+    const mapa = new Map<string, any[]>();
+    evolucoes.forEach(e => {
+      const chave = e.created_at?.slice(0, 7) || "desconhecido";
+      if (!mapa.has(chave)) mapa.set(chave, []);
+      mapa.get(chave)!.push(e);
+    });
+    return Array.from(mapa.entries());
+  }, [evolucoes]);
+
   if (loading) return <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>;
 
   if (evolucoes.length === 0) return (
@@ -481,43 +624,65 @@ function AbaEvolucao({ criancaId }: { criancaId: string }) {
   );
 
   return (
-    <div className="space-y-3">
-      {evolucoes.map(e => (
-        <div key={e.id} onClick={() => setDetalhe(e)}
-          className="bg-white rounded-2xl border border-slate-200 p-4 flex items-start gap-3 cursor-pointer hover:border-blue-200 hover:shadow-sm transition border-l-4 border-l-blue-400">
-          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-lg">📊</span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold text-slate-800 text-sm">{e.titulo}</p>
-            <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{e.conteudo}</p>
-            <p className="text-xs text-slate-300 mt-1">{new Date(e.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</p>
-          </div>
-          <span className="text-slate-300 text-lg flex-shrink-0">›</span>
+    <div className="space-y-4">
+      <p className="text-xs text-slate-400">{evolucoes.length} registro{evolucoes.length !== 1 ? "s" : ""} no total</p>
+
+      {porMes.map(([mes, items]) => (
+        <div key={mes} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <button onClick={() => toggle(mes)}
+            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-base flex-shrink-0">📊</div>
+              <div className="text-left">
+                <p className="font-bold text-slate-800 text-sm capitalize">{labelMes(mes)}</p>
+                <p className="text-xs text-slate-400">{items.length} registro{items.length !== 1 ? "s" : ""}</p>
+              </div>
+            </div>
+            <span className={`text-slate-400 text-lg transition-transform duration-200 ${abertos.has(mes) ? "rotate-90" : ""}`}>›</span>
+          </button>
+
+          {abertos.has(mes) && (
+            <div className="border-t border-slate-100 divide-y divide-slate-50">
+              {items.map(e => (
+                <div key={e.id} onClick={() => setDetalhe(e)}
+                  className="flex items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-slate-50 transition">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-slate-800 text-sm">{e.titulo}</p>
+                    <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{e.conteudo}</p>
+                    <p className="text-[10px] text-slate-300 mt-0.5">
+                      {new Date(e.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                    </p>
+                  </div>
+                  <span className="text-slate-300 text-lg flex-shrink-0">›</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
 
       {detalhe && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm px-4 pb-4"
           onClick={e => { if (e.target === e.currentTarget) setDetalhe(null); }}>
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-lg">📊</span>
-                </div>
-                <div>
-                  <p className="font-bold text-slate-800">{detalhe.titulo}</p>
-                  <p className="text-xs text-slate-400">{new Date(detalhe.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</p>
-                </div>
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden max-h-[80vh] flex flex-col">
+            <div className="bg-blue-900 px-5 py-4 flex items-center justify-between flex-shrink-0">
+              <div>
+                <p className="font-bold text-white text-sm">{detalhe.titulo}</p>
+                <p className="text-blue-300 text-xs mt-0.5">
+                  {new Date(detalhe.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                </p>
               </div>
-              <button onClick={() => setDetalhe(null)} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+              <button onClick={() => setDetalhe(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white transition">✕</button>
             </div>
-            <p className="text-sm text-slate-700 leading-relaxed">{detalhe.conteudo}</p>
-            <button onClick={() => setDetalhe(null)}
-              className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
-              Fechar
-            </button>
+            <div className="overflow-y-auto flex-1 p-5">
+              <p className="text-sm text-slate-700 leading-relaxed">{detalhe.conteudo}</p>
+            </div>
+            <div className="px-5 py-4 border-t border-slate-100 flex-shrink-0">
+              <button onClick={() => setDetalhe(null)}
+                className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
