@@ -3,13 +3,44 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import {
-  MessageCircle, Send, Paperclip, Image as ImageIcon, Check, CheckCheck,
-  X, FileText, Download, Search,
+  MessageCircle, Send, Paperclip, Image as ImageIcon, Images, Check, CheckCheck,
+  X, FileText, Download, Search, PenSquare, Camera, ChevronLeft,
 } from "lucide-react";
 
+// ─── Permissões por role ─────────────────────────────────────────────────────
+
+const PODE_CONTATAR: Record<string, string[]> = {
+  atendente:   ["adm", "supervisora"],
+  especialista:["adm", "supervisora", "gestao"],
+  gestao:      ["adm", "supervisora", "especialista"],
+  supervisora: ["adm", "gestao", "especialista", "atendente", "supervisora"],
+  adm:         ["adm", "gestao", "especialista", "atendente", "supervisora"],
+};
+
+const ROLE_LABEL: Record<string, string> = {
+  adm:         "Administrador",
+  gestao:      "Gestão",
+  supervisora: "Supervisora",
+  especialista:"Especialista",
+  atendente:   "Acompanhante",
+  familia:     "Família",
+};
+
+// Cores consistentes por role para avatares
+const ROLE_STYLE: Record<string, string> = {
+  adm:         "bg-violet-100 text-violet-700",
+  gestao:      "bg-blue-100 text-blue-700",
+  supervisora: "bg-emerald-100 text-emerald-700",
+  especialista:"bg-amber-100 text-amber-700",
+  atendente:   "bg-slate-100 text-slate-600",
+  familia:     "bg-rose-100 text-rose-700",
+};
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
 type MensagemConteudo =
-  | { tipo: "texto"; texto: string }
-  | { tipo: "imagem"; url: string; nome: string }
+  | { tipo: "texto";   texto: string }
+  | { tipo: "imagem";  url: string; nome: string }
   | { tipo: "arquivo"; url: string; nome: string; tamanho: number };
 
 type Mensagem = {
@@ -20,559 +51,569 @@ type Mensagem = {
   lida: boolean;
 };
 
+type Perfil = { id: string; nome: string; role: string };
+
 type Conversa = {
   id: string;
-  nome: string;
   tipo: string;
+  created_at: string;
+  participante_a: string;
+  participante_b: string;
+  perfil_a: Perfil;
+  perfil_b: Perfil;
 };
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function parseConteudo(conteudo: string): MensagemConteudo {
   try {
-    const parsed = JSON.parse(conteudo);
-    if (parsed.tipo === "imagem" || parsed.tipo === "arquivo") return parsed;
+    const p = JSON.parse(conteudo);
+    if (p.tipo === "imagem" || p.tipo === "arquivo") return p;
   } catch {}
   return { tipo: "texto", texto: conteudo };
 }
 
-function formatarTamanho(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+function formatarTamanho(bytes: number) {
+  if (bytes < 1024)       return `${bytes} B`;
+  if (bytes < 1048576)    return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
 }
 
-function labelData(dateStr: string): string {
-  const date = new Date(dateStr);
+function labelData(iso: string) {
+  const d = new Date(iso);
   const hoje = new Date();
-  const ontem = new Date(hoje);
-  ontem.setDate(ontem.getDate() - 1);
-  if (date.toDateString() === hoje.toDateString()) return "Hoje";
-  if (date.toDateString() === ontem.toDateString()) return "Ontem";
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  const ontem = new Date(hoje); ontem.setDate(hoje.getDate() - 1);
+  if (d.toDateString() === hoje.toDateString())  return "Hoje";
+  if (d.toDateString() === ontem.toDateString()) return "Ontem";
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 }
+
+function iniciais(nome: string) {
+  return nome.split(" ").filter(Boolean).slice(0, 2).map(p => p[0]).join("").toUpperCase();
+}
+
+function outro(c: Conversa, meuId: string): Perfil {
+  return c.participante_a === meuId ? c.perfil_b : c.perfil_a;
+}
+
+// ─── Componente ──────────────────────────────────────────────────────────────
 
 export default function ChatPage() {
   const supabase = createSupabaseBrowserClient();
 
+  // Usuário atual
+  const [eu, setEu] = useState<Perfil | null>(null);
+
+  // Lista de conversas
   const [conversas, setConversas] = useState<Conversa[]>([]);
-  const [conversaSelecionada, setConversaSelecionada] = useState<Conversa | null>(null);
-  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
-  const [novaMensagem, setNovaMensagem] = useState("");
-  const [usuarioId, setUsuarioId] = useState<string | null>(null);
-  const [nomeUsuario, setNomeUsuario] = useState("");
-  const [perfisMap, setPerfisMap] = useState<Record<string, string>>({});
+  const [ativa, setAtiva] = useState<Conversa | null>(null);
   const [busca, setBusca] = useState("");
+
+  // Mensagens
+  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [texto, setTexto] = useState("");
   const [digitando, setDigitando] = useState<string | null>(null);
+
+  // Upload
   const [uploading, setUploading] = useState(false);
   const [uploadErro, setUploadErro] = useState<string | null>(null);
-  const [naoLidasPorConversa, setNaoLidasPorConversa] = useState<Record<string, number>>({});
+  const [menuFoto, setMenuFoto] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  const mensagensEndRef = useRef<HTMLDivElement>(null);
-  const mensagensContainerRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const canalRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const digitandoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ultimasLeiturasRef = useRef<Record<string, string>>({});
-  const isInitialLoadRef = useRef(true);
+  // Não lidas
+  const [naoLidas, setNaoLidas] = useState<Record<string, number>>({});
 
-  // Carrega usuário e ultimasLeituras do localStorage
+  // Modal nova conversa
+  const [modal, setModal] = useState(false);
+  const [usuarios, setUsuarios] = useState<Perfil[]>([]);
+  const [buscaUsuario, setBuscaUsuario] = useState("");
+  const [criando, setCriando] = useState(false);
+
+  // Refs
+  const fimRef        = useRef<HTMLDivElement>(null);
+  const containerRef  = useRef<HTMLDivElement>(null);
+  const fileRef       = useRef<HTMLInputElement>(null);
+  const imagemRef     = useRef<HTMLInputElement>(null);
+  const cameraRef     = useRef<HTMLInputElement>(null);
+  const textareaRef   = useRef<HTMLTextAreaElement>(null);
+  const canalRef      = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const leiturasRef   = useRef<Record<string, string>>({});
+  const primeiraVez   = useRef(true);
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    const init = async () => {
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    try {
+      const s = localStorage.getItem("chat_leituras");
+      if (s) leiturasRef.current = JSON.parse(s);
+    } catch {}
+
+    (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      setUsuarioId(user.id);
-      const { data: perfil } = await supabase
-        .from("perfis")
-        .select("nome")
-        .eq("id", user.id)
-        .single();
-      if (perfil) setNomeUsuario(perfil.nome);
-    };
-    init();
-
-    try {
-      const stored = localStorage.getItem("chat_ultimasLeituras");
-      if (stored) ultimasLeiturasRef.current = JSON.parse(stored);
-    } catch {}
+      const { data } = await supabase
+        .from("perfis").select("id, nome, role")
+        .eq("id", user.id).single();
+      if (data) setEu(data as Perfil);
+    })();
   }, []);
 
-  // Carrega conversas
+  // ── Carregar conversas ────────────────────────────────────────────────────
+
+  const carregarConversas = useCallback(async () => {
+    if (!eu) return;
+    const { data, error } = await supabase
+      .from("conversas")
+      .select(`
+        id, tipo, created_at, participante_a, participante_b,
+        perfil_a:perfis!participante_a(id, nome, role),
+        perfil_b:perfis!participante_b(id, nome, role)
+      `)
+      .or(`participante_a.eq.${eu.id},participante_b.eq.${eu.id}`)
+      .order("created_at", { ascending: false });
+    if (error) console.error("Erro ao carregar conversas:", error.message);
+    if (data) setConversas(data as unknown as Conversa[]);
+  }, [eu]);
+
+  useEffect(() => { carregarConversas(); }, [carregarConversas]);
+
+  // ── Não lidas ─────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    const carregar = async () => {
+    if (!eu || conversas.length === 0) return;
+    (async () => {
+      const map: Record<string, number> = {};
+      await Promise.all(conversas.map(async (c) => {
+        const ul = leiturasRef.current[c.id];
+        let q = supabase
+          .from("mensagens_chat")
+          .select("id", { count: "exact", head: true })
+          .eq("conversa_id", c.id)
+          .neq("autor_id", eu.id);
+        if (ul) q = q.gt("created_at", ul);
+        const { count } = await q;
+        map[c.id] = count ?? 0;
+      }));
+      setNaoLidas(map);
+    })();
+  }, [conversas, eu]);
+
+  // ── Carregar mensagens + realtime ─────────────────────────────────────────
+
+  useEffect(() => {
+    if (!ativa || !eu) return;
+
+    primeiraVez.current = true;
+    setMensagens([]);
+    setDigitando(null);
+
+    (async () => {
       const { data, error } = await supabase
-        .from("conversas")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) console.error("Erro ao carregar conversas:", error.message);
-      if (data) setConversas(data);
-    };
-    carregar();
-  }, []);
-
-  // Calcula não lidas após carregar conversas + usuário
-  useEffect(() => {
-    if (!usuarioId || conversas.length === 0) return;
-    const calcular = async () => {
-      const novoMap: Record<string, number> = {};
-      await Promise.all(
-        conversas.map(async (c) => {
-          const ultimaLeitura = ultimasLeiturasRef.current[c.id];
-          let query = supabase
-            .from("mensagens_chat")
-            .select("id", { count: "exact", head: true })
-            .eq("conversa_id", c.id)
-            .neq("autor_id", usuarioId);
-          if (ultimaLeitura) query = query.gt("created_at", ultimaLeitura);
-          const { count } = await query;
-          novoMap[c.id] = count ?? 0;
-        })
-      );
-      setNaoLidasPorConversa(novoMap);
-    };
-    calcular();
-  }, [conversas, usuarioId]);
-
-  // Carrega mensagens + realtime quando muda conversa
-  useEffect(() => {
-    if (!conversaSelecionada) return;
-
-    isInitialLoadRef.current = true;
-
-    const carregarMensagens = async () => {
-      const { data, error } = await supabase
-        .from("mensagens_chat")
-        .select("*")
-        .eq("conversa_id", conversaSelecionada.id)
+        .from("mensagens_chat").select("*")
+        .eq("conversa_id", ativa.id)
         .order("created_at", { ascending: true });
       if (error) console.error("Erro ao carregar mensagens:", error.message);
-      if (data) {
-        setMensagens(data);
-        // Carrega perfis dos autores
-        const ids = [...new Set(data.map((m: Mensagem) => m.autor_id))];
-        if (ids.length > 0) {
-          const { data: perfis } = await supabase
-            .from("perfis")
-            .select("id, nome")
-            .in("id", ids);
-          if (perfis) {
-            const mapa: Record<string, string> = {};
-            perfis.forEach((p: { id: string; nome: string }) => { mapa[p.id] = p.nome; });
-            setPerfisMap((prev) => ({ ...prev, ...mapa }));
-          }
-        }
-      }
+      if (data) setMensagens(data);
 
-      // Marca como lida
+      // marcar como lida
       const now = new Date().toISOString();
-      ultimasLeiturasRef.current = { ...ultimasLeiturasRef.current, [conversaSelecionada.id]: now };
-      try {
-        localStorage.setItem("chat_ultimasLeituras", JSON.stringify(ultimasLeiturasRef.current));
-      } catch {}
-      setNaoLidasPorConversa((prev) => ({ ...prev, [conversaSelecionada.id]: 0 }));
-    };
-    carregarMensagens();
+      leiturasRef.current = { ...leiturasRef.current, [ativa.id]: now };
+      try { localStorage.setItem("chat_leituras", JSON.stringify(leiturasRef.current)); } catch {}
+      setNaoLidas(prev => ({ ...prev, [ativa.id]: 0 }));
+    })();
 
-    // Desmonta canal anterior
-    if (canalRef.current) {
-      supabase.removeChannel(canalRef.current);
-    }
+    if (canalRef.current) supabase.removeChannel(canalRef.current);
 
     const canal = supabase
-      .channel(`chat-${conversaSelecionada.id}`)
+      .channel(`chat-${ativa.id}`)
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "mensagens_chat",
-          filter: `conversa_id=eq.${conversaSelecionada.id}`,
-        },
+        { event: "INSERT", schema: "public", table: "mensagens_chat", filter: `conversa_id=eq.${ativa.id}` },
         (payload: { new: Mensagem }) => {
-          setMensagens((prev) => {
-            if (prev.some((m) => m.id === payload.new.id)) return prev;
+          setMensagens(prev => {
+            if (prev.some(m => m.id === payload.new.id)) return prev;
             return [...prev, payload.new];
           });
-          // Carrega perfil do autor se novo
-          const autorId = payload.new.autor_id;
-          supabase
-            .from("perfis")
-            .select("id, nome")
-            .eq("id", autorId)
-            .single()
-            .then((res: { data: { id: string; nome: string } | null }) => {
-              if (res.data) setPerfisMap((p) => ({ ...p, [res.data!.id]: res.data!.nome }));
-            });
         }
       )
       .on("broadcast", { event: "typing" }, (payload: { payload: { userId: string; nome: string } }) => {
-        if (payload.payload.userId === usuarioId) return;
-        setDigitando(payload.payload.nome || "Alguém");
-        if (digitandoTimeoutRef.current) clearTimeout(digitandoTimeoutRef.current);
-        digitandoTimeoutRef.current = setTimeout(() => setDigitando(null), 3000);
+        if (payload.payload.userId === eu.id) return;
+        setDigitando(payload.payload.nome);
+        if (typingTimeout.current) clearTimeout(typingTimeout.current);
+        typingTimeout.current = setTimeout(() => setDigitando(null), 3000);
       })
       .subscribe();
 
     canalRef.current = canal;
 
     return () => {
-      if (canalRef.current) {
-        supabase.removeChannel(canalRef.current);
-        canalRef.current = null;
-      }
-      setDigitando(null);
+      if (canalRef.current) { supabase.removeChannel(canalRef.current); canalRef.current = null; }
     };
-  }, [conversaSelecionada]);
+  }, [ativa]);
 
-  // Scroll automático — instant na carga inicial, smooth em novas mensagens
+  // ── Scroll automático ─────────────────────────────────────────────────────
+
   useEffect(() => {
     if (mensagens.length === 0) return;
-    const container = mensagensContainerRef.current;
-    if (!container) return;
-
-    if (isInitialLoadRef.current) {
-      mensagensEndRef.current?.scrollIntoView({ behavior: "instant" as ScrollBehavior });
-      isInitialLoadRef.current = false;
+    const c = containerRef.current;
+    if (!c) return;
+    if (primeiraVez.current) {
+      fimRef.current?.scrollIntoView({ behavior: "instant" as ScrollBehavior });
+      primeiraVez.current = false;
       return;
     }
-
-    const isAtBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight < 120;
-    const isMyMessage = mensagens[mensagens.length - 1]?.autor_id === usuarioId;
-    if (isAtBottom || isMyMessage) {
-      mensagensEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+    const perto = c.scrollHeight - c.scrollTop - c.clientHeight < 120;
+    const minha = mensagens.at(-1)?.autor_id === eu?.id;
+    if (perto || minha) fimRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensagens]);
 
-  // Broadcast "está digitando"
+  // ── Typing broadcast ──────────────────────────────────────────────────────
+
   const broadcastTyping = useCallback(() => {
-    if (!canalRef.current || !usuarioId || !nomeUsuario) return;
-    canalRef.current.send({
-      type: "broadcast",
-      event: "typing",
-      payload: { userId: usuarioId, nome: nomeUsuario },
-    });
-  }, [usuarioId, nomeUsuario]);
+    if (!canalRef.current || !eu) return;
+    canalRef.current.send({ type: "broadcast", event: "typing", payload: { userId: eu.id, nome: eu.nome } });
+  }, [eu]);
 
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNovaMensagem(e.target.value);
-    // Auto-resize
-    e.target.style.height = "auto";
-    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-    broadcastTyping();
-  };
+  // ── Enviar mensagem ───────────────────────────────────────────────────────
 
-  const enviarMensagem = async (conteudoOverride?: string) => {
-    const texto = conteudoOverride ?? novaMensagem.trim();
-    if (!texto || !conversaSelecionada || !usuarioId) return;
-    if (!conteudoOverride) {
-      setNovaMensagem("");
+  const enviar = async (override?: string) => {
+    const conteudo = override ?? texto.trim();
+    if (!conteudo || !ativa || !eu) return;
+    if (!override) {
+      setTexto("");
       if (textareaRef.current) textareaRef.current.style.height = "auto";
     }
 
     const { data, error } = await supabase
       .from("mensagens_chat")
-      .insert({
-        conversa_id: conversaSelecionada.id,
-        autor_id: usuarioId,
-        conteudo: texto,
-        lida: false,
-      })
-      .select()
-      .single();
+      .insert({ conversa_id: ativa.id, autor_id: eu.id, conteudo, lida: false })
+      .select().single();
 
-    if (error) {
-      console.error("Erro ao enviar mensagem:", error.message);
-      if (!conteudoOverride) setNovaMensagem(texto);
-      return;
-    }
-
-    if (data) {
-      setMensagens((prev) => {
-        if (prev.some((m) => m.id === data.id)) return prev;
-        return [...prev, data];
-      });
-    }
+    if (error) { console.error(error.message); if (!override) setTexto(conteudo); return; }
+    if (data) setMensagens(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data]);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      enviarMensagem();
-    }
-  };
+  // ── Upload de arquivo ─────────────────────────────────────────────────────
 
-  const handleFileUpload = async (file: File, tipo: "imagem" | "arquivo") => {
-    if (!conversaSelecionada || !usuarioId) return;
-    setUploading(true);
-    setUploadErro(null);
-
+  const upload = async (file: File, tipo: "imagem" | "arquivo") => {
+    if (!ativa || !eu) return;
+    setUploading(true); setUploadErro(null); setMenuFoto(false);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${conversaSelecionada.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("chat-uploads")
-        .upload(path, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("chat-uploads")
-        .getPublicUrl(path);
-
+      const path = `${ativa.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: err } = await supabase.storage.from("chat-uploads").upload(path, file);
+      if (err) throw err;
+      const { data: { publicUrl } } = supabase.storage.from("chat-uploads").getPublicUrl(path);
       const conteudo = JSON.stringify(
         tipo === "imagem"
           ? { tipo: "imagem", url: publicUrl, nome: file.name }
           : { tipo: "arquivo", url: publicUrl, nome: file.name, tamanho: file.size }
       );
-
-      await enviarMensagem(conteudo);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Erro ao enviar arquivo";
+      await enviar(conteudo);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erro ao enviar arquivo";
       setUploadErro(msg);
-      setTimeout(() => setUploadErro(null), 4000);
-    } finally {
-      setUploading(false);
-    }
+      setTimeout(() => setUploadErro(null), 5000);
+    } finally { setUploading(false); }
   };
 
-  // Agrupa mensagens por data
-  const mensagensAgrupadas = mensagens.reduce<Array<{ label: string; itens: Mensagem[] }>>(
-    (acc, msg) => {
-      const label = labelData(msg.created_at);
-      const grupo = acc.find((g) => g.label === label);
-      if (grupo) grupo.itens.push(msg);
-      else acc.push({ label, itens: [msg] });
-      return acc;
-    },
-    []
+  // ── Abrir / criar conversa ────────────────────────────────────────────────
+
+  const abrirConversa = async (alvo: Perfil) => {
+    if (!eu || criando) return;
+
+    const existente = conversas.find(c =>
+      (c.participante_a === eu.id && c.participante_b === alvo.id) ||
+      (c.participante_b === eu.id && c.participante_a === alvo.id)
+    );
+    if (existente) { setAtiva(existente); setModal(false); return; }
+
+    setCriando(true);
+    try {
+      const { data, error } = await supabase
+        .from("conversas")
+        .insert({ nome: `${eu.nome} ↔ ${alvo.nome}`, tipo: "privado", participante_a: eu.id, participante_b: alvo.id })
+        .select(`
+          id, tipo, created_at, participante_a, participante_b,
+          perfil_a:perfis!participante_a(id, nome, role),
+          perfil_b:perfis!participante_b(id, nome, role)
+        `)
+        .single();
+      if (error) throw error;
+      const nova = data as unknown as Conversa;
+      setConversas(prev => [nova, ...prev]);
+      setAtiva(nova);
+      setModal(false);
+    } catch (e) {
+      console.error("Erro ao criar conversa:", e);
+    } finally { setCriando(false); }
+  };
+
+  // ── Carregar usuários para nova conversa ──────────────────────────────────
+
+  useEffect(() => {
+    if (!modal || !eu) return;
+    const roles = PODE_CONTATAR[eu.role] ?? [];
+    if (!roles.length) return;
+    (async () => {
+      const { data } = await supabase
+        .from("perfis").select("id, nome, role")
+        .in("role", roles)
+        .neq("id", eu.id)
+        .order("nome");
+      if (data) setUsuarios(data as Perfil[]);
+    })();
+  }, [modal, eu]);
+
+  // ── Derivados ─────────────────────────────────────────────────────────────
+
+  const conversasFiltradas = conversas.filter(c => {
+    if (!eu) return false;
+    const o = outro(c, eu.id);
+    return o?.nome?.toLowerCase().includes(busca.toLowerCase());
+  });
+
+  const usuariosFiltrados = usuarios.filter(u =>
+    u.nome.toLowerCase().includes(buscaUsuario.toLowerCase())
   );
 
-  const conversasFiltradas = conversas.filter((c) =>
-    c.nome.toLowerCase().includes(busca.toLowerCase())
-  );
+  const usuariosPorRole = usuariosFiltrados.reduce<Record<string, Perfil[]>>((acc, u) => {
+    if (!acc[u.role]) acc[u.role] = [];
+    acc[u.role].push(u);
+    return acc;
+  }, {});
+
+  const agrupado = mensagens.reduce<Array<{ label: string; itens: Mensagem[] }>>((acc, m) => {
+    const l = labelData(m.created_at);
+    const g = acc.find(x => x.label === l);
+    if (g) g.itens.push(m); else acc.push({ label: l, itens: [m] });
+    return acc;
+  }, []);
+
+  const parceiro = ativa && eu ? outro(ativa, eu.id) : null;
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div className="flex h-full overflow-hidden rounded-xl border border-slate-200 bg-white relative">
 
-      {/* Inputs de arquivo ocultos */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFileUpload(file, "arquivo");
-          e.target.value = "";
-        }}
-      />
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFileUpload(file, "imagem");
-          e.target.value = "";
-        }}
-      />
+      {/* Inputs ocultos */}
+      <input ref={fileRef}   type="file" className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) upload(f, "arquivo"); e.target.value = ""; }} />
+      <input ref={imagemRef} type="file" accept="image/*" className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) upload(f, "imagem"); e.target.value = ""; }} />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) upload(f, "imagem"); e.target.value = ""; }} />
 
-      {/* LISTA DE CONVERSAS */}
-      <div className="w-64 border-r border-slate-200 flex flex-col shrink-0 pt-16 md:pt-0">
-        <div className="p-4 border-b border-slate-200">
-          <h1 className="flex items-center gap-2 text-lg font-semibold text-blue-900 whitespace-nowrap">
-            <MessageCircle className="h-5 w-5 shrink-0" />
-            Mensagens
-          </h1>
-          <div className="mt-2 relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+      {/* ══════════════════════════════════════════════════════
+          PAINEL ESQUERDO — lista de conversas
+      ══════════════════════════════════════════════════════ */}
+      <div className={`
+        ${ativa ? "hidden md:flex" : "flex"}
+        w-full md:w-72 lg:w-80 flex-col shrink-0
+        border-r border-slate-200 pt-16 md:pt-0
+      `}>
+
+        {/* Cabeçalho */}
+        <div className="px-4 pt-4 pb-3 border-b border-slate-100 space-y-3">
+          <div className="flex items-center justify-between">
+            <h1 className="flex items-center gap-2 text-base font-semibold text-slate-800">
+              <MessageCircle className="h-5 w-5 text-blue-600 shrink-0" />
+              Mensagens
+            </h1>
+            <button
+              onClick={() => { setModal(true); setBuscaUsuario(""); setUsuarios([]); }}
+              title="Nova conversa"
+              className="w-8 h-8 rounded-full bg-blue-50 hover:bg-blue-100 flex items-center justify-center transition-colors"
+            >
+              <PenSquare className="h-4 w-4 text-blue-600" />
+            </button>
+          </div>
+
+          {/* Busca */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
             <input
-              type="text"
-              placeholder="Buscar conversa..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 pl-8 pr-7 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="text" placeholder="Buscar..." value={busca}
+              onChange={e => setBusca(e.target.value)}
+              className="w-full rounded-full border border-slate-200 bg-slate-50 pl-9 pr-8 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
             />
             {busca && (
-              <button
-                onClick={() => setBusca("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              >
-                <X className="h-3.5 w-3.5" />
+              <button onClick={() => setBusca("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+                <X className="h-3.5 w-3.5 text-slate-400" />
               </button>
             )}
           </div>
         </div>
 
+        {/* Lista */}
         <div className="flex-1 overflow-y-auto">
-          {conversasFiltradas.length === 0 && (
-            <p className="p-4 text-sm text-slate-400">
-              {busca ? "Nenhuma conversa encontrada." : "Nenhuma conversa ainda."}
-            </p>
+          {conversasFiltradas.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-2 p-6 text-center">
+              <MessageCircle className="h-10 w-10 text-slate-200" />
+              <p className="text-sm text-slate-400">
+                {busca ? "Nenhuma conversa encontrada" : "Nenhuma conversa ainda"}
+              </p>
+              {!busca && (
+                <button
+                  onClick={() => { setModal(true); setBuscaUsuario(""); setUsuarios([]); }}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Iniciar uma conversa
+                </button>
+              )}
+            </div>
+          ) : (
+            conversasFiltradas.map(c => {
+              if (!eu) return null;
+              const o = outro(c, eu.id);
+              if (!o) return null;
+              const nl = naoLidas[c.id] ?? 0;
+              const isAtiva = ativa?.id === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setAtiva(c)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-slate-50 transition-colors ${
+                    isAtiva ? "bg-blue-50 border-l-2 border-l-blue-500" : "hover:bg-slate-50"
+                  }`}
+                >
+                  {/* Avatar */}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 ${ROLE_STYLE[o.role] ?? "bg-slate-100 text-slate-600"}`}>
+                    {iniciais(o.nome)}
+                  </div>
+
+                  <div className="flex-1 overflow-hidden">
+                    <div className="flex items-center justify-between gap-1">
+                      <p className={`text-sm truncate ${nl > 0 && !isAtiva ? "font-bold text-slate-900" : "font-medium text-slate-700"}`}>
+                        {o.nome}
+                      </p>
+                      {nl > 0 && !isAtiva && (
+                        <span className="shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">
+                          {nl > 99 ? "99+" : nl}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400 truncate">{ROLE_LABEL[o.role] ?? o.role}</p>
+                  </div>
+                </button>
+              );
+            })
           )}
-          {conversasFiltradas.map((conversa) => {
-            const naoLidas = naoLidasPorConversa[conversa.id] ?? 0;
-            const ativa = conversaSelecionada?.id === conversa.id;
-            return (
-              <button
-                key={conversa.id}
-                onClick={() => setConversaSelecionada(conversa)}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors ${
-                  ativa ? "bg-blue-50" : ""
-                }`}
-              >
-                <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-semibold text-sm shrink-0">
-                  {conversa.nome?.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <p className={`text-sm truncate w-full ${naoLidas > 0 && !ativa ? "font-bold text-slate-900" : "font-medium text-slate-800"}`}>
-                    {conversa.nome}
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    {conversa.tipo === "grupo" ? "Grupo" : "Conversa direta"}
-                  </p>
-                </div>
-                {naoLidas > 0 && !ativa && (
-                  <span className="shrink-0 min-w-5 h-5 px-1 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-semibold">
-                    {naoLidas > 99 ? "99+" : naoLidas}
-                  </span>
-                )}
-              </button>
-            );
-          })}
         </div>
       </div>
 
-      {/* ÁREA DA CONVERSA */}
-      {conversaSelecionada ? (
+      {/* ══════════════════════════════════════════════════════
+          PAINEL DIREITO — conversa ativa
+      ══════════════════════════════════════════════════════ */}
+      {ativa && parceiro ? (
         <div className="flex-1 flex flex-col overflow-hidden">
 
-          {/* CABEÇALHO */}
-          <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-3 shrink-0">
-            <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-semibold text-sm shrink-0">
-              {conversaSelecionada.nome?.charAt(0).toUpperCase()}
+          {/* Cabeçalho da conversa */}
+          <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-3 shrink-0 bg-white">
+            <button onClick={() => setAtiva(null)} className="md:hidden text-slate-500 mr-1">
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 ${ROLE_STYLE[parceiro.role] ?? "bg-slate-100 text-slate-600"}`}>
+              {iniciais(parceiro.nome)}
             </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-semibold text-slate-800 truncate">
-                {conversaSelecionada.nome}
-              </p>
-              <p className="text-xs min-h-4">
-                {digitando ? (
-                  <span className="text-blue-500 animate-pulse">{digitando} está digitando...</span>
-                ) : (
-                  <span className="text-slate-400">
-                    {conversaSelecionada.tipo === "grupo" ? "Grupo" : "Conversa direta"}
-                  </span>
-                )}
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-semibold text-slate-800 truncate">{parceiro.nome}</p>
+              <p className="text-xs min-h-[1rem]">
+                {digitando
+                  ? <span className="text-blue-500 animate-pulse">digitando...</span>
+                  : <span className="text-slate-400">{ROLE_LABEL[parceiro.role] ?? parceiro.role}</span>
+                }
               </p>
             </div>
           </div>
 
-          {/* MENSAGENS */}
-          <div ref={mensagensContainerRef} className="flex-1 overflow-y-auto p-4">
+          {/* Área de mensagens */}
+          <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 bg-slate-50 space-y-1">
             {mensagens.length === 0 && (
-              <p className="text-center text-sm text-slate-400 mt-8">
-                Nenhuma mensagem ainda. Seja o primeiro a enviar!
-              </p>
+              <div className="flex flex-col items-center justify-center h-full text-center gap-2 pb-8">
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-base font-bold ${ROLE_STYLE[parceiro.role] ?? "bg-slate-100 text-slate-600"}`}>
+                  {iniciais(parceiro.nome)}
+                </div>
+                <p className="text-sm font-semibold text-slate-700">{parceiro.nome}</p>
+                <p className="text-xs text-slate-400">{ROLE_LABEL[parceiro.role]}</p>
+                <p className="text-xs text-slate-300 mt-2">Início da conversa · Diga olá 👋</p>
+              </div>
             )}
 
-            {mensagensAgrupadas.map((grupo) => (
+            {agrupado.map(grupo => (
               <div key={grupo.label}>
+
                 {/* Separador de data */}
                 <div className="flex items-center gap-3 my-4">
                   <div className="flex-1 h-px bg-slate-200" />
-                  <span className="text-xs text-slate-400 font-medium px-2 whitespace-nowrap">
-                    {grupo.label}
-                  </span>
+                  <span className="text-xs text-slate-400 font-medium whitespace-nowrap px-1">{grupo.label}</span>
                   <div className="flex-1 h-px bg-slate-200" />
                 </div>
 
-                <div className="space-y-2">
-                  {grupo.itens.map((msg) => {
-                    const isMinha = msg.autor_id === usuarioId;
-                    const conteudo = parseConteudo(msg.conteudo);
-                    const nomeAutor = perfisMap[msg.autor_id];
+                <div className="space-y-1.5">
+                  {grupo.itens.map((msg, i) => {
+                    const minha = msg.autor_id === eu?.id;
+                    const c = parseConteudo(msg.conteudo);
+                    const ant = grupo.itens[i - 1];
+                    const primeiraDoGrupo = !ant || ant.autor_id !== msg.autor_id;
 
                     return (
-                      <div
-                        key={msg.id}
-                        className={`flex flex-col ${isMinha ? "items-end" : "items-start"}`}
-                      >
-                        {/* Nome do autor em grupos */}
-                        {!isMinha && conversaSelecionada.tipo === "grupo" && nomeAutor && (
-                          <span className="text-xs text-slate-500 mb-0.5 ml-1">{nomeAutor}</span>
+                      <div key={msg.id} className={`flex items-end gap-1.5 ${minha ? "flex-row-reverse" : "flex-row"}`}>
+
+                        {/* Mini-avatar do parceiro (apenas na primeira msg da sequência) */}
+                        {!minha && (
+                          <div className="w-6 shrink-0 self-end">
+                            {primeiraDoGrupo && (
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${ROLE_STYLE[parceiro.role] ?? "bg-slate-100"}`}>
+                                {iniciais(parceiro.nome)[0]}
+                              </div>
+                            )}
+                          </div>
                         )}
 
-                        <div
-                          className={`max-w-xs lg:max-w-sm rounded-2xl text-sm overflow-hidden ${
-                            isMinha
-                              ? "bg-blue-600 text-white rounded-br-sm"
-                              : "bg-slate-100 text-slate-800 rounded-bl-sm"
-                          }`}
-                        >
-                          {/* Conteúdo da mensagem */}
-                          {conteudo.tipo === "texto" && (
-                            <p className="px-4 pt-2 pb-1 break-words whitespace-pre-wrap">
-                              {conteudo.texto}
+                        {/* Balão */}
+                        <div className={`max-w-xs sm:max-w-sm lg:max-w-md rounded-2xl overflow-hidden shadow-sm text-sm ${
+                          minha
+                            ? "bg-blue-600 text-white rounded-br-sm"
+                            : "bg-white text-slate-800 rounded-bl-sm"
+                        }`}>
+
+                          {c.tipo === "texto" && (
+                            <p className="px-4 pt-2.5 pb-1 break-words whitespace-pre-wrap leading-relaxed">
+                              {c.texto}
                             </p>
                           )}
 
-                          {conteudo.tipo === "imagem" && (
-                            <button
-                              onClick={() => window.open(conteudo.url, "_blank")}
-                              className="block w-full"
-                            >
+                          {c.tipo === "imagem" && (
+                            <button onClick={() => window.open(c.url, "_blank")} className="block">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={conteudo.url}
-                                alt={conteudo.nome}
-                                className="max-w-full max-h-48 object-cover"
-                              />
+                              <img src={c.url} alt={c.nome} className="max-w-full max-h-56 object-cover" />
                             </button>
                           )}
 
-                          {conteudo.tipo === "arquivo" && (
-                            <a
-                              href={conteudo.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className={`flex items-center gap-3 px-4 pt-3 pb-1 ${
-                                isMinha ? "text-blue-100" : "text-slate-700"
-                              }`}
-                            >
-                              <FileText
-                                className={`h-8 w-8 shrink-0 ${
-                                  isMinha ? "text-blue-200" : "text-slate-400"
-                                }`}
-                              />
+                          {c.tipo === "arquivo" && (
+                            <a href={c.url} target="_blank" rel="noreferrer"
+                              className={`flex items-center gap-3 px-4 pt-3 pb-1 ${minha ? "text-blue-100" : "text-slate-600"}`}>
+                              <FileText className={`h-8 w-8 shrink-0 ${minha ? "text-blue-200" : "text-slate-400"}`} />
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{conteudo.nome}</p>
-                                <p className={`text-xs ${isMinha ? "text-blue-200" : "text-slate-400"}`}>
-                                  {formatarTamanho(conteudo.tamanho)}
-                                </p>
+                                <p className="text-sm font-medium truncate">{c.nome}</p>
+                                <p className={`text-xs ${minha ? "text-blue-200" : "text-slate-400"}`}>{formatarTamanho(c.tamanho)}</p>
                               </div>
                               <Download className="h-4 w-4 shrink-0" />
                             </a>
                           )}
 
-                          {/* Horário + status de leitura */}
-                          <div
-                            className={`flex items-center justify-end gap-1 px-3 pb-1.5 pt-0.5 ${
-                              isMinha ? "text-blue-200" : "text-slate-400"
-                            }`}
-                          >
+                          {/* Horário + status */}
+                          <div className={`flex items-center justify-end gap-1 px-3 pb-1.5 pt-0.5 ${minha ? "text-blue-200" : "text-slate-400"}`}>
                             <span className="text-xs">
-                              {new Date(msg.created_at).toLocaleTimeString("pt-BR", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {new Date(msg.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                             </span>
-                            {isMinha && (
-                              msg.lida
-                                ? <CheckCheck className="h-3 w-3" />
-                                : <Check className="h-3 w-3" />
+                            {minha && (msg.lida
+                              ? <CheckCheck className="h-3 w-3" />
+                              : <Check className="h-3 w-3" />
                             )}
                           </div>
                         </div>
@@ -583,90 +624,200 @@ export default function ChatPage() {
               </div>
             ))}
 
-            {/* Indicador de digitação (bolinha animada) */}
+            {/* Indicador de digitação */}
             {digitando && (
-              <div className="flex items-start mt-2">
-                <div className="bg-slate-100 rounded-2xl rounded-bl-sm px-4 py-2.5 flex items-center gap-1.5">
-                  <span
-                    className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0ms" }}
-                  />
-                  <span
-                    className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "150ms" }}
-                  />
-                  <span
-                    className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "300ms" }}
-                  />
+              <div className="flex items-center gap-1.5 mt-2">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${ROLE_STYLE[parceiro.role] ?? "bg-slate-200"}`}>
+                  {iniciais(parceiro.nome)[0]}
+                </div>
+                <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm flex gap-1 items-center">
+                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
               </div>
             )}
 
-            <div ref={mensagensEndRef} />
+            <div ref={fimRef} />
           </div>
 
           {/* Erro de upload */}
           {uploadErro && (
-            <div className="mx-3 mb-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 flex items-center justify-between">
+            <div className="mx-3 mb-1 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 flex items-center justify-between shrink-0">
               <span>{uploadErro}</span>
-              <button onClick={() => setUploadErro(null)}>
-                <X className="h-3.5 w-3.5" />
+              <button onClick={() => setUploadErro(null)}><X className="h-3.5 w-3.5" /></button>
+            </div>
+          )}
+
+          {/* Menu foto (mobile) */}
+          {menuFoto && (
+            <div className="mx-3 mb-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden shrink-0">
+              <button
+                onClick={() => cameraRef.current?.click()}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 text-sm text-slate-700 border-b border-slate-100"
+              >
+                <Camera className="h-4 w-4 text-slate-500" /> Tirar foto
+              </button>
+              <button
+                onClick={() => { imagemRef.current?.click(); setMenuFoto(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 text-sm text-slate-700"
+              >
+                <Images className="h-4 w-4 text-slate-500" /> Escolher da galeria
               </button>
             </div>
           )}
 
-          {/* INPUT DE MENSAGEM */}
-          <div className="p-3 border-t border-slate-200 flex items-end gap-2 shrink-0">
+          {/* Barra de input */}
+          <div className="p-3 border-t border-slate-200 flex items-end gap-2 shrink-0 bg-white">
             <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
+              onClick={() => fileRef.current?.click()} disabled={uploading}
               title="Enviar arquivo"
-              className="text-slate-400 hover:text-slate-600 shrink-0 mb-1.5 disabled:opacity-40"
+              className="text-slate-400 hover:text-blue-500 disabled:opacity-40 transition-colors shrink-0 mb-1.5"
             >
               <Paperclip className="h-5 w-5" />
             </button>
+
             <button
-              onClick={() => imageInputRef.current?.click()}
+              onClick={() => isMobile ? setMenuFoto(v => !v) : imagemRef.current?.click()}
               disabled={uploading}
               title="Enviar imagem"
-              className="text-slate-400 hover:text-slate-600 shrink-0 mb-1.5 disabled:opacity-40"
+              className="text-slate-400 hover:text-blue-500 disabled:opacity-40 transition-colors shrink-0 mb-1.5"
             >
               <ImageIcon className="h-5 w-5" />
             </button>
+
             <textarea
               ref={textareaRef}
-              value={novaMensagem}
-              onChange={handleTextareaChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Digite uma mensagem... (Enter envia, Shift+Enter nova linha)"
+              value={texto}
+              onChange={e => {
+                setTexto(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                broadcastTyping();
+              }}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); } }}
+              placeholder="Mensagem… (Enter envia · Shift+Enter nova linha)"
               rows={1}
-              className="flex-1 rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden leading-5"
+              className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white resize-none overflow-hidden leading-5 transition-colors"
               style={{ minHeight: "38px", maxHeight: "120px" }}
             />
+
             <button
-              onClick={() => enviarMensagem()}
-              disabled={!novaMensagem.trim() || uploading}
+              onClick={() => enviar()} disabled={!texto.trim() || uploading}
               className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 mb-0.5"
             >
-              {uploading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Send className="h-4 w-4 text-white" />
-              )}
+              {uploading
+                ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : <Send className="h-4 w-4 text-white" />}
             </button>
           </div>
-
         </div>
+
       ) : (
-        <div className="flex-1 flex items-center justify-center">
+        /* Estado vazio — desktop */
+        <div className="hidden md:flex flex-1 items-center justify-center">
           <div className="text-center">
-            <MessageCircle className="h-12 w-12 text-slate-200 mx-auto mb-3" />
-            <p className="text-slate-400 text-sm">Selecione uma conversa para começar</p>
+            <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
+              <MessageCircle className="h-8 w-8 text-blue-300" />
+            </div>
+            <p className="text-sm font-medium text-slate-600">Selecione uma conversa</p>
+            <p className="text-xs text-slate-400 mt-1">ou inicie uma nova</p>
+            <button
+              onClick={() => { setModal(true); setBuscaUsuario(""); setUsuarios([]); }}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 transition-colors"
+            >
+              Nova conversa
+            </button>
           </div>
         </div>
       )}
 
+      {/* ══════════════════════════════════════════════════════
+          MODAL — Nova conversa
+      ══════════════════════════════════════════════════════ */}
+      {modal && (
+        <div
+          className="absolute inset-0 z-30 flex items-start justify-center bg-black/25 backdrop-blur-sm p-4 pt-10"
+          onClick={e => { if (e.target === e.currentTarget) setModal(false); }}
+        >
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-800">Nova conversa</h2>
+                {eu && (
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Você pode contatar: {(PODE_CONTATAR[eu.role] ?? []).map(r => ROLE_LABEL[r] ?? r).join(", ")}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setModal(false)}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+              >
+                <X className="h-4 w-4 text-slate-600" />
+              </button>
+            </div>
+
+            {/* Busca */}
+            <div className="px-4 py-3 border-b border-slate-100 shrink-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                <input
+                  autoFocus type="text" placeholder="Buscar por nome…"
+                  value={buscaUsuario} onChange={e => setBuscaUsuario(e.target.value)}
+                  className="w-full rounded-full border border-slate-200 bg-slate-50 pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Lista de usuários agrupada por role */}
+            <div className="flex-1 overflow-y-auto py-1">
+              {usuarios.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-28 text-center px-4">
+                  <p className="text-sm text-slate-400">Carregando usuários…</p>
+                </div>
+              )}
+
+              {Object.entries(usuariosPorRole).map(([role, lista]) => (
+                <div key={role}>
+                  <p className="px-4 pt-3 pb-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    {ROLE_LABEL[role] ?? role}
+                  </p>
+                  {lista.map(u => {
+                    const jaTem = conversas.some(c =>
+                      (c.participante_a === eu?.id && c.participante_b === u.id) ||
+                      (c.participante_b === eu?.id && c.participante_a === u.id)
+                    );
+                    return (
+                      <button
+                        key={u.id}
+                        onClick={() => abrirConversa(u)}
+                        disabled={criando}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors disabled:opacity-60"
+                      >
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 ${ROLE_STYLE[u.role] ?? "bg-slate-100 text-slate-600"}`}>
+                          {iniciais(u.nome)}
+                        </div>
+                        <div className="flex-1 text-left overflow-hidden">
+                          <p className="text-sm font-medium text-slate-800 truncate">{u.nome}</p>
+                          {jaTem && <p className="text-xs text-blue-500">Conversa existente — abrir</p>}
+                        </div>
+                        {criando && <div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+
+              {usuarios.length > 0 && usuariosFiltrados.length === 0 && (
+                <p className="text-center text-sm text-slate-400 py-8">Nenhum resultado para "{buscaUsuario}"</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
