@@ -24,6 +24,16 @@ export default function GestaoCriancasPage() {
     c.nome?.toLowerCase().includes(busca.toLowerCase())
   );
 
+  function calcularIdade(dataNascimento: string | null): string {
+    if (!dataNascimento) return "";
+    const hoje = new Date();
+    const nasc = new Date(dataNascimento);
+    let idade = hoje.getFullYear() - nasc.getFullYear();
+    const m = hoje.getMonth() - nasc.getMonth();
+    if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+    return idade >= 0 ? `${idade} anos` : "";
+  }
+
   function abrirWhatsApp(telefone: string, nome: string) {
     const numero = telefone.replace(/\D/g, "");
     const msg = encodeURIComponent(`Ola! Somos da Clinica Abraco ABA. Entramos em contato referente ao atendimento de ${nome}.`);
@@ -78,7 +88,7 @@ export default function GestaoCriancasPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold text-slate-800 text-sm truncate">{c.nome}</p>
-                  <p className="text-xs text-slate-400">{c.idade ? c.idade + " anos" : ""}</p>
+                  <p className="text-xs text-slate-400">{calcularIdade(c.data_nascimento)}</p>
                 </div>
               </div>
 

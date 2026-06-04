@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function GestaoDashboardPage() {
@@ -379,7 +380,7 @@ export default function GestaoDashboardPage() {
           { label: "Agenda", icon: "📅", href: "/gestao/agenda", color: "bg-purple-50 border-purple-200 text-purple-700" },
           { label: "Relatórios", icon: "📊", href: "/gestao/relatorios", color: "bg-emerald-50 border-emerald-200 text-emerald-700" },
         ].map((a) => (
-          <a
+          <Link
             key={a.href}
             href={a.href}
             className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border
@@ -387,7 +388,7 @@ export default function GestaoDashboardPage() {
           >
             <span className="text-2xl">{a.icon}</span>
             <span>{a.label}</span>
-          </a>
+          </Link>
         ))}
       </div>
 

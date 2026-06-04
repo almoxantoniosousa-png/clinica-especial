@@ -7,7 +7,7 @@ import { registrarLog } from "@/lib/auditoria";
 
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
-type Profissional = { id: string; nome: string; especialidade: string; role: string; pix_key: string };
+type Profissional = { id: string; nome: string; especialidade: string; role: string };
 type Folha = {
   id: string;
   profissional_id: string;
@@ -67,7 +67,7 @@ export default function FolhaPagamentoPage() {
   async function carregarDados() {
     setLoading(true);
     const [{ data: profs }, { data: folhasData }] = await Promise.all([
-      supabase.from("atendentes").select("id, nome, especialidade, role, pix_key").order("nome"),
+      supabase.from("atendentes").select("id, nome, especialidade, role").order("nome"),
       supabase.from("folha_pagamento").select("*").eq("mes", mes).eq("ano", ano),
     ]);
     setProfissionais(profs || []);
@@ -214,9 +214,6 @@ export default function FolhaPagamentoPage() {
             <div>
               <p className="font-semibold text-slate-800 text-sm">{prof?.nome || "—"}</p>
               <p className="text-xs text-slate-400">{prof?.especialidade || prof?.role}</p>
-              {prof?.pix_key && (
-                <p className="text-xs text-slate-400 mt-0.5">PIX: <span className="font-medium text-slate-600">{prof.pix_key}</span></p>
-              )}
             </div>
           </div>
 

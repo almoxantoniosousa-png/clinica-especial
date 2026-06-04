@@ -318,7 +318,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
     const { data } = await supabase.from("contas_receber")
       .select("*, criancas(nome)").eq("mes_referencia", mesAno).order("created_at", { ascending: false });
     setContas(data || []);
-    const { data: cs } = await supabase.from("criancas").select("id, nome, valor_sessao, plano_saude, numero_processo").order("nome");
+    const { data: cs } = await supabase.from("criancas").select("id, nome, plano_saude, numero_processo").order("nome");
     setCriancas(cs || []);
     setLoading(false);
   };
@@ -329,7 +329,6 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
 
   useEffect(() => {
     if (criancaSelecionada) {
-      setValorSessao(criancaSelecionada.valor_sessao || "");
       setPlano(criancaSelecionada.plano_saude || "");
       setProcesso(criancaSelecionada.numero_processo || "");
     }
