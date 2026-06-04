@@ -8,6 +8,7 @@ export default function RelatorioPage() {
   const router = useRouter();
   const [criancas, setCriancas] = useState<any[]>([]);
   const [autor, setAutor] = useState<any>(null);
+  const [autorAuthId, setAutorAuthId] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
   const [criancaId, setCriancaId] = useState("");
@@ -28,12 +29,20 @@ export default function RelatorioPage() {
     async function carregar() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: perfil } = await supabase
+        setAutorAuthId(user.id);
+        const { data: porId } = await supabase
           .from("atendentes").select("id, nome, especialidade")
-          .eq("email", user.email).maybeSingle();
-        if (perfil) setAutor(perfil);
+          .eq("id", user.id).maybeSingle();
+        if (porId) {
+          setAutor(porId);
+        } else {
+          const { data: porEmail } = await supabase
+            .from("atendentes").select("id, nome, especialidade")
+            .eq("email", user.email).maybeSingle();
+          if (porEmail) setAutor(porEmail);
+        }
       }
-      const { data } = await supabase.from("criancas").select("id, nome, idade, serie, ano").order("nome");
+      const { data } = await supabase.from("criancas").select("id, nome").order("nome");
       setCriancas(data || []);
     }
     carregar();
@@ -60,7 +69,8 @@ export default function RelatorioPage() {
     };
     const { error } = await supabase.from("prontuarios").insert([{
       crianca_id: criancaId,
-      autor_id: autor?.id,
+      autor_id: autorAuthId ?? autor?.id,
+      autor_nome: autor?.nome || null,
       tipo: "relatorio_diario",
       titulo: `Relatorio de Avaliacao -- ${new Date(data + "T12:00:00").toLocaleDateString("pt-BR")}`,
       conteudo: JSON.stringify(conteudo),
@@ -158,8 +168,6 @@ export default function RelatorioPage() {
           {criancaSelecionada && (
             <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 flex flex-wrap gap-4 text-sm">
               <span className="text-blue-800 font-semibold">{criancaSelecionada.nome}</span>
-              {criancaSelecionada.idade && <span className="text-blue-600">Idade: <strong>{criancaSelecionada.idade}</strong></span>}
-              {criancaSelecionada.serie && <span className="text-blue-600">Serie: <strong>{criancaSelecionada.serie}</strong></span>}
             </div>
           )}
 

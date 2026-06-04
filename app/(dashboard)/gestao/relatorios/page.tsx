@@ -23,14 +23,14 @@ export default function GestaoRelatoriosPage() {
     setErro("");
     const { data, error } = await supabase
       .from("prontuarios")
-      .select("*, criancas(nome), atendentes!autor_id(nome)")
+      .select("*, criancas(nome)")
       .eq("tipo", "relatorio_diario")
       .order("created_at", { ascending: false });
     if (error) { setErro("Erro ao carregar os relatórios: " + error.message); setLoading(false); return; }
     setRelatorios(data || []);
 
     // Profissionais únicos para filtro
-    const nomes = Array.from(new Set((data || []).map((r: any) => r.atendentes?.nome).filter(Boolean))).sort();
+    const nomes = Array.from(new Set((data || []).map((r: any) => r.autor_nome).filter(Boolean))).sort();
     setProfissionais(nomes as string[]);
     setLoading(false);
   }
@@ -41,9 +41,9 @@ export default function GestaoRelatoriosPage() {
     const termoBusca = busca.toLowerCase();
     const matchBusca = !busca ||
       r.criancas?.nome?.toLowerCase().includes(termoBusca) ||
-      r.atendentes?.nome?.toLowerCase().includes(termoBusca);
+      r.autor_nome?.toLowerCase().includes(termoBusca);
 
-    const matchProfissional = !filtroProfissional || r.atendentes?.nome === filtroProfissional;
+    const matchProfissional = !filtroProfissional || r.autor_nome === filtroProfissional;
 
     const dataRel = r.created_at?.slice(0, 10);
     const matchInicio = !dataInicio || dataRel >= dataInicio;
@@ -174,7 +174,7 @@ export default function GestaoRelatoriosPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-slate-800 text-sm">{r.criancas?.nome}</p>
                       <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-                        {r.atendentes?.nome}
+                        {r.autor_nome}
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
@@ -187,16 +187,53 @@ export default function GestaoRelatoriosPage() {
                 </button>
 
                 {estaAberto && conteudo && (
-                  <div className="border-t border-slate-100 px-5 py-4 space-y-4 bg-slate-50">
-                    {campos.map(campo => conteudo[campo.key] ? (
-                      <div key={campo.key}>
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${campo.badge}`}>{campo.label}</span>
-                        <p className="text-sm text-slate-700 mt-2 leading-relaxed">{conteudo[campo.key]}</p>
+                  <div className="border-t border-slate-100">
+                    {/* Cabeçalho do documento */}
+                    <div className="bg-blue-900 px-5 py-4 flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white text-lg shrink-0">📋</div>
+                      <div>
+                        <p className="text-white font-bold text-sm">Relatório de Avaliação de Desempenho</p>
+                        <p className="text-blue-300 text-xs mt-0.5">
+                          {r.criancas?.nome} · {r.autor_nome} · {new Date(r.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                        </p>
                       </div>
-                    ) : null)}
-                    {!campos.some(c => conteudo[c.key]) && (
-                      <p className="text-sm text-slate-400 italic">Conteúdo não estruturado: {r.conteudo}</p>
-                    )}
+                    </div>
+
+                    <div className="p-5 space-y-3 bg-slate-50">
+                      {/* Objetivo do atendimento */}
+                      {conteudo.objetivo_atendimento && (
+                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                          <div className="bg-slate-100 px-4 py-2 border-b border-slate-200">
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Objetivo do Atendimento</span>
+                          </div>
+                          <p className="px-4 py-3 text-sm text-slate-700 leading-relaxed">{conteudo.objetivo_atendimento}</p>
+                        </div>
+                      )}
+
+                      {/* Campos principais em grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {campos.map(campo => conteudo[campo.key] ? (
+                          <div key={campo.key} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                            <div className={`px-4 py-2 border-b ${campo.badge} border-opacity-30`}>
+                              <span className="text-xs font-bold uppercase tracking-wide">{campo.label}</span>
+                            </div>
+                            <p className="px-4 py-3 text-sm text-slate-700 leading-relaxed min-h-[60px]">{conteudo[campo.key]}</p>
+                          </div>
+                        ) : null)}
+                      </div>
+
+                      {/* Especialidade */}
+                      {conteudo.especialidade && (
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl border border-slate-200">
+                          <span className="text-xs text-slate-400 font-medium">Especialidade:</span>
+                          <span className="text-xs font-semibold text-slate-700">{conteudo.especialidade}</span>
+                        </div>
+                      )}
+
+                      {!campos.some(c => conteudo[c.key]) && (
+                        <p className="text-sm text-slate-400 italic px-2">Conteúdo não estruturado.</p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

@@ -105,7 +105,7 @@ export default function GestaoDashboardPage() {
       // Últimos relatórios (5 mais recentes)
       const { data: relatoriosDados } = await supabase
         .from("prontuarios")
-        .select("id, titulo, created_at, criancas(nome), atendentes!autor_id(nome)")
+        .select("id, titulo, created_at, autor_nome, criancas(nome)")
         .eq("tipo", "relatorio_diario")
         .order("created_at", { ascending: false })
         .limit(5);
@@ -460,7 +460,7 @@ export default function GestaoDashboardPage() {
                   <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-sm flex-shrink-0">📝</div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-slate-800 truncate">{r.criancas?.nome || "—"}</p>
-                    <p className="text-[10px] text-slate-400 truncate">{(r.atendentes as any)?.nome || "—"}</p>
+                    <p className="text-[10px] text-slate-400 truncate">{r.autor_nome || "—"}</p>
                   </div>
                   <p className="text-[10px] text-slate-400 flex-shrink-0">
                     {new Date(r.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
