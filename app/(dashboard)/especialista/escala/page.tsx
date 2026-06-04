@@ -15,26 +15,30 @@ type EscalaItem = {
   profissional_nome: string | null;
 };
 
-function getCorServico(servico: string) {
-  const s = servico.toLowerCase();
-  if (s.includes("avd"))      return "bg-orange-100 text-orange-800 border-orange-200";
-  if (s.includes("reforço") || s.includes("reforco")) return "bg-purple-100 text-purple-800 border-purple-200";
-  if (s.includes("to"))       return "bg-teal-100 text-teal-800 border-teal-200";
-  if (s === "simone")         return "bg-pink-100 text-pink-800 border-pink-200";
-  if (s === "juliana")        return "bg-blue-100 text-blue-800 border-blue-200";
-  if (s === "joão" || s === "joao") return "bg-green-100 text-green-800 border-green-200";
-  if (s === "bia moura")      return "bg-red-100 text-red-800 border-red-200";
-  if (s === "geovana")        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-  if (s === "franciele")      return "bg-indigo-100 text-indigo-800 border-indigo-200";
-  if (s === "elaine")         return "bg-cyan-100 text-cyan-800 border-cyan-200";
-  if (s === "muralha")        return "bg-slate-100 text-slate-800 border-slate-200";
-  return "bg-gray-100 text-gray-700 border-gray-200";
+const CORES = [
+  "bg-orange-100 text-orange-800 border-orange-200",
+  "bg-purple-100 text-purple-800 border-purple-200",
+  "bg-teal-100 text-teal-800 border-teal-200",
+  "bg-pink-100 text-pink-800 border-pink-200",
+  "bg-blue-100 text-blue-800 border-blue-200",
+  "bg-green-100 text-green-800 border-green-200",
+  "bg-red-100 text-red-800 border-red-200",
+  "bg-yellow-100 text-yellow-800 border-yellow-200",
+  "bg-indigo-100 text-indigo-800 border-indigo-200",
+  "bg-cyan-100 text-cyan-800 border-cyan-200",
+  "bg-slate-100 text-slate-800 border-slate-200",
+  "bg-amber-100 text-amber-800 border-amber-200",
+];
+
+function getCorServico(servico: string, corMap: Record<string, string>) {
+  return corMap[servico] ?? "bg-gray-100 text-gray-700 border-gray-200";
 }
 
 export default function EspecialistaEscalaPage() {
   const supabase = createSupabaseBrowserClient();
 
   const [escala, setEscala] = useState<EscalaItem[]>([]);
+  const [servicos, setServicos] = useState<string[]>([]);
   const [profissionalNome, setProfissionalNome] = useState("");
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
@@ -68,15 +72,19 @@ export default function EspecialistaEscalaPage() {
 
       setProfissionalNome(profissional.nome);
 
-      const { data: escalaData, error: escalaError } = await supabase
-        .from("escala")
-        .select("id, dia, horario, crianca, servico, profissional_nome")
-        .eq("profissional_id", profissional.id)
-        .order("horario", { ascending: true });
+      const [escalaRes, servicosRes] = await Promise.all([
+        supabase
+          .from("escala")
+          .select("id, dia, horario, crianca, servico, profissional_nome")
+          .eq("profissional_id", profissional.id)
+          .order("horario", { ascending: true }),
+        supabase.from("tipos_atendimento").select("nome").eq("ativo", true).order("nome"),
+      ]);
 
-      if (escalaError) throw new Error(escalaError.message);
+      if (escalaRes.error) throw new Error(escalaRes.error.message);
 
-      setEscala(escalaData ?? []);
+      setEscala(escalaRes.data ?? []);
+      setServicos((servicosRes.data ?? []).map((s) => s.nome));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido.";
       setErro(msg);
@@ -86,6 +94,9 @@ export default function EspecialistaEscalaPage() {
   }
 
   const slotsDoDia = escala.filter((s) => s.dia === dia);
+
+  const corMap: Record<string, string> = {};
+  servicos.forEach((nome, i) => { corMap[nome] = CORES[i % CORES.length]; });
 
   return (
     <div className="space-y-6">
@@ -156,7 +167,7 @@ export default function EspecialistaEscalaPage() {
               <div className="space-y-2">
                 {slotsDoDia.map((item) => (
                   <div key={item.id}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg border text-xs font-medium ${getCorServico(item.servico)}`}>
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg border text-xs font-medium ${getCorServico(item.servico, corMap)}`}>
                     <span className="font-mono font-bold w-24 shrink-0">{item.horario}</span>
                     <span className="font-bold">{item.crianca}</span>
                     <span className="opacity-60">·</span>

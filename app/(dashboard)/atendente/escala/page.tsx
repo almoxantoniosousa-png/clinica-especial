@@ -24,26 +24,30 @@ type EscalaItem = {
   profissional_nome: string | null;
 };
 
-function getCorServico(servico: string) {
-  const s = servico.toLowerCase();
-  if (s.includes("avd"))      return "bg-orange-100 text-orange-800 border-orange-200";
-  if (s.includes("reforço") || s.includes("reforco")) return "bg-purple-100 text-purple-800 border-purple-200";
-  if (s.includes("to"))       return "bg-teal-100 text-teal-800 border-teal-200";
-  if (s === "simone")         return "bg-pink-100 text-pink-800 border-pink-200";
-  if (s === "juliana")        return "bg-blue-100 text-blue-800 border-blue-200";
-  if (s === "joão" || s === "joao") return "bg-green-100 text-green-800 border-green-200";
-  if (s === "bia moura")      return "bg-red-100 text-red-800 border-red-200";
-  if (s === "geovana")        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-  if (s === "franciele")      return "bg-indigo-100 text-indigo-800 border-indigo-200";
-  if (s === "elaine")         return "bg-cyan-100 text-cyan-800 border-cyan-200";
-  if (s === "muralha")        return "bg-slate-100 text-slate-800 border-slate-200";
-  return "bg-gray-100 text-gray-700 border-gray-200";
+const CORES = [
+  "bg-orange-100 text-orange-800 border-orange-200",
+  "bg-purple-100 text-purple-800 border-purple-200",
+  "bg-teal-100 text-teal-800 border-teal-200",
+  "bg-pink-100 text-pink-800 border-pink-200",
+  "bg-blue-100 text-blue-800 border-blue-200",
+  "bg-green-100 text-green-800 border-green-200",
+  "bg-red-100 text-red-800 border-red-200",
+  "bg-yellow-100 text-yellow-800 border-yellow-200",
+  "bg-indigo-100 text-indigo-800 border-indigo-200",
+  "bg-cyan-100 text-cyan-800 border-cyan-200",
+  "bg-slate-100 text-slate-800 border-slate-200",
+  "bg-amber-100 text-amber-800 border-amber-200",
+];
+
+function getCorServico(servico: string, corMap: Record<string, string>) {
+  return corMap[servico] ?? "bg-gray-100 text-gray-700 border-gray-200";
 }
 
 export default function AtendenteEscalaPage() {
   const supabase = createSupabaseBrowserClient();
 
   const [escala, setEscala] = useState<EscalaItem[]>([]);
+  const [servicos, setServicos] = useState<string[]>([]);
   const [profissionalNome, setProfissionalNome] = useState("");
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
@@ -77,15 +81,19 @@ export default function AtendenteEscalaPage() {
 
       setProfissionalNome(atendente.nome);
 
-      const { data: escalaData, error: escalaError } = await supabase
-        .from("escala")
-        .select("id, dia, horario, crianca, servico, profissional_nome")
-        .eq("profissional_id", atendente.id)
-        .order("horario", { ascending: true });
+      const [escalaRes, servicosRes] = await Promise.all([
+        supabase
+          .from("escala")
+          .select("id, dia, horario, crianca, servico, profissional_nome")
+          .eq("profissional_id", atendente.id)
+          .order("horario", { ascending: true }),
+        supabase.from("tipos_atendimento").select("nome").eq("ativo", true).order("nome"),
+      ]);
 
-      if (escalaError) throw new Error(escalaError.message);
+      if (escalaRes.error) throw new Error(escalaRes.error.message);
 
-      setEscala(escalaData ?? []);
+      setEscala(escalaRes.data ?? []);
+      setServicos((servicosRes.data ?? []).map((s) => s.nome));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido.";
       setErro(msg);
@@ -95,6 +103,9 @@ export default function AtendenteEscalaPage() {
   }
 
   const slotsDoDia = escala.filter((s) => s.dia === dia);
+
+  const corMap: Record<string, string> = {};
+  servicos.forEach((nome, i) => { corMap[nome] = CORES[i % CORES.length]; });
 
   return (
     <div className="space-y-6">
@@ -173,7 +184,7 @@ export default function AtendenteEscalaPage() {
                     {slotsHorario.map((slot) => (
                       <div
                         key={slot.id}
-                        className={`flex flex-col px-3 py-2 rounded-lg border text-xs font-medium ${getCorServico(slot.servico)}`}
+                        className={`flex flex-col px-3 py-2 rounded-lg border text-xs font-medium ${getCorServico(slot.servico, corMap)}`}
                       >
                         <div className="flex items-center gap-2">
                           <span className="font-bold">{slot.crianca}</span>
@@ -216,21 +227,9 @@ export default function AtendenteEscalaPage() {
         <div className="rounded-xl border border-slate-200 p-4">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Legenda</p>
           <div className="flex flex-wrap gap-2">
-            {[
-              { label: "AVD",       cor: "bg-orange-100 text-orange-800 border-orange-200" },
-              { label: "Reforço",   cor: "bg-purple-100 text-purple-800 border-purple-200" },
-              { label: "TO",        cor: "bg-teal-100 text-teal-800 border-teal-200" },
-              { label: "Simone",    cor: "bg-pink-100 text-pink-800 border-pink-200" },
-              { label: "Juliana",   cor: "bg-blue-100 text-blue-800 border-blue-200" },
-              { label: "João",      cor: "bg-green-100 text-green-800 border-green-200" },
-              { label: "Bia Moura", cor: "bg-red-100 text-red-800 border-red-200" },
-              { label: "Geovana",   cor: "bg-yellow-100 text-yellow-800 border-yellow-200" },
-              { label: "Franciele", cor: "bg-indigo-100 text-indigo-800 border-indigo-200" },
-              { label: "Elaine",    cor: "bg-cyan-100 text-cyan-800 border-cyan-200" },
-              { label: "Muralha",   cor: "bg-slate-100 text-slate-800 border-slate-200" },
-            ].map((item) => (
-              <span key={item.label} className={`px-2 py-1 rounded-md border text-xs font-medium ${item.cor}`}>
-                {item.label}
+            {servicos.map((nome, i) => (
+              <span key={nome} className={`px-2 py-1 rounded-md border text-xs font-medium ${CORES[i % CORES.length]}`}>
+                {nome}
               </span>
             ))}
           </div>
