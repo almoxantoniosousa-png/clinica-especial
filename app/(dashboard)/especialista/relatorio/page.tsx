@@ -72,6 +72,25 @@ export default function RelatorioPage() {
     if (error) {
       mostrarFeedback("erro", "Erro ao salvar: " + error.message);
     } else {
+      const nomeCrianca = criancaSelecionada?.nome || "Paciente";
+      await supabase.from("notificacoes").insert([
+        {
+          destinatario_role: "gestao",
+          titulo: `Novo relatório: ${nomeCrianca}`,
+          mensagem: `${autor?.nome || "Especialista"} enviou relatório de avaliação`,
+          tipo: "relatorio",
+          link: "/gestao/relatorios",
+          autor_nome: autor?.nome || null,
+        },
+        {
+          destinatario_role: "supervisora",
+          titulo: `Novo relatório: ${nomeCrianca}`,
+          mensagem: `${autor?.nome || "Especialista"} enviou relatório de avaliação`,
+          tipo: "relatorio",
+          link: null,
+          autor_nome: autor?.nome || null,
+        },
+      ]);
       mostrarFeedback("sucesso", "Relatorio salvo e enviado para Supervisora e Gestao!");
       setCriancaId(""); setObjetivoAtendimento(""); setAvaliacao("");
       setResultado(""); setIntervencao(""); setAvancos(""); setConclusao("");

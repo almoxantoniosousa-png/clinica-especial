@@ -19,6 +19,8 @@ export default function GestaoDashboardPage() {
   const [liminares, setLiminares] = useState<any[]>([]);
   const [equipe, setEquipe] = useState<any[]>([]);
   const [atendimentosPorModalidade, setAtendimentosPorModalidade] = useState<any>({});
+  const [ultimosRelatorios, setUltimosRelatorios] = useState<any[]>([]);
+  const [agendaHoje, setAgendaHoje] = useState<any[]>([]);
 
   const hoje = new Date().toISOString().split("T")[0];
   const mesAtual = new Date().toISOString().slice(0, 7);
@@ -99,6 +101,23 @@ export default function GestaoDashboardPage() {
         .eq("ativo", true)
         .order("nome");
       setEquipe(equipeDados || []);
+
+      // Últimos relatórios (5 mais recentes)
+      const { data: relatoriosDados } = await supabase
+        .from("prontuarios")
+        .select("id, titulo, created_at, criancas(nome), atendentes!autor_id(nome)")
+        .eq("tipo", "relatorio_diario")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      setUltimosRelatorios(relatoriosDados || []);
+
+      // Agenda de hoje
+      const { data: agendaDados } = await supabase
+        .from("agenda")
+        .select("id, hora, servico, profissional_nome, criancas(nome)")
+        .eq("data", hoje)
+        .order("hora");
+      setAgendaHoje(agendaDados || []);
 
       setLoading(false);
     }
@@ -370,6 +389,87 @@ export default function GestaoDashboardPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* AGENDA DE HOJE + ÚLTIMOS RELATÓRIOS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* AGENDA DE HOJE */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 bg-slate-50 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <span>📅</span>
+              <h3 className="font-semibold text-slate-700 text-sm">Agenda de Hoje</h3>
+            </div>
+            <Link href="/gestao/agenda"
+              className="text-xs text-blue-600 hover:underline font-medium">Ver tudo</Link>
+          </div>
+          {agendaHoje.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-2 text-slate-400">
+              <span className="text-2xl">📭</span>
+              <p className="text-xs">Nenhum atendimento hoje</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-50">
+              {agendaHoje.slice(0, 5).map(ag => (
+                <div key={ag.id} className="flex items-center gap-3 px-5 py-3">
+                  <span className="text-xs font-black text-blue-900 min-w-[3rem]">
+                    {ag.hora?.slice(0, 5) || "--:--"}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-slate-800 truncate">{ag.criancas?.nome || "—"}</p>
+                    {ag.profissional_nome && (
+                      <p className="text-[10px] text-slate-400 truncate">👤 {ag.profissional_nome}</p>
+                    )}
+                  </div>
+                  {ag.servico && (
+                    <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
+                      {ag.servico}
+                    </span>
+                  )}
+                </div>
+              ))}
+              {agendaHoje.length > 5 && (
+                <p className="text-xs text-center text-slate-400 py-2">
+                  +{agendaHoje.length - 5} mais
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ÚLTIMOS RELATÓRIOS */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 bg-slate-50 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <span>📊</span>
+              <h3 className="font-semibold text-slate-700 text-sm">Últimos Relatórios</h3>
+            </div>
+            <Link href="/gestao/relatorios"
+              className="text-xs text-blue-600 hover:underline font-medium">Ver tudo</Link>
+          </div>
+          {ultimosRelatorios.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-2 text-slate-400">
+              <span className="text-2xl">📭</span>
+              <p className="text-xs">Nenhum relatório ainda</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-50">
+              {ultimosRelatorios.map(r => (
+                <div key={r.id} className="flex items-start gap-3 px-5 py-3">
+                  <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-sm flex-shrink-0">📝</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-slate-800 truncate">{r.criancas?.nome || "—"}</p>
+                    <p className="text-[10px] text-slate-400 truncate">{(r.atendentes as any)?.nome || "—"}</p>
+                  </div>
+                  <p className="text-[10px] text-slate-400 flex-shrink-0">
+                    {new Date(r.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ATALHOS RÁPIDOS */}

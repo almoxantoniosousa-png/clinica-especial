@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Clock, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
-const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+const DIAS_FIM_SEMANA = new Set(["Sábado", "Domingo"]);
 const HORARIOS = [
   "13:00 – 13:30",
   "13:30 – 14:30",
@@ -113,13 +114,17 @@ export default function GestaoEscalaPage() {
           {DIAS.map((d, i) => (
             <button key={d} onClick={() => setDiaAtivo(i)}
               className={`flex-1 min-w-[80px] py-2 rounded-xl text-sm font-semibold transition-all ${
-                diaAtivo === i ? "bg-blue-600 text-white shadow-md" : "bg-white border border-slate-200 text-slate-600 hover:bg-blue-50"
+                diaAtivo === i
+                  ? "bg-blue-600 text-white shadow-md"
+                  : DIAS_FIM_SEMANA.has(d)
+                    ? "bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100"
+                    : "bg-white border border-slate-200 text-slate-600 hover:bg-blue-50"
               }`}>
               {d}
             </button>
           ))}
         </div>
-        <button onClick={() => setDiaAtivo((p) => Math.min(4, p + 1))} disabled={diaAtivo === 4}
+        <button onClick={() => setDiaAtivo((p) => Math.min(6, p + 1))} disabled={diaAtivo === 6}
           className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30">
           <ChevronRight className="h-4 w-4" />
         </button>

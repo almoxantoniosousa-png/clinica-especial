@@ -23,7 +23,7 @@ export default function GestaoRelatoriosPage() {
     setErro("");
     const { data, error } = await supabase
       .from("prontuarios")
-      .select("*, criancas(nome), atendentes(nome)")
+      .select("*, criancas(nome), atendentes!autor_id(nome)")
       .eq("tipo", "relatorio_diario")
       .order("created_at", { ascending: false });
     if (error) { setErro("Erro ao carregar os relatórios: " + error.message); setLoading(false); return; }
