@@ -70,7 +70,7 @@ export default function GestaoEscalaPage() {
       return;
     }
     setSlots(escalaRes.data || []);
-    setServicos((servicosRes.data ?? []).map((s) => s.nome));
+    setServicos((servicosRes.data ?? []).map((s: { nome: string }) => s.nome));
     setLoading(false);
   };
 
@@ -97,7 +97,7 @@ export default function GestaoEscalaPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <Calendar className="h-6 w-6 text-blue-600" />
-            Frequência Semanal 2026
+            Frequência Semanal {new Date().getFullYear()}
           </h1>
           <p className="text-sm text-slate-400 mt-1">Escala de atendimentos — visualização</p>
         </div>
