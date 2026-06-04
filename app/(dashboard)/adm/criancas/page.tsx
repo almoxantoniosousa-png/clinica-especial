@@ -80,7 +80,6 @@ export default function AdmCriancasPage() {
 
   async function salvarCrianca(e: React.FormEvent) {
     e.preventDefault();
-    console.log("salvarCrianca chamado!", form.nome);
     if (!form.nome.trim()) return;
     setUploadingFoto(true);
 

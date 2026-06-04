@@ -84,7 +84,9 @@ export default function EscalaPage() {
   const [erroForm, setErroForm] = useState("");
 
   // exclusão
-  const [excluindoId, setExcluindoId] = useState<string | null>(null);
+  const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [deletandoLabel, setDeletandoLabel] = useState("");
+  const [excluindo, setExcluindo] = useState(false);
 
   const dia = DIAS[diaAtivo];
 
@@ -171,11 +173,14 @@ export default function EscalaPage() {
     carregarTudo();
   }
 
-  async function excluir(id: string) {
-    setExcluindoId(id);
-    await supabase.from("escala").delete().eq("id", id);
-    setExcluindoId(null);
-    setSlots((prev) => prev.filter((s) => s.id !== id));
+  async function excluir() {
+    if (!deletandoId) return;
+    setExcluindo(true);
+    await supabase.from("escala").delete().eq("id", deletandoId);
+    setSlots((prev) => prev.filter((s) => s.id !== deletandoId));
+    setDeletandoId(null);
+    setDeletandoLabel("");
+    setExcluindo(false);
   }
 
   const slotsDoDia = slots.filter((s) => {
@@ -307,9 +312,8 @@ export default function EscalaPage() {
                                 <Pencil className="h-3 w-3" />
                               </button>
                               <button
-                                onClick={() => excluir(slot.id)}
-                                disabled={excluindoId === slot.id}
-                                className="p-0.5 rounded hover:bg-red-200 text-red-600 transition-colors disabled:opacity-40"
+                                onClick={() => { setDeletandoId(slot.id); setDeletandoLabel(`${slot.crianca} · ${slot.servico}`); }}
+                                className="p-0.5 rounded hover:bg-red-200 text-red-600 transition-colors"
                                 title="Excluir"
                               >
                                 <Trash2 className="h-3 w-3" />
@@ -355,6 +359,40 @@ export default function EscalaPage() {
           ))}
         </div>
       </div>
+
+      {/* MODAL CONFIRMAÇÃO DE EXCLUSÃO */}
+      {deletandoId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
+                <Trash2 className="h-8 w-8 text-red-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Remover atendimento?</h3>
+                <p className="text-sm text-slate-500 mt-1">{deletandoLabel}</p>
+                <p className="text-xs text-slate-400 mt-1">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setDeletandoId(null); setDeletandoLabel(""); }}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={excluir}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {excluindo ? "Removendo..." : "Sim, remover"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL CADASTRO / EDIÇÃO */}
       {modalAberto && (

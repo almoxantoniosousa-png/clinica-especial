@@ -46,11 +46,8 @@ export default async function DashboardLayout({
   }
 
   if (!roleFinal) {
-    console.log("Usuário não encontrado em nenhuma tabela:", user.email);
     redirect("/login");
   }
-
-  console.log("ROLE FINAL:", roleFinal);
 
   return (
     <div className="min-h-screen bg-slate-50">

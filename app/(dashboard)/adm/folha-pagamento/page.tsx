@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
-import { DollarSign, Check, Clock, Plus, Pencil, X, ChevronDown, ChevronRight } from "lucide-react";
+import { DollarSign, Check, Clock, Plus, Pencil, X, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -42,6 +42,15 @@ export default function FolhaPagamentoPage() {
 
   const [pendentesAberto, setPendentesAberto] = useState(true);
   const [pagosAberto, setPagosAberto] = useState(false);
+
+  // confirmação de pagamento PIX
+  const [confirmandoPagamento, setConfirmandoPagamento] = useState<Folha | null>(null);
+  const [processandoPagamento, setProcessandoPagamento] = useState(false);
+
+  // confirmação de exclusão
+  const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [deletandoLabel, setDeletandoLabel] = useState("");
+  const [excluindo, setExcluindo] = useState(false);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -131,7 +140,10 @@ export default function FolhaPagamentoPage() {
     carregarDados();
   }
 
-  async function marcarPago(folha: Folha) {
+  async function marcarPago() {
+    if (!confirmandoPagamento) return;
+    const folha = confirmandoPagamento;
+    setProcessandoPagamento(true);
     const { error } = await supabase.from("folha_pagamento").update({
       status: "pago",
       data_pagamento: new Date().toISOString().split("T")[0],
@@ -150,25 +162,31 @@ export default function FolhaPagamentoPage() {
       mostrarFeedback("sucesso", "Pagamento confirmado!");
       carregarDados();
     }
+    setConfirmandoPagamento(null);
+    setProcessandoPagamento(false);
   }
 
-  async function excluir(id: string) {
-    if (!confirm("Remover este lançamento?")) return;
-    const folha = folhas.find(f => f.id === id);
+  async function excluir() {
+    if (!deletandoId) return;
+    setExcluindo(true);
+    const folha = folhas.find(f => f.id === deletandoId);
     const profNome = profissionais.find(p => p.id === folha?.profissional_id)?.nome || "profissional";
-    const { error } = await supabase.from("folha_pagamento").delete().eq("id", id);
+    const { error } = await supabase.from("folha_pagamento").delete().eq("id", deletandoId);
     if (!error) {
       const user = await getUsuarioLogado();
       await registrarLog(supabase, {
         usuario_email: user?.email || "desconhecido",
         acao: "Excluiu",
         tabela: "folha_pagamento",
-        registro_id: id,
+        registro_id: deletandoId,
         descricao: `Removeu folha de ${profNome} — ${MESES[mes-1]}/${ano}`,
       });
       mostrarFeedback("sucesso", "Lançamento removido.");
       carregarDados();
     }
+    setDeletandoId(null);
+    setDeletandoLabel("");
+    setExcluindo(false);
   }
 
   const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -233,7 +251,8 @@ export default function FolhaPagamentoPage() {
 
             <div className="flex items-center gap-2">
               {folha.status === "pendente" && (
-                <button onClick={() => marcarPago(folha)}
+                <button
+                  onClick={() => setConfirmandoPagamento(folha)}
                   className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition">
                   Confirmar PIX
                 </button>
@@ -242,7 +261,12 @@ export default function FolhaPagamentoPage() {
                 className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
                 <Pencil className="h-4 w-4" />
               </button>
-              <button onClick={() => excluir(folha.id)}
+              <button
+                onClick={() => {
+                  const profNome = profissionais.find(p => p.id === folha.profissional_id)?.nome || "profissional";
+                  setDeletandoId(folha.id);
+                  setDeletandoLabel(`${profNome} — ${MESES[mes-1]}/${ano}`);
+                }}
                 className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
                 <X className="h-4 w-4" />
               </button>
@@ -363,6 +387,77 @@ export default function FolhaPagamentoPage() {
             onToggle={() => setPendentesAberto(!pendentesAberto)} corBadge="bg-orange-100 text-orange-700" />
           <Secao titulo="Pagos" folhasSecao={folhasPagas} aberto={pagosAberto}
             onToggle={() => setPagosAberto(!pagosAberto)} corBadge="bg-emerald-100 text-emerald-700" />
+        </div>
+      )}
+
+      {/* MODAL CONFIRMAÇÃO DE PAGAMENTO PIX */}
+      {confirmandoPagamento && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center">
+                <Check className="h-8 w-8 text-emerald-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Confirmar pagamento via PIX?</h3>
+                <p className="text-sm text-slate-600 mt-1 font-medium">
+                  {profissionais.find(p => p.id === confirmandoPagamento.profissional_id)?.nome}
+                </p>
+                <p className="text-xl font-bold text-emerald-700 mt-1">{fmt(confirmandoPagamento.valor_final)}</p>
+                <p className="text-xs text-slate-400 mt-1">Esta ação marcará o pagamento como concluído e não poderá ser desfeita.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmandoPagamento(null)}
+                disabled={processandoPagamento}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={marcarPago}
+                disabled={processandoPagamento}
+                className="flex-1 h-11 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50"
+              >
+                {processandoPagamento ? "Confirmando..." : "Sim, confirmar PIX"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRMAÇÃO DE EXCLUSÃO */}
+      {deletandoId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
+                <Trash2 className="h-8 w-8 text-red-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Remover lançamento?</h3>
+                <p className="text-sm text-slate-600 mt-1 font-medium">{deletandoLabel}</p>
+                <p className="text-xs text-slate-400 mt-1">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setDeletandoId(null); setDeletandoLabel(""); }}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={excluir}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {excluindo ? "Removendo..." : "Sim, remover"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

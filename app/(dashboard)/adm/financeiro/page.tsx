@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
+import { Check } from "lucide-react";
 
 type Aba = "contas_pagar" | "contas_receber" | "fluxo";
 
@@ -82,6 +83,11 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
   const [vencimento, setVencimento] = useState("");
   const [observacao, setObservacao] = useState("");
 
+  const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
+  const [confirmandoDescricao, setConfirmandoDescricao] = useState("");
+  const [confirmandoValor, setConfirmandoValor] = useState(0);
+  const [processando, setProcessando] = useState(false);
+
   const categorias = ["aluguel","energia","agua","internet","fornecedor","salario","imposto","outro"];
 
   const carregar = async () => {
@@ -114,9 +120,15 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
     }
   }
 
-  async function marcarPago(id: string) {
-    await supabase.from("contas_pagar").update({ status: "pago", pago_em: new Date().toISOString().slice(0, 10) }).eq("id", id);
+  async function marcarPago() {
+    if (!confirmandoId) return;
+    setProcessando(true);
+    await supabase.from("contas_pagar").update({ status: "pago", pago_em: new Date().toISOString().slice(0, 10) }).eq("id", confirmandoId);
     mostrarFeedback("sucesso", "Marcado como pago!");
+    setConfirmandoId(null);
+    setConfirmandoDescricao("");
+    setConfirmandoValor(0);
+    setProcessando(false);
     carregar();
   }
 
@@ -182,7 +194,8 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
               <div className="flex items-center gap-3 flex-shrink-0">
                 <p className="font-black text-slate-800">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                 {c.status !== "pago" ? (
-                  <button onClick={() => marcarPago(c.id)}
+                  <button
+                    onClick={() => { setConfirmandoId(c.id); setConfirmandoDescricao(c.descricao); setConfirmandoValor(Number(c.valor)); }}
                     className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
                     Pagar
                   </button>
@@ -192,6 +205,42 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {confirmandoId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center">
+                <Check className="h-8 w-8 text-emerald-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Confirmar pagamento?</h3>
+                <p className="text-sm text-slate-600 mt-1 font-medium">{confirmandoDescricao}</p>
+                <p className="text-xl font-bold text-emerald-700 mt-1">
+                  R$ {confirmandoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">Esta ação marcará a conta como paga e não poderá ser desfeita.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setConfirmandoId(null); setConfirmandoDescricao(""); setConfirmandoValor(0); }}
+                disabled={processando}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={marcarPago}
+                disabled={processando}
+                className="flex-1 h-11 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50"
+              >
+                {processando ? "Confirmando..." : "Sim, pagar"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -260,6 +309,10 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
   const [processo, setProcesso] = useState("");
   const [observacao, setObservacao] = useState("");
 
+  type Confirmacao = { id: string; novoStatus: string; nomeLabel: string; valor: number } | null;
+  const [confirmando, setConfirmando] = useState<Confirmacao>(null);
+  const [processando, setProcessando] = useState(false);
+
   const carregar = async () => {
     setLoading(true);
     const { data } = await supabase.from("contas_receber")
@@ -302,12 +355,16 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
     }
   }
 
-  async function alterarStatus(id: string, status: string) {
-    const update: any = { status };
-    if (status === "faturado") update.faturado_em = new Date().toISOString().slice(0, 10);
-    if (status === "recebido") update.recebido_em = new Date().toISOString().slice(0, 10);
-    await supabase.from("contas_receber").update(update).eq("id", id);
+  async function confirmarAlteracao() {
+    if (!confirmando) return;
+    setProcessando(true);
+    const update: any = { status: confirmando.novoStatus };
+    if (confirmando.novoStatus === "faturado") update.faturado_em = new Date().toISOString().slice(0, 10);
+    if (confirmando.novoStatus === "recebido") update.recebido_em = new Date().toISOString().slice(0, 10);
+    await supabase.from("contas_receber").update(update).eq("id", confirmando.id);
     mostrarFeedback("sucesso", "Status atualizado!");
+    setConfirmando(null);
+    setProcessando(false);
     carregar();
   }
 
@@ -376,12 +433,14 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
               {c.status !== "recebido" && (
                 <div className="flex gap-2">
                   {c.status === "pendente" && (
-                    <button onClick={() => alterarStatus(c.id, "faturado")}
+                    <button
+                      onClick={() => setConfirmando({ id: c.id, novoStatus: "faturado", nomeLabel: c.criancas?.nome, valor: Number(c.valor_total) })}
                       className="h-8 px-3 text-xs font-semibold bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
                       Marcar Faturado
                     </button>
                   )}
-                  <button onClick={() => alterarStatus(c.id, "recebido")}
+                  <button
+                    onClick={() => setConfirmando({ id: c.id, novoStatus: "recebido", nomeLabel: c.criancas?.nome, valor: Number(c.valor_total) })}
                     className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
                     Marcar Recebido
                   </button>
@@ -389,6 +448,44 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {confirmando && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center ${confirmando.novoStatus === "recebido" ? "bg-emerald-50" : "bg-blue-50"}`}>
+                <Check className={`h-8 w-8 ${confirmando.novoStatus === "recebido" ? "text-emerald-500" : "text-blue-500"}`} />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">
+                  {confirmando.novoStatus === "recebido" ? "Marcar como recebido?" : "Marcar como faturado?"}
+                </h3>
+                <p className="text-sm text-slate-600 mt-1 font-medium">{confirmando.nomeLabel}</p>
+                <p className={`text-xl font-bold mt-1 ${confirmando.novoStatus === "recebido" ? "text-emerald-700" : "text-blue-700"}`}>
+                  R$ {confirmando.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">Esta ação não poderá ser desfeita.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmando(null)}
+                disabled={processando}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarAlteracao}
+                disabled={processando}
+                className={`flex-1 h-11 rounded-xl text-white text-sm font-bold transition disabled:opacity-50 ${confirmando.novoStatus === "recebido" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}`}
+              >
+                {processando ? "Salvando..." : "Sim, confirmar"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

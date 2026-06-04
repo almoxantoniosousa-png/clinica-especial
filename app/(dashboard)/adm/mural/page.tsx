@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
+import { Trash2 } from "lucide-react";
 
 export default function MuralPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -18,6 +19,11 @@ export default function MuralPage() {
   const [fixado, setFixado] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [mostrarForm, setMostrarForm] = useState(false);
+
+  // Exclusão
+  const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [deletandoTitulo, setDeletandoTitulo] = useState("");
+  const [excluindo, setExcluindo] = useState(false);
 
   // Feedback
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
@@ -84,9 +90,13 @@ export default function MuralPage() {
     carregar();
   }
 
-  async function excluir(id: string) {
-    if (!confirm("Excluir este comunicado?")) return;
-    await supabase.from("mural").delete().eq("id", id);
+  async function excluir() {
+    if (!deletandoId) return;
+    setExcluindo(true);
+    await supabase.from("mural").delete().eq("id", deletandoId);
+    setDeletandoId(null);
+    setDeletandoTitulo("");
+    setExcluindo(false);
     carregar();
     mostrarFeedback("sucesso", "Comunicado removido.");
   }
@@ -252,7 +262,7 @@ export default function MuralPage() {
                       {c.fixado ? "Desafixar" : "Fixar"}
                     </button>
                     <button
-                      onClick={() => excluir(c.id)}
+                      onClick={() => { setDeletandoId(c.id); setDeletandoTitulo(c.titulo); }}
                       className="h-8 px-3 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100
                         rounded-lg border border-red-100 transition"
                     >
@@ -281,6 +291,38 @@ export default function MuralPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {deletandoId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
+                <Trash2 className="h-8 w-8 text-red-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Remover comunicado?</h3>
+                <p className="text-sm text-slate-600 mt-1 font-medium">{deletandoTitulo}</p>
+                <p className="text-xs text-slate-400 mt-1">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setDeletandoId(null); setDeletandoTitulo(""); }}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={excluir}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {excluindo ? "Removendo..." : "Sim, remover"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
