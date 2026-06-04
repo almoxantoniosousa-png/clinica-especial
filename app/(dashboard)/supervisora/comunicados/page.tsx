@@ -287,25 +287,94 @@ function AbaComunicadosDiarios({ mostrarFeedback }: any) {
   }
 
   function renderDetalhe(form: any) {
-    const campos = [
-      { key: "humor_chegada", label: "Humor na chegada" },
-      { key: "atividades", label: "Atividades realizadas" },
-      { key: "comportamento", label: "Comportamento" },
-      { key: "alimentacao", label: "Alimentação" },
-      { key: "comunicacao", label: "Comunicação" },
-      { key: "observacoes_gerais", label: "Observações gerais" },
-      { key: "recado_familia", label: "Recado para a família" },
-    ];
-    return campos.map(c => form[c.key] ? (
-      <div key={c.key} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">{c.label}</p>
-        </div>
-        <p className="px-4 py-3 text-sm text-slate-700 leading-relaxed">
-          {Array.isArray(form[c.key]) ? form[c.key].join(", ") : String(form[c.key])}
-        </p>
+    const autonomiaLabel: Record<number, { label: string; cor: string }> = {
+      1: { label: "Dependência Total",      cor: "bg-red-100 text-red-700 border-red-200" },
+      2: { label: "Ajuda Física/Verbal",    cor: "bg-amber-100 text-amber-700 border-amber-200" },
+      3: { label: "Independência Parcial",  cor: "bg-blue-100 text-blue-700 border-blue-200" },
+      4: { label: "Independência Total",    cor: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+    };
+    const autonomia = autonomiaLabel[form.autonomia_nivel];
+
+    const secoes = [
+      {
+        titulo: "🏁 Entrada e Interação",
+        cor: "border-blue-200 bg-blue-50",
+        itens: [
+          form.hora_chegada && { label: "Horário de chegada", valor: form.hora_chegada, tipo: "texto" },
+          form.interacao?.length && { label: "Interação inicial", valor: form.interacao, tipo: "tags" },
+        ].filter(Boolean),
+      },
+      {
+        titulo: "🛠 Autonomia e Higiene",
+        cor: "border-amber-200 bg-amber-50",
+        itens: [
+          autonomia && { label: "Nível de independência", valor: autonomia.label, tipo: "badge", cor: autonomia.cor },
+          { label: "Idas ao banheiro", valor: `${form.idas_banheiro ?? 0} vez${(form.idas_banheiro ?? 0) !== 1 ? "es" : ""}`, tipo: "texto" },
+          form.evacuou !== undefined && { label: "Evacuou", valor: form.evacuou ? "Sim" : "Não", tipo: "badge", cor: form.evacuou ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200" },
+          form.periodo_menstrual && { label: "Período menstrual", valor: "Sim", tipo: "badge", cor: "bg-pink-100 text-pink-700 border-pink-200" },
+        ].filter(Boolean),
+      },
+      {
+        titulo: "🏀 Recreio e Socialização",
+        cor: "border-purple-200 bg-purple-50",
+        itens: [
+          form.socializacao?.length && { label: "Interação no recreio", valor: form.socializacao, tipo: "tags" },
+          form.atencao?.length && { label: "Atenção e foco", valor: form.atencao, tipo: "tags" },
+          form.lanche && { label: "Lanche", valor: form.lanche, tipo: "texto" },
+          form.comeu_tudo !== undefined && { label: "Comeu tudo", valor: form.comeu_tudo ? "Sim" : "Não", tipo: "badge", cor: form.comeu_tudo ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200" },
+        ].filter(Boolean),
+      },
+      {
+        titulo: "📖 Agenda e Recados",
+        cor: "border-emerald-200 bg-emerald-50",
+        itens: [
+          form.atividades_sala && { label: "Conteúdo de sala", valor: form.atividades_sala, tipo: "texto" },
+          form.tarefa_casa && { label: "Tarefa de casa", valor: form.tarefa_casa, tipo: "texto" },
+          form.materiais_pedir && { label: "⚠️ Materiais / Avisos urgentes", valor: form.materiais_pedir, tipo: "alerta" },
+          form.obs_gerais && { label: "Observações gerais", valor: form.obs_gerais, tipo: "texto" },
+        ].filter(Boolean),
+      },
+    ].filter(s => s.itens.length > 0);
+
+    if (secoes.length === 0) return (
+      <div className="flex flex-col items-center justify-center py-8 text-slate-400 gap-2">
+        <span className="text-3xl">📄</span>
+        <p className="text-sm">Nenhum conteúdo registrado.</p>
       </div>
-    ) : null);
+    );
+
+    return secoes.map(secao => (
+      <div key={secao.titulo} className={`rounded-xl border overflow-hidden ${secao.cor}`}>
+        <div className="px-4 py-2.5 border-b border-black/5">
+          <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">{secao.titulo}</p>
+        </div>
+        <div className="bg-white divide-y divide-slate-50">
+          {(secao.itens as any[]).map((item: any) => (
+            <div key={item.label} className="px-4 py-3">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">{item.label}</p>
+              {item.tipo === "tags" && (
+                <div className="flex flex-wrap gap-1.5">
+                  {(item.valor as string[]).map((t: string) => (
+                    <span key={t} className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full font-medium">{t}</span>
+                  ))}
+                </div>
+              )}
+              {item.tipo === "badge" && (
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${item.cor}`}>{item.valor}</span>
+              )}
+              {item.tipo === "alerta" && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  <p className="text-sm text-red-700 leading-relaxed">{item.valor}</p>
+                </div>
+              )}
+              {item.tipo === "texto" && (
+                <p className="text-sm text-slate-700 leading-relaxed">{item.valor}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    ));
   }
 
   return (
