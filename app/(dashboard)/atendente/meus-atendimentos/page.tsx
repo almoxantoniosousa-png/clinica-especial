@@ -24,7 +24,7 @@ export default function MeusAtendimentosPage() {
 
       const { data, error } = await supabase
         .from('atendimentos')
-        .select('id, data, local, horas, valor_hora, valor_total, status')
+        .select('id, data, local, horas, valor_hora, valor_total, status, criancas(nome)')
         .eq('atendente_id', user.id)
         .gte('data', primeiroDia)
         .lte('data', ultimoDia)
@@ -150,17 +150,20 @@ export default function MeusAtendimentosPage() {
               return (
                 <div key={item.id} className={`bg-white rounded-2xl border shadow-sm p-4 border-l-4
                   ${pago ? 'border-l-emerald-400' : 'border-l-amber-400'} border-slate-200`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      {item.local?.toLowerCase() === 'escola'
-                        ? <School size={16} className="text-blue-500"/>
-                        : <Home size={16} className="text-amber-500"/>}
-                      <span className="text-sm font-semibold text-slate-700 capitalize">{item.local}</span>
-                    </div>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-bold text-slate-800 truncate">
+                      {(item.criancas as any)?.nome ?? <span className="text-slate-400 italic">Criança não informada</span>}
+                    </p>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ml-2 shrink-0
                       ${pago ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                       {pago ? 'Pago' : 'Pendente'}
                     </span>
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    {item.local?.toLowerCase() === 'escola'
+                      ? <School size={14} className="text-blue-500"/>
+                      : <Home size={14} className="text-amber-500"/>}
+                    <span className="text-xs text-slate-500 capitalize">{item.local}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="bg-slate-50 rounded-xl p-2">
@@ -190,6 +193,7 @@ export default function MeusAtendimentosPage() {
                 <thead className="bg-slate-50 border-b border-slate-100">
                   <tr>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Data</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Criança</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Local</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Horas</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Valor/h</th>
@@ -204,6 +208,9 @@ export default function MeusAtendimentosPage() {
                       <tr key={item.id} className="hover:bg-slate-50 transition">
                         <td className="px-5 py-3 font-medium text-slate-700 whitespace-nowrap">
                           {item.data?.split('T')[0].split('-').reverse().join('/')}
+                        </td>
+                        <td className="px-5 py-3 font-semibold text-slate-800 whitespace-nowrap">
+                          {(item.criancas as any)?.nome ?? <span className="text-slate-400 italic text-xs">—</span>}
                         </td>
                         <td className="px-5 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-2">
