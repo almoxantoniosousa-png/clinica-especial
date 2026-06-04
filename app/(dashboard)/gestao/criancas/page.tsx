@@ -8,17 +8,19 @@ export default function GestaoCriancasPage() {
   const router = useRouter();
   const [criancas, setCriancas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState("");
   const [busca, setBusca] = useState("");
 
-  useEffect(() => {
-    async function carregar() {
-      setLoading(true);
-      const { data } = await supabase.from("criancas").select("*").order("nome");
-      setCriancas(data || []);
-      setLoading(false);
-    }
-    carregar();
-  }, []);
+  async function carregar() {
+    setLoading(true);
+    setErro("");
+    const { data, error } = await supabase.from("criancas").select("*").order("nome");
+    if (error) { setErro("Erro ao carregar as crianças: " + error.message); setLoading(false); return; }
+    setCriancas(data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { carregar(); }, []);
 
   const filtradas = criancas.filter(c =>
     c.nome?.toLowerCase().includes(busca.toLowerCase())
@@ -71,6 +73,14 @@ export default function GestaoCriancasPage() {
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <p className="text-sm text-slate-400">Carregando...</p>
+        </div>
+      ) : erro ? (
+        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-red-200 gap-3">
+          <span className="text-4xl">⚠️</span>
+          <p className="text-sm text-red-600 font-medium">{erro}</p>
+          <button onClick={carregar} className="px-4 py-2 text-sm font-medium bg-red-50 text-red-700 rounded-xl border border-red-200 hover:bg-red-100 transition">
+            Tentar novamente
+          </button>
         </div>
       ) : filtradas.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-slate-200">

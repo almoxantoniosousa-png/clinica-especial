@@ -8,21 +8,23 @@ export default function GestaoAgendaPage() {
   const router = useRouter();
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState("");
   const [diaSelecionado, setDiaSelecionado] = useState(() => new Date().toISOString().slice(0, 10));
 
-  useEffect(() => {
-    async function carregar() {
-      setLoading(true);
-      const { data } = await supabase
-        .from("agenda")
-        .select("*, criancas(nome)")
-        .eq("data", diaSelecionado)
-        .order("hora");
-      setAgendamentos(data || []);
-      setLoading(false);
-    }
-    carregar();
-  }, [diaSelecionado]);
+  async function carregar() {
+    setLoading(true);
+    setErro("");
+    const { data, error } = await supabase
+      .from("agenda")
+      .select("*, criancas(nome)")
+      .eq("data", diaSelecionado)
+      .order("hora");
+    if (error) { setErro("Erro ao carregar a agenda: " + error.message); setLoading(false); return; }
+    setAgendamentos(data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { carregar(); }, [diaSelecionado]);
 
   const diasSemana = useMemo(() => {
     const dias = [];
@@ -81,6 +83,14 @@ export default function GestaoAgendaPage() {
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <p className="text-sm text-slate-400">Carregando agenda...</p>
+        </div>
+      ) : erro ? (
+        <div className="flex flex-col items-center justify-center py-12 bg-white rounded-2xl border border-red-200 gap-3">
+          <span className="text-4xl">⚠️</span>
+          <p className="text-sm text-red-600 font-medium">{erro}</p>
+          <button onClick={carregar} className="px-4 py-2 text-sm font-medium bg-red-50 text-red-700 rounded-xl border border-red-200 hover:bg-red-100 transition">
+            Tentar novamente
+          </button>
         </div>
       ) : agendamentos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 gap-2 bg-white rounded-2xl border border-slate-200">

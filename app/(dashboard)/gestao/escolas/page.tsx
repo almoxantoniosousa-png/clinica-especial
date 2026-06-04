@@ -8,17 +8,19 @@ export default function GestaoEscolasPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [escolas, setEscolas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState("");
   const [busca, setBusca] = useState("");
 
-  useEffect(() => {
-    const carregar = async () => {
-      setLoading(true);
-      const { data } = await supabase.from("escolas").select("*").order("nome");
-      setEscolas(data || []);
-      setLoading(false);
-    };
-    carregar();
-  }, []);
+  const carregar = async () => {
+    setLoading(true);
+    setErro("");
+    const { data, error } = await supabase.from("escolas").select("*").order("nome");
+    if (error) { setErro("Erro ao carregar as escolas: " + error.message); setLoading(false); return; }
+    setEscolas(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { carregar(); }, []);
 
   const filtradas = escolas.filter((e) =>
     e.nome.toLowerCase().includes(busca.toLowerCase()) ||
@@ -47,6 +49,14 @@ export default function GestaoEscolasPage() {
 
       {loading ? (
         <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
+      ) : erro ? (
+        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-red-200 gap-3">
+          <span className="text-4xl">⚠️</span>
+          <p className="text-sm text-red-600 font-medium">{erro}</p>
+          <button onClick={carregar} className="px-4 py-2 text-sm font-medium bg-red-50 text-red-700 rounded-xl border border-red-200 hover:bg-red-100 transition">
+            Tentar novamente
+          </button>
+        </div>
       ) : filtradas.length === 0 ? (
         <div className="text-center py-16 text-slate-400">
           <School className="h-12 w-12 mx-auto mb-3 opacity-20" />

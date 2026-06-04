@@ -49,25 +49,32 @@ export default function GestaoEscalaPage() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [servicos, setServicos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState("");
   const [diaAtivo, setDiaAtivo] = useState(0);
   const [filtroCrianca, setFiltroCrianca] = useState("");
   const [filtroServico, setFiltroServico] = useState("");
 
   const dia = DIAS[diaAtivo];
 
-  useEffect(() => {
-    const carregar = async () => {
-      setLoading(true);
-      const [escalaRes, servicosRes] = await Promise.all([
-        supabase.from("escala").select("*").order("horario"),
-        supabase.from("tipos_atendimento").select("nome").eq("ativo", true).order("nome"),
-      ]);
-      setSlots(escalaRes.data || []);
-      setServicos((servicosRes.data ?? []).map((s) => s.nome));
+  const carregar = async () => {
+    setLoading(true);
+    setErro("");
+    const [escalaRes, servicosRes] = await Promise.all([
+      supabase.from("escala").select("*").order("horario"),
+      supabase.from("tipos_atendimento").select("nome").eq("ativo", true).order("nome"),
+    ]);
+    if (escalaRes.error || servicosRes.error) {
+      const msg = escalaRes.error?.message || servicosRes.error?.message || "Erro desconhecido";
+      setErro("Erro ao carregar a escala: " + msg);
       setLoading(false);
-    };
-    carregar();
-  }, []);
+      return;
+    }
+    setSlots(escalaRes.data || []);
+    setServicos((servicosRes.data ?? []).map((s) => s.nome));
+    setLoading(false);
+  };
+
+  useEffect(() => { carregar(); }, []);
 
   const slotsDoDia = slots.filter((s) => {
     if (s.dia !== dia) return false;
@@ -141,6 +148,14 @@ export default function GestaoEscalaPage() {
       {/* HORÁRIOS */}
       {loading ? (
         <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
+      ) : erro ? (
+        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-red-200 gap-3">
+          <span className="text-4xl">⚠️</span>
+          <p className="text-sm text-red-600 font-medium">{erro}</p>
+          <button onClick={carregar} className="px-4 py-2 text-sm font-medium bg-red-50 text-red-700 rounded-xl border border-red-200 hover:bg-red-100 transition">
+            Tentar novamente
+          </button>
+        </div>
       ) : (
         <div className="space-y-3">
           {HORARIOS.map((horario) => {

@@ -9,20 +9,22 @@ export default function GestaoMuralPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [comunicados, setComunicados] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState("");
 
-  useEffect(() => {
-    async function carregar() {
-      setLoading(true);
-      const { data } = await supabase
-        .from("mural")
-        .select("*, atendentes(nome)")
-        .order("fixado", { ascending: false })
-        .order("created_at", { ascending: false });
-      setComunicados(data || []);
-      setLoading(false);
-    }
-    carregar();
-  }, []);
+  async function carregar() {
+    setLoading(true);
+    setErro("");
+    const { data, error } = await supabase
+      .from("mural")
+      .select("*, atendentes(nome)")
+      .order("fixado", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (error) { setErro("Erro ao carregar o mural: " + error.message); setLoading(false); return; }
+    setComunicados(data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { carregar(); }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 pt-4 pb-6 md:px-8 md:py-10 space-y-5">
@@ -45,6 +47,14 @@ export default function GestaoMuralPage() {
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <p className="text-sm text-slate-400">Carregando comunicados...</p>
+        </div>
+      ) : erro ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-red-200 gap-3">
+          <span className="text-4xl">⚠️</span>
+          <p className="text-sm text-red-600 font-medium">{erro}</p>
+          <button onClick={carregar} className="px-4 py-2 text-sm font-medium bg-red-50 text-red-700 rounded-xl border border-red-200 hover:bg-red-100 transition">
+            Tentar novamente
+          </button>
         </div>
       ) : comunicados.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white rounded-2xl border border-slate-200">
