@@ -5,48 +5,39 @@ import { LoginForm } from "../../components/login-form";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-slate-100 p-4">
+    <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-950 via-blue-900 to-blue-800 flex items-center justify-center px-5">
 
-      {/* FUNDO DECORATIVO */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-200 rounded-full opacity-30 blur-3xl"/>
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-200 rounded-full opacity-30 blur-3xl"/>
-      </div>
+      {/* Círculos decorativos de fundo */}
+      <div className="absolute top-0 left-0 w-72 h-72 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"/>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full translate-x-1/3 translate-y-1/3 pointer-events-none"/>
 
-      {/* CARD */}
-      <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center gap-6">
+      {/* Card */}
+      <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden">
 
-        {/* LOGO */}
-        <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-md bg-white flex items-center justify-center p-2">
-          <img
-            src={logoClinica.src}
-            alt="Logo Clínica Abraço"
-            className="w-full h-full object-contain"
-          />
+        {/* Topo do card — gradiente com logo */}
+        <div className="bg-gradient-to-br from-blue-900 to-blue-700 px-8 pt-8 pb-6 flex flex-col items-center gap-3">
+          <div className="w-16 h-16 rounded-2xl overflow-hidden bg-white shadow-lg p-1.5">
+            <img src={logoClinica.src} alt="Logo Clínica Abraço" className="w-full h-full object-contain"/>
+          </div>
+          <div className="text-center">
+            <h1 className="text-lg font-black text-white tracking-tight">Clínica Abraço</h1>
+            <p className="text-blue-300 text-xs mt-0.5">ABA — Intervenção Comportamental</p>
+          </div>
         </div>
 
-        {/* TÍTULO */}
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold text-blue-900 tracking-tight">
-            Clínica Abraço
-          </h1>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-            ABA — Núcleo de Intervenção Comportamental
-          </p>
-        </div>
-
-        {/* DIVISOR */}
-        <div className="w-full h-px bg-slate-100"/>
-
-        {/* FORMULÁRIO */}
-        <div className="w-full">
+        {/* Formulário */}
+        <div className="px-8 py-6 space-y-1">
+          <p className="text-sm font-bold text-slate-700">Acessar sistema</p>
+          <p className="text-xs text-slate-400 mb-4">Use suas credenciais da clínica.</p>
           <LoginForm />
         </div>
 
-        {/* RODAPÉ */}
-        <p className="text-xs text-slate-400 text-center">
-          Sistema exclusivo para uso interno da clínica.
-        </p>
+        {/* Rodapé */}
+        <div className="px-8 pb-6 text-center">
+          <p className="text-[11px] text-slate-300">
+            Acesso restrito · Clínica Abraço © {new Date().getFullYear()}
+          </p>
+        </div>
       </div>
     </div>
   );
