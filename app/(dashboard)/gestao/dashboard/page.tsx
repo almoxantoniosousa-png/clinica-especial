@@ -3,12 +3,22 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import { Bar, Line, Pie } from "react-chartjs-2";
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement,
+  LineElement, PointElement, ArcElement, Tooltip, Legend, Filler
+} from "chart.js";
+
+ChartJS.register(
+  CategoryScale, LinearScale, BarElement,
+  LineElement, PointElement, ArcElement, Tooltip, Legend, Filler
+);
 
 export default function GestaoDashboardPage() {
-  
+
   const [loading, setLoading] = useState(true);
 
-  // Métricas
+  // Métricas operacionais
   const [criancasAtivas, setCriancasAtivas] = useState(0);
   const [equipeTotal, setEquipeTotal] = useState(0);
   const [atendimentosHoje, setAtendimentosHoje] = useState(0);
@@ -22,6 +32,16 @@ export default function GestaoDashboardPage() {
   const [ultimosRelatorios, setUltimosRelatorios] = useState<any[]>([]);
   const [agendaHoje, setAgendaHoje] = useState<any[]>([]);
 
+  // Analytics
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+  const [graficoVolume, setGraficoVolume] = useState<any>(null);
+  const [graficoProfissionais, setGraficoProfissionais] = useState<any>(null);
+  const [graficoModalidades, setGraficoModalidades] = useState<any>(null);
+  const [graficoPlanos, setGraficoPlanos] = useState<any>(null);
+  const [kpiAnalytics, setKpiAnalytics] = useState({
+    crescimento: 0, totalRelatorios: 0, mediaDiaria: 0, melhorProfissional: ""
+  });
+
   const hoje = new Date().toISOString().split("T")[0];
   const mesAtual = new Date().toISOString().slice(0, 7);
   const hojeFormatado = new Date().toLocaleDateString("pt-BR", {
@@ -31,6 +51,7 @@ export default function GestaoDashboardPage() {
   useEffect(() => {
     async function carregar() {
       setLoading(true);
+      carregarAnalytics();
 
       // Crianças ativas
       const { count: totalCriancas } = await supabase
@@ -124,6 +145,126 @@ export default function GestaoDashboardPage() {
     carregar();
   }, []);
 
+  async function carregarAnalytics() {
+    setLoadingAnalytics(true);
+    const agora = new Date();
+
+    const meses: string[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+      meses.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    }
+    const mesAnt = meses[meses.length - 2];
+    const mesAtualStr = meses[meses.length - 1];
+    const [, mesFimNum] = mesAtualStr.split("-");
+    const ultimoDia = new Date(agora.getFullYear(), Number(mesFimNum), 0).getDate();
+    const dataIni = `${meses[0]}-01`;
+    const dataFim = `${mesAtualStr}-${String(ultimoDia).padStart(2, "0")}`;
+
+    const [
+      { data: atendData },
+      { data: criancasData },
+      { data: relatoriosData },
+      { data: perfisData },
+    ] = await Promise.all([
+      supabase.from("atendimentos").select("data, modalidade, atendente_id").gte("data", dataIni).lte("data", dataFim),
+      supabase.from("criancas").select("plano_saude"),
+      supabase.from("prontuarios").select("id").eq("tipo", "relatorio"),
+      supabase.from("perfis").select("id, nome").eq("role", "atendente"),
+    ]);
+
+    // Volume mensal
+    const volPorMes: Record<string, number> = {};
+    meses.forEach(m => { volPorMes[m] = 0; });
+    (atendData || []).forEach((a: any) => {
+      const m = a.data?.slice(0, 7);
+      if (m && volPorMes[m] !== undefined) volPorMes[m]++;
+    });
+
+    const labelMeses = meses.map(m => {
+      const [a, ms] = m.split("-");
+      return new Date(Number(a), Number(ms) - 1, 1).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+    });
+
+    setGraficoVolume({
+      labels: labelMeses,
+      datasets: [{
+        label: "Atendimentos",
+        data: meses.map(m => volPorMes[m]),
+        borderColor: "rgb(99,102,241)",
+        backgroundColor: "rgba(99,102,241,0.15)",
+        tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: "rgb(99,102,241)",
+      }],
+    });
+
+    // Crescimento vs mês anterior
+    const totalMesAtual = volPorMes[mesAtualStr] || 0;
+    const totalMesAnt   = volPorMes[mesAnt]       || 0;
+    const crescimento   = totalMesAnt > 0 ? Math.round(((totalMesAtual - totalMesAnt) / totalMesAnt) * 100) : 0;
+
+    // Modalidades (mês atual)
+    const modalMes = (atendData || []).filter((a: any) => a.data?.startsWith(mesAtualStr));
+    const modCount: Record<string, number> = { liminar: 0, convenio: 0, particular: 0 };
+    modalMes.forEach((a: any) => { if (a.modalidade) modCount[a.modalidade] = (modCount[a.modalidade] || 0) + 1; });
+
+    setGraficoModalidades({
+      labels: ["Liminar", "Convênio", "Particular"],
+      datasets: [{
+        data: [modCount.liminar, modCount.convenio, modCount.particular],
+        backgroundColor: ["#6366f1", "#10b981", "#f97316"],
+        hoverOffset: 8, borderWidth: 2, borderColor: "#fff",
+      }],
+    });
+
+    // Planos de saúde
+    const planosCount: Record<string, number> = {};
+    (criancasData || []).forEach((c: any) => {
+      const p = c.plano_saude?.trim() || "Sem plano";
+      planosCount[p] = (planosCount[p] || 0) + 1;
+    });
+    const planosOrd = Object.entries(planosCount).sort((a, b) => b[1] - a[1]);
+    const coresPlano = ["#6366f1","#10b981","#f97316","#3b82f6","#ec4899","#84cc16","#94a3b8"];
+
+    setGraficoPlanos({
+      labels: planosOrd.map(([p]) => p),
+      datasets: [{ data: planosOrd.map(([, n]) => n), backgroundColor: planosOrd.map((_, i) => coresPlano[i % coresPlano.length]), hoverOffset: 8, borderWidth: 2, borderColor: "#fff" }],
+    });
+
+    // Top profissionais (mês atual)
+    const nomesMap: Record<string, string> = {};
+    (perfisData || []).forEach((p: any) => { nomesMap[p.id] = p.nome; });
+    const rankMap: Record<string, number> = {};
+    modalMes.forEach((a: any) => {
+      const id = a.atendente_id;
+      if (id) rankMap[id] = (rankMap[id] || 0) + 1;
+    });
+    const ranking = Object.entries(rankMap)
+      .map(([id, count]) => ({ nome: nomesMap[id]?.split(" ")[0] || "AT", count }))
+      .sort((a, b) => b.count - a.count).slice(0, 8);
+
+    if (ranking.length > 0) {
+      setGraficoProfissionais({
+        labels: ranking.map(p => p.nome),
+        datasets: [{
+          label: "Atendimentos",
+          data: ranking.map(p => p.count),
+          backgroundColor: "rgba(99,102,241,0.8)",
+          borderRadius: 6,
+        }],
+      });
+    }
+
+    const diasUteis = ultimoDia * (5 / 7);
+    setKpiAnalytics({
+      crescimento,
+      totalRelatorios: relatoriosData?.length || 0,
+      mediaDiaria: diasUteis > 0 ? Math.round((totalMesAtual / diasUteis) * 10) / 10 : 0,
+      melhorProfissional: ranking[0]?.nome || "—",
+    });
+
+    setLoadingAnalytics(false);
+  }
+
   const roleLabel: any = {
     gestao: { label: "Gestão", color: "bg-purple-100 text-purple-700" },
     adm: { label: "ADM", color: "bg-blue-100 text-blue-700" },
@@ -140,6 +281,39 @@ export default function GestaoDashboardPage() {
   }
 
   const totalAtend = Object.values(atendimentosPorModalidade).reduce((a: any, b: any) => a + b, 0) as number;
+
+  const optLine = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { cornerRadius: 8 } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: "#94a3b8", font: { size: 11 } } },
+      y: { grid: { color: "#f1f5f9" }, ticks: { color: "#94a3b8", font: { size: 11 } }, beginAtZero: true },
+    },
+  };
+
+  const optBar = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { cornerRadius: 8 } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: "#475569", font: { size: 11 } } },
+      y: { grid: { color: "#f1f5f9" }, ticks: { color: "#94a3b8", font: { size: 11 } }, beginAtZero: true },
+    },
+  };
+
+  const optBarH = {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: "y" as const,
+    plugins: { legend: { display: false }, tooltip: { cornerRadius: 8 } },
+    scales: {
+      x: { grid: { color: "#f1f5f9" }, ticks: { color: "#94a3b8", font: { size: 11 } }, beginAtZero: true },
+      y: { grid: { display: false }, ticks: { color: "#475569", font: { size: 12 } } },
+    },
+  };
+
+  const optPie = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: "bottom" as const, labels: { font: { size: 11 }, color: "#64748b", padding: 12 } }, tooltip: { cornerRadius: 8 } },
+  };
 
   if (loading) {
     return (
@@ -393,6 +567,104 @@ export default function GestaoDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* ANALYTICS */}
+      <div className="flex items-center gap-3 pt-2">
+        <div className="flex-1 h-px bg-slate-200"/>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analytics</span>
+        <div className="flex-1 h-px bg-slate-200"/>
+      </div>
+
+      {loadingAnalytics ? (
+        <div className="flex items-center justify-center py-10 gap-3">
+          <svg className="animate-spin h-5 w-5 text-indigo-400" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          <p className="text-slate-400 text-sm">Carregando analytics...</p>
+        </div>
+      ) : (
+        <>
+          {/* KPIs Analytics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+              <p className="text-xs font-medium text-slate-500 mb-3">Crescimento</p>
+              <p className={`text-3xl font-bold ${kpiAnalytics.crescimento >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                {kpiAnalytics.crescimento >= 0 ? "+" : ""}{kpiAnalytics.crescimento}%
+              </p>
+              <p className="text-xs text-slate-400 mt-1">vs mês anterior</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+              <p className="text-xs font-medium text-slate-500 mb-3">Média diária</p>
+              <p className="text-3xl font-bold text-indigo-600">{kpiAnalytics.mediaDiaria}</p>
+              <p className="text-xs text-slate-400 mt-1">atendimentos/dia</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+              <p className="text-xs font-medium text-slate-500 mb-3">Relatórios enviados</p>
+              <p className="text-3xl font-bold text-violet-600">{kpiAnalytics.totalRelatorios}</p>
+              <p className="text-xs text-slate-400 mt-1">total no sistema</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+              <p className="text-xs font-medium text-slate-500 mb-3">Mais ativo no mês</p>
+              <p className="text-xl font-bold text-fuchsia-600 truncate">{kpiAnalytics.melhorProfissional}</p>
+              <p className="text-xs text-slate-400 mt-1">maior volume de atend.</p>
+            </div>
+          </div>
+
+          {/* Volume mensal */}
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-800">Volume de atendimentos</h2>
+              <p className="text-xs text-slate-400">Evolução nos últimos 6 meses</p>
+            </div>
+            <div className="p-5 h-52">
+              {graficoVolume
+                ? <Line data={graficoVolume} options={optLine}/>
+                : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados.</p></div>}
+            </div>
+          </div>
+
+          {/* Profissionais + Modalidades */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100">
+                <h2 className="text-sm font-semibold text-slate-800">Top profissionais</h2>
+                <p className="text-xs text-slate-400">Mais ativos no mês atual</p>
+              </div>
+              <div className="p-5 h-56">
+                {graficoProfissionais
+                  ? <Bar data={graficoProfissionais} options={optBarH}/>
+                  : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados.</p></div>}
+              </div>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100">
+                <h2 className="text-sm font-semibold text-slate-800">Modalidades no mês</h2>
+                <p className="text-xs text-slate-400">Liminar · Convênio · Particular</p>
+              </div>
+              <div className="p-5 h-56">
+                {graficoModalidades
+                  ? <Pie data={graficoModalidades} options={optPie}/>
+                  : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados.</p></div>}
+              </div>
+            </div>
+          </div>
+
+          {/* Planos de saúde */}
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-800">Crianças por plano de saúde</h2>
+              <p className="text-xs text-slate-400">Distribuição atual</p>
+            </div>
+            <div className="p-5 h-56">
+              {graficoPlanos
+                ? <Pie data={graficoPlanos} options={optPie}/>
+                : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados.</p></div>}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ATALHOS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
