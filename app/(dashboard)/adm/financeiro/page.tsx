@@ -336,7 +336,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
   const totalBruto = especialidades.reduce(
     (acc, e) => acc + (Number(e.qtd) || 0) * (Number(e.valor_sessao) || 0), 0
   );
-  const valorISS = descontoISS ? totalBruto * (Number(descontoISS) / 100) : 0;
+  const valorISS = Math.min(Number(descontoISS) || 0, totalBruto);
   const totalLiquido = totalBruto - valorISS;
 
   function addEspecialidade() {
@@ -368,7 +368,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
       subtotal: Number(e.qtd) * Number(e.valor_sessao),
     }));
     const bruto = espComSubtotal.reduce((acc, e) => acc + e.subtotal, 0);
-    const iss = descontoISS ? bruto * (Number(descontoISS) / 100) : 0;
+    const iss = Math.min(Number(descontoISS) || 0, bruto);
     const { error } = await supabase.from("contas_receber").insert([{
       crianca_id: criancaId,
       mes_referencia: mesAno,
@@ -408,9 +408,9 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
   }
 
   const totais = useMemo(() => ({
-    total: contas.reduce((acc, c) => acc + Number(c.valor_total || 0), 0),
+    total: contas.reduce((acc, c) => acc + Number(c.valor_liquido ?? c.valor_total ?? 0), 0),
     recebido: contas.filter(c => c.status === "recebido").reduce((acc, c) => acc + Number(c.valor_liquido ?? c.valor_total ?? 0), 0),
-    pendente: contas.filter(c => c.status !== "recebido").reduce((acc, c) => acc + Number(c.valor_liquido ?? c.valor_total ?? 0), 0),
+    emAberto: contas.filter(c => c.status !== "recebido").length,
   }), [contas]);
 
   function corStatus(status: string) {
@@ -431,16 +431,19 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Total a Receber</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Total Faturado</p>
           <p className="text-2xl font-black text-slate-800">R$ {totais.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-slate-400 mt-1">{contas.length} {contas.length === 1 ? "fatura" : "faturas"} emitida{contas.length === 1 ? "" : "s"}</p>
         </div>
         <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-semibold text-amber-600 uppercase mb-1">Pendente</p>
-          <p className="text-2xl font-black text-amber-500">R$ {totais.pendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs font-semibold text-amber-600 uppercase mb-1">Em Aberto</p>
+          <p className="text-2xl font-black text-amber-500">{totais.emAberto}</p>
+          <p className="text-xs text-amber-400 mt-1">{totais.emAberto === 1 ? "fatura aguardando" : "faturas aguardando"} pagamento</p>
         </div>
         <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Recebido</p>
+          <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Liquidado</p>
           <p className="text-2xl font-black text-emerald-600">R$ {totais.recebido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-emerald-400 mt-1">{contas.filter(c => c.status === "recebido").length} {contas.filter(c => c.status === "recebido").length === 1 ? "fatura" : "faturas"} recebida{contas.filter(c => c.status === "recebido").length === 1 ? "" : "s"}</p>
         </div>
       </div>
 
@@ -489,7 +492,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
                     {c.desconto_iss > 0 && (
                       <>
                         <p className="text-xs text-slate-400 line-through">R$ {Number(c.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                        <p className="text-xs text-red-400">ISS -{c.desconto_iss}%</p>
+                        <p className="text-xs text-red-400">ISS -R$ {Number(c.desconto_iss).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                       </>
                     )}
                     <p className="font-black text-slate-800">R$ {Number(valorFinal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
@@ -637,9 +640,9 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
 
               {/* Desconto ISS */}
               <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase">Desconto ISS (%)</label>
-                <input type="number" min="0" max="100" step="0.01" value={descontoISS}
-                  onChange={e => setDescontoISS(e.target.value)} placeholder="Ex: 5"
+                <label className="text-xs font-semibold text-slate-500 uppercase">Desconto ISS (R$)</label>
+                <input type="number" min="0" step="0.01" value={descontoISS}
+                  onChange={e => setDescontoISS(e.target.value)} placeholder="Ex: 900,00"
                   className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
               </div>
 
@@ -652,7 +655,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
                   </div>
                   {valorISS > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-red-400">Desconto ISS ({descontoISS}%)</span>
+                      <span className="text-red-400">Desconto ISS</span>
                       <span className="font-semibold text-red-400">− R$ {valorISS.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                     </div>
                   )}
