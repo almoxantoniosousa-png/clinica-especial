@@ -56,14 +56,16 @@ export default function AgendaEspecialistaPage() {
   }, [autor, diaSelecionado]);
 
   const diasSemana = useMemo(() => {
-    const dias = [];
     const hoje = new Date();
-    for (let i = -1; i <= 5; i++) {
-      const d = new Date(hoje);
-      d.setDate(hoje.getDate() + i);
-      dias.push(d.toISOString().slice(0, 10));
-    }
-    return dias;
+    const dow = hoje.getDay(); // 0=dom, 1=seg...6=sab
+    const diffSegunda = dow === 0 ? -6 : 1 - dow;
+    const segunda = new Date(hoje);
+    segunda.setDate(hoje.getDate() + diffSegunda);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(segunda);
+      d.setDate(segunda.getDate() + i);
+      return d.toISOString().slice(0, 10);
+    });
   }, []);
 
   function nomeDia(dataStr: string) {

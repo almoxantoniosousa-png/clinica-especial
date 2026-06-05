@@ -124,10 +124,9 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   ];
 
   const menuEspecialista = [
-    { href: "/especialista/agenda",      label: "Minha Agenda", icon: "🗓️" }, // ← ícone diferenciado
-    { href: "/especialista/escala",      label: "Minha Escala", icon: "📅" }, // ← adicionado
-    { href: "/especialista/prontuarios", label: "Prontuários",  icon: "📋" },
-    { href: "/especialista/relatorio",   label: "Relatório",    icon: "📝" },
+    { href: "/especialista/agenda",    label: "Minha Agenda",  icon: "🗓️" },
+    { href: "/especialista/escala",    label: "Minha Escala",  icon: "📅" },
+    { href: "/especialista/relatorio", label: "Prontuários",   icon: "📋" },
     { href: "/mural",                    label: "Mural",        icon: "📢" },
     { href: "/chat",                     label: "Chat",         icon: "💬" },
   ];

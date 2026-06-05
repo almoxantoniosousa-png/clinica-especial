@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X } from "lucide-react";
 
-const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 const HORARIOS = [
   "13:00 – 13:30",
   "13:30 – 14:30",

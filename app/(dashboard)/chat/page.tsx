@@ -153,10 +153,13 @@ export default function ChatPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
-        .from("perfis").select("id, nome, role")
-        .eq("id", user.id).single();
-      if (data) setEu(data as Perfil);
+      const { data: p } = await supabase
+        .from("perfis").select("id, nome, role").eq("id", user.id).single();
+      if (p) { setEu(p as Perfil); return; }
+      // especialistas/supervisora/gestao ficam em atendentes, não em perfis
+      const { data: a } = await supabase
+        .from("atendentes").select("id, nome, role").eq("email", user.email).maybeSingle();
+      if (a) setEu(a as Perfil);
     })();
   }, []);
 
@@ -358,12 +361,15 @@ export default function ChatPage() {
     const roles = PODE_CONTATAR[eu.role] ?? [];
     if (!roles.length) return;
     (async () => {
-      const { data } = await supabase
-        .from("perfis").select("id, nome, role")
-        .in("role", roles)
-        .neq("id", eu.id)
-        .order("nome");
-      if (data) setUsuarios(data as Perfil[]);
+      // adm fica em perfis; supervisora/gestao/especialista ficam em atendentes
+      const [{ data: dp }, { data: da }] = await Promise.all([
+        supabase.from("perfis").select("id, nome, role").in("role", roles).neq("id", eu.id),
+        supabase.from("atendentes").select("id, nome, role").in("role", roles).neq("id", eu.id),
+      ]);
+      const todos = [...(dp || []), ...(da || [])]
+        .filter((u, i, arr) => arr.findIndex(x => x.id === u.id) === i)
+        .sort((a: any, b: any) => a.nome.localeCompare(b.nome));
+      if (todos.length) setUsuarios(todos as Perfil[]);
     })();
   }, [modal, eu]);
 

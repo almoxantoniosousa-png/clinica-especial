@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Clock, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
-const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
 type EscalaItem = {
   id: string;
