@@ -423,18 +423,18 @@ export default function ChatPage() {
       `}>
 
         {/* Cabeçalho */}
-        <div className="px-4 pt-4 pb-3 border-b border-slate-100 space-y-3">
+        <div className="px-4 pt-4 pb-3 border-b border-slate-100 space-y-3 bg-[#128C7E]">
           <div className="flex items-center justify-between">
-            <h1 className="flex items-center gap-2 text-base font-semibold text-slate-800">
-              <MessageCircle className="h-5 w-5 text-blue-600 shrink-0" />
+            <h1 className="flex items-center gap-2 text-base font-semibold text-white">
+              <MessageCircle className="h-5 w-5 text-white/80 shrink-0" />
               Mensagens
             </h1>
             <button
               onClick={() => { setModal(true); setBuscaUsuario(""); setUsuarios([]); }}
               title="Nova conversa"
-              className="w-8 h-8 rounded-full bg-blue-50 hover:bg-blue-100 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
             >
-              <PenSquare className="h-4 w-4 text-blue-600" />
+              <PenSquare className="h-4 w-4 text-white" />
             </button>
           </div>
 
@@ -444,7 +444,7 @@ export default function ChatPage() {
             <input
               type="text" placeholder="Buscar..." value={busca}
               onChange={e => setBusca(e.target.value)}
-              className="w-full rounded-full border border-slate-200 bg-slate-50 pl-9 pr-8 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
+              className="w-full rounded-full border-0 bg-white pl-9 pr-8 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors"
             />
             {busca && (
               <button onClick={() => setBusca("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -482,8 +482,8 @@ export default function ChatPage() {
                 <button
                   key={c.id}
                   onClick={() => setAtiva(c)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-slate-50 transition-colors ${
-                    isAtiva ? "bg-blue-50 border-l-2 border-l-blue-500" : "hover:bg-slate-50"
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-slate-100 transition-colors ${
+                    isAtiva ? "bg-[#d9fdd3]" : "hover:bg-slate-50"
                   }`}
                 >
                   {/* Avatar */}
@@ -497,7 +497,7 @@ export default function ChatPage() {
                         {o.nome}
                       </p>
                       {nl > 0 && !isAtiva && (
-                        <span className="shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">
+                        <span className="shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-[#25D366] text-white text-xs font-bold flex items-center justify-center">
                           {nl > 99 ? "99+" : nl}
                         </span>
                       )}
@@ -518,26 +518,26 @@ export default function ChatPage() {
         <div className="flex-1 flex flex-col overflow-hidden">
 
           {/* Cabeçalho da conversa */}
-          <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-3 shrink-0 bg-white">
-            <button onClick={() => setAtiva(null)} className="md:hidden text-slate-500 mr-1">
+          <div className="px-4 py-3 flex items-center gap-3 shrink-0 bg-[#128C7E]">
+            <button onClick={() => setAtiva(null)} className="md:hidden text-white/80 mr-1">
               <ChevronLeft className="h-5 w-5" />
             </button>
             <div className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 ${ROLE_STYLE[parceiro.role] ?? "bg-slate-100 text-slate-600"}`}>
               {iniciais(parceiro.nome)}
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-semibold text-slate-800 truncate">{parceiro.nome}</p>
+              <p className="text-sm font-semibold text-white truncate">{parceiro.nome}</p>
               <p className="text-xs min-h-[1rem]">
                 {digitando
-                  ? <span className="text-blue-500 animate-pulse">digitando...</span>
-                  : <span className="text-slate-400">{ROLE_LABEL[parceiro.role] ?? parceiro.role}</span>
+                  ? <span className="text-green-200 animate-pulse">digitando...</span>
+                  : <span className="text-white/70">{ROLE_LABEL[parceiro.role] ?? parceiro.role}</span>
                 }
               </p>
             </div>
           </div>
 
           {/* Área de mensagens */}
-          <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 bg-slate-50 space-y-1">
+          <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1" style={{ background: "#e5ddd5 url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9b99a' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }}>
             {mensagens.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center gap-2 pb-8">
                 <div className={`w-14 h-14 rounded-full flex items-center justify-center text-base font-bold ${ROLE_STYLE[parceiro.role] ?? "bg-slate-100 text-slate-600"}`}>
@@ -553,10 +553,10 @@ export default function ChatPage() {
               <div key={grupo.label}>
 
                 {/* Separador de data */}
-                <div className="flex items-center gap-3 my-4">
-                  <div className="flex-1 h-px bg-slate-200" />
-                  <span className="text-xs text-slate-400 font-medium whitespace-nowrap px-1">{grupo.label}</span>
-                  <div className="flex-1 h-px bg-slate-200" />
+                <div className="flex justify-center my-4">
+                  <span className="text-xs text-slate-600 font-medium bg-[#e1f3fb] px-3 py-1 rounded-full shadow-sm">
+                    {grupo.label}
+                  </span>
                 </div>
 
                 <div className="space-y-1.5">
@@ -583,7 +583,7 @@ export default function ChatPage() {
                         {/* Balão */}
                         <div className={`max-w-xs sm:max-w-sm lg:max-w-md rounded-2xl overflow-hidden shadow-sm text-sm ${
                           minha
-                            ? "bg-blue-600 text-white rounded-br-sm"
+                            ? "bg-[#dcf8c6] text-slate-800 rounded-br-sm"
                             : "bg-white text-slate-800 rounded-bl-sm"
                         }`}>
 
@@ -602,23 +602,23 @@ export default function ChatPage() {
 
                           {c.tipo === "arquivo" && (
                             <a href={c.url} target="_blank" rel="noreferrer"
-                              className={`flex items-center gap-3 px-4 pt-3 pb-1 ${minha ? "text-blue-100" : "text-slate-600"}`}>
-                              <FileText className={`h-8 w-8 shrink-0 ${minha ? "text-blue-200" : "text-slate-400"}`} />
+                              className="flex items-center gap-3 px-4 pt-3 pb-1 text-slate-600">
+                              <FileText className="h-8 w-8 shrink-0 text-slate-400" />
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium truncate">{c.nome}</p>
-                                <p className={`text-xs ${minha ? "text-blue-200" : "text-slate-400"}`}>{formatarTamanho(c.tamanho)}</p>
+                                <p className="text-xs text-slate-400">{formatarTamanho(c.tamanho)}</p>
                               </div>
                               <Download className="h-4 w-4 shrink-0" />
                             </a>
                           )}
 
                           {/* Horário + status */}
-                          <div className={`flex items-center justify-end gap-1 px-3 pb-1.5 pt-0.5 ${minha ? "text-blue-200" : "text-slate-400"}`}>
+                          <div className={`flex items-center justify-end gap-1 px-3 pb-1.5 pt-0.5 text-slate-500`}>
                             <span className="text-xs">
                               {new Date(msg.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                             </span>
                             {minha && (msg.lida
-                              ? <CheckCheck className="h-3 w-3" />
+                              ? <CheckCheck className="h-3 w-3 text-[#53bdeb]" />
                               : <Check className="h-3 w-3" />
                             )}
                           </div>
@@ -675,7 +675,7 @@ export default function ChatPage() {
 
           {/* Atalhos rápidos — ADM e Gestão */}
           {(eu?.role === "adm" || eu?.role === "admin" || eu?.role === "gestao") && (
-            <div className="px-3 pt-2 pb-1 flex gap-2 flex-wrap shrink-0 border-t border-slate-100 bg-white">
+            <div className="px-3 pt-2 pb-1 flex gap-2 flex-wrap shrink-0 bg-[#f0f2f5]">
               {[
                 { icon: "📍", label: "Endereço", texto: "📍 Clínica Abraço ABA\nRua Professor Leopoldo Amaral, 366 — Empresarial Alto do Parque" },
                 { icon: "📱", label: "WhatsApp", texto: "📱 WhatsApp da Clínica Abraço: (71) 9 8123-6857" },
@@ -691,7 +691,7 @@ export default function ChatPage() {
           )}
 
           {/* Barra de input */}
-          <div className="p-3 border-t border-slate-200 flex items-end gap-2 shrink-0 bg-white">
+          <div className="p-3 flex items-end gap-2 shrink-0 bg-[#f0f2f5]">
             <button
               onClick={() => fileRef.current?.click()} disabled={uploading}
               title="Enviar arquivo"
@@ -721,13 +721,13 @@ export default function ChatPage() {
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); } }}
               placeholder="Mensagem… (Enter envia · Shift+Enter nova linha)"
               rows={1}
-              className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white resize-none overflow-y-auto leading-5 transition-all"
+              className="flex-1 rounded-2xl border-0 bg-white px-4 py-2 text-sm focus:outline-none shadow-sm resize-none overflow-y-auto leading-5 transition-all"
               style={{ minHeight: "38px", maxHeight: "200px" }}
             />
 
             <button
               onClick={() => enviar()} disabled={!texto.trim() || uploading}
-              className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 mb-0.5"
+              className="w-9 h-9 bg-[#128C7E] rounded-full flex items-center justify-center hover:bg-[#0e7568] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 mb-0.5"
             >
               {uploading
                 ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
