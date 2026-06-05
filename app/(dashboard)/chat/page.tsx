@@ -673,6 +673,23 @@ export default function ChatPage() {
             </div>
           )}
 
+          {/* Atalhos rápidos — ADM e Gestão */}
+          {(eu?.role === "adm" || eu?.role === "admin" || eu?.role === "gestao") && (
+            <div className="px-3 pt-2 pb-1 flex gap-2 flex-wrap shrink-0 border-t border-slate-100 bg-white">
+              {[
+                { icon: "📍", label: "Endereço", texto: "📍 Clínica Abraço ABA\nRua Professor Leopoldo Amaral, 366 — Empresarial Alto do Parque" },
+                { icon: "📱", label: "WhatsApp", texto: "📱 WhatsApp da Clínica Abraço: (71) 9 8123-6857" },
+                { icon: "🗺️", label: "Maps", texto: "🗺️ Como chegar à Clínica Abraço:\nhttps://www.google.com/maps/place/12%C2%B059'58.5%22S+38%C2%B028'07.7%22W/@-12.9994182,-38.4707605,16.77z/data=!4m4!3m3!8m2!3d-12.9995756!4d-38.4688072?hl=pt-BR&entry=ttu&g_ep=EgoyMDI2MDYwMS4wIKXMDSoASAFQAw%3D%3D" },
+                { icon: "📋", label: "Tudo", texto: "📍 Clínica Abraço ABA\nRua Professor Leopoldo Amaral, 366 — Empresarial Alto do Parque\n\n📱 WhatsApp: (71) 9 8123-6857\n\n🗺️ Como chegar:\nhttps://www.google.com/maps/place/12%C2%B059'58.5%22S+38%C2%B028'07.7%22W/@-12.9994182,-38.4707605,16.77z/data=!4m4!3m3!8m2!3d-12.9995756!4d-38.4688072?hl=pt-BR&entry=ttu&g_ep=EgoyMDI2MDYwMS4wIKXMDSoASAFQAw%3D%3D" },
+              ].map(a => (
+                <button key={a.label} onClick={() => setTexto(a.texto)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 rounded-full border border-slate-200 hover:border-blue-200 transition">
+                  <span>{a.icon}</span>{a.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Barra de input */}
           <div className="p-3 border-t border-slate-200 flex items-end gap-2 shrink-0 bg-white">
             <button
