@@ -41,7 +41,8 @@ const ROLE_STYLE: Record<string, string> = {
 type MensagemConteudo =
   | { tipo: "texto";   texto: string }
   | { tipo: "imagem";  url: string; nome: string }
-  | { tipo: "arquivo"; url: string; nome: string; tamanho: number };
+  | { tipo: "arquivo"; url: string; nome: string; tamanho: number }
+  | { tipo: "audio";   url: string; duracao: number };
 
 type Mensagem = {
   id: string;
@@ -49,6 +50,7 @@ type Mensagem = {
   autor_id: string;
   created_at: string;
   lida: boolean;
+  reacoes?: Record<string, string[]>;
 };
 
 type Perfil = { id: string; nome: string; role: string; foto_url?: string | null };
@@ -68,9 +70,14 @@ type Conversa = {
 function parseConteudo(conteudo: string): MensagemConteudo {
   try {
     const p = JSON.parse(conteudo);
-    if (p.tipo === "imagem" || p.tipo === "arquivo") return p;
+    if (p.tipo === "imagem" || p.tipo === "arquivo" || p.tipo === "audio") return p;
   } catch {}
   return { tipo: "texto", texto: conteudo };
+}
+
+function formatDuracao(s: number) {
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, "0")}`;
 }
 
 function formatarTamanho(bytes: number) {
@@ -126,6 +133,17 @@ export default function ChatPage() {
 
   // Fotos dos contatos { userId: url }
   const [fotosContatos, setFotosContatos] = useState<Record<string, string>>({});
+
+  // Gravação de voz
+  const [gravando, setGravando] = useState(false);
+  const [tempoGravacao, setTempoGravacao] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef   = useRef<Blob[]>([]);
+  const timerGravacaoRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Reações
+  const [reacaoAberta, setReacaoAberta] = useState<string | null>(null);
+  const EMOJIS_REACAO = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
   // Não lidas
   const [naoLidas, setNaoLidas] = useState<Record<string, number>>({});
@@ -252,6 +270,13 @@ export default function ChatPage() {
           });
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "mensagens_chat", filter: `conversa_id=eq.${ativa.id}` },
+        (payload: { new: Mensagem }) => {
+          setMensagens(prev => prev.map(m => m.id === payload.new.id ? { ...m, reacoes: payload.new.reacoes } : m));
+        }
+      )
       .on("broadcast", { event: "typing" }, (payload: { payload: { userId: string; nome: string } }) => {
         if (payload.payload.userId === eu.id) return;
         setDigitando(payload.payload.nome);
@@ -375,6 +400,74 @@ export default function ChatPage() {
         {iniciais(perfil.nome)}
       </div>
     );
+  }
+
+  // ── Gravação de voz ───────────────────────────────────────────────────────
+
+  async function iniciarGravacao() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const duracao = tempoGravacao;
+        setTempoGravacao(0);
+        if (!ativa || !eu) return;
+        setUploading(true);
+        try {
+          const path = `${ativa.id}/${Date.now()}-audio.webm`;
+          const { error: upErr } = await supabase.storage.from("chat-uploads").upload(path, blob);
+          if (upErr) throw upErr;
+          const { data: { publicUrl } } = supabase.storage.from("chat-uploads").getPublicUrl(path);
+          await enviar(JSON.stringify({ tipo: "audio", url: publicUrl, duracao }));
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : "Erro ao enviar áudio";
+          setUploadErro(msg); setTimeout(() => setUploadErro(null), 5000);
+        } finally { setUploading(false); }
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setGravando(true);
+      timerGravacaoRef.current = setInterval(() => setTempoGravacao(t => t + 1), 1000);
+    } catch { setUploadErro("Microfone não disponível ou sem permissão."); setTimeout(() => setUploadErro(null), 4000); }
+  }
+
+  function pararGravacao() {
+    if (mediaRecorderRef.current && gravando) {
+      mediaRecorderRef.current.stop();
+      setGravando(false);
+      if (timerGravacaoRef.current) clearInterval(timerGravacaoRef.current);
+    }
+  }
+
+  function cancelarGravacao() {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.ondataavailable = null;
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.stop();
+    }
+    setGravando(false);
+    setTempoGravacao(0);
+    if (timerGravacaoRef.current) clearInterval(timerGravacaoRef.current);
+  }
+
+  // ── Reações ───────────────────────────────────────────────────────────────
+
+  async function toggleReacao(msgId: string, emoji: string) {
+    if (!eu) return;
+    const msg = mensagens.find(m => m.id === msgId);
+    if (!msg) return;
+    const reacoes = { ...(msg.reacoes ?? {}) };
+    const users = reacoes[emoji] ?? [];
+    const jaReagiu = users.includes(eu.id);
+    const novosUsers = jaReagiu ? users.filter(id => id !== eu.id) : [...users, eu.id];
+    if (novosUsers.length === 0) delete reacoes[emoji]; else reacoes[emoji] = novosUsers;
+    await supabase.from("mensagens_chat").update({ reacoes }).eq("id", msgId);
+    setMensagens(prev => prev.map(m => m.id === msgId ? { ...m, reacoes } : m));
+    setReacaoAberta(null);
   }
 
   // ── Abrir / criar conversa ────────────────────────────────────────────────
@@ -634,58 +727,112 @@ export default function ChatPage() {
                     const ant = grupo.itens[i - 1];
                     const primeiraDoGrupo = !ant || ant.autor_id !== msg.autor_id;
 
+                    const totalReacoes = Object.values(msg.reacoes ?? {}).flat().length;
+
                     return (
                       <div key={msg.id} className={`flex items-end gap-1.5 ${minha ? "flex-row-reverse" : "flex-row"}`}>
 
-                        {/* Mini-avatar do parceiro (apenas na primeira msg da sequência) */}
+                        {/* Mini-avatar do parceiro */}
                         {!minha && (
                           <div className="w-6 shrink-0 self-end">
                             {primeiraDoGrupo && <Avatar perfil={parceiro} size="sm" />}
                           </div>
                         )}
 
-                        {/* Balão */}
-                        <div className={`max-w-xs sm:max-w-sm lg:max-w-md rounded-2xl overflow-hidden shadow-sm text-sm ${
-                          minha
-                            ? "bg-[#dcf8c6] text-slate-800 rounded-br-sm"
-                            : "bg-white text-slate-800 rounded-bl-sm"
-                        }`}>
+                        {/* Wrapper balão + reações */}
+                        <div className={`flex flex-col ${minha ? "items-end" : "items-start"} relative group`}>
 
-                          {c.tipo === "texto" && (
-                            <p className="px-4 pt-2.5 pb-1 break-words whitespace-pre-wrap leading-relaxed">
-                              {c.texto}
-                            </p>
-                          )}
-
-                          {c.tipo === "imagem" && (
-                            <button onClick={() => window.open(c.url, "_blank")} className="block">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={c.url} alt={c.nome} className="max-w-full max-h-56 object-cover" />
+                          {/* Botão de reação (aparece no hover) */}
+                          <div className={`absolute top-1 ${minha ? "left-0 -translate-x-8" : "right-0 translate-x-8"} opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
+                            <button onClick={() => setReacaoAberta(reacaoAberta === msg.id ? null : msg.id)}
+                              className="w-6 h-6 rounded-full bg-white shadow border border-slate-200 flex items-center justify-center text-sm hover:bg-slate-50">
+                              😊
                             </button>
-                          )}
-
-                          {c.tipo === "arquivo" && (
-                            <a href={c.url} target="_blank" rel="noreferrer"
-                              className="flex items-center gap-3 px-4 pt-3 pb-1 text-slate-600">
-                              <FileText className="h-8 w-8 shrink-0 text-slate-400" />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{c.nome}</p>
-                                <p className="text-xs text-slate-400">{formatarTamanho(c.tamanho)}</p>
+                            {reacaoAberta === msg.id && (
+                              <div className={`absolute bottom-8 ${minha ? "right-0" : "left-0"} bg-white rounded-2xl shadow-xl border border-slate-200 px-2 py-1.5 flex gap-1 z-20`}>
+                                {EMOJIS_REACAO.map(emoji => (
+                                  <button key={emoji} onClick={() => toggleReacao(msg.id, emoji)}
+                                    className={`text-xl hover:scale-125 transition-transform p-0.5 rounded ${
+                                      (msg.reacoes?.[emoji] ?? []).includes(eu?.id ?? "") ? "bg-blue-50" : ""
+                                    }`}>
+                                    {emoji}
+                                  </button>
+                                ))}
                               </div>
-                              <Download className="h-4 w-4 shrink-0" />
-                            </a>
-                          )}
-
-                          {/* Horário + status */}
-                          <div className={`flex items-center justify-end gap-1 px-3 pb-1.5 pt-0.5 text-slate-500`}>
-                            <span className="text-xs">
-                              {new Date(msg.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                            {minha && (msg.lida
-                              ? <CheckCheck className="h-3 w-3 text-[#53bdeb]" />
-                              : <Check className="h-3 w-3" />
                             )}
                           </div>
+
+                          {/* Balão */}
+                          <div className={`max-w-xs sm:max-w-sm lg:max-w-md rounded-2xl overflow-hidden shadow-sm text-sm ${
+                            minha
+                              ? "bg-[#dcf8c6] text-slate-800 rounded-br-sm"
+                              : "bg-white text-slate-800 rounded-bl-sm"
+                          }`}>
+
+                            {c.tipo === "texto" && (
+                              <p className="px-4 pt-2.5 pb-1 break-words whitespace-pre-wrap leading-relaxed">
+                                {c.texto}
+                              </p>
+                            )}
+
+                            {c.tipo === "imagem" && (
+                              <button onClick={() => window.open(c.url, "_blank")} className="block">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={c.url} alt={c.nome} className="max-w-full max-h-56 object-cover" />
+                              </button>
+                            )}
+
+                            {c.tipo === "arquivo" && (
+                              <a href={c.url} target="_blank" rel="noreferrer"
+                                className="flex items-center gap-3 px-4 pt-3 pb-1 text-slate-600">
+                                <FileText className="h-8 w-8 shrink-0 text-slate-400" />
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium truncate">{c.nome}</p>
+                                  <p className="text-xs text-slate-400">{formatarTamanho(c.tamanho)}</p>
+                                </div>
+                                <Download className="h-4 w-4 shrink-0" />
+                              </a>
+                            )}
+
+                            {c.tipo === "audio" && (
+                              <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 min-w-[200px]">
+                                <span className="text-xl">🎤</span>
+                                <audio src={c.url} controls
+                                  className="flex-1 h-8"
+                                  style={{ accentColor: "#128C7E" }}
+                                />
+                                <span className="text-xs text-slate-500 shrink-0">{formatDuracao(c.duracao)}</span>
+                              </div>
+                            )}
+
+                            {/* Horário + status */}
+                            <div className="flex items-center justify-end gap-1 px-3 pb-1.5 pt-0.5 text-slate-500">
+                              <span className="text-xs">
+                                {new Date(msg.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                              {minha && (msg.lida
+                                ? <CheckCheck className="h-3 w-3 text-[#53bdeb]" />
+                                : <Check className="h-3 w-3" />
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Reações abaixo do balão */}
+                          {totalReacoes > 0 && (
+                            <div className="flex gap-1 mt-0.5 flex-wrap">
+                              {Object.entries(msg.reacoes ?? {}).filter(([, users]) => users.length > 0).map(([emoji, users]) => (
+                                <button key={emoji} onClick={() => toggleReacao(msg.id, emoji)}
+                                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs border shadow-sm transition
+                                    ${users.includes(eu?.id ?? "")
+                                      ? "bg-blue-50 border-blue-200 text-blue-700"
+                                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                    }`}>
+                                  <span>{emoji}</span>
+                                  {users.length > 1 && <span className="font-medium">{users.length}</span>}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -754,47 +901,71 @@ export default function ChatPage() {
 
           {/* Barra de input */}
           <div className="p-3 flex items-end gap-2 shrink-0 bg-[#f0f2f5]">
-            <button
-              onClick={() => fileRef.current?.click()} disabled={uploading}
-              title="Enviar arquivo"
-              className="text-slate-400 hover:text-blue-500 disabled:opacity-40 transition-colors shrink-0 mb-1.5"
-            >
-              <Paperclip className="h-5 w-5" />
-            </button>
 
-            <button
-              onClick={() => isMobile ? setMenuFoto(v => !v) : imagemRef.current?.click()}
-              disabled={uploading}
-              title="Enviar imagem"
-              className="text-slate-400 hover:text-blue-500 disabled:opacity-40 transition-colors shrink-0 mb-1.5"
-            >
-              <ImageIcon className="h-5 w-5" />
-            </button>
+            {/* Gravando: mostra timer + cancelar + enviar */}
+            {gravando ? (
+              <>
+                <button onClick={cancelarGravacao}
+                  className="text-red-500 hover:text-red-600 transition shrink-0 mb-1.5">
+                  <X className="h-5 w-5" />
+                </button>
+                <div className="flex-1 rounded-2xl bg-white shadow-sm px-4 py-2 flex items-center gap-3">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"/>
+                  <span className="text-sm text-slate-600 font-medium">{formatDuracao(tempoGravacao)}</span>
+                  <span className="text-xs text-slate-400">Gravando…</span>
+                </div>
+                <button onClick={pararGravacao}
+                  className="w-9 h-9 bg-[#128C7E] rounded-full flex items-center justify-center hover:bg-[#0e7568] transition-colors shrink-0 mb-0.5">
+                  <Send className="h-4 w-4 text-white" />
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => fileRef.current?.click()} disabled={uploading}
+                  title="Enviar arquivo"
+                  className="text-slate-400 hover:text-[#128C7E] disabled:opacity-40 transition-colors shrink-0 mb-1.5">
+                  <Paperclip className="h-5 w-5" />
+                </button>
 
-            <textarea
-              ref={textareaRef}
-              value={texto}
-              onChange={e => {
-                setTexto(e.target.value);
-                e.target.style.height = "auto";
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
-                broadcastTyping();
-              }}
-              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); } }}
-              placeholder="Mensagem… (Enter envia · Shift+Enter nova linha)"
-              rows={1}
-              className="flex-1 rounded-2xl border-0 bg-white px-4 py-2 text-sm focus:outline-none shadow-sm resize-none overflow-y-auto leading-5 transition-all"
-              style={{ minHeight: "38px", maxHeight: "200px" }}
-            />
+                <button onClick={() => isMobile ? setMenuFoto(v => !v) : imagemRef.current?.click()}
+                  disabled={uploading} title="Enviar imagem"
+                  className="text-slate-400 hover:text-[#128C7E] disabled:opacity-40 transition-colors shrink-0 mb-1.5">
+                  <ImageIcon className="h-5 w-5" />
+                </button>
 
-            <button
-              onClick={() => enviar()} disabled={!texto.trim() || uploading}
-              className="w-9 h-9 bg-[#128C7E] rounded-full flex items-center justify-center hover:bg-[#0e7568] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 mb-0.5"
-            >
-              {uploading
-                ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                : <Send className="h-4 w-4 text-white" />}
-            </button>
+                <textarea
+                  ref={textareaRef}
+                  value={texto}
+                  onChange={e => {
+                    setTexto(e.target.value);
+                    e.target.style.height = "auto";
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
+                    broadcastTyping();
+                  }}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); } }}
+                  placeholder="Mensagem… (Enter envia · Shift+Enter nova linha)"
+                  rows={1}
+                  className="flex-1 rounded-2xl border-0 bg-white px-4 py-2 text-sm focus:outline-none shadow-sm resize-none overflow-y-auto leading-5 transition-all"
+                  style={{ minHeight: "38px", maxHeight: "200px" }}
+                />
+
+                {/* Enviar texto OU microfone */}
+                {texto.trim() ? (
+                  <button onClick={() => enviar()} disabled={uploading}
+                    className="w-9 h-9 bg-[#128C7E] rounded-full flex items-center justify-center hover:bg-[#0e7568] transition-colors disabled:opacity-40 shrink-0 mb-0.5">
+                    {uploading
+                      ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : <Send className="h-4 w-4 text-white" />}
+                  </button>
+                ) : (
+                  <button onClick={iniciarGravacao} disabled={uploading}
+                    title="Gravar áudio"
+                    className="w-9 h-9 bg-[#128C7E] rounded-full flex items-center justify-center hover:bg-[#0e7568] transition-colors disabled:opacity-40 shrink-0 mb-0.5">
+                    <span className="text-white text-base">🎤</span>
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
