@@ -128,10 +128,7 @@ export default function GestaoAgendaPage() {
             </svg>
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
-              <Calendar className="h-6 w-6 text-blue-600" />
-              Agenda
-            </h1>
+            <h1 className="text-xl font-bold text-slate-900">Agenda</h1>
             <p className="text-xs text-slate-400 mt-0.5">Visão geral de todos os atendimentos</p>
           </div>
         </div>
@@ -210,7 +207,7 @@ export default function GestaoAgendaPage() {
           {agendamentos.map(ag => (
             <div key={ag.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex gap-4 items-start">
               <div className="shrink-0 text-center min-w-[3rem]">
-                <p className="text-lg font-black text-blue-900 leading-none">{ag.hora?.slice(0, 5)}</p>
+                <p className="text-lg font-bold text-blue-600 leading-none">{ag.hora?.slice(0, 5)}</p>
                 <p className="text-xs text-slate-400 mt-0.5">h</p>
               </div>
               <div className="w-px bg-slate-100 self-stretch"/>

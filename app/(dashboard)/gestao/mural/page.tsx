@@ -87,7 +87,7 @@ export default function GestaoMuralPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"/>
-              <h1 className="text-2xl font-bold text-blue-900">Mural</h1>
+              <h1 className="text-xl font-bold text-slate-900">Mural</h1>
             </div>
             <p className="text-xs text-slate-400 uppercase tracking-widest mt-0.5">Comunicados e Avisos</p>
           </div>

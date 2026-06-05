@@ -82,8 +82,8 @@ export default function GestaoRelatoriosPage() {
           </svg>
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-blue-900">Relatórios</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Relatórios diários da equipe</p>
+          <h1 className="text-xl font-bold text-slate-900">Relatórios</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Prontuários e relatórios da equipe</p>
         </div>
       </div>
 
@@ -189,49 +189,39 @@ export default function GestaoRelatoriosPage() {
                 {estaAberto && conteudo && (
                   <div className="border-t border-slate-100">
                     {/* Cabeçalho do documento */}
-                    <div className="bg-blue-900 px-5 py-4 flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white text-lg shrink-0">📋</div>
+                    <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                       <div>
-                        <p className="text-white font-bold text-sm">Relatório de Avaliação de Desempenho</p>
-                        <p className="text-blue-300 text-xs mt-0.5">
-                          {r.criancas?.nome} · {r.autor_nome} · {new Date(r.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                        <p className="text-sm font-semibold text-slate-800">{r.criancas?.nome}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {r.autor_nome} · {new Date(r.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
                         </p>
                       </div>
+                      {conteudo?.especialidade && (
+                        <span className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full font-medium">
+                          {conteudo.especialidade}
+                        </span>
+                      )}
                     </div>
 
-                    <div className="p-5 space-y-3 bg-slate-50">
-                      {/* Objetivo do atendimento */}
+                    <div className="p-4 space-y-3">
                       {conteudo.objetivo_atendimento && (
-                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                          <div className="bg-slate-100 px-4 py-2 border-b border-slate-200">
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Objetivo do Atendimento</span>
-                          </div>
-                          <p className="px-4 py-3 text-sm text-slate-700 leading-relaxed">{conteudo.objetivo_atendimento}</p>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Objetivo</p>
+                          <p className="text-sm text-slate-700 leading-relaxed">{conteudo.objetivo_atendimento}</p>
                         </div>
                       )}
 
-                      {/* Campos principais em grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {campos.map(campo => conteudo[campo.key] ? (
-                          <div key={campo.key} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                            <div className={`px-4 py-2 border-b ${campo.badge} border-opacity-30`}>
-                              <span className="text-xs font-bold uppercase tracking-wide">{campo.label}</span>
-                            </div>
-                            <p className="px-4 py-3 text-sm text-slate-700 leading-relaxed min-h-[60px]">{conteudo[campo.key]}</p>
+                          <div key={campo.key} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${campo.badge}`}>{campo.label}</span>
+                            <p className="text-sm text-slate-700 leading-relaxed mt-2">{conteudo[campo.key]}</p>
                           </div>
                         ) : null)}
                       </div>
 
-                      {/* Especialidade */}
-                      {conteudo.especialidade && (
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl border border-slate-200">
-                          <span className="text-xs text-slate-400 font-medium">Especialidade:</span>
-                          <span className="text-xs font-semibold text-slate-700">{conteudo.especialidade}</span>
-                        </div>
-                      )}
-
                       {!campos.some(c => conteudo[c.key]) && (
-                        <p className="text-sm text-slate-400 italic px-2">Conteúdo não estruturado.</p>
+                        <p className="text-sm text-slate-400 italic">Conteúdo não estruturado.</p>
                       )}
                     </div>
                   </div>

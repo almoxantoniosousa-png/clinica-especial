@@ -58,8 +58,8 @@ export default function GestaoAcompanhantesPage() {
     <div className="space-y-6 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-blue-900">Acompanhantes Terapêuticos</h1>
-          <p className="text-slate-500 text-sm mt-1">Visualização — somente leitura</p>
+          <h1 className="text-xl font-bold text-slate-900">Acompanhantes Terapêuticos</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Somente leitura</p>
         </div>
         <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full">
           <span className="w-2 h-2 rounded-full bg-emerald-500"/>
@@ -97,7 +97,7 @@ export default function GestaoAcompanhantesPage() {
         <>
           <div className="space-y-3">
             {exibidos.map(at => (
-              <div key={at.id} className="bg-white rounded-xl border border-slate-200 p-4">
+              <div key={at.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
                 <div className="flex items-start gap-3">
                   <div className={`w-11 h-11 shrink-0 flex items-center justify-center rounded-full font-bold text-sm ${corAvatar(at.nome)}`}>
                     {iniciais(at.nome)}

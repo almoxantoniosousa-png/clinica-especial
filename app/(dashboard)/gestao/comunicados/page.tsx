@@ -23,11 +23,9 @@ export default function GestaoComunicadosPage() {
     <div className="space-y-6 pb-10">
 
       {/* HEADER */}
-      <div className="bg-gradient-to-r from-blue-900 to-blue-700 rounded-2xl p-6">
-        <h1 className="text-white text-2xl font-bold flex items-center gap-2">
-          💬 Comunicação com a Família
-        </h1>
-        <p className="text-blue-200 text-sm mt-1">Publique avisos e registros de evolução para as famílias</p>
+      <div>
+        <h1 className="text-xl font-bold text-slate-900">Comunicação com a Família</h1>
+        <p className="text-xs text-slate-400 mt-0.5">Publique avisos e registros de evolução para as famílias</p>
       </div>
 
       {/* FEEDBACK */}

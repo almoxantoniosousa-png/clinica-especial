@@ -42,8 +42,8 @@ export default function GestaoInternasPage() {
     <div className="space-y-6 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-blue-900">Colaboradoras Internas</h1>
-          <p className="text-slate-500 text-sm mt-1">Visualização — somente leitura</p>
+          <h1 className="text-xl font-bold text-slate-900">Colaboradoras Internas</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Somente leitura</p>
         </div>
         <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full">
           <span className="w-2 h-2 rounded-full bg-blue-500 inline-block"></span>

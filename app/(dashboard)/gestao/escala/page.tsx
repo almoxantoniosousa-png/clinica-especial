@@ -96,11 +96,8 @@ export default function GestaoEscalaPage() {
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Calendar className="h-6 w-6 text-blue-600" />
-            Frequência Semanal {new Date().getFullYear()}
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">Escala de atendimentos — visualização</p>
+          <h1 className="text-xl font-bold text-slate-900">Escala Semanal {new Date().getFullYear()}</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Frequência de atendimentos — visualização</p>
         </div>
       </div>
 
@@ -168,7 +165,7 @@ export default function GestaoEscalaPage() {
             if (slotsHorario.length === 0 && (filtroCrianca || filtroServico)) return null;
             return (
               <div key={horario} className="rounded-xl border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-4 py-2 flex items-center gap-2 border-b border-slate-200">
+                <div className="px-4 py-2.5 flex items-center gap-2 border-b border-slate-100 bg-white">
                   <Clock className="h-4 w-4 text-blue-500" />
                   <span className="text-sm font-semibold text-slate-700">{horario}</span>
                   <span className="ml-auto text-xs text-slate-400">{slotsHorario.length} atendimento{slotsHorario.length !== 1 ? "s" : ""}</span>

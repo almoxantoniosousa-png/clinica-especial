@@ -86,7 +86,7 @@ export default function GestaoCriancasPage() {
           </svg>
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-blue-900">Crianças</h1>
+          <h1 className="text-xl font-bold text-slate-900">Crianças</h1>
           <p className="text-xs text-slate-400 mt-0.5">Visão geral dos pacientes</p>
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function GestaoCriancasPage() {
                   </div>
                 </div>
 
-                <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 space-y-1">
+                <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 space-y-1">
                   {c.responsavel && <p>Responsável: <span className="font-medium text-slate-700">{c.responsavel}</span></p>}
                   {c.diagnostico && <p>Diagnóstico: <span className="font-medium text-slate-700">{c.diagnostico}</span></p>}
                   {c.modalidade && <p>Modalidade: <span className="font-medium text-slate-700">{c.modalidade}</span></p>}
