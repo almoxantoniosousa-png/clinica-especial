@@ -73,134 +73,310 @@ export default function FinanceiroPage() {
 // ABA CONTAS A PAGAR
 // =============================================
 function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
+  const hoje = new Date().toISOString().slice(0, 10);
+
   const [contas, setContas] = useState<any[]>([]);
+  const [modelos, setModelos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [filtro, setFiltro] = useState("todas");
+
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("aluguel");
   const [valor, setValor] = useState("");
   const [vencimento, setVencimento] = useState("");
   const [observacao, setObservacao] = useState("");
+  const [salvarModelo, setSalvarModelo] = useState(false);
 
   const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
   const [confirmandoDescricao, setConfirmandoDescricao] = useState("");
   const [confirmandoValor, setConfirmandoValor] = useState(0);
   const [processando, setProcessando] = useState(false);
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
 
   const categorias = ["aluguel","energia","agua","internet","fornecedor","salario","imposto","outro"];
 
   const carregar = async () => {
     setLoading(true);
     const [ano, mes] = mesAno.split("-");
-    const { data } = await supabase.from("contas_pagar")
+    const ultimoDia = new Date(Number(ano), Number(mes), 0).getDate();
+    const { data, error } = await supabase.from("contas_pagar")
       .select("*")
       .gte("vencimento", `${ano}-${mes}-01`)
-      .lte("vencimento", `${ano}-${mes}-31`)
+      .lte("vencimento", `${ano}-${mes}-${String(ultimoDia).padStart(2,"0")}`)
       .order("vencimento");
+    if (error) mostrarFeedback("erro", "Erro ao carregar contas: " + error.message);
     setContas(data || []);
+    const { data: mods } = await supabase.from("contas_pagar_modelos").select("*").order("descricao");
+    setModelos(mods || []);
     setLoading(false);
   };
 
   useEffect(() => { carregar(); }, [mesAno]);
 
+  function diasVenc(c: any): number {
+    return Math.ceil(
+      (new Date(c.vencimento + "T12:00:00").getTime() - new Date(hoje + "T12:00:00").getTime()) / 86400000
+    );
+  }
+
+  function statusVenc(c: any): string {
+    if (c.status === "pago") return "pago";
+    const d = diasVenc(c);
+    if (d < 0) return "vencida";
+    if (d === 0) return "vence_hoje";
+    if (d <= 7) return "em_breve";
+    return "ok";
+  }
+
+  function handleDescricaoChange(val: string) {
+    setDescricao(val);
+    const m = modelos.find(m => m.descricao.toLowerCase() === val.toLowerCase());
+    if (m) {
+      setCategoria(m.categoria || "outro");
+      if (m.valor) setValor(String(m.valor));
+      if (m.observacao) setObservacao(m.observacao);
+    }
+  }
+
+  function preencherDeModelo(m: any) {
+    setDescricao(m.descricao);
+    setCategoria(m.categoria || "outro");
+    setValor(m.valor ? String(m.valor) : "");
+    setObservacao(m.observacao || "");
+  }
+
+  function vencimentoDefault() {
+    const [ano, mes] = mesAno.split("-");
+    const ultimoDia = new Date(Number(ano), Number(mes), 0).getDate();
+    return `${ano}-${mes}-${String(ultimoDia).padStart(2, "0")}`;
+  }
+
+  function fecharModal() {
+    setModalAberto(false);
+    setDescricao(""); setValor(""); setVencimento(vencimentoDefault()); setObservacao("");
+    setSalvarModelo(false); setCategoria("aluguel");
+  }
+
   async function salvar() {
-    if (!descricao || !valor || !vencimento) { mostrarFeedback("erro", "Preencha todos os campos."); return; }
+    if (!descricao || !valor || !vencimento) { mostrarFeedback("erro", "Preencha todos os campos obrigatórios."); return; }
     setSalvando(true);
     const { error } = await supabase.from("contas_pagar").insert([{
       descricao, categoria, valor: Number(valor), vencimento, observacao, status: "pendente"
     }]);
-    setSalvando(false);
-    if (error) mostrarFeedback("erro", "Erro: " + error.message);
-    else {
-      mostrarFeedback("sucesso", "Conta registrada!");
-      setModalAberto(false);
-      setDescricao(""); setValor(""); setVencimento(""); setObservacao("");
-      carregar();
+    if (!error && salvarModelo) {
+      const jaExiste = modelos.some(m => m.descricao.toLowerCase() === descricao.toLowerCase());
+      if (!jaExiste) {
+        await supabase.from("contas_pagar_modelos").insert([{ descricao, categoria, valor: Number(valor), observacao }]);
+      }
     }
+    setSalvando(false);
+    if (error) mostrarFeedback("erro", "Erro ao salvar: " + error.message);
+    else { mostrarFeedback("sucesso", "Conta registrada!"); fecharModal(); carregar(); }
   }
 
   async function marcarPago() {
     if (!confirmandoId) return;
     setProcessando(true);
-    await supabase.from("contas_pagar").update({ status: "pago", pago_em: new Date().toISOString().slice(0, 10) }).eq("id", confirmandoId);
+    await supabase.from("contas_pagar").update({ status: "pago", pago_em: hoje }).eq("id", confirmandoId);
     mostrarFeedback("sucesso", "Marcado como pago!");
-    setConfirmandoId(null);
-    setConfirmandoDescricao("");
-    setConfirmandoValor(0);
-    setProcessando(false);
+    setConfirmandoId(null); setConfirmandoDescricao(""); setConfirmandoValor(0); setProcessando(false);
     carregar();
   }
 
-  const totais = useMemo(() => ({
-    total: contas.reduce((acc, c) => acc + Number(c.valor || 0), 0),
-    pago: contas.filter(c => c.status === "pago").reduce((acc, c) => acc + Number(c.valor || 0), 0),
-    pendente: contas.filter(c => c.status !== "pago").reduce((acc, c) => acc + Number(c.valor || 0), 0),
-  }), [contas]);
+  async function excluir(id: string) {
+    setExcluindoId(id);
+    await supabase.from("contas_pagar").delete().eq("id", id);
+    mostrarFeedback("sucesso", "Conta removida.");
+    setExcluindoId(null);
+    carregar();
+  }
+
+  async function excluirModelo(id: string) {
+    await supabase.from("contas_pagar_modelos").delete().eq("id", id);
+    setModelos(prev => prev.filter((m: any) => m.id !== id));
+  }
+
+  const totais = useMemo(() => {
+    const vencidas = contas.filter(c => {
+      if (c.status === "pago") return false;
+      return Math.ceil((new Date(c.vencimento + "T12:00:00").getTime() - new Date(hoje + "T12:00:00").getTime()) / 86400000) < 0;
+    }).length;
+    return {
+      total:    contas.reduce((acc, c) => acc + Number(c.valor || 0), 0),
+      pago:     contas.filter(c => c.status === "pago").reduce((acc, c) => acc + Number(c.valor || 0), 0),
+      pendente: contas.filter(c => c.status !== "pago").reduce((acc, c) => acc + Number(c.valor || 0), 0),
+      vencidas,
+    };
+  }, [contas, hoje]);
+
+  const contasFiltradas = useMemo(() => {
+    if (filtro === "pago")    return contas.filter(c => c.status === "pago");
+    if (filtro === "pendente") return contas.filter(c => c.status !== "pago");
+    if (filtro === "vencida") return contas.filter(c => {
+      if (c.status === "pago") return false;
+      return Math.ceil((new Date(c.vencimento + "T12:00:00").getTime() - new Date(hoje + "T12:00:00").getTime()) / 86400000) < 0;
+    });
+    return contas;
+  }, [contas, filtro, hoje]);
+
+  const porCategoria = useMemo(() =>
+    Object.entries(
+      contas.filter(c => c.status !== "pago").reduce((acc: Record<string, number>, c) => {
+        acc[c.categoria] = (acc[c.categoria] || 0) + Number(c.valor || 0);
+        return acc;
+      }, {})
+    ).sort((a, b) => b[1] - a[1]),
+  [contas]);
 
   function corCategoria(cat: string) {
-    const cores: any = {
+    const c: Record<string, string> = {
       aluguel: "bg-purple-100 text-purple-700", energia: "bg-yellow-100 text-yellow-700",
       agua: "bg-blue-100 text-blue-700", internet: "bg-cyan-100 text-cyan-700",
       fornecedor: "bg-orange-100 text-orange-700", salario: "bg-emerald-100 text-emerald-700",
-      imposto: "bg-red-100 text-red-700", outro: "bg-slate-100 text-slate-700"
+      imposto: "bg-red-100 text-red-700", outro: "bg-slate-100 text-slate-700",
     };
-    return cores[cat] || "bg-slate-100 text-slate-700";
+    return c[cat] || "bg-slate-100 text-slate-700";
   }
+
+  function estiloCard(c: any) {
+    const sv = statusVenc(c);
+    if (sv === "pago")       return "border-emerald-200 bg-white";
+    if (sv === "vencida")    return "border-red-300 bg-red-50";
+    if (sv === "vence_hoje") return "border-orange-300 bg-orange-50";
+    if (sv === "em_breve")   return "border-yellow-300 bg-yellow-50/60";
+    return "border-slate-200 bg-white";
+  }
+
+  function badgeVenc(c: any) {
+    const sv = statusVenc(c);
+    if (sv === "vencida")    return <span className="text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full">Vencida</span>;
+    if (sv === "vence_hoje") return <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">Vence hoje</span>;
+    if (sv === "em_breve")   return <span className="text-[10px] font-bold text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded-full">Em breve</span>;
+    return null;
+  }
+
+  const nPendentes = contas.filter(c => c.status !== "pago").length;
+  const nPagas    = contas.filter(c => c.status === "pago").length;
 
   return (
     <div className="space-y-5">
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-slate-700">Contas a Pagar</h2>
-        <button onClick={() => setModalAberto(true)}
+        <button onClick={() => { setVencimento(vencimentoDefault()); setModalAberto(true); }}
           className="h-9 px-4 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition">
           + Nova Conta
         </button>
       </div>
 
+      {/* Cards resumo */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Total</p>
           <p className="text-2xl font-black text-slate-800">R$ {totais.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-slate-400 mt-1">{contas.length} {contas.length === 1 ? "conta" : "contas"} no mês</p>
         </div>
         <div className="bg-white border border-red-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-red-600 uppercase mb-1">A Pagar</p>
           <p className="text-2xl font-black text-red-500">R$ {totais.pendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          {totais.vencidas > 0 && (
+            <p className="text-xs font-bold text-red-400 mt-1">{totais.vencidas} {totais.vencidas === 1 ? "conta vencida" : "contas vencidas"}</p>
+          )}
         </div>
         <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Pago</p>
           <p className="text-2xl font-black text-emerald-600">R$ {totais.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-slate-400 mt-1">{nPagas} {nPagas === 1 ? "conta quitada" : "contas quitadas"}</p>
         </div>
       </div>
 
+      {/* Breakdown por categoria (só se há pendentes) */}
+      {porCategoria.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <p className="text-xs font-bold text-slate-500 uppercase mb-3">Pendentes por categoria</p>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+            {porCategoria.map(([cat, val]) => (
+              <div key={cat} className="flex items-center justify-between gap-2">
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${corCategoria(cat)}`}>{cat}</span>
+                <span className="text-xs font-bold text-slate-600">R$ {val.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Filtros */}
+      {!loading && contas.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap">
+          {[
+            { id: "todas",    label: "Todas",     count: contas.length, red: false },
+            { id: "pendente", label: "Pendentes", count: nPendentes,    red: false },
+            { id: "vencida",  label: "Vencidas",  count: totais.vencidas, red: true },
+            { id: "pago",     label: "Pagas",     count: nPagas,        red: false },
+          ].map(f => (
+            <button key={f.id} onClick={() => setFiltro(f.id)}
+              className={`h-8 px-3 rounded-xl text-xs font-semibold transition
+                ${filtro === f.id
+                  ? f.red ? "bg-red-600 text-white" : "bg-blue-900 text-white"
+                  : f.red && f.count > 0
+                    ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
+                    : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"
+                }`}>
+              {f.label} {f.count > 0 && <span className="ml-1 opacity-70">({f.count})</span>}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Lista */}
       {loading ? (
         <div className="flex items-center justify-center py-12"><p className="text-sm text-slate-400">Carregando...</p></div>
-      ) : contas.length === 0 ? (
+      ) : contasFiltradas.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 bg-white rounded-2xl border border-slate-200 gap-2">
           <span className="text-4xl">📤</span>
-          <p className="text-sm text-slate-400">Nenhuma conta registrada neste mês.</p>
+          <p className="text-sm text-slate-400">
+            {contas.length === 0 ? "Nenhuma conta registrada neste mês." : "Nenhuma conta nesta categoria."}
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {contas.map(c => (
-            <div key={c.id} className={`bg-white border rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4 ${c.status === "pago" ? "border-emerald-200" : "border-slate-200"}`}>
+          {contasFiltradas.map(c => (
+            <div key={c.id} className={`border rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4 ${estiloCard(c)}`}>
               <div className="flex items-center gap-3 min-w-0">
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0 ${corCategoria(c.categoria)}`}>{c.categoria}</span>
                 <div className="min-w-0">
-                  <p className="font-semibold text-slate-800 text-sm truncate">{c.descricao}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-slate-800 text-sm truncate">{c.descricao}</p>
+                    {badgeVenc(c)}
+                  </div>
                   <p className="text-xs text-slate-400">Vencimento: {new Date(c.vencimento + "T12:00:00").toLocaleDateString("pt-BR")}</p>
+                  {c.observacao && <p className="text-xs text-slate-400 truncate">{c.observacao}</p>}
                 </div>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <p className="font-black text-slate-800">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <p className="font-black text-slate-800 text-sm">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                 {c.status !== "pago" ? (
-                  <button
-                    onClick={() => { setConfirmandoId(c.id); setConfirmandoDescricao(c.descricao); setConfirmandoValor(Number(c.valor)); }}
-                    className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
-                    Pagar
-                  </button>
+                  <>
+                    <button
+                      onClick={() => { setConfirmandoId(c.id); setConfirmandoDescricao(c.descricao); setConfirmandoValor(Number(c.valor)); }}
+                      className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
+                      Pagar
+                    </button>
+                    <button
+                      onClick={() => excluir(c.id)}
+                      disabled={excluindoId === c.id}
+                      className="h-8 w-8 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition text-xl leading-none disabled:opacity-40">
+                      ×
+                    </button>
+                  </>
                 ) : (
-                  <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">Pago</span>
+                  <div className="text-right">
+                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">Pago</span>
+                    {c.pago_em && <p className="text-[10px] text-slate-400 mt-0.5">{new Date(c.pago_em + "T12:00:00").toLocaleDateString("pt-BR")}</p>}
+                  </div>
                 )}
               </div>
             </div>
@@ -208,6 +384,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
         </div>
       )}
 
+      {/* Modal confirmação pagamento */}
       {confirmandoId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
@@ -221,22 +398,18 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
                 <p className="text-xl font-bold text-emerald-700 mt-1">
                   R$ {confirmandoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-xs text-slate-400 mt-1">Esta ação marcará a conta como paga e não poderá ser desfeita.</p>
+                <p className="text-xs text-slate-400 mt-1">Esta ação não poderá ser desfeita.</p>
               </div>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => { setConfirmandoId(null); setConfirmandoDescricao(""); setConfirmandoValor(0); }}
                 disabled={processando}
-                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
-              >
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50">
                 Cancelar
               </button>
-              <button
-                onClick={marcarPago}
-                disabled={processando}
-                className="flex-1 h-11 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50"
-              >
+              <button onClick={marcarPago} disabled={processando}
+                className="flex-1 h-11 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50">
                 {processando ? "Confirmando..." : "Sim, pagar"}
               </button>
             </div>
@@ -244,16 +417,47 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
         </div>
       )}
 
+      {/* Modal nova conta */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
-          onClick={e => { if (e.target === e.currentTarget) setModalAberto(false); }}>
-          <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+          onClick={e => { if (e.target === e.currentTarget) fecharModal(); }}>
+          <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-slate-800">Nova Conta a Pagar</h3>
+
+            {/* Contas salvas como atalho */}
+            {modelos.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Contas salvas — clique para preencher</p>
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pb-1">
+                  {modelos.map((m: any) => (
+                    <div key={m.id} className="flex items-center rounded-full border border-blue-200 bg-blue-50 overflow-hidden">
+                      <button type="button" onClick={() => preencherDeModelo(m)}
+                        className="h-7 px-2.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition">
+                        {m.descricao}
+                      </button>
+                      <button type="button" onClick={() => excluirModelo(m.id)}
+                        className="h-7 w-6 flex items-center justify-center text-blue-300 hover:text-red-500 hover:bg-red-50 transition text-base leading-none">
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-slate-100 mt-3" />
+              </div>
+            )}
+
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-slate-500 uppercase">Descrição *</label>
-                <input type="text" value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Aluguel sala junho"
+                <input
+                  type="text" value={descricao}
+                  onChange={e => handleDescricaoChange(e.target.value)}
+                  list="sugestoes-contas"
+                  placeholder="Ex: Aluguel sala, Energia elétrica..."
                   className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                <datalist id="sugestoes-contas">
+                  {modelos.map((m: any) => <option key={m.id} value={m.descricao} />)}
+                </datalist>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -265,7 +469,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-500 uppercase">Valor *</label>
-                  <input type="number" min="0" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00"
+                  <input type="number" min="0" step="0.01" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00"
                     className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
               </div>
@@ -279,10 +483,23 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
                 <input type="text" value={observacao} onChange={e => setObservacao(e.target.value)} placeholder="Opcional"
                   className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
               </div>
+              {/* Toggle salvar modelo */}
+              <label className="flex items-center gap-3 cursor-pointer select-none pt-1">
+                <div onClick={() => setSalvarModelo(v => !v)}
+                  className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 cursor-pointer ${salvarModelo ? "bg-blue-600" : "bg-slate-200"}`}>
+                  <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${salvarModelo ? "translate-x-4" : "translate-x-0"}`} />
+                </div>
+                <span className="text-sm text-slate-600">Salvar para usar novamente</span>
+              </label>
             </div>
+
             <div className="flex gap-3">
-              <button onClick={() => setModalAberto(false)} className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">Cancelar</button>
-              <button onClick={salvar} disabled={salvando} className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
+              <button onClick={fecharModal}
+                className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                Cancelar
+              </button>
+              <button onClick={salvar} disabled={salvando}
+                className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
                 {salvando ? "Salvando..." : "Salvar"}
               </button>
             </div>
