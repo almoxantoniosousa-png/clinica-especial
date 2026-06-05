@@ -715,14 +715,14 @@ export default function ChatPage() {
               onChange={e => {
                 setTexto(e.target.value);
                 e.target.style.height = "auto";
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
                 broadcastTyping();
               }}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); } }}
               placeholder="Mensagem… (Enter envia · Shift+Enter nova linha)"
               rows={1}
-              className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white resize-none overflow-hidden leading-5 transition-colors"
-              style={{ minHeight: "38px", maxHeight: "120px" }}
+              className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white resize-none overflow-y-auto leading-5 transition-all"
+              style={{ minHeight: "38px", maxHeight: "200px" }}
             />
 
             <button
