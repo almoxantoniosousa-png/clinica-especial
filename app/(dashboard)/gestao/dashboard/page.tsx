@@ -148,35 +148,23 @@ export default function GestaoDashboardPage() {
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
         </svg>
-        <p className="text-slate-400 text-sm font-medium">Carregando painel da gestão...</p>
+        <p className="text-slate-400 text-sm">Carregando painel...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
+    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-8 space-y-5">
 
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-md bg-white p-0.5">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain"/>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"/>
-              <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Portal da Gestão</h1>
-            </div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
-              Clínica Abraço — Visão Executiva
-            </p>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-xs text-slate-400 mt-0.5 capitalize">{hojeFormatado}</p>
         </div>
-        <div className="self-start sm:self-auto flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm">
-          <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
-          <span className="text-xs font-medium text-slate-600 capitalize">{hojeFormatado}</span>
+        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
+          Ao vivo
         </div>
       </div>
 
@@ -184,125 +172,82 @@ export default function GestaoDashboardPage() {
       {(liminares.length > 0 || inadimplentes > 0) && (
         <div className="space-y-2">
           {liminares.length > 0 && (
-            <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-              <span className="text-amber-500 text-lg flex-shrink-0">⚠️</span>
-              <p className="text-sm font-medium text-amber-800">
-                <span className="font-bold">{liminares.length} liminar(es)</span> vencendo nos próximos 30 dias — verifique o setor jurídico!
-              </p>
+            <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm font-medium text-amber-800">
+              <span className="flex-shrink-0">⚠️</span>
+              <span className="font-bold">{liminares.length} liminar(es)</span> vencendo nos próximos 30 dias
             </div>
           )}
           {inadimplentes > 0 && (
-            <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
-              <span className="text-red-500 text-lg flex-shrink-0">🔴</span>
-              <p className="text-sm font-medium text-red-800">
-                <span className="font-bold">{inadimplentes} família(s)</span> com pagamento em atraso —
-                total de <span className="font-bold">R$ {valorInadimplente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-              </p>
+            <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm font-medium text-red-800">
+              <span className="flex-shrink-0">🔴</span>
+              <span className="font-bold">{inadimplentes} família(s)</span> em atraso — R$ {valorInadimplente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </div>
           )}
         </div>
       )}
 
-      {/* CARDS MÉTRICAS PRINCIPAIS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-blue-400">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Crianças</p>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-base">👶</div>
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Crianças ativas",      valor: criancasAtivas,     sub: "em atendimento",           icon: "👶", bg: "bg-blue-50",    cor: "text-blue-600" },
+          { label: "Profissionais ativos", valor: equipeTotal,         sub: "na equipe",                icon: "👥", bg: "bg-purple-50",  cor: "text-purple-600" },
+          { label: "Atendimentos hoje",    valor: atendimentosHoje,    sub: "registrados hoje",         icon: "📅", bg: "bg-amber-50",   cor: "text-amber-600" },
+          { label: "Atendimentos no mês",  valor: atendimentosMes,     sub: `R$ ${receitaMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: "📋", bg: "bg-emerald-50", cor: "text-emerald-600" },
+        ].map((kpi, i) => (
+          <div key={i} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-slate-500">{kpi.label}</p>
+              <div className={`w-8 h-8 rounded-lg ${kpi.bg} flex items-center justify-center text-base`}>{kpi.icon}</div>
+            </div>
+            <p className={`text-3xl font-bold ${kpi.cor}`}>{kpi.valor}</p>
+            <p className="text-xs text-slate-400 mt-1">{kpi.sub}</p>
           </div>
-          <p className="text-3xl font-black text-blue-600">{criancasAtivas}</p>
-          <p className="text-xs text-slate-400 mt-1">em atendimento ativo</p>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-purple-400">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Equipe</p>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-base">👥</div>
-          </div>
-          <p className="text-3xl font-black text-purple-600">{equipeTotal}</p>
-          <p className="text-xs text-slate-400 mt-1">profissionais ativos</p>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-emerald-400">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Receita</p>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-base">💰</div>
-          </div>
-          <p className="text-xl font-black text-emerald-600">
-            R$ {receitaMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-          </p>
-          <p className="text-xs text-slate-400 mt-1">{atendimentosMes} atendimentos no mês</p>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-amber-400">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Hoje</p>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-base">📅</div>
-          </div>
-          <p className="text-3xl font-black text-amber-500">{atendimentosHoje}</p>
-          <p className="text-xs text-slate-400 mt-1">atendimentos hoje</p>
-        </div>
+        ))}
       </div>
 
-      {/* SEGUNDA LINHA — Inadimplência + Modalidades */}
+      {/* FINANCEIRO + MODALIDADES */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-        {/* INADIMPLÊNCIA */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-slate-700">Situação Financeira das Famílias</h2>
-            <span className="text-xs bg-red-50 text-red-600 px-2.5 py-1 rounded-full font-medium border border-red-100">
-              Gestão
-            </span>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-semibold text-slate-800">Situação das Famílias</h2>
+            <p className="text-xs text-slate-400">Pagamentos em dia vs atrasados</p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="p-4 grid grid-cols-2 gap-3">
             <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
-              <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Em dia</p>
-              <p className="text-2xl font-black text-emerald-700 mt-1">
-                {Math.max(0, criancasAtivas - inadimplentes)}
-              </p>
+              <p className="text-xs font-medium text-emerald-600">Em dia</p>
+              <p className="text-2xl font-bold text-emerald-700 mt-1">{Math.max(0, criancasAtivas - inadimplentes)}</p>
               <p className="text-xs text-slate-400 mt-0.5">famílias</p>
             </div>
             <div className="bg-red-50 rounded-xl p-4 border border-red-100">
-              <p className="text-xs font-semibold text-red-600 uppercase tracking-wide">Atrasadas</p>
-              <p className="text-2xl font-black text-red-600 mt-1">{inadimplentes}</p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                R$ {valorInadimplente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </p>
+              <p className="text-xs font-medium text-red-600">Atrasadas</p>
+              <p className="text-2xl font-bold text-red-600 mt-1">{inadimplentes}</p>
+              <p className="text-xs text-slate-400 mt-0.5">R$ {valorInadimplente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
-          <p className="text-xs text-slate-400 mt-3 text-center">
-            * Detalhes disponíveis no portal do Financeiro
-          </p>
         </div>
 
-        {/* MODALIDADES */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold text-slate-700">Atendimentos por Modalidade</h2>
-            <span className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-medium border border-blue-100">
-              Este mês
-            </span>
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-semibold text-slate-800">Atendimentos por Modalidade</h2>
+            <p className="text-xs text-slate-400">Distribuição no mês atual</p>
           </div>
-          <div className="space-y-3">
+          <div className="p-5 space-y-3">
             {[
-              { key: "liminar", label: "⚖️ Liminar Judicial", color: "bg-blue-500" },
-              { key: "convenio", label: "📋 Convênio", color: "bg-emerald-500" },
-              { key: "particular", label: "💳 Particular", color: "bg-purple-500" },
+              { key: "liminar",    label: "Liminar Judicial", color: "bg-blue-500" },
+              { key: "convenio",   label: "Convênio",         color: "bg-emerald-500" },
+              { key: "particular", label: "Particular",       color: "bg-purple-500" },
             ].map((m) => {
               const val = atendimentosPorModalidade[m.key] || 0;
               const pct = totalAtend > 0 ? Math.round((val / totalAtend) * 100) : 0;
               return (
                 <div key={m.key}>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs font-medium text-slate-600">{m.label}</span>
-                    <span className="text-xs font-bold text-slate-700">{val} ({pct}%)</span>
+                    <span className="text-xs font-semibold text-slate-700">{val} <span className="text-slate-400 font-normal">({pct}%)</span></span>
                   </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${m.color} rounded-full transition-all`}
-                      style={{ width: `${pct}%` }}
-                    />
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`h-full ${m.color} rounded-full transition-all`} style={{ width: `${pct}%` }}/>
                   </div>
                 </div>
               );
@@ -314,14 +259,11 @@ export default function GestaoDashboardPage() {
       {/* LIMINARES VENCENDO */}
       {liminares.length > 0 && (
         <div className="bg-white border border-amber-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 bg-amber-50 border-b border-amber-100">
-            <div className="flex items-center gap-2">
-              <span>⚖️</span>
-              <h3 className="font-semibold text-amber-800 text-sm">Liminares Vencendo em 30 dias</h3>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-amber-100">
+            <div>
+              <h3 className="text-sm font-semibold text-amber-800">Liminares vencendo em 30 dias</h3>
+              <p className="text-xs text-amber-600">{liminares.length} alerta(s) — verifique o setor jurídico</p>
             </div>
-            <span className="text-xs bg-amber-200 text-amber-800 px-2.5 py-1 rounded-full font-bold">
-              {liminares.length} alerta(s)
-            </span>
           </div>
           <div className="divide-y divide-slate-100">
             {liminares.map((l) => {
@@ -332,20 +274,14 @@ export default function GestaoDashboardPage() {
                 <div key={l.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition">
                   <div>
                     <p className="font-semibold text-slate-800 text-sm">{l.criancas?.nome}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Processo: {l.numero_processo || "não informado"} · {l.vara || ""}
-                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">Processo: {l.numero_processo || "não informado"} · {l.vara || ""}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full
-                      ${diasRestantes <= 7
-                        ? "bg-red-50 text-red-700 border border-red-100"
-                        : "bg-amber-50 text-amber-700 border border-amber-100"}`}>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border
+                      ${diasRestantes <= 7 ? "bg-red-50 text-red-700 border-red-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}>
                       {diasRestantes <= 0 ? "VENCIDA" : `${diasRestantes} dias`}
                     </span>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {new Date(l.data_vencimento + "T12:00:00").toLocaleDateString("pt-BR")}
-                    </p>
+                    <p className="text-xs text-slate-400 mt-1">{new Date(l.data_vencimento + "T12:00:00").toLocaleDateString("pt-BR")}</p>
                   </div>
                 </div>
               );
@@ -356,11 +292,11 @@ export default function GestaoDashboardPage() {
 
       {/* EQUIPE */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 bg-slate-50 border-b border-slate-100">
-          <h3 className="font-semibold text-slate-700 text-sm">Equipe Ativa</h3>
-          <span className="text-xs bg-slate-200 text-slate-600 px-2.5 py-1 rounded-full font-medium">
-            {equipe.length} profissionais
-          </span>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">Equipe Ativa</h3>
+            <p className="text-xs text-slate-400">{equipe.length} profissionais</p>
+          </div>
         </div>
         {equipe.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 gap-2">
@@ -372,8 +308,7 @@ export default function GestaoDashboardPage() {
             {equipe.map((p: any) => (
               <div key={p.email} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition">
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                    ${roleLabel[p.role]?.color || "bg-slate-100 text-slate-700"}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${roleLabel[p.role]?.color || "bg-slate-100 text-slate-700"}`}>
                     {iniciais(p.nome)}
                   </div>
                   <div>
@@ -381,8 +316,7 @@ export default function GestaoDashboardPage() {
                     <p className="text-xs text-slate-400">{p.email}</p>
                   </div>
                 </div>
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full
-                  ${roleLabel[p.role]?.color || "bg-slate-100 text-slate-600"}`}>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${roleLabel[p.role]?.color || "bg-slate-100 text-slate-600"}`}>
                   {roleLabel[p.role]?.label || p.role}
                 </span>
               </div>
@@ -391,18 +325,16 @@ export default function GestaoDashboardPage() {
         )}
       </div>
 
-      {/* AGENDA DE HOJE + ÚLTIMOS RELATÓRIOS */}
+      {/* AGENDA + RELATÓRIOS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-        {/* AGENDA DE HOJE */}
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 bg-slate-50 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <span>📅</span>
-              <h3 className="font-semibold text-slate-700 text-sm">Agenda de Hoje</h3>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800">Agenda de Hoje</h3>
+              <p className="text-xs text-slate-400">{agendaHoje.length} atendimento(s)</p>
             </div>
-            <Link href="/gestao/agenda"
-              className="text-xs text-blue-600 hover:underline font-medium">Ver tudo</Link>
+            <Link href="/gestao/agenda" className="text-xs text-blue-600 hover:text-blue-700 font-medium">Ver tudo</Link>
           </div>
           {agendaHoje.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 gap-2 text-slate-400">
@@ -410,43 +342,33 @@ export default function GestaoDashboardPage() {
               <p className="text-xs">Nenhum atendimento hoje</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-50">
+            <div className="divide-y divide-slate-100">
               {agendaHoje.slice(0, 5).map(ag => (
                 <div key={ag.id} className="flex items-center gap-3 px-5 py-3">
-                  <span className="text-xs font-black text-blue-900 min-w-[3rem]">
-                    {ag.hora?.slice(0, 5) || "--:--"}
-                  </span>
+                  <span className="text-xs font-bold text-blue-600 min-w-[3rem]">{ag.hora?.slice(0, 5) || "--:--"}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-slate-800 truncate">{ag.criancas?.nome || "—"}</p>
-                    {ag.profissional_nome && (
-                      <p className="text-[10px] text-slate-400 truncate">👤 {ag.profissional_nome}</p>
-                    )}
+                    {ag.profissional_nome && <p className="text-[10px] text-slate-400 truncate">{ag.profissional_nome}</p>}
                   </div>
                   {ag.servico && (
-                    <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
-                      {ag.servico}
-                    </span>
+                    <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">{ag.servico}</span>
                   )}
                 </div>
               ))}
               {agendaHoje.length > 5 && (
-                <p className="text-xs text-center text-slate-400 py-2">
-                  +{agendaHoje.length - 5} mais
-                </p>
+                <p className="text-xs text-center text-slate-400 py-2">+{agendaHoje.length - 5} mais</p>
               )}
             </div>
           )}
         </div>
 
-        {/* ÚLTIMOS RELATÓRIOS */}
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 bg-slate-50 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <span>📊</span>
-              <h3 className="font-semibold text-slate-700 text-sm">Últimos Relatórios</h3>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800">Últimos Relatórios</h3>
+              <p className="text-xs text-slate-400">Prontuários recentes</p>
             </div>
-            <Link href="/gestao/relatorios"
-              className="text-xs text-blue-600 hover:underline font-medium">Ver tudo</Link>
+            <Link href="/gestao/relatorios" className="text-xs text-blue-600 hover:text-blue-700 font-medium">Ver tudo</Link>
           </div>
           {ultimosRelatorios.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 gap-2 text-slate-400">
@@ -454,10 +376,10 @@ export default function GestaoDashboardPage() {
               <p className="text-xs">Nenhum relatório ainda</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-50">
+            <div className="divide-y divide-slate-100">
               {ultimosRelatorios.map(r => (
-                <div key={r.id} className="flex items-start gap-3 px-5 py-3">
-                  <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-sm flex-shrink-0">📝</div>
+                <div key={r.id} className="flex items-center gap-3 px-5 py-3">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-sm flex-shrink-0">📝</div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-slate-800 truncate">{r.criancas?.nome || "—"}</p>
                     <p className="text-[10px] text-slate-400 truncate">{r.autor_nome || "—"}</p>
@@ -472,20 +394,16 @@ export default function GestaoDashboardPage() {
         </div>
       </div>
 
-      {/* ATALHOS RÁPIDOS */}
+      {/* ATALHOS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Mural", icon: "📢", href: "/gestao/mural", color: "bg-amber-50 border-amber-200 text-amber-700" },
-          { label: "Crianças", icon: "👶", href: "/gestao/criancas", color: "bg-blue-50 border-blue-200 text-blue-700" },
-          { label: "Agenda", icon: "📅", href: "/gestao/agenda", color: "bg-purple-50 border-purple-200 text-purple-700" },
-          { label: "Relatórios", icon: "📊", href: "/gestao/relatorios", color: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+          { label: "Mural",      icon: "📢", href: "/gestao/mural",      color: "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" },
+          { label: "Crianças",   icon: "👶", href: "/gestao/criancas",   color: "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100" },
+          { label: "Agenda",     icon: "📅", href: "/gestao/agenda",     color: "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100" },
+          { label: "Relatórios", icon: "📊", href: "/gestao/relatorios", color: "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100" },
         ].map((a) => (
-          <Link
-            key={a.href}
-            href={a.href}
-            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border
-              font-semibold text-sm transition hover:scale-105 active:scale-95 ${a.color}`}
-          >
+          <Link key={a.href} href={a.href}
+            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border font-semibold text-sm transition active:scale-95 ${a.color}`}>
             <span className="text-2xl">{a.icon}</span>
             <span>{a.label}</span>
           </Link>
