@@ -127,7 +127,7 @@ export default function GestaoDashboardPage() {
       const { data: relatoriosDados } = await supabase
         .from("prontuarios")
         .select("id, titulo, created_at, autor_nome, criancas(nome)")
-        .eq("tipo", "relatorio_diario")
+        .in("tipo", ["prontuario", "relatorio", "relatorio_diario"])
         .order("created_at", { ascending: false })
         .limit(5);
       setUltimosRelatorios(relatoriosDados || []);

@@ -74,7 +74,7 @@ export default function RelatorioPage() {
     const { error } = await supabase.from("prontuarios").insert([{
       crianca_id: criancaId,
       autor_id: autor?.id,
-      tipo: "relatorio_diario",
+      tipo: "prontuario",
       titulo: `Relatório de Avaliação — ${new Date(data + "T12:00:00").toLocaleDateString("pt-BR")}`,
       conteudo: JSON.stringify(conteudo),
       visivel_familia: false,

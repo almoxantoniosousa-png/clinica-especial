@@ -24,7 +24,7 @@ export default function GestaoRelatoriosPage() {
     const { data, error } = await supabase
       .from("prontuarios")
       .select("*, criancas(nome)")
-      .eq("tipo", "relatorio_diario")
+      .in("tipo", ["prontuario", "relatorio", "relatorio_diario"])
       .order("created_at", { ascending: false });
     if (error) { setErro("Erro ao carregar os relatórios: " + error.message); setLoading(false); return; }
     setRelatorios(data || []);
