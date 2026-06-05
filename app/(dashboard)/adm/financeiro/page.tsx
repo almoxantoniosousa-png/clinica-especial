@@ -934,47 +934,83 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
 // =============================================
 function AbaFluxo({ supabase, mesAno }: any) {
   const [loading, setLoading] = useState(true);
-  const [entradas, setEntradas] = useState(0);
-  const [saidas, setSaidas] = useState(0);
-  const [receber, setReceber] = useState(0);
-  const [pagar, setPagar] = useState(0);
+  const [d, setD] = useState({
+    entradas: 0, saidasContas: 0, saidasFolha: 0,
+    receberPlano: 0, pagarContas: 0, pagarFolha: 0,
+  });
+  const [saldoAnterior, setSaldoAnterior] = useState<number | null>(null);
 
   useEffect(() => {
     async function carregar() {
       setLoading(true);
       const [ano, mes] = mesAno.split("-");
+      const ultimoDia = new Date(Number(ano), Number(mes), 0).getDate();
+      const ini = `${ano}-${mes}-01`;
+      const fim = `${ano}-${mes}-${String(ultimoDia).padStart(2, "0")}`;
 
-      const { data: recebidos } = await supabase.from("contas_receber")
-        .select("valor_total").eq("mes_referencia", mesAno).eq("status", "recebido");
-      const { data: pagos } = await supabase.from("contas_pagar")
-        .select("valor").eq("status", "pago")
-        .gte("vencimento", `${ano}-${mes}-01`).lte("vencimento", `${ano}-${mes}-31`);
-      const { data: folhaPaga } = await supabase.from("folha_pagamento")
-        .select("valor_final").eq("mes", Number(mes)).eq("ano", Number(ano)).eq("status", "pago");
-      const { data: aReceber } = await supabase.from("contas_receber")
-        .select("valor_total").eq("mes_referencia", mesAno).neq("status", "recebido");
-      const { data: aPagar } = await supabase.from("contas_pagar")
-        .select("valor").neq("status", "pago")
-        .gte("vencimento", `${ano}-${mes}-01`).lte("vencimento", `${ano}-${mes}-31`);
-      const { data: folhaPendente } = await supabase.from("folha_pagamento")
-        .select("valor_final").eq("mes", Number(mes)).eq("ano", Number(ano)).eq("status", "pendente");
+      // mês anterior
+      const prevD   = new Date(Number(ano), Number(mes) - 2, 1);
+      const prevMes = String(prevD.getMonth() + 1).padStart(2, "0");
+      const prevAno = String(prevD.getFullYear());
+      const prevMesAno  = `${prevAno}-${prevMes}`;
+      const prevUltimo  = new Date(prevD.getFullYear(), prevD.getMonth() + 1, 0).getDate();
+      const prevIni = `${prevAno}-${prevMes}-01`;
+      const prevFim = `${prevAno}-${prevMes}-${String(prevUltimo).padStart(2, "0")}`;
 
-      setEntradas((recebidos || []).reduce((acc: number, r: any) => acc + Number(r.valor_total || 0), 0));
-      setSaidas(
-        (pagos || []).reduce((acc: number, r: any) => acc + Number(r.valor || 0), 0) +
-        (folhaPaga || []).reduce((acc: number, r: any) => acc + Number(r.valor_final || 0), 0)
-      );
-      setReceber((aReceber || []).reduce((acc: number, r: any) => acc + Number(r.valor_total || 0), 0));
-      setPagar(
-        (aPagar || []).reduce((acc: number, r: any) => acc + Number(r.valor || 0), 0) +
-        (folhaPendente || []).reduce((acc: number, r: any) => acc + Number(r.valor_final || 0), 0)
-      );
+      const [
+        { data: recebidos },
+        { data: pagos },
+        { data: folhaPaga },
+        { data: aReceber },
+        { data: aPagar },
+        { data: folhaPendente },
+        { data: prevRecebidos },
+        { data: prevPagos },
+        { data: prevFolhaPaga },
+      ] = await Promise.all([
+        supabase.from("contas_receber").select("valor_liquido,valor_total").eq("mes_referencia", mesAno).eq("status", "recebido"),
+        supabase.from("contas_pagar").select("valor").eq("status", "pago").gte("vencimento", ini).lte("vencimento", fim),
+        supabase.from("folha_pagamento").select("valor_final").eq("mes", Number(mes)).eq("ano", Number(ano)).eq("status", "pago"),
+        supabase.from("contas_receber").select("valor_liquido,valor_total").eq("mes_referencia", mesAno).neq("status", "recebido"),
+        supabase.from("contas_pagar").select("valor").neq("status", "pago").gte("vencimento", ini).lte("vencimento", fim),
+        supabase.from("folha_pagamento").select("valor_final").eq("mes", Number(mes)).eq("ano", Number(ano)).eq("status", "pendente"),
+        supabase.from("contas_receber").select("valor_liquido,valor_total").eq("mes_referencia", prevMesAno).eq("status", "recebido"),
+        supabase.from("contas_pagar").select("valor").eq("status", "pago").gte("vencimento", prevIni).lte("vencimento", prevFim),
+        supabase.from("folha_pagamento").select("valor_final").eq("mes", prevD.getMonth() + 1).eq("ano", prevD.getFullYear()).eq("status", "pago"),
+      ]);
+
+      const sumLiq = (arr: any[]) => (arr || []).reduce((acc: number, r: any) =>
+        acc + Number(r.valor_liquido ?? r.valor_total ?? 0), 0);
+      const sumK = (arr: any[], k: string) => (arr || []).reduce((acc: number, r: any) => acc + Number(r[k] || 0), 0);
+
+      setD({
+        entradas:     sumLiq(recebidos),
+        saidasContas: sumK(pagos, "valor"),
+        saidasFolha:  sumK(folhaPaga, "valor_final"),
+        receberPlano: sumLiq(aReceber),
+        pagarContas:  sumK(aPagar, "valor"),
+        pagarFolha:   sumK(folhaPendente, "valor_final"),
+      });
+      setSaldoAnterior(sumLiq(prevRecebidos) - sumK(prevPagos, "valor") - sumK(prevFolhaPaga, "valor_final"));
       setLoading(false);
     }
     carregar();
   }, [mesAno]);
 
-  const saldo = entradas - saidas;
+  const saidas           = d.saidasContas + d.saidasFolha;
+  const pagar            = d.pagarContas  + d.pagarFolha;
+  const saldo            = d.entradas - saidas;
+  const receitaTotal     = d.entradas + d.receberPlano;
+  const despesaTotal     = saidas + pagar;
+  const saldoProj        = receitaTotal - despesaTotal;
+  const pctRecebido      = receitaTotal > 0 ? Math.round((d.entradas / receitaTotal) * 100) : 0;
+  const pctComprometido  = receitaTotal > 0 ? Math.round((despesaTotal / receitaTotal) * 100) : 0;
+  const totalSaidas      = despesaTotal > 0 ? despesaTotal : 1;
+  const pctContas        = Math.round(((d.saidasContas + d.pagarContas) / totalSaidas) * 100);
+  const pctFolha         = Math.round(((d.saidasFolha  + d.pagarFolha)  / totalSaidas) * 100);
+  const difAnterior      = saldoAnterior !== null ? saldo - saldoAnterior : null;
+
+  const brl = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
   if (loading) return <div className="flex items-center justify-center py-16"><p className="text-sm text-slate-400">Carregando...</p></div>;
 
@@ -982,54 +1018,135 @@ function AbaFluxo({ supabase, mesAno }: any) {
     <div className="space-y-5">
       <h2 className="font-bold text-slate-700">Fluxo de Caixa</h2>
 
+      {/* Saldo realizado */}
       <div className={`rounded-2xl p-6 text-center shadow-sm ${saldo >= 0 ? "bg-emerald-50 border border-emerald-200" : "bg-red-50 border border-red-200"}`}>
-        <p className="text-xs font-bold uppercase tracking-wide mb-1 text-slate-500">Saldo do Mês</p>
+        <p className="text-xs font-bold uppercase tracking-wide mb-1 text-slate-500">Saldo Realizado</p>
         <p className={`text-4xl font-black ${saldo >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-          R$ {Math.abs(saldo).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          {saldo < 0 && "− "}R$ {brl(Math.abs(saldo))}
         </p>
-        <p className="text-sm text-slate-500 mt-1">{saldo >= 0 ? "Positivo" : "Negativo"}</p>
+        <p className="text-xs text-slate-400 mt-2">Entradas já recebidas menos saídas já pagas</p>
+        {difAnterior !== null && (
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <span className="text-xs text-slate-400">
+              Mês anterior: {saldoAnterior! < 0 && "− "}R$ {brl(Math.abs(saldoAnterior!))}
+            </span>
+            <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${difAnterior >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"}`}>
+              {difAnterior >= 0 ? "▲" : "▼"} R$ {brl(Math.abs(difAnterior))}
+            </span>
+          </div>
+        )}
       </div>
 
+      {/* 4 cards */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Entradas Realizadas</p>
-          <p className="text-2xl font-black text-emerald-600">R$ {entradas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-slate-400 mt-1">Recebido do plano</p>
+          <p className="text-2xl font-black text-emerald-600">R$ {brl(d.entradas)}</p>
+          {receitaTotal > 0 && (
+            <div className="mt-2">
+              <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                <span>{pctRecebido}% da receita prevista recebida</span>
+              </div>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${pctRecebido}%` }} />
+              </div>
+            </div>
+          )}
         </div>
         <div className="bg-white border border-red-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-red-600 uppercase mb-1">Saídas Realizadas</p>
-          <p className="text-2xl font-black text-red-500">R$ {saidas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-slate-400 mt-1">Contas + folha de pagamento</p>
+          <p className="text-2xl font-black text-red-500">R$ {brl(saidas)}</p>
+          {saidas > 0 && (
+            <div className="mt-2 space-y-0.5">
+              <p className="text-[10px] text-slate-400">Contas: R$ {brl(d.saidasContas)}</p>
+              <p className="text-[10px] text-slate-400">Folha: R$ {brl(d.saidasFolha)}</p>
+            </div>
+          )}
         </div>
         <div className="bg-white border border-blue-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-blue-600 uppercase mb-1">A Receber</p>
-          <p className="text-2xl font-black text-blue-600">R$ {receber.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-slate-400 mt-1">Pendente do plano</p>
+          <p className="text-2xl font-black text-blue-600">R$ {brl(d.receberPlano)}</p>
+          <p className="text-xs text-slate-400 mt-1">Faturas pendentes do plano</p>
         </div>
         <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-amber-600 uppercase mb-1">A Pagar</p>
-          <p className="text-2xl font-black text-amber-500">R$ {pagar.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-slate-400 mt-1">Contas + folha pendente</p>
+          <p className="text-2xl font-black text-amber-500">R$ {brl(pagar)}</p>
+          {pagar > 0 && (
+            <div className="mt-2 space-y-0.5">
+              <p className="text-[10px] text-slate-400">Contas: R$ {brl(d.pagarContas)}</p>
+              <p className="text-[10px] text-slate-400">Folha: R$ {brl(d.pagarFolha)}</p>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Alerta despesas > receita */}
+      {despesaTotal > receitaTotal && receitaTotal > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+          <span className="text-xl flex-shrink-0">⚠️</span>
+          <div>
+            <p className="font-bold text-red-700 text-sm">Despesas superam a receita prevista</p>
+            <p className="text-xs text-red-500 mt-0.5">
+              Déficit projetado de R$ {brl(despesaTotal - receitaTotal)}. Revise as contas a pagar ou a folha de pagamento.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Composição das despesas */}
+      {despesaTotal > 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+          <h3 className="font-bold text-slate-700 text-sm">Composição das Despesas</h3>
+          <div className="space-y-2.5">
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-slate-500">Contas fixas</span>
+                <span className="font-semibold text-slate-700">R$ {brl(d.saidasContas + d.pagarContas)} <span className="text-slate-400 font-normal">({pctContas}%)</span></span>
+              </div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-orange-400 rounded-full" style={{ width: `${pctContas}%` }} />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-slate-500">Folha de pagamento</span>
+                <span className="font-semibold text-slate-700">R$ {brl(d.saidasFolha + d.pagarFolha)} <span className="text-slate-400 font-normal">({pctFolha}%)</span></span>
+              </div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-400 rounded-full" style={{ width: `${pctFolha}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Projeção */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
-        <h3 className="font-bold text-slate-700 text-sm">Projeção do Mês</h3>
+        <h3 className="font-bold text-slate-700 text-sm">Resultado Projetado do Mês</h3>
+        <p className="text-xs text-slate-400 -mt-1">Considera tudo realizado + pendente</p>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Total a receber</span>
-            <span className="font-semibold text-blue-600">+ R$ {(entradas + receber).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+            <span className="text-slate-500">Receita total prevista</span>
+            <span className="font-semibold text-emerald-600">+ R$ {brl(receitaTotal)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Total a pagar</span>
-            <span className="font-semibold text-red-500">- R$ {(saidas + pagar).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+            <span className="text-slate-500">Despesa total prevista</span>
+            <span className="font-semibold text-red-500">− R$ {brl(despesaTotal)}</span>
           </div>
           <div className="border-t border-slate-100 pt-2 flex justify-between text-sm font-bold">
-            <span className="text-slate-700">Saldo projetado</span>
-            <span className={entradas + receber - saidas - pagar >= 0 ? "text-emerald-600" : "text-red-600"}>
-              R$ {(entradas + receber - saidas - pagar).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            <span className="text-slate-700">Resultado projetado</span>
+            <span className={saldoProj >= 0 ? "text-emerald-600" : "text-red-600"}>
+              {saldoProj < 0 && "− "}R$ {brl(Math.abs(saldoProj))}
             </span>
           </div>
+          {receitaTotal > 0 && (
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+              <span className="text-xs text-slate-500">Receita comprometida com despesas</span>
+              <span className={`text-sm font-black ${pctComprometido > 100 ? "text-red-600" : pctComprometido > 85 ? "text-amber-600" : "text-emerald-600"}`}>
+                {pctComprometido}%
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>
