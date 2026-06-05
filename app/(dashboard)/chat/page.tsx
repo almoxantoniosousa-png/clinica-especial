@@ -51,7 +51,7 @@ type Mensagem = {
   lida: boolean;
 };
 
-type Perfil = { id: string; nome: string; role: string };
+type Perfil = { id: string; nome: string; role: string; foto_url?: string | null };
 
 type Conversa = {
   id: string;
@@ -114,11 +114,18 @@ export default function ChatPage() {
   const [texto, setTexto] = useState("");
   const [digitando, setDigitando] = useState<string | null>(null);
 
-  // Upload
+  // Upload mensagens
   const [uploading, setUploading] = useState(false);
   const [uploadErro, setUploadErro] = useState<string | null>(null);
   const [menuFoto, setMenuFoto] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Upload foto de perfil
+  const [uploadandoFoto, setUploadandoFoto] = useState(false);
+  const fotoPerfilRef = useRef<HTMLInputElement>(null);
+
+  // Fotos dos contatos { userId: url }
+  const [fotosContatos, setFotosContatos] = useState<Record<string, string>>({});
 
   // Não lidas
   const [naoLidas, setNaoLidas] = useState<Record<string, number>>({});
@@ -158,8 +165,12 @@ export default function ChatPage() {
       if (p) { setEu(p as Perfil); return; }
       // especialistas/supervisora/gestao ficam em atendentes, não em perfis
       const { data: a } = await supabase
-        .from("atendentes").select("id, nome, role").eq("email", user.email).maybeSingle();
-      if (a) setEu(a as Perfil);
+        .from("atendentes").select("id, nome, role, logo_url").eq("email", user.email).maybeSingle();
+      if (a) setEu({ ...a, foto_url: a.logo_url } as Perfil);
+      // usuarios (adm, gestao, supervisora via usuarios)
+      const { data: u } = await supabase
+        .from("usuarios").select("id, nome, role, foto_url").eq("email", user.email).maybeSingle();
+      if (u) setEu(u as Perfil);
     })();
   }, []);
 
@@ -322,6 +333,50 @@ export default function ChatPage() {
     } finally { setUploading(false); }
   };
 
+  // ── Foto de perfil ────────────────────────────────────────────────────────
+
+  async function uploadarFotoPerfil(file: File) {
+    if (!eu) return;
+    setUploadandoFoto(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${eu.id}/perfil.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("fotos-perfil").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from("fotos-perfil").getPublicUrl(path);
+      const urlComCache = `${publicUrl}?t=${Date.now()}`;
+
+      // Atualiza na tabela correta
+      const isAtendente = ["atendente", "especialista"].includes(eu.role);
+      if (isAtendente) {
+        await supabase.from("atendentes").update({ logo_url: urlComCache }).eq("id", eu.id);
+      } else {
+        await supabase.from("usuarios").update({ foto_url: urlComCache }).eq("id", eu.id);
+      }
+      setEu(prev => prev ? { ...prev, foto_url: urlComCache } : prev);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erro ao enviar foto";
+      alert(msg);
+    } finally { setUploadandoFoto(false); }
+  }
+
+  // ── Avatar (foto ou iniciais) ─────────────────────────────────────────────
+
+  function Avatar({ perfil, size = "md" }: { perfil: Perfil; size?: "sm" | "md" | "lg" }) {
+    const foto = perfil.foto_url || fotosContatos[perfil.id];
+    const dim = size === "sm" ? "w-6 h-6 text-xs" : size === "lg" ? "w-14 h-14 text-base" : "w-10 h-10 text-sm";
+    if (foto) return (
+      <img src={foto} alt={perfil.nome}
+        className={`${dim} rounded-full object-cover shrink-0`}/>
+    );
+    return (
+      <div className={`${dim} rounded-full flex items-center justify-center font-semibold shrink-0 ${ROLE_STYLE[perfil.role] ?? "bg-slate-100 text-slate-600"}`}>
+        {iniciais(perfil.nome)}
+      </div>
+    );
+  }
+
   // ── Abrir / criar conversa ────────────────────────────────────────────────
 
   const abrirConversa = async (alvo: Perfil) => {
@@ -425,10 +480,26 @@ export default function ChatPage() {
         {/* Cabeçalho */}
         <div className="px-4 pt-4 pb-3 border-b border-slate-100 space-y-3 bg-[#128C7E]">
           <div className="flex items-center justify-between">
-            <h1 className="flex items-center gap-2 text-base font-semibold text-white">
-              <MessageCircle className="h-5 w-5 text-white/80 shrink-0" />
-              Mensagens
-            </h1>
+            {/* Avatar próprio clicável */}
+            {eu && (
+              <button onClick={() => fotoPerfilRef.current?.click()}
+                title="Alterar foto de perfil"
+                className="relative group shrink-0">
+                {eu.foto_url
+                  ? <img src={eu.foto_url} alt={eu.nome} className="w-9 h-9 rounded-full object-cover"/>
+                  : <div className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm ${ROLE_STYLE[eu.role] ?? "bg-slate-100"}`}>{iniciais(eu.nome)}</div>
+                }
+                <span className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                  <span className="text-white text-xs">📷</span>
+                </span>
+                {uploadandoFoto && (
+                  <span className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+                  </span>
+                )}
+              </button>
+            )}
+            <h1 className="flex-1 ml-2 text-base font-semibold text-white truncate">{eu?.nome || "Mensagens"}</h1>
             <button
               onClick={() => { setModal(true); setBuscaUsuario(""); setUsuarios([]); }}
               title="Nova conversa"
@@ -437,6 +508,9 @@ export default function ChatPage() {
               <PenSquare className="h-4 w-4 text-white" />
             </button>
           </div>
+          <input ref={fotoPerfilRef} type="file" accept="image/*" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) uploadarFotoPerfil(f); e.target.value = ""; }}
+          />
 
           {/* Busca */}
           <div className="relative">
@@ -487,9 +561,7 @@ export default function ChatPage() {
                   }`}
                 >
                   {/* Avatar */}
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 ${ROLE_STYLE[o.role] ?? "bg-slate-100 text-slate-600"}`}>
-                    {iniciais(o.nome)}
-                  </div>
+                  <Avatar perfil={o} size="md" />
 
                   <div className="flex-1 overflow-hidden">
                     <div className="flex items-center justify-between gap-1">
@@ -522,9 +594,7 @@ export default function ChatPage() {
             <button onClick={() => setAtiva(null)} className="md:hidden text-white/80 mr-1">
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 ${ROLE_STYLE[parceiro.role] ?? "bg-slate-100 text-slate-600"}`}>
-              {iniciais(parceiro.nome)}
-            </div>
+            <Avatar perfil={parceiro} size="md" />
             <div className="flex-1 overflow-hidden">
               <p className="text-sm font-semibold text-white truncate">{parceiro.nome}</p>
               <p className="text-xs min-h-[1rem]">
@@ -540,9 +610,7 @@ export default function ChatPage() {
           <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1" style={{ background: "#e5ddd5 url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9b99a' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }}>
             {mensagens.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center gap-2 pb-8">
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-base font-bold ${ROLE_STYLE[parceiro.role] ?? "bg-slate-100 text-slate-600"}`}>
-                  {iniciais(parceiro.nome)}
-                </div>
+                <Avatar perfil={parceiro} size="lg" />
                 <p className="text-sm font-semibold text-slate-700">{parceiro.nome}</p>
                 <p className="text-xs text-slate-400">{ROLE_LABEL[parceiro.role]}</p>
                 <p className="text-xs text-slate-300 mt-2">Início da conversa · Diga olá 👋</p>
@@ -572,11 +640,7 @@ export default function ChatPage() {
                         {/* Mini-avatar do parceiro (apenas na primeira msg da sequência) */}
                         {!minha && (
                           <div className="w-6 shrink-0 self-end">
-                            {primeiraDoGrupo && (
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${ROLE_STYLE[parceiro.role] ?? "bg-slate-100"}`}>
-                                {iniciais(parceiro.nome)[0]}
-                              </div>
-                            )}
+                            {primeiraDoGrupo && <Avatar perfil={parceiro} size="sm" />}
                           </div>
                         )}
 
@@ -633,9 +697,7 @@ export default function ChatPage() {
             {/* Indicador de digitação */}
             {digitando && (
               <div className="flex items-center gap-1.5 mt-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${ROLE_STYLE[parceiro.role] ?? "bg-slate-200"}`}>
-                  {iniciais(parceiro.nome)[0]}
-                </div>
+                <Avatar perfil={parceiro} size="sm" />
                 <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm flex gap-1 items-center">
                   <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
                   <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
