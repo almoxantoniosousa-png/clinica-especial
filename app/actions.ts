@@ -47,7 +47,7 @@ export async function loginWithPassword(
     if (role === "adm" || role === "admin") redirect("/adm/dashboard");
     if (role === "gestao") redirect("/gestao/dashboard");
     if (role === "supervisora") redirect("/supervisora/comunicados");
-    if (role === "especialista") redirect("/especialista/agenda");
+    if (role === "especialista") redirect("/especialista/escala");
     if (role === "familia") redirect("/familia");
     if (role === "financeiro") redirect("/adm/financeiro");
     if (role === "at" || role === "atendente") redirect("/atendente/meus-atendimentos");
@@ -70,7 +70,7 @@ export async function loginWithPassword(
     if (role === "adm" || role === "admin") redirect("/adm/dashboard");
     if (role === "gestao") redirect("/gestao/dashboard");
     if (role === "supervisora") redirect("/supervisora/comunicados");
-    if (role === "especialista") redirect("/especialista/agenda");
+    if (role === "especialista") redirect("/especialista/escala");
     if (role === "at" || role === "atendente") redirect("/atendente/meus-atendimentos");
 
     redirect("/atendente/meus-atendimentos");
