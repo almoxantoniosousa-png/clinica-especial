@@ -300,179 +300,137 @@ export default function AdmDashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
-        <svg className="animate-spin h-8 w-8 text-blue-500" viewBox="0 0 24 24" fill="none">
+        <svg className="animate-spin h-7 w-7 text-blue-500" viewBox="0 0 24 24" fill="none">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
         </svg>
-        <p className="text-slate-400 text-sm font-medium">Carregando painel...</p>
+        <p className="text-slate-400 text-sm">Carregando painel...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
+    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-8 space-y-5">
 
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-md bg-white p-0.5">
-            <img src="/logo.png" alt="Logo Clínica Abraço" className="w-full h-full object-contain"/>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/>
-              <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Dashboard</h1>
-            </div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
-              Clínica Abraço — Visão geral operacional
-            </p>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-xs text-slate-400 mt-0.5 capitalize">{hoje}</p>
         </div>
-        <div className="self-start sm:self-auto flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-sm">
-          <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
-          <span className="text-xs font-medium text-slate-600 capitalize">{hoje}</span>
+        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
+          Ao vivo
         </div>
       </div>
 
       {/* KPIs OPERACIONAIS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-blue-400">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Hoje</p>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
-              <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Atendimentos hoje",    valor: metricas.totalDia,   sufixo: "",    cor: "text-blue-600",    bg: "bg-blue-50",    icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",  icor: "text-blue-500" },
+          { label: "Aguardando pagamento", valor: metricas.pendentes,  sufixo: "",    cor: "text-amber-600",   bg: "bg-amber-50",   icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z", icor: "text-amber-500" },
+          { label: "Custo acumulado",      valor: null,                sufixo: "",    cor: "text-red-600",     bg: "bg-red-50",     icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z", icor: "text-red-500" },
+          { label: "Atendimentos pagos",   valor: metricas.pagos,      sufixo: "",    cor: "text-emerald-600", bg: "bg-emerald-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", icor: "text-emerald-500" },
+        ].map((kpi, i) => (
+          <div key={i} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-slate-500">{kpi.label}</p>
+              <div className={`w-8 h-8 rounded-lg ${kpi.bg} flex items-center justify-center`}>
+                <svg className={`w-4 h-4 ${kpi.icor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={kpi.icon}/>
+                </svg>
+              </div>
             </div>
+            {i === 2
+              ? <p className={`text-xl font-bold ${kpi.cor}`}>R$ {metricas.receitaMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              : <p className={`text-3xl font-bold ${kpi.cor}`}>{kpi.valor}</p>
+            }
           </div>
-          <p className="text-2xl md:text-3xl font-black text-blue-600">{metricas.totalDia}</p>
-          <p className="text-xs text-slate-400 mt-1">atendimentos hoje</p>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-amber-400">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Pendentes</p>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center">
-              <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-              </svg>
-            </div>
-          </div>
-          <p className="text-2xl md:text-3xl font-black text-amber-500">{metricas.pendentes}</p>
-          <p className="text-xs text-slate-400 mt-1">aguardando pagamento</p>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-red-400">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Custo atend.</p>
-            <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center">
-              <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-          </div>
-          <p className="text-xl md:text-2xl font-black text-red-500">
-            R$ {metricas.receitaMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-          </p>
-          <p className="text-xs text-slate-400 mt-1">acumulado no mês</p>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-emerald-400">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Pagos</p>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center">
-              <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-          </div>
-          <p className="text-2xl md:text-3xl font-black text-emerald-600">{metricas.pagos}</p>
-          <p className="text-xs text-slate-400 mt-1">atendimentos pagos</p>
-        </div>
+        ))}
       </div>
 
       {/* ANIVERSARIANTES */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-            🎂 Aniversariantes de {mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}
-          </h2>
-          <span className="text-xs bg-pink-50 text-pink-600 px-2.5 py-1 rounded-full font-medium">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-800">Aniversariantes</h2>
+            <p className="text-xs text-slate-400">{mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}</p>
+          </div>
+          <span className="text-xs bg-pink-50 text-pink-600 border border-pink-100 px-2.5 py-1 rounded-full font-medium">
             {aniversariantes.length} este mês
           </span>
         </div>
-        {aniversariantes.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-4">Nenhum aniversariante este mês 🎉</p>
-        ) : (
-          <div className="space-y-2">
-            {aniversariantes.map((p, i) => {
-              const isHoje   = p.diff === 0;
-              const isProximo = p.diff > 0 && p.diff <= 7;
-              return (
-                <div key={i} className={`flex items-center justify-between px-3 py-2.5 rounded-xl ${
-                  isHoje ? "bg-pink-50 border border-pink-200" :
-                  isProximo ? "bg-amber-50 border border-amber-100" :
-                  "bg-slate-50 border border-slate-100"}`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      isHoje ? "bg-pink-200 text-pink-800" :
-                      isProximo ? "bg-amber-200 text-amber-800" :
-                      "bg-slate-200 text-slate-700"}`}>
-                      {p.nome.charAt(0).toUpperCase()}
+        <div className="p-4">
+          {aniversariantes.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-6">Nenhum aniversariante este mês.</p>
+          ) : (
+            <div className="space-y-2">
+              {aniversariantes.map((p, i) => {
+                const isHoje    = p.diff === 0;
+                const isProximo = p.diff > 0 && p.diff <= 7;
+                return (
+                  <div key={i} className={`flex items-center justify-between px-3 py-2.5 rounded-xl border ${
+                    isHoje    ? "bg-pink-50 border-pink-200" :
+                    isProximo ? "bg-amber-50 border-amber-100" :
+                                "bg-slate-50 border-slate-100"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                        isHoje    ? "bg-pink-200 text-pink-800" :
+                        isProximo ? "bg-amber-200 text-amber-800" :
+                                    "bg-slate-200 text-slate-600"}`}>
+                        {p.nome.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className={`text-sm font-semibold ${isHoje ? "text-pink-800" : "text-slate-700"}`}>
+                          {p.nome} {isHoje && "🎉"}
+                        </p>
+                        <p className="text-xs text-slate-400">{p.tipo}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className={`text-sm font-semibold ${isHoje ? "text-pink-800" : "text-slate-700"}`}>
-                        {p.nome} {isHoje && "🎉"}
+                    <div className="text-right">
+                      <p className={`text-sm font-semibold ${isHoje ? "text-pink-600" : isProximo ? "text-amber-600" : "text-slate-500"}`}>
+                        {isHoje ? "Hoje!" : isProximo ? `em ${p.diff} dias` : `dia ${p.dia}`}
                       </p>
-                      <p className="text-xs text-slate-400">{p.tipo}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-bold ${isHoje ? "text-pink-600" : isProximo ? "text-amber-600" : "text-slate-500"}`}>
-                      dia {p.dia}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {isHoje ? "Hoje! 🎂" : isProximo ? `em ${p.diff} dias` : `dia ${p.dia}`}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* GRÁFICOS OPERACIONAIS */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold text-slate-700">Custo de atendimentos pagos — por dia</h2>
-          <span className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-medium">Linha</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-semibold text-slate-800">Custo por dia</h2>
+            <p className="text-xs text-slate-400">Atendimentos pagos no mês atual</p>
+          </div>
+          <div className="p-5 h-52">
+            {graficoLinha
+              ? <Line data={graficoLinha} options={chartOptions}/>
+              : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados no mês.</p></div>}
+          </div>
         </div>
-        <div className="h-52">
-          {graficoLinha
-            ? <Line data={graficoLinha} options={chartOptions}/>
-            : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados no mês.</p></div>}
+
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-semibold text-slate-800">Atendimentos por semana</h2>
+            <p className="text-xs text-slate-400">Volume semanal no mês atual</p>
+          </div>
+          <div className="p-5 h-52">
+            {graficoBarras
+              ? <Bar data={graficoBarras} options={chartOptions}/>
+              : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados semanais.</p></div>}
+          </div>
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold text-slate-700">Atendimentos por semana</h2>
-          <span className="text-xs bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full font-medium">Barras</span>
-        </div>
-        <div className="h-56">
-          {graficoBarras
-            ? <Bar data={graficoBarras} options={chartOptions}/>
-            : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados semanais.</p></div>}
-        </div>
-      </div>
-
-      {/* ── DIVISOR ANALYTICS ─────────────────────────────────── */}
+      {/* SEÇÃO ANALYTICS */}
       <div className="flex items-center gap-3 pt-2">
         <div className="flex-1 h-px bg-slate-200"/>
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest px-2">Analytics</span>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analytics</span>
         <div className="flex-1 h-px bg-slate-200"/>
       </div>
 
@@ -487,31 +445,31 @@ export default function AdmDashboardPage() {
       ) : (
         <>
           {/* KPIs ANALYTICS */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-indigo-400">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Crianças ativas</p>
-              <p className="text-3xl font-black text-indigo-600">{kpisExtra.totalCriancas}</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+              <p className="text-xs font-medium text-slate-500 mb-3">Crianças ativas</p>
+              <p className="text-3xl font-bold text-indigo-600">{kpisExtra.totalCriancas}</p>
               <p className="text-xs text-slate-400 mt-1">no sistema</p>
             </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-violet-400">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Média atend./criança</p>
-              <p className="text-3xl font-black text-violet-600">{kpisExtra.mediaAtend}</p>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+              <p className="text-xs font-medium text-slate-500 mb-3">Média atend./criança</p>
+              <p className="text-3xl font-bold text-violet-600">{kpisExtra.mediaAtend}</p>
               <p className="text-xs text-slate-400 mt-1">neste mês</p>
             </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-fuchsia-400 col-span-2 md:col-span-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Mais ativo no mês</p>
-              <p className="text-lg font-black text-fuchsia-600 truncate">{kpisExtra.melhorProfissional || "—"}</p>
-              <p className="text-xs text-slate-400 mt-1">profissional com mais atend.</p>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm col-span-2 md:col-span-1">
+              <p className="text-xs font-medium text-slate-500 mb-3">Mais ativo no mês</p>
+              <p className="text-lg font-bold text-fuchsia-600 truncate">{kpisExtra.melhorProfissional || "—"}</p>
+              <p className="text-xs text-slate-400 mt-1">maior número de atendimentos</p>
             </div>
           </div>
 
-          {/* HISTÓRICO FINANCEIRO 6 MESES */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold text-slate-700">Receita vs Despesa — Últimos 6 meses</h2>
-              <span className="text-xs bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full font-medium">Financeiro</span>
+          {/* HISTÓRICO FINANCEIRO */}
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-800">Receita vs Despesa</h2>
+              <p className="text-xs text-slate-400">Últimos 6 meses</p>
             </div>
-            <div className="h-64">
+            <div className="p-5 h-64">
               {historicoFinanceiro
                 ? <Bar data={historicoFinanceiro} options={historicoOptions}/>
                 : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados financeiros no período.</p></div>}
@@ -520,24 +478,24 @@ export default function AdmDashboardPage() {
 
           {/* PLANOS + TOP PROFISSIONAIS */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold text-slate-700">Crianças por plano de saúde</h2>
-                <span className="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full font-medium">Donut</span>
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100">
+                <h2 className="text-sm font-semibold text-slate-800">Crianças por plano de saúde</h2>
+                <p className="text-xs text-slate-400">Distribuição atual</p>
               </div>
-              <div className="h-60">
+              <div className="p-5 h-60">
                 {distribuicaoPlanos
                   ? <Pie data={distribuicaoPlanos} options={pieOptions}/>
                   : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados de plano.</p></div>}
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold text-slate-700">Top profissionais do mês</h2>
-                <span className="text-xs bg-violet-50 text-violet-600 px-2.5 py-1 rounded-full font-medium">Ranking</span>
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100">
+                <h2 className="text-sm font-semibold text-slate-800">Top profissionais</h2>
+                <p className="text-xs text-slate-400">Mais ativos no mês atual</p>
               </div>
-              <div className="h-60">
+              <div className="p-5 h-60">
                 {topProfissionais
                   ? <Bar data={topProfissionais} options={horizontalOptions}/>
                   : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem atendimentos este mês.</p></div>}

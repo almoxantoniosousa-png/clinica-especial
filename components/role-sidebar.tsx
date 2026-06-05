@@ -154,6 +154,20 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     );
   };
 
+  const MenuItem = ({ item }: { item: { href: string; label: string; icon: string } }) => {
+    const ativo = pathname === item.href;
+    return (
+      <Link href={item.href}
+        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all
+          ${ativo
+            ? "bg-blue-600 text-white font-semibold"
+            : "text-slate-400 hover:bg-slate-800 hover:text-white font-medium"}`}>
+        <span className="text-base leading-none">{item.icon}</span>
+        <span>{item.label}</span>
+      </Link>
+    );
+  };
+
   const Accordion = ({ label, icon, subItems, aberto, onToggle }: {
     label: string; icon: string;
     subItems: { href: string; label: string; icon: string }[];
@@ -163,23 +177,22 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     return (
       <div>
         <button onClick={onToggle}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
-            ${isAtivo ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"}`}>
-          <span className="text-lg">{icon}</span>
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all
+            ${isAtivo ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
+          <span className="text-base leading-none">{icon}</span>
           <span className="flex-1 text-left">{label}</span>
-          <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${aberto ? "rotate-180" : ""}`} />
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${aberto ? "rotate-180" : ""} opacity-60`} />
         </button>
         {aberto && (
-          <div className="ml-4 mt-1 space-y-1 border-l-2 border-slate-100 pl-3">
+          <div className="ml-3 mt-0.5 space-y-0.5 border-l border-slate-700 pl-3">
             {subItems.map((item) => {
               const ativo = pathname === item.href;
               return (
                 <Link key={item.href} href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                    ${ativo ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"}`}>
-                  <span className="text-base">{item.icon}</span>
+                  className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-sm transition-all
+                    ${ativo ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:bg-slate-800 hover:text-white font-medium"}`}>
+                  <span className="text-sm leading-none">{item.icon}</span>
                   <span>{item.label}</span>
-                  {ativo && <span className="ml-auto w-2 h-2 rounded-full bg-blue-600" />}
                 </Link>
               );
             })}
@@ -190,22 +203,14 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   };
 
   const renderMenu = () => (
-    <nav className="px-3 py-4 space-y-1">
-      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-3">Menu</p>
+    <nav className="px-2 py-3 space-y-0.5">
       {(isAdmin || isGestao) ? (
         <>
-          {[(isAdmin ? menuAdmin : menuGestao)[0]].map((item) => {
-            const ativo = pathname === item.href;
-            return (
-              <Link key={item.href} href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
-                  ${ativo ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"}`}>
-                <span className="text-lg">{item.icon}</span>
-                <span>{item.label}</span>
-                {ativo && <span className="ml-auto w-2 h-2 rounded-full bg-blue-600" />}
-              </Link>
-            );
-          })}
+          <MenuItem item={(isAdmin ? menuAdmin : menuGestao)[0]} />
+
+          <div className="pt-3 pb-0.5">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-3 pb-1">Pessoas</p>
+          </div>
 
           <Accordion
             label="Colaboradores" icon="👥"
@@ -215,42 +220,29 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
           />
 
           {isAdmin && (
-            <Accordion
-              label="Financeiro" icon="💰"
-              subItems={subMenuFinanceiro}
-              aberto={financeiroAberto}
-              onToggle={() => setFinanceiroAberto(!financeiroAberto)}
-            />
+            <>
+              <div className="pt-3 pb-0.5">
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-3 pb-1">Financeiro</p>
+              </div>
+              <Accordion
+                label="Financeiro" icon="💰"
+                subItems={subMenuFinanceiro}
+                aberto={financeiroAberto}
+                onToggle={() => setFinanceiroAberto(!financeiroAberto)}
+              />
+            </>
           )}
 
-          {(isAdmin ? menuAdmin : menuGestao).slice(1).map((item) => {
-            const ativo = pathname === item.href;
-            return (
-              <Link key={item.href} href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
-                  ${ativo ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"}`}>
-                <span className="text-lg">{item.icon}</span>
-                <span>{item.label}</span>
-                {ativo && <span className="ml-auto w-2 h-2 rounded-full bg-blue-600" />}
-              </Link>
-            );
-          })}
+          <div className="pt-3 pb-0.5">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-3 pb-1">Geral</p>
+          </div>
+
+          {(isAdmin ? menuAdmin : menuGestao).slice(1).map((item) => (
+            <MenuItem key={item.href} item={item} />
+          ))}
         </>
       ) : (
-        <>
-          {menu.map((item) => {
-            const ativo = pathname === item.href;
-            return (
-              <Link key={item.href} href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all
-                  ${ativo ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"}`}>
-                <span className="text-lg">{item.icon}</span>
-                <span>{item.label}</span>
-                {ativo && <span className="ml-auto w-2 h-2 rounded-full bg-blue-600" />}
-              </Link>
-            );
-          })}
-        </>
+        menu.map((item) => <MenuItem key={item.href} item={item} />)
       )}
     </nav>
   );
@@ -258,13 +250,13 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   return (
     <>
       {!isMobile && (
-        <aside className="w-56 bg-white border-r border-slate-200 min-h-screen flex flex-col justify-between flex-shrink-0">
+        <aside className="w-56 bg-slate-900 min-h-screen flex flex-col justify-between flex-shrink-0">
           <div>
-            <div className="px-5 py-5 border-b border-slate-100">
+            <div className="px-4 py-4 border-b border-slate-700/60">
               <div className="flex items-center gap-3">
                 <Logo size="md" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-800 text-sm leading-tight">Clínica Abraço</p>
+                  <p className="font-bold text-white text-sm leading-tight">Clínica Abraço</p>
                   <p className="text-xs text-slate-400">{roleLabel}</p>
                 </div>
                 <NotificacoesBell userRole={role} />
@@ -272,10 +264,10 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
             </div>
             {renderMenu()}
           </div>
-          <div className="px-3 pb-5 border-t border-slate-100 pt-4">
+          <div className="px-2 pb-4 border-t border-slate-700/60 pt-3">
             <button onClick={() => setConfirmandoSaida(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all group">
-              <svg className="w-4 h-4 text-slate-400 group-hover:text-red-500 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-red-900/40 hover:text-red-400 transition-all group">
+              <svg className="w-4 h-4 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
               Sair do sistema
@@ -314,17 +306,17 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
       {isMobile && menuAberto && (
         <>
           <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMenuAberto(false)} />
-          <div className="fixed top-0 left-0 h-full w-72 z-50 bg-white shadow-xl flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className="fixed top-0 left-0 h-full w-72 z-50 bg-slate-900 shadow-xl flex flex-col">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-slate-700/60">
               <div className="flex items-center gap-3">
                 <Logo size="md" />
                 <div>
-                  <p className="font-bold text-slate-800 text-sm">Clínica Abraço</p>
+                  <p className="font-bold text-white text-sm">Clínica Abraço</p>
                   <p className="text-xs text-slate-400">{roleLabel}</p>
                 </div>
               </div>
-              <button onClick={() => setMenuAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition">
-                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <button onClick={() => setMenuAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800 transition">
+                <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -332,10 +324,10 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
             <div className="flex-1 overflow-y-auto">
               {renderMenu()}
             </div>
-            <div className="px-3 pb-6 border-t border-slate-100 pt-4">
+            <div className="px-2 pb-5 border-t border-slate-700/60 pt-3">
               <button onClick={() => { setMenuAberto(false); setConfirmandoSaida(true); }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all group">
-                <svg className="w-4 h-4 text-slate-400 group-hover:text-red-500 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-red-900/40 hover:text-red-400 transition-all">
+                <svg className="w-4 h-4 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 Sair do sistema
