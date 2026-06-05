@@ -296,6 +296,8 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
 // =============================================
 // ABA CONTAS A RECEBER
 // =============================================
+type ItemEsp = { especialidade: string; qtd: string; valor_sessao: string };
+
 function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
   const [contas, setContas] = useState<any[]>([]);
   const [criancas, setCriancas] = useState<any[]>([]);
@@ -303,10 +305,11 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [criancaId, setCriancaId] = useState("");
-  const [sessoes, setSessoes] = useState("");
-  const [valorSessao, setValorSessao] = useState("");
+  const [especialidades, setEspecialidades] = useState<ItemEsp[]>([{ especialidade: "", qtd: "", valor_sessao: "" }]);
   const [plano, setPlano] = useState("");
-  const [processo, setProcesso] = useState("");
+  const [numeroNotaFiscal, setNumeroNotaFiscal] = useState("");
+  const [dataEnvio, setDataEnvio] = useState("");
+  const [descontoISS, setDescontoISS] = useState("");
   const [observacao, setObservacao] = useState("");
 
   type Confirmacao = { id: string; novoStatus: string; nomeLabel: string; valor: number } | null;
@@ -318,38 +321,75 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
     const { data } = await supabase.from("contas_receber")
       .select("*, criancas(nome)").eq("mes_referencia", mesAno).order("created_at", { ascending: false });
     setContas(data || []);
-    const { data: cs } = await supabase.from("criancas").select("id, nome, plano_saude, numero_processo").order("nome");
+    const { data: cs } = await supabase.from("criancas").select("id, nome, plano_saude").order("nome");
     setCriancas(cs || []);
     setLoading(false);
   };
 
   useEffect(() => { carregar(); }, [mesAno]);
 
-  const criancaSelecionada = criancas.find(c => c.id === criancaId);
-
+  const criancaSelecionada = criancas.find((c: any) => c.id === criancaId);
   useEffect(() => {
-    if (criancaSelecionada) {
-      setPlano(criancaSelecionada.plano_saude || "");
-      setProcesso(criancaSelecionada.numero_processo || "");
-    }
+    if (criancaSelecionada) setPlano(criancaSelecionada.plano_saude || "");
   }, [criancaId]);
 
+  const totalBruto = especialidades.reduce(
+    (acc, e) => acc + (Number(e.qtd) || 0) * (Number(e.valor_sessao) || 0), 0
+  );
+  const valorISS = descontoISS ? totalBruto * (Number(descontoISS) / 100) : 0;
+  const totalLiquido = totalBruto - valorISS;
+
+  function addEspecialidade() {
+    setEspecialidades(prev => [...prev, { especialidade: "", qtd: "", valor_sessao: "" }]);
+  }
+  function removeEspecialidade(i: number) {
+    setEspecialidades(prev => prev.filter((_, idx) => idx !== i));
+  }
+  function updateEspecialidade(i: number, field: keyof ItemEsp, value: string) {
+    setEspecialidades(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: value } : e));
+  }
+
+  function resetForm() {
+    setCriancaId("");
+    setEspecialidades([{ especialidade: "", qtd: "", valor_sessao: "" }]);
+    setPlano(""); setNumeroNotaFiscal(""); setDataEnvio(""); setDescontoISS(""); setObservacao("");
+  }
+
   async function salvar() {
-    if (!criancaId || !sessoes || !valorSessao) { mostrarFeedback("erro", "Preencha todos os campos obrigatórios."); return; }
+    if (!criancaId) { mostrarFeedback("erro", "Selecione a criança."); return; }
+    if (especialidades.some(e => !e.especialidade || !e.qtd || !e.valor_sessao)) {
+      mostrarFeedback("erro", "Preencha todos os campos de especialidade."); return;
+    }
     setSalvando(true);
-    const total = Number(sessoes) * Number(valorSessao);
+    const espComSubtotal = especialidades.map(e => ({
+      especialidade: e.especialidade,
+      qtd: Number(e.qtd),
+      valor_sessao: Number(e.valor_sessao),
+      subtotal: Number(e.qtd) * Number(e.valor_sessao),
+    }));
+    const bruto = espComSubtotal.reduce((acc, e) => acc + e.subtotal, 0);
+    const iss = descontoISS ? bruto * (Number(descontoISS) / 100) : 0;
     const { error } = await supabase.from("contas_receber").insert([{
-      crianca_id: criancaId, mes_referencia: mesAno,
-      sessoes_realizadas: Number(sessoes), valor_sessao: Number(valorSessao),
-      valor_total: total, plano_saude: plano, numero_processo: processo,
-      observacao, status: "pendente"
+      crianca_id: criancaId,
+      mes_referencia: mesAno,
+      especialidades: espComSubtotal,
+      sessoes_realizadas: espComSubtotal.reduce((acc, e) => acc + e.qtd, 0),
+      valor_sessao: 0,
+      valor_total: bruto,
+      valor_liquido: bruto - iss,
+      desconto_iss: Number(descontoISS) || 0,
+      plano_saude: plano,
+      numero_nota_fiscal: numeroNotaFiscal,
+      data_envio: dataEnvio || null,
+      observacao,
+      status: "pendente",
     }]);
     setSalvando(false);
     if (error) mostrarFeedback("erro", "Erro: " + error.message);
     else {
       mostrarFeedback("sucesso", "Fatura registrada!");
       setModalAberto(false);
-      setCriancaId(""); setSessoes(""); setValorSessao(""); setPlano(""); setProcesso(""); setObservacao("");
+      resetForm();
       carregar();
     }
   }
@@ -369,8 +409,8 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
 
   const totais = useMemo(() => ({
     total: contas.reduce((acc, c) => acc + Number(c.valor_total || 0), 0),
-    recebido: contas.filter(c => c.status === "recebido").reduce((acc, c) => acc + Number(c.valor_total || 0), 0),
-    pendente: contas.filter(c => c.status !== "recebido").reduce((acc, c) => acc + Number(c.valor_total || 0), 0),
+    recebido: contas.filter(c => c.status === "recebido").reduce((acc, c) => acc + Number(c.valor_liquido ?? c.valor_total ?? 0), 0),
+    pendente: contas.filter(c => c.status !== "recebido").reduce((acc, c) => acc + Number(c.valor_liquido ?? c.valor_total ?? 0), 0),
   }), [contas]);
 
   function corStatus(status: string) {
@@ -413,40 +453,67 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
         </div>
       ) : (
         <div className="space-y-3">
-          {contas.map(c => (
-            <div key={c.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-semibold text-slate-800 text-sm truncate">{c.criancas?.nome}</p>
-                  <p className="text-xs text-slate-400">{c.sessoes_realizadas} sessões x R$ {Number(c.valor_sessao).toFixed(2)}</p>
-                  {c.plano_saude && <p className="text-xs text-slate-400">Plano: {c.plano_saude}</p>}
-                  {c.numero_processo && <p className="text-xs text-slate-400">Processo: {c.numero_processo}</p>}
+          {contas.map(c => {
+            const esps: any[] = c.especialidades || [];
+            const valorFinal = c.valor_liquido ?? c.valor_total;
+            return (
+              <div key={c.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-slate-800 text-sm">{c.criancas?.nome}</p>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${corStatus(c.status)}`}>
+                        {c.status === "pendente" ? "Pendente" : c.status === "faturado" ? "Faturado" : "Recebido"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">Ref: {c.mes_referencia}</p>
+                    {esps.length > 0 ? (
+                      <div className="mt-2 space-y-1">
+                        {esps.map((e: any, i: number) => (
+                          <div key={i} className="flex justify-between text-xs text-slate-500">
+                            <span>{e.especialidade} — {e.qtd}x R$ {Number(e.valor_sessao).toFixed(2)}</span>
+                            <span className="font-semibold">R$ {Number(e.subtotal).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 mt-1">{c.sessoes_realizadas} sessões x R$ {Number(c.valor_sessao).toFixed(2)}</p>
+                    )}
+                    <div className="flex flex-wrap gap-x-3 mt-1">
+                      {c.plano_saude && <p className="text-xs text-slate-400">Plano: {c.plano_saude}</p>}
+                      {c.numero_nota_fiscal && <p className="text-xs text-slate-400">NF: {c.numero_nota_fiscal}</p>}
+                      {c.data_envio && <p className="text-xs text-slate-400">Envio: {new Date(c.data_envio + "T12:00:00").toLocaleDateString("pt-BR")}</p>}
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    {c.desconto_iss > 0 && (
+                      <>
+                        <p className="text-xs text-slate-400 line-through">R$ {Number(c.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                        <p className="text-xs text-red-400">ISS -{c.desconto_iss}%</p>
+                      </>
+                    )}
+                    <p className="font-black text-slate-800">R$ {Number(valorFinal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                  </div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="font-black text-slate-800">R$ {Number(c.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${corStatus(c.status)}`}>
-                    {c.status === "pendente" ? "Pendente" : c.status === "faturado" ? "Faturado" : "Recebido"}
-                  </span>
-                </div>
-              </div>
-              {c.status !== "recebido" && (
-                <div className="flex gap-2">
-                  {c.status === "pendente" && (
+                {c.status !== "recebido" && (
+                  <div className="flex gap-2">
+                    {c.status === "pendente" && (
+                      <button
+                        onClick={() => setConfirmando({ id: c.id, novoStatus: "faturado", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) })}
+                        className="h-8 px-3 text-xs font-semibold bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
+                        Marcar Faturado
+                      </button>
+                    )}
                     <button
-                      onClick={() => setConfirmando({ id: c.id, novoStatus: "faturado", nomeLabel: c.criancas?.nome, valor: Number(c.valor_total) })}
-                      className="h-8 px-3 text-xs font-semibold bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
-                      Marcar Faturado
+                      onClick={() => setConfirmando({ id: c.id, novoStatus: "recebido", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) })}
+                      className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
+                      Marcar Recebido
                     </button>
-                  )}
-                  <button
-                    onClick={() => setConfirmando({ id: c.id, novoStatus: "recebido", nomeLabel: c.criancas?.nome, valor: Number(c.valor_total) })}
-                    className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
-                    Marcar Recebido
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -469,18 +536,12 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
               </div>
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmando(null)}
-                disabled={processando}
-                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
-              >
+              <button onClick={() => setConfirmando(null)} disabled={processando}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50">
                 Cancelar
               </button>
-              <button
-                onClick={confirmarAlteracao}
-                disabled={processando}
-                className={`flex-1 h-11 rounded-xl text-white text-sm font-bold transition disabled:opacity-50 ${confirmando.novoStatus === "recebido" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}`}
-              >
+              <button onClick={confirmarAlteracao} disabled={processando}
+                className={`flex-1 h-11 rounded-xl text-white text-sm font-bold transition disabled:opacity-50 ${confirmando.novoStatus === "recebido" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}`}>
                 {processando ? "Salvando..." : "Sim, confirmar"}
               </button>
             </div>
@@ -490,54 +551,154 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
 
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
-          onClick={e => { if (e.target === e.currentTarget) setModalAberto(false); }}>
-          <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-bold text-slate-800">Nova Fatura</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase">Criança *</label>
-                <select value={criancaId} onChange={e => setCriancaId(e.target.value)}
-                  className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Selecione...</option>
-                  {criancas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                </select>
-              </div>
+          onClick={e => { if (e.target === e.currentTarget) { setModalAberto(false); resetForm(); } }}>
+          <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="font-bold text-slate-800 text-lg">Nova Fatura</h3>
+            <div className="space-y-4">
+
+              {/* Criança + Mês */}
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Sessões *</label>
-                  <input type="number" min="0" value={sessoes} onChange={e => setSessoes(e.target.value)} placeholder="0"
-                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Criança *</label>
+                  <select value={criancaId} onChange={e => setCriancaId(e.target.value)}
+                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Selecione...</option>
+                    {criancas.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Valor/Sessão *</label>
-                  <input type="number" min="0" value={valorSessao} onChange={e => setValorSessao(e.target.value)} placeholder="0,00"
-                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Mês de Referência</label>
+                  <input type="text" value={mesAno} readOnly
+                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 text-slate-500"/>
                 </div>
               </div>
-              {sessoes && valorSessao && (
-                <div className="bg-blue-50 rounded-xl p-3">
-                  <p className="text-sm font-bold text-blue-800">Total: R$ {(Number(sessoes) * Number(valorSessao)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+
+              {/* Especialidades */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Especialidades *</label>
+                  <button type="button" onClick={addEspecialidade}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition">
+                    + Adicionar
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-12 gap-1 text-xs text-slate-400 px-1">
+                    <span className="col-span-5">Especialidade</span>
+                    <span className="col-span-2 text-center">Qtd</span>
+                    <span className="col-span-4">R$/sessão</span>
+                  </div>
+                  {especialidades.map((e, i) => (
+                    <div key={i} className="grid grid-cols-12 gap-1 items-center">
+                      <div className="col-span-5">
+                        <input type="text" value={e.especialidade}
+                          onChange={ev => updateEspecialidade(i, "especialidade", ev.target.value)}
+                          placeholder="Ex: Fonoaudiologia"
+                          className="w-full h-9 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                      </div>
+                      <div className="col-span-2">
+                        <input type="number" min="0" value={e.qtd}
+                          onChange={ev => updateEspecialidade(i, "qtd", ev.target.value)}
+                          placeholder="0"
+                          className="w-full h-9 px-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"/>
+                      </div>
+                      <div className="col-span-4">
+                        <input type="number" min="0" value={e.valor_sessao}
+                          onChange={ev => updateEspecialidade(i, "valor_sessao", ev.target.value)}
+                          placeholder="0,00"
+                          className="w-full h-9 px-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                      </div>
+                      <div className="col-span-1 flex justify-center">
+                        {especialidades.length > 1 && (
+                          <button type="button" onClick={() => removeEspecialidade(i)}
+                            className="h-8 w-8 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition text-lg leading-none">
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {especialidades.some(e => e.qtd && e.valor_sessao) && (
+                  <div className="mt-2 space-y-1 px-1">
+                    {especialidades.map((e, i) => {
+                      const sub = (Number(e.qtd) || 0) * (Number(e.valor_sessao) || 0);
+                      if (!sub) return null;
+                      return (
+                        <div key={i} className="flex justify-between text-xs text-slate-400">
+                          <span>{e.especialidade || `Especialidade ${i + 1}`}</span>
+                          <span>R$ {sub.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Desconto ISS */}
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase">Desconto ISS (%)</label>
+                <input type="number" min="0" max="100" step="0.01" value={descontoISS}
+                  onChange={e => setDescontoISS(e.target.value)} placeholder="Ex: 5"
+                  className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+              </div>
+
+              {/* Resumo financeiro */}
+              {totalBruto > 0 && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Total bruto</span>
+                    <span className="font-semibold text-slate-700">R$ {totalBruto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  {valorISS > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-red-400">Desconto ISS ({descontoISS}%)</span>
+                      <span className="font-semibold text-red-400">− R$ {valorISS.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm font-bold border-t border-slate-200 pt-1.5">
+                    <span className="text-blue-900">Total a receber</span>
+                    <span className="text-blue-900">R$ {totalLiquido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                  </div>
                 </div>
               )}
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase">Plano de Saúde</label>
-                <input type="text" value={plano} onChange={e => setPlano(e.target.value)} placeholder="Ex: Unimed"
-                  className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+
+              {/* Plano + NF */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Plano de Saúde</label>
+                  <input type="text" value={plano} onChange={e => setPlano(e.target.value)} placeholder="Ex: Unimed"
+                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Nº Nota Fiscal</label>
+                  <input type="text" value={numeroNotaFiscal} onChange={e => setNumeroNotaFiscal(e.target.value)} placeholder="Ex: 000123"
+                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
               </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase">Número do Processo</label>
-                <input type="text" value={processo} onChange={e => setProcesso(e.target.value)} placeholder="Liminar judicial"
-                  className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase">Observação</label>
-                <input type="text" value={observacao} onChange={e => setObservacao(e.target.value)} placeholder="Opcional"
-                  className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+
+              {/* Data de Envio + Observação */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Data de Envio</label>
+                  <input type="date" value={dataEnvio} onChange={e => setDataEnvio(e.target.value)}
+                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Observação</label>
+                  <input type="text" value={observacao} onChange={e => setObservacao(e.target.value)} placeholder="Opcional"
+                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
               </div>
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => setModalAberto(false)} className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">Cancelar</button>
-              <button onClick={salvar} disabled={salvando} className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => { setModalAberto(false); resetForm(); }}
+                className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                Cancelar
+              </button>
+              <button onClick={salvar} disabled={salvando}
+                className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
                 {salvando ? "Salvando..." : "Salvar"}
               </button>
             </div>
