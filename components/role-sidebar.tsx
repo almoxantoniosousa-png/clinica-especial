@@ -161,7 +161,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
         className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all
           ${ativo
             ? "bg-blue-600 text-white font-semibold"
-            : "text-slate-400 hover:bg-blue-700 hover:text-white font-medium"}`}>
+            : "text-slate-400 hover:bg-slate-800 hover:text-white font-medium"}`}>
         <span className="text-base leading-none">{item.icon}</span>
         <span>{item.label}</span>
       </Link>
@@ -178,19 +178,19 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
       <div>
         <button onClick={onToggle}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all
-            ${isAtivo ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:bg-blue-700 hover:text-white"}`}>
+            ${isAtivo ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
           <span className="text-base leading-none">{icon}</span>
           <span className="flex-1 text-left">{label}</span>
           <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${aberto ? "rotate-180" : ""} opacity-60`} />
         </button>
         {aberto && (
-          <div className="ml-3 mt-0.5 space-y-0.5 border-l border-blue-600/40 pl-3">
+          <div className="ml-3 mt-0.5 space-y-0.5 border-l border-slate-700/60 pl-3">
             {subItems.map((item) => {
               const ativo = pathname === item.href;
               return (
                 <Link key={item.href} href={item.href}
                   className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-sm transition-all
-                    ${ativo ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:bg-blue-700 hover:text-white font-medium"}`}>
+                    ${ativo ? "bg-blue-600 text-white font-semibold" : "text-slate-400 hover:bg-slate-800 hover:text-white font-medium"}`}>
                   <span className="text-sm leading-none">{item.icon}</span>
                   <span>{item.label}</span>
                 </Link>
@@ -250,9 +250,9 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   return (
     <>
       {!isMobile && (
-        <aside className="w-56 bg-blue-800 min-h-screen flex flex-col justify-between flex-shrink-0">
+        <aside className="w-56 bg-slate-900 min-h-screen flex flex-col justify-between flex-shrink-0">
           <div>
-            <div className="px-4 py-4 border-b border-blue-600/50">
+            <div className="px-4 py-4 border-b border-slate-700/60">
               <div className="flex items-center gap-3">
                 <Logo size="md" />
                 <div className="flex-1 min-w-0">
@@ -264,7 +264,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
             </div>
             {renderMenu()}
           </div>
-          <div className="px-2 pb-4 border-t border-blue-600/50 pt-3">
+          <div className="px-2 pb-4 border-t border-slate-700/60 pt-3">
             <button onClick={() => setConfirmandoSaida(true)}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-red-500/20 hover:text-red-300 transition-all group">
               <svg className="w-4 h-4 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -306,8 +306,8 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
       {isMobile && menuAberto && (
         <>
           <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMenuAberto(false)} />
-          <div className="fixed top-0 left-0 h-full w-72 z-50 bg-blue-800 shadow-xl flex flex-col">
-            <div className="flex items-center justify-between px-4 py-4 border-b border-blue-600/50">
+          <div className="fixed top-0 left-0 h-full w-72 z-50 bg-slate-900 shadow-xl flex flex-col">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-slate-700/60">
               <div className="flex items-center gap-3">
                 <Logo size="md" />
                 <div>
@@ -315,7 +315,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
                   <p className="text-xs text-slate-400">{roleLabel}</p>
                 </div>
               </div>
-              <button onClick={() => setMenuAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-blue-700 transition">
+              <button onClick={() => setMenuAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800 transition">
                 <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -324,7 +324,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
             <div className="flex-1 overflow-y-auto">
               {renderMenu()}
             </div>
-            <div className="px-2 pb-5 border-t border-blue-600/50 pt-3">
+            <div className="px-2 pb-5 border-t border-slate-700/60 pt-3">
               <button onClick={() => { setMenuAberto(false); setConfirmandoSaida(true); }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-red-500/20 hover:text-red-300 transition-all">
                 <svg className="w-4 h-4 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
