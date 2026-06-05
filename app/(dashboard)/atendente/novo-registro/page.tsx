@@ -14,22 +14,9 @@ export default function NovoRegistroPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-200 shadow-sm">
-            <img
-              src="/logo.png"
-              alt="Logo Clínica Abraço"
-              className="w-full h-full object-cover"
-            />
-          </div>
-
           <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/>
-              <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">
-                Novo Registro
-              </h1>
-            </div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
+            <h1 className="text-xl font-bold text-slate-900">Novo Registro</h1>
+            <p className="text-xs text-slate-400 mt-0.5">
               ABA Abraço — Núcleo de Intervenção Comportamental
             </p>
           </div>

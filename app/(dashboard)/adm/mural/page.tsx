@@ -113,20 +113,15 @@ export default function MuralPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"/>
-            <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Mural</h1>
-          </div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-1">
-            Comunicados e Avisos — Clínica Abraço
-          </p>
+          <h1 className="text-xl font-bold text-slate-900">Mural</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Comunicados e avisos da clínica</p>
         </div>
 
         {isAdmin && (
           <button
             onClick={() => setMostrarForm(!mostrarForm)}
-            className="self-start sm:self-auto flex items-center gap-2 h-10 px-5 bg-blue-900 hover:bg-blue-800
-              text-white text-sm font-semibold rounded-xl transition-all active:scale-95 shadow-sm"
+            className="self-start sm:self-auto flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700
+              text-white text-sm font-semibold rounded-xl transition-all active:scale-95"
           >
             <span>{mostrarForm ? "✕ Cancelar" : "+ Novo Comunicado"}</span>
           </button>

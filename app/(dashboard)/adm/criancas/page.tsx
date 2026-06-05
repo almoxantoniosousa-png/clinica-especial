@@ -236,8 +236,8 @@ export default function AdmCriancasPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Gestão de Crianças</h1>
-          <p className="text-slate-500 text-sm mt-1">Prontuário e cadastro das crianças atendidas.</p>
+          <h1 className="text-xl font-bold text-slate-900">Crianças</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Cadastro e prontuário das crianças atendidas.</p>
         </div>
         <span className="self-start sm:self-auto inline-flex items-center gap-1.5 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full">
           <span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>

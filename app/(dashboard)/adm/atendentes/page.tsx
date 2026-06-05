@@ -189,8 +189,8 @@ export default function CadastrarAtendentePage() {
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Gestão de Acompanhantes</h1>
-          <p className="text-slate-500 text-sm mt-1">Cadastre e gerencie os Acompanhantes Terapeuticos da clinica.</p>
+          <h1 className="text-xl font-bold text-slate-900">Acompanhantes Terapêuticos</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Cadastre e gerencie os ATs da clínica.</p>
         </div>
         <span className="self-start sm:self-auto inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full">
           <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>

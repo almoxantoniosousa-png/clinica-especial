@@ -104,24 +104,14 @@ export default function AuditoriaPage() {
     <div className="space-y-6 pb-10">
 
       {/* HEADER */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl p-6 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-white text-2xl font-bold flex items-center gap-2">
-            🔍 Log de Auditoria
-          </h1>
-          <p className="text-slate-300 text-sm mt-1">Histórico completo de ações no sistema</p>
-          <div className="flex items-center gap-2 mt-3">
-            <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
-              {logs.length} registro{logs.length !== 1 ? "s" : ""} no total
-            </span>
-            {temFiltro && (
-              <span className="bg-blue-500/30 text-blue-200 text-xs font-semibold px-3 py-1 rounded-full">
-                {filtrados.length} filtrado{filtrados.length !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
+          <h1 className="text-xl font-bold text-slate-900">Log de Auditoria</h1>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {logs.length} registro{logs.length !== 1 ? "s" : ""}{temFiltro ? ` · ${filtrados.length} filtrado${filtrados.length !== 1 ? "s" : ""}` : ""}
+          </p>
         </div>
-        <span className="text-5xl">📋</span>
+        <span className="text-3xl">📋</span>
       </div>
 
       {/* FILTROS */}

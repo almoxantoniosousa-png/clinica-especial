@@ -33,8 +33,8 @@ export default function FinanceiroPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl md:text-3xl font-bold text-blue-900 tracking-tight">Financeiro</h1>
-          <p className="text-slate-500 text-sm mt-1 capitalize">{mesFormatado}</p>
+          <h1 className="text-xl font-bold text-slate-900">Financeiro</h1>
+          <p className="text-xs text-slate-400 mt-0.5 capitalize">{mesFormatado}</p>
         </div>
         <input type="month" value={mesAno} onChange={e => setMesAno(e.target.value)}
           className="h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white w-full sm:w-auto"/>
@@ -276,19 +276,19 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Total</p>
-          <p className="text-2xl font-black text-slate-800">R$ {totais.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-slate-800">R$ {totais.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           <p className="text-xs text-slate-400 mt-1">{contas.length} {contas.length === 1 ? "conta" : "contas"} no mês</p>
         </div>
         <div className="bg-white border border-red-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-red-600 uppercase mb-1">A Pagar</p>
-          <p className="text-2xl font-black text-red-500">R$ {totais.pendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-red-500">R$ {totais.pendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           {totais.vencidas > 0 && (
             <p className="text-xs font-bold text-red-400 mt-1">{totais.vencidas} {totais.vencidas === 1 ? "conta vencida" : "contas vencidas"}</p>
           )}
         </div>
         <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Pago</p>
-          <p className="text-2xl font-black text-emerald-600">R$ {totais.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-emerald-600">R$ {totais.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           <p className="text-xs text-slate-400 mt-1">{nPagas} {nPagas === 1 ? "conta quitada" : "contas quitadas"}</p>
         </div>
       </div>
@@ -357,7 +357,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <p className="font-black text-slate-800 text-sm">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                <p className="font-bold text-slate-800 text-sm">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                 {c.status !== "pago" ? (
                   <>
                     <button
@@ -649,17 +649,17 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Total Faturado</p>
-          <p className="text-2xl font-black text-slate-800">R$ {totais.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-slate-800">R$ {totais.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           <p className="text-xs text-slate-400 mt-1">{contas.length} {contas.length === 1 ? "fatura" : "faturas"} emitida{contas.length === 1 ? "" : "s"}</p>
         </div>
         <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-amber-600 uppercase mb-1">Em Aberto</p>
-          <p className="text-2xl font-black text-amber-500">{totais.emAberto}</p>
+          <p className="text-2xl font-bold text-amber-500">{totais.emAberto}</p>
           <p className="text-xs text-amber-400 mt-1">{totais.emAberto === 1 ? "fatura aguardando" : "faturas aguardando"} pagamento</p>
         </div>
         <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Liquidado</p>
-          <p className="text-2xl font-black text-emerald-600">R$ {totais.recebido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-emerald-600">R$ {totais.recebido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           <p className="text-xs text-emerald-400 mt-1">{contas.filter(c => c.status === "recebido").length} {contas.filter(c => c.status === "recebido").length === 1 ? "fatura" : "faturas"} recebida{contas.filter(c => c.status === "recebido").length === 1 ? "" : "s"}</p>
         </div>
       </div>
@@ -712,7 +712,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
                         <p className="text-xs text-red-400">ISS -R$ {Number(c.desconto_iss).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                       </>
                     )}
-                    <p className="font-black text-slate-800">R$ {Number(valorFinal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                    <p className="font-bold text-slate-800">R$ {Number(valorFinal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
                 {c.status !== "recebido" && (
@@ -1021,7 +1021,7 @@ function AbaFluxo({ supabase, mesAno }: any) {
       {/* Saldo realizado */}
       <div className={`rounded-2xl p-6 text-center shadow-sm ${saldo >= 0 ? "bg-emerald-50 border border-emerald-200" : "bg-red-50 border border-red-200"}`}>
         <p className="text-xs font-bold uppercase tracking-wide mb-1 text-slate-500">Saldo Realizado</p>
-        <p className={`text-4xl font-black ${saldo >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+        <p className={`text-4xl font-bold ${saldo >= 0 ? "text-emerald-600" : "text-red-600"}`}>
           {saldo < 0 && "− "}R$ {brl(Math.abs(saldo))}
         </p>
         <p className="text-xs text-slate-400 mt-2">Entradas já recebidas menos saídas já pagas</p>
@@ -1041,7 +1041,7 @@ function AbaFluxo({ supabase, mesAno }: any) {
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Entradas Realizadas</p>
-          <p className="text-2xl font-black text-emerald-600">R$ {brl(d.entradas)}</p>
+          <p className="text-2xl font-bold text-emerald-600">R$ {brl(d.entradas)}</p>
           {receitaTotal > 0 && (
             <div className="mt-2">
               <div className="flex justify-between text-[10px] text-slate-400 mb-1">
@@ -1055,7 +1055,7 @@ function AbaFluxo({ supabase, mesAno }: any) {
         </div>
         <div className="bg-white border border-red-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-red-600 uppercase mb-1">Saídas Realizadas</p>
-          <p className="text-2xl font-black text-red-500">R$ {brl(saidas)}</p>
+          <p className="text-2xl font-bold text-red-500">R$ {brl(saidas)}</p>
           {saidas > 0 && (
             <div className="mt-2 space-y-0.5">
               <p className="text-[10px] text-slate-400">Contas: R$ {brl(d.saidasContas)}</p>
@@ -1065,12 +1065,12 @@ function AbaFluxo({ supabase, mesAno }: any) {
         </div>
         <div className="bg-white border border-blue-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-blue-600 uppercase mb-1">A Receber</p>
-          <p className="text-2xl font-black text-blue-600">R$ {brl(d.receberPlano)}</p>
+          <p className="text-2xl font-bold text-blue-600">R$ {brl(d.receberPlano)}</p>
           <p className="text-xs text-slate-400 mt-1">Faturas pendentes do plano</p>
         </div>
         <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-amber-600 uppercase mb-1">A Pagar</p>
-          <p className="text-2xl font-black text-amber-500">R$ {brl(pagar)}</p>
+          <p className="text-2xl font-bold text-amber-500">R$ {brl(pagar)}</p>
           {pagar > 0 && (
             <div className="mt-2 space-y-0.5">
               <p className="text-[10px] text-slate-400">Contas: R$ {brl(d.pagarContas)}</p>
@@ -1142,7 +1142,7 @@ function AbaFluxo({ supabase, mesAno }: any) {
           {receitaTotal > 0 && (
             <div className="flex items-center justify-between pt-2 border-t border-slate-100">
               <span className="text-xs text-slate-500">Receita comprometida com despesas</span>
-              <span className={`text-sm font-black ${pctComprometido > 100 ? "text-red-600" : pctComprometido > 85 ? "text-amber-600" : "text-emerald-600"}`}>
+              <span className={`text-sm font-bold ${pctComprometido > 100 ? "text-red-600" : pctComprometido > 85 ? "text-amber-600" : "text-emerald-600"}`}>
                 {pctComprometido}%
               </span>
             </div>

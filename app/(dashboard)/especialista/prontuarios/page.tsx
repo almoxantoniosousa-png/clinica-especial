@@ -337,13 +337,12 @@ export default function RelatorioPage() {
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
 
             {/* Header modal */}
-            <div className="bg-violet-700 px-6 py-4 flex items-center gap-4 flex-shrink-0">
-              <img src="/logo.png" alt="Logo" className="w-9 h-9 object-contain rounded-full bg-white p-0.5"/>
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-bold text-sm">Clínica Abraço ABA</p>
-                <p className="text-violet-300 text-xs">Relatório de Evolução — solicitado pela supervisão/gestão</p>
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">Relatório de Evolução</p>
+                <p className="text-xs text-slate-400">Solicitado pela supervisão/gestão</p>
               </div>
-              <button onClick={fecharModal} className="text-violet-300 hover:text-white transition text-xl leading-none">×</button>
+              <button onClick={fecharModal} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition text-lg leading-none">×</button>
             </div>
 
             <div className="overflow-y-auto p-5 space-y-4 flex-1">

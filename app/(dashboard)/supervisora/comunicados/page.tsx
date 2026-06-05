@@ -26,18 +26,14 @@ export default function SupervisoraPage() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
 
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-md bg-white p-0.5">
-          <img src="/logo.png" alt="Logo" className="w-full h-full object-contain"/>
-        </div>
+      <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"/>
-            <h1 className="text-xl md:text-2xl font-bold text-blue-900">Portal da Supervisora</h1>
-          </div>
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mt-0.5">
-            Clínica Abraço — ABA
-          </p>
+          <h1 className="text-xl font-bold text-slate-900">Portal da Supervisora</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Clínica Abraço ABA</p>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
+          Ao vivo
         </div>
       </div>
 

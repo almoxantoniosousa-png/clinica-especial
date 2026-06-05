@@ -189,10 +189,8 @@ export default function InternasPage() {
     <div className="space-y-6 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
-            <Users className="h-6 w-6 text-blue-600" /> Colaboradoras Internas
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">Auxiliar Administrativa e Agente de Limpeza</p>
+          <h1 className="text-xl font-bold text-slate-900">Colaboradoras Internas</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Auxiliar Administrativa e Agente de Limpeza</p>
         </div>
         <button onClick={abrirNovo}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition">

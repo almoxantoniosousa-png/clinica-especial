@@ -145,12 +145,9 @@ export default function ProntuarioPage() {
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         {/* Cabeçalho */}
-        <div className="bg-blue-900 px-6 py-4 flex items-center gap-4">
-          <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain rounded-full bg-white p-0.5"/>
-          <div>
-            <p className="text-white font-bold text-sm">Clínica Abraço ABA</p>
-            <p className="text-blue-300 text-xs">Prontuário de Atendimento — Registro Diário</p>
-          </div>
+        <div className="px-5 py-4 border-b border-slate-100">
+          <h2 className="text-sm font-semibold text-slate-800">Prontuário de Atendimento</h2>
+          <p className="text-xs text-slate-400">Registro diário de sessão</p>
         </div>
 
         <div className="p-5 space-y-5">

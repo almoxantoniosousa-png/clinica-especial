@@ -150,25 +150,15 @@ export default function ResponsaveisPage() {
   return (
     <div className="space-y-6 pb-10">
 
-      <div className="bg-gradient-to-r from-blue-900 to-blue-700 rounded-2xl p-6 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-white text-2xl font-bold flex items-center gap-2">
-            <Users className="h-6 w-6" /> Portal da Família
-          </h1>
-          <p className="text-blue-200 text-sm mt-1">Gerencie os responsáveis e seus acessos</p>
-          <div className="flex items-center gap-2 mt-3">
-            <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
-              {responsaveis.length} responsável{responsaveis.length !== 1 ? "is" : ""} cadastrado{responsaveis.length !== 1 ? "s" : ""}
-            </span>
-            <span className="bg-emerald-400/30 text-emerald-100 text-xs font-semibold px-3 py-1 rounded-full">
-              {responsaveis.filter(r => r.ativo).length} ativo{responsaveis.filter(r => r.ativo).length !== 1 ? "s" : ""}
-            </span>
-          </div>
+          <h1 className="text-xl font-bold text-slate-900">Portal da Família</h1>
+          <p className="text-xs text-slate-400 mt-0.5">{responsaveis.length} responsável{responsaveis.length !== 1 ? "is" : ""} · {responsaveis.filter(r => r.ativo).length} ativo{responsaveis.filter(r => r.ativo).length !== 1 ? "s" : ""}</p>
         </div>
         <button onClick={abrirNovo}
-          className="flex items-center gap-2 px-5 py-3 bg-white text-blue-900 rounded-xl text-sm font-bold hover:bg-blue-50 transition shadow-lg">
+          className="flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
           <Plus className="h-4 w-4" />
-          Novo responsável
+          Novo
         </button>
       </div>
 

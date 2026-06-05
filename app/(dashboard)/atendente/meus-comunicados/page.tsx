@@ -54,19 +54,9 @@ export default function MeusComunicadosPage() {
 
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-md bg-white p-0.5">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain"/>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"/>
-              <h1 className="text-xl md:text-2xl font-bold text-blue-900">Meus Comunicados</h1>
-            </div>
-            <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mt-0.5">
-              Histórico e envio para família
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Meus Comunicados</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Histórico e envio para família</p>
         </div>
       </div>
 

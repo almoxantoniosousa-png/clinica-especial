@@ -314,11 +314,8 @@ export default function FolhaPagamentoPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
-            <DollarSign className="h-6 w-6 text-blue-600" />
-            Folha de Pagamento
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">Gerencie os pagamentos mensais dos profissionais</p>
+          <h1 className="text-xl font-bold text-slate-900">Folha de Pagamento</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Gerencie os pagamentos mensais dos profissionais</p>
         </div>
         <button onClick={abrirNovo}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition">

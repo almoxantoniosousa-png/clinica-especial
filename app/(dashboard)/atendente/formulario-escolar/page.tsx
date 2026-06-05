@@ -117,19 +117,11 @@ export default function FormularioEscolarPage() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-5">
 
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-md bg-white p-0.5">
-          <img src="/logo.png" alt="Logo" className="w-full h-full object-contain"/>
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"/>
-            <h1 className="text-xl md:text-2xl font-bold text-blue-900">Comunicado Diário</h1>
-          </div>
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mt-0.5">
-            {atNome || "Atendente"} · {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
-          </p>
-        </div>
+      <div>
+        <h1 className="text-xl font-bold text-slate-900">Comunicado Diário</h1>
+        <p className="text-xs text-slate-400 mt-0.5">
+          {atNome || "Atendente"} · {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+        </p>
       </div>
 
       {feedback && (
