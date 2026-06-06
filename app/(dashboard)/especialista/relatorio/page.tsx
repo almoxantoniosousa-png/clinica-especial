@@ -121,7 +121,7 @@ export default function ProntuarioPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
+    <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-6">
       <div className="flex items-center gap-3">
         <button onClick={() => router.back()}
           className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition">

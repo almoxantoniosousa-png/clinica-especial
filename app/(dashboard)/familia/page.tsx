@@ -50,7 +50,7 @@ export default function FamiliaDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center space-y-3">
           <svg className="animate-spin h-8 w-8 text-blue-500 mx-auto" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
@@ -64,7 +64,7 @@ export default function FamiliaDashboardPage() {
 
   if (!crianca) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-transparent flex items-center justify-center px-4">
         <div className="text-center space-y-4 max-w-sm">
           <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
             <span className="text-4xl">👶</span>
@@ -89,7 +89,7 @@ export default function FamiliaDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-transparent">
 
       {/* HEADER DA CRIANÇA */}
       <div className="bg-gradient-to-br from-blue-900 to-blue-700 px-4 pt-6 pb-8">

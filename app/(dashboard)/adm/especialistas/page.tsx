@@ -186,7 +186,7 @@ export default function EspecialistasPage() {
   const inputClass = "w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-slate-400 transition";
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
+    <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Especialistas</h1>

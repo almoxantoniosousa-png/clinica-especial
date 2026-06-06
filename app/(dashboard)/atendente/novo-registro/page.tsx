@@ -9,7 +9,7 @@ export default function NovoRegistroPage() {
   })
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-10 space-y-6">
+    <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-6">
 
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
