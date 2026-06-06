@@ -133,7 +133,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   ];
 
   const menuAuxAdm = [
-    { href: "/aux/agenda", label: "Agenda", icon: "📅" },
+    { href: "/auxiliar/agenda", label: "Agenda", icon: "📅" },
     { href: "/mural",      label: "Mural",  icon: "📢" },
     { href: "/chat",       label: "Chat",   icon: "💬" },
   ];
