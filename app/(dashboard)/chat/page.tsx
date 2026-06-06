@@ -12,9 +12,10 @@ import {
 const PODE_CONTATAR: Record<string, string[]> = {
   atendente:   ["adm", "supervisora"],
   especialista:["adm", "supervisora", "gestao"],
-  gestao:      ["adm", "supervisora", "especialista"],
-  supervisora: ["adm", "gestao", "especialista", "atendente", "supervisora"],
-  adm:         ["adm", "gestao", "especialista", "atendente", "supervisora"],
+  gestao:      ["adm", "supervisora", "especialista", "aux_adm"],
+  supervisora: ["adm", "gestao", "especialista", "atendente", "supervisora", "aux_adm"],
+  adm:         ["adm", "gestao", "especialista", "atendente", "supervisora", "aux_adm"],
+  aux_adm:     ["adm", "gestao", "supervisora"],
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -24,6 +25,7 @@ const ROLE_LABEL: Record<string, string> = {
   especialista:"Especialista",
   atendente:   "Acompanhante",
   familia:     "Família",
+  aux_adm:     "Aux. Administrativo",
 };
 
 // Cores consistentes por role para avatares
