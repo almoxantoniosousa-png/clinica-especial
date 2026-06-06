@@ -25,7 +25,7 @@ const FEEDS: Record<string, string> = {
   brasil:
     "https://news.google.com/rss?hl=pt-BR&gl=BR&ceid=BR:pt",
   mundo:
-    "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtcHlHZ0pTUWlnQVAB?hl=pt-BR&gl=BR&ceid=BR:pt",
+    "https://news.google.com/rss/search?q=internacional+mundo&hl=pt-BR&gl=BR&ceid=BR:pt",
   inclusao:
     "https://news.google.com/rss/search?q=autismo+crian%C3%A7a+especial+inclus%C3%A3o+tratamento+TEA&hl=pt-BR&gl=BR&ceid=BR:pt",
 };

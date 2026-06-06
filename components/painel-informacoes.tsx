@@ -55,6 +55,9 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
   const [data, setData] = useState("");
   const [clima, setClima] = useState<WeatherData | null>(null);
   const [climaErro, setClimaErro] = useState(false);
+  const [cidadeInput, setCidadeInput] = useState("");
+  const [cidadeAtual, setCidadeAtual] = useState("Salvador, BA");
+  const [loadingClima, setLoadingClima] = useState(true);
   const [noticias, setNoticias] = useState<Record<string, Noticia[]>>({ brasil: [], mundo: [], inclusao: [] });
   const [abaNoticia, setAbaNoticia] = useState<"brasil" | "mundo" | "inclusao">("brasil");
   const [loadingNoticias, setLoadingNoticias] = useState(true);
@@ -72,12 +75,23 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
   }, []);
 
   // Clima
-  useEffect(() => {
-    fetch("/api/weather")
+  function buscarClima(cidade?: string) {
+    const alvo = cidade ?? "Salvador,BA";
+    setLoadingClima(true);
+    setClimaErro(false);
+    fetch(`/api/weather?cidade=${encodeURIComponent(alvo)}`)
       .then(r => r.json())
-      .then(d => { if (d.error) setClimaErro(true); else setClima(d); })
-      .catch(() => setClimaErro(true));
-  }, []);
+      .then(d => {
+        if (d.error) { setClimaErro(true); } else {
+          setClima(d);
+          setCidadeAtual(alvo.replace(",", ", "));
+        }
+      })
+      .catch(() => setClimaErro(true))
+      .finally(() => setLoadingClima(false));
+  }
+
+  useEffect(() => { buscarClima(); }, []);
 
   // Notícias
   useEffect(() => {
@@ -117,27 +131,43 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
           </div>
 
           {/* Clima */}
-          <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-5 py-4 min-w-[200px]">
-            {climaErro ? (
-              <p className="text-slate-400 text-sm">Clima indisponível</p>
-            ) : !cc ? (
+          <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 min-w-[240px] space-y-3">
+            {/* Busca de cidade */}
+            <form onSubmit={e => { e.preventDefault(); if (cidadeInput.trim()) { buscarClima(cidadeInput.trim()); setCidadeInput(""); } }}
+              className="flex gap-2">
+              <input
+                value={cidadeInput}
+                onChange={e => setCidadeInput(e.target.value)}
+                placeholder="Buscar cidade..."
+                className="flex-1 min-w-0 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 text-xs px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40"
+              />
+              <button type="submit"
+                className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition">
+                🔍
+              </button>
+            </form>
+
+            {/* Dados do clima */}
+            {loadingClima ? (
               <div className="flex gap-2 items-center">
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
-                <p className="text-slate-400 text-sm">Carregando...</p>
+                <p className="text-slate-400 text-xs">Carregando...</p>
               </div>
-            ) : (
-              <>
-                <span className="text-4xl">{weatherEmoji(code)}</span>
+            ) : climaErro ? (
+              <p className="text-red-300 text-xs">Cidade não encontrada.</p>
+            ) : cc ? (
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{weatherEmoji(code)}</span>
                 <div>
-                  <p className="text-white font-black text-2xl">{cc.temp_C}°C</p>
-                  <p className="text-slate-300 text-xs">{cc.weatherDesc[0]?.value}</p>
+                  <p className="text-white font-bold text-2xl leading-none">{cc.temp_C}°C</p>
+                  <p className="text-slate-300 text-xs mt-0.5">{cc.weatherDesc[0]?.value}</p>
                   <p className="text-slate-400 text-xs mt-0.5">
                     ↑{wt?.maxtempC}° ↓{wt?.mintempC}° · 💧{cc.humidity}%
                   </p>
-                  <p className="text-slate-500 text-[10px] mt-0.5">Salvador, BA</p>
+                  <p className="text-slate-500 text-[10px] mt-0.5">📍 {cidadeAtual}</p>
                 </div>
-              </>
-            )}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
