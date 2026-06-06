@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import { PainelInformacoes } from "@/components/painel-informacoes";
 import { Bar, Line, Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
@@ -329,6 +330,16 @@ export default function GestaoDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-8 space-y-5">
+
+      {/* PAINEL INFORMATIVO */}
+      <PainelInformacoes />
+
+      {/* DIVISOR */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-slate-200"/>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Painel Operacional</span>
+        <div className="flex-1 h-px bg-slate-200"/>
+      </div>
 
       {/* HEADER */}
       <div className="flex items-center justify-between">

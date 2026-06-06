@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { carregarDadosDashboard } from "@/app/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
+import { PainelInformacoes } from "@/components/painel-informacoes";
 import { Line, Pie, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -311,6 +312,16 @@ export default function AdmDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 md:py-8 space-y-5">
+
+      {/* PAINEL INFORMATIVO */}
+      <PainelInformacoes nome={undefined} />
+
+      {/* DIVISOR */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-slate-200"/>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Painel Operacional</span>
+        <div className="flex-1 h-px bg-slate-200"/>
+      </div>
 
       {/* HEADER */}
       <div className="flex items-center justify-between">

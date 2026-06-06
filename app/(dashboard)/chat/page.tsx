@@ -407,19 +407,25 @@ export default function ChatPage() {
   async function iniciarGravacao() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+
+      // Detecta o melhor formato suportado pelo navegador
+      const mimeType = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg"]
+        .find(t => MediaRecorder.isTypeSupported(t)) ?? "";
+      const ext = mimeType.includes("mp4") ? "m4a" : mimeType.includes("ogg") ? "ogg" : "webm";
+
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       audioChunksRef.current = [];
       recorder.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       recorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const blob = new Blob(audioChunksRef.current, { type: mimeType || "audio/webm" });
         const duracao = tempoGravacao;
         setTempoGravacao(0);
         if (!ativa || !eu) return;
         setUploading(true);
         try {
-          const path = `${ativa.id}/${Date.now()}-audio.webm`;
-          const { error: upErr } = await supabase.storage.from("chat-uploads").upload(path, blob);
+          const path = `${ativa.id}/${Date.now()}-audio.${ext}`;
+          const { error: upErr } = await supabase.storage.from("chat-uploads").upload(path, blob, { contentType: mimeType || "audio/webm" });
           if (upErr) throw upErr;
           const { data: { publicUrl } } = supabase.storage.from("chat-uploads").getPublicUrl(path);
           await enviar(JSON.stringify({ tipo: "audio", url: publicUrl, duracao }));
@@ -795,13 +801,15 @@ export default function ChatPage() {
                             )}
 
                             {c.tipo === "audio" && (
-                              <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 min-w-[200px]">
-                                <span className="text-xl">🎤</span>
-                                <audio src={c.url} controls
-                                  className="flex-1 h-8"
-                                  style={{ accentColor: "#128C7E" }}
+                              <div className="px-3 pt-2.5 pb-1 min-w-[220px]">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-lg">🎤</span>
+                                  <span className="text-xs text-slate-500">{formatDuracao(c.duracao)}</span>
+                                </div>
+                                <audio src={c.url} controls preload="metadata"
+                                  className="w-full"
+                                  style={{ height: "40px", accentColor: "#128C7E" }}
                                 />
-                                <span className="text-xs text-slate-500 shrink-0">{formatDuracao(c.duracao)}</span>
                               </div>
                             )}
 
