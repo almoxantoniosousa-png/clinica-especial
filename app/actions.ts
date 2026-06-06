@@ -51,6 +51,7 @@ export async function loginWithPassword(
     if (role === "familia") redirect("/familia");
     if (role === "financeiro") redirect("/adm/financeiro");
     if (role === "at" || role === "atendente") redirect("/atendente/meus-atendimentos");
+    if (role === "aux_adm") redirect("/aux/agenda");
 
     redirect("/adm/dashboard");
   }
