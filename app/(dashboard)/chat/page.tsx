@@ -517,12 +517,12 @@ export default function ChatPage() {
     const roles = PODE_CONTATAR[eu.role] ?? [];
     if (!roles.length) return;
     (async () => {
-      // adm fica em perfis; supervisora/gestao/especialista ficam em atendentes
-      const [{ data: dp }, { data: da }] = await Promise.all([
+      const [{ data: dp }, { data: da }, { data: du }] = await Promise.all([
         supabase.from("perfis").select("id, nome, role").in("role", roles).neq("id", eu.id),
         supabase.from("atendentes").select("id, nome, role").in("role", roles).neq("id", eu.id),
+        supabase.from("usuarios").select("id, nome, role").in("role", roles).neq("id", eu.id),
       ]);
-      const todos = [...(dp || []), ...(da || [])]
+      const todos = [...(dp || []), ...(da || []), ...(du || [])]
         .filter((u, i, arr) => arr.findIndex(x => x.id === u.id) === i)
         .sort((a: any, b: any) => a.nome.localeCompare(b.nome));
       if (todos.length) setUsuarios(todos as Perfil[]);
