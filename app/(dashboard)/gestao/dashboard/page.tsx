@@ -5,10 +5,16 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { PainelInformacoes } from "@/components/painel-informacoes";
 import { Bar, Line, Pie } from "react-chartjs-2";
+import type { ChartData } from "chart.js";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
   LineElement, PointElement, ArcElement, Tooltip, Legend, Filler
 } from "chart.js";
+
+type Liminar    = { id: string; crianca_id?: string; criancas?: { nome: string }; status?: string };
+type Membro     = { id: string; nome: string; role: string; logo_url?: string };
+type Relatorio  = { id: string; created_at: string; criancas?: { nome: string }; tipo?: string };
+type AgendaItem = { id: string; hora_inicio?: string; criancas?: { nome: string }; atendentes?: { nome: string }; status?: string };
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement,
@@ -27,18 +33,18 @@ export default function GestaoDashboardPage() {
   const [receitaMes, setReceitaMes] = useState(0);
   const [inadimplentes, setInadimplentes] = useState(0);
   const [valorInadimplente, setValorInadimplente] = useState(0);
-  const [liminares, setLiminares] = useState<any[]>([]);
-  const [equipe, setEquipe] = useState<any[]>([]);
-  const [atendimentosPorModalidade, setAtendimentosPorModalidade] = useState<any>({});
-  const [ultimosRelatorios, setUltimosRelatorios] = useState<any[]>([]);
-  const [agendaHoje, setAgendaHoje] = useState<any[]>([]);
+  const [liminares, setLiminares] = useState<Liminar[]>([]);
+  const [equipe, setEquipe] = useState<Membro[]>([]);
+  const [atendimentosPorModalidade, setAtendimentosPorModalidade] = useState<Record<string, number>>({});
+  const [ultimosRelatorios, setUltimosRelatorios] = useState<Relatorio[]>([]);
+  const [agendaHoje, setAgendaHoje] = useState<AgendaItem[]>([]);
 
   // Analytics
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
-  const [graficoVolume, setGraficoVolume] = useState<any>(null);
-  const [graficoProfissionais, setGraficoProfissionais] = useState<any>(null);
-  const [graficoModalidades, setGraficoModalidades] = useState<any>(null);
-  const [graficoPlanos, setGraficoPlanos] = useState<any>(null);
+  const [graficoVolume, setGraficoVolume] = useState<ChartData<"line"> | null>(null);
+  const [graficoProfissionais, setGraficoProfissionais] = useState<ChartData<"bar"> | null>(null);
+  const [graficoModalidades, setGraficoModalidades] = useState<ChartData<"pie"> | null>(null);
+  const [graficoPlanos, setGraficoPlanos] = useState<ChartData<"pie"> | null>(null);
   const [kpiAnalytics, setKpiAnalytics] = useState({
     crescimento: 0, totalRelatorios: 0, mediaDiaria: 0, melhorProfissional: ""
   });
@@ -85,7 +91,7 @@ export default function GestaoDashboardPage() {
         setReceitaMes(receita);
 
         // Por modalidade
-        const porModalidade: any = { liminar: 0, convenio: 0, particular: 0 };
+        const porModalidade: Record<string, number> = { liminar: 0, convenio: 0, particular: 0 };
         atendMes.forEach(a => {
           if (a.modalidade) porModalidade[a.modalidade] = (porModalidade[a.modalidade] || 0) + 1;
         });
@@ -177,7 +183,7 @@ export default function GestaoDashboardPage() {
     // Volume mensal
     const volPorMes: Record<string, number> = {};
     meses.forEach(m => { volPorMes[m] = 0; });
-    (atendData || []).forEach((a: any) => {
+    (atendData || []).forEach((a: { data: string; modalidade?: string; atendente_id?: string }) => {
       const m = a.data?.slice(0, 7);
       if (m && volPorMes[m] !== undefined) volPorMes[m]++;
     });
@@ -204,9 +210,9 @@ export default function GestaoDashboardPage() {
     const crescimento   = totalMesAnt > 0 ? Math.round(((totalMesAtual - totalMesAnt) / totalMesAnt) * 100) : 0;
 
     // Modalidades (mês atual)
-    const modalMes = (atendData || []).filter((a: any) => a.data?.startsWith(mesAtualStr));
+    const modalMes = (atendData || []).filter((a: { data: string; modalidade?: string; atendente_id?: string }) => a.data?.startsWith(mesAtualStr));
     const modCount: Record<string, number> = { liminar: 0, convenio: 0, particular: 0 };
-    modalMes.forEach((a: any) => { if (a.modalidade) modCount[a.modalidade] = (modCount[a.modalidade] || 0) + 1; });
+    modalMes.forEach(a => { if (a.modalidade) modCount[a.modalidade] = (modCount[a.modalidade] || 0) + 1; });
 
     setGraficoModalidades({
       labels: ["Liminar", "Convênio", "Particular"],
@@ -219,7 +225,7 @@ export default function GestaoDashboardPage() {
 
     // Planos de saúde
     const planosCount: Record<string, number> = {};
-    (criancasData || []).forEach((c: any) => {
+    (criancasData || []).forEach((c: { plano_saude?: string }) => {
       const p = c.plano_saude?.trim() || "Sem plano";
       planosCount[p] = (planosCount[p] || 0) + 1;
     });
@@ -233,9 +239,9 @@ export default function GestaoDashboardPage() {
 
     // Top profissionais (mês atual)
     const nomesMap: Record<string, string> = {};
-    (perfisData || []).forEach((p: any) => { nomesMap[p.id] = p.nome; });
+    (perfisData || []).forEach((p: { id: string; nome: string }) => { nomesMap[p.id] = p.nome; });
     const rankMap: Record<string, number> = {};
-    modalMes.forEach((a: any) => {
+    modalMes.forEach(a => {
       const id = a.atendente_id;
       if (id) rankMap[id] = (rankMap[id] || 0) + 1;
     });
@@ -266,7 +272,7 @@ export default function GestaoDashboardPage() {
     setLoadingAnalytics(false);
   }
 
-  const roleLabel: any = {
+  const roleLabel: Record<string, string> = {
     gestao: { label: "Gestão", color: "bg-purple-100 text-purple-700" },
     adm: { label: "ADM", color: "bg-blue-100 text-blue-700" },
     financeiro: { label: "Financeiro", color: "bg-emerald-100 text-emerald-700" },
@@ -281,7 +287,7 @@ export default function GestaoDashboardPage() {
     return nome.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
   }
 
-  const totalAtend = Object.values(atendimentosPorModalidade).reduce((a: any, b: any) => a + b, 0) as number;
+  const totalAtend = Object.values(atendimentosPorModalidade).reduce((a, b) => a + b, 0);
 
   const optLine = {
     responsive: true, maintainAspectRatio: false,
@@ -490,7 +496,7 @@ export default function GestaoDashboardPage() {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {equipe.map((p: any) => (
+            {equipe.map((p) => (
               <div key={p.email} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition">
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${roleLabel[p.role]?.color || "bg-slate-100 text-slate-700"}`}>

@@ -5,6 +5,7 @@ import { carregarDadosDashboard } from "@/app/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { PainelInformacoes } from "@/components/painel-informacoes";
 import { Line, Pie, Bar } from "react-chartjs-2";
+import type { ChartData } from "chart.js";
 import {
   Chart as ChartJS,
   LineElement,
@@ -18,6 +19,8 @@ import {
   Filler
 } from "chart.js";
 
+type Aniversariante = { nome: string; data_nascimento: string; tipo: string; dia: number; diff: number };
+
 ChartJS.register(
   LineElement, CategoryScale, LinearScale, PointElement,
   Tooltip, Legend, ArcElement, BarElement, Filler
@@ -28,16 +31,16 @@ export default function AdmDashboardPage() {
 
   // ── estado original ──────────────────────────────────────────
   const [metricas, setMetricas] = useState({ totalDia: 0, pendentes: 0, receitaMes: 0, pagos: 0 });
-  const [graficoLinha, setGraficoLinha] = useState<any>(null);
-  const [graficoPizza, setGraficoPizza] = useState<any>(null);
-  const [graficoBarras, setGraficoBarras] = useState<any>(null);
+  const [graficoLinha, setGraficoLinha] = useState<ChartData<"line"> | null>(null);
+  const [graficoPizza, setGraficoPizza] = useState<ChartData<"pie"> | null>(null);
+  const [graficoBarras, setGraficoBarras] = useState<ChartData<"bar"> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [aniversariantes, setAniversariantes] = useState<any[]>([]);
+  const [aniversariantes, setAniversariantes] = useState<Aniversariante[]>([]);
 
   // ── estado analytics ─────────────────────────────────────────
-  const [historicoFinanceiro, setHistoricoFinanceiro] = useState<any>(null);
-  const [distribuicaoPlanos, setDistribuicaoPlanos] = useState<any>(null);
-  const [topProfissionais, setTopProfissionais] = useState<any>(null);
+  const [historicoFinanceiro, setHistoricoFinanceiro] = useState<ChartData<"line"> | null>(null);
+  const [distribuicaoPlanos, setDistribuicaoPlanos] = useState<ChartData<"pie"> | null>(null);
+  const [topProfissionais, setTopProfissionais] = useState<ChartData<"bar"> | null>(null);
   const [kpisExtra, setKpisExtra] = useState({ totalCriancas: 0, melhorProfissional: "", mediaAtend: 0 });
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
@@ -68,8 +71,8 @@ export default function AdmDashboardPage() {
       .from("colaboradoras_internas").select("nome, data_nascimento, cargo").not("data_nascimento", "is", null);
 
     const todos = [
-      ...(atendentes || []).map((a: any) => ({ ...a, tipo: a.role === "especialista" ? "Especialista" : "Acompanhante" })),
-      ...(internas  || []).map((i: any) => ({ ...i, tipo: i.cargo })),
+      ...(atendentes || []).map((a: { nome: string; data_nascimento: string; role: string }) => ({ ...a, tipo: a.role === "especialista" ? "Especialista" : "Acompanhante" })),
+      ...(internas  || []).map((i: { nome: string; data_nascimento: string; cargo: string }) => ({ ...i, tipo: i.cargo })),
     ];
 
     setAniversariantes(
@@ -131,15 +134,15 @@ export default function AdmDashboardPage() {
     const despesaPorMes: Record<string, number> = {};
     meses.forEach(m => { receitaPorMes[m] = 0; despesaPorMes[m] = 0; });
 
-    (receitaData || []).forEach((r: any) => {
+    (receitaData || []).forEach((r: { mes_referencia: string; valor_liquido?: number; valor_total?: number }) => {
       if (receitaPorMes[r.mes_referencia] !== undefined)
         receitaPorMes[r.mes_referencia] += Number(r.valor_liquido ?? r.valor_total ?? 0);
     });
-    (despesaContasData || []).forEach((r: any) => {
+    (despesaContasData || []).forEach((r: { vencimento: string; valor: number }) => {
       const m = r.vencimento?.slice(0, 7);
       if (m && despesaPorMes[m] !== undefined) despesaPorMes[m] += Number(r.valor || 0);
     });
-    (despesaFolhaData || []).forEach((r: any) => {
+    (despesaFolhaData || []).forEach((r: { mes: number; ano: number; valor_final: number }) => {
       const m = `${r.ano}-${String(r.mes).padStart(2, "0")}`;
       if (despesaPorMes[m] !== undefined) despesaPorMes[m] += Number(r.valor_final || 0);
     });
@@ -169,7 +172,7 @@ export default function AdmDashboardPage() {
 
     // ── planos de saúde ──
     const planosCount: Record<string, number> = {};
-    (criancasData || []).forEach((c: any) => {
+    (criancasData || []).forEach((c: { plano_saude?: string }) => {
       const p = c.plano_saude?.trim() || "Sem plano";
       planosCount[p] = (planosCount[p] || 0) + 1;
     });
@@ -188,20 +191,20 @@ export default function AdmDashboardPage() {
     // ── top profissionais (acompanhantes + especialistas) ──
     // acompanhantes: atendimentos.atendente_id → perfis.id
     const nomesAcomp: Record<string, string> = {};
-    (perfisData || []).forEach((p: any) => { nomesAcomp[p.id] = p.nome; });
+    (perfisData || []).forEach((p: { id: string; nome: string }) => { nomesAcomp[p.id] = p.nome; });
 
     // especialistas: agenda.especialista_id → atendentes.id
     const nomesEsp: Record<string, string> = {};
-    (especialistasData || []).forEach((e: any) => { nomesEsp[e.id] = e.nome; });
+    (especialistasData || []).forEach((e: { id: string; nome: string }) => { nomesEsp[e.id] = e.nome; });
 
     const ranking: Record<string, { nome: string; role: string; count: number }> = {};
 
-    (atendMesData || []).forEach((a: any) => {
+    (atendMesData || []).forEach((a: { atendente_id: string }) => {
       const id = a.atendente_id;
       if (!ranking[id]) ranking[id] = { nome: nomesAcomp[id] || "Acompanhante", role: "atendente", count: 0 };
       ranking[id].count++;
     });
-    (agendaMesData || []).forEach((a: any) => {
+    (agendaMesData || []).forEach((a: { especialista_id?: string }) => {
       const id = a.especialista_id;
       if (!ranking[id]) ranking[id] = { nome: nomesEsp[id] || "Especialista", role: "especialista", count: 0 };
       ranking[id].count++;
@@ -270,7 +273,7 @@ export default function AdmDashboardPage() {
       legend: { labels: { font: { size: 12 }, color: "#64748b" }, position: "top" as const },
       tooltip: {
         cornerRadius: 8,
-        callbacks: { label: (ctx: any) => ` R$ ${Number(ctx.raw).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` }
+        callbacks: { label: (ctx: { raw: unknown }) => ` R$ ${Number(ctx.raw).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` }
       }
     },
     scales: {
@@ -279,7 +282,7 @@ export default function AdmDashboardPage() {
         grid: { color: "#f1f5f9" },
         ticks: {
           color: "#94a3b8", font: { size: 11 },
-          callback: (v: any) => `R$ ${Number(v).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`
+          callback: (v: unknown) => `R$ ${Number(v).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`
         }
       }
     }

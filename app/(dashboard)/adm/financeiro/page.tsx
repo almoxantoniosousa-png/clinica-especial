@@ -5,6 +5,25 @@ import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClie
 import { Check } from "lucide-react";
 
 type Aba = "contas_pagar" | "contas_receber" | "fluxo";
+type SupabaseClient = ReturnType<typeof createSupabaseBrowserClient>;
+
+type ContaPagar = {
+  id: string; descricao: string; categoria: string;
+  valor: number; vencimento: string; status: string;
+  observacao?: string | null; data_pagamento?: string | null; valor_pago?: number | null;
+};
+type ModeloPagar = { id: string; descricao: string; categoria: string; valor: number };
+type ContaReceber = {
+  id: string; crianca_id: string; mes_referencia: string;
+  valor_total: number; valor_liquido?: number | null; valor_iss?: number | null;
+  status: string; plano: string;
+  numero_nota_fiscal?: string | null; data_envio?: string | null; observacao?: string | null;
+  especialidades?: ItemEsp[];
+  criancas?: { nome: string };
+};
+type CriancaSimples = { id: string; nome: string; plano_saude?: string | null };
+type AbaProps = { supabase: SupabaseClient; mesAno: string; mostrarFeedback: (tipo: "sucesso" | "erro", msg: string) => void };
+type AbaFluxoProps = { supabase: SupabaseClient; mesAno: string };
 
 export default function FinanceiroPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -72,11 +91,11 @@ export default function FinanceiroPage() {
 // =============================================
 // ABA CONTAS A PAGAR
 // =============================================
-function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
+function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const hoje = new Date().toISOString().slice(0, 10);
 
-  const [contas, setContas] = useState<any[]>([]);
-  const [modelos, setModelos] = useState<any[]>([]);
+  const [contas, setContas] = useState<ContaPagar[]>([]);
+  const [modelos, setModelos] = useState<ModeloPagar[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -115,13 +134,13 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
 
   useEffect(() => { carregar(); }, [mesAno]);
 
-  function diasVenc(c: any): number {
+  function diasVenc(c: ContaPagar): number {
     return Math.ceil(
       (new Date(c.vencimento + "T12:00:00").getTime() - new Date(hoje + "T12:00:00").getTime()) / 86400000
     );
   }
 
-  function statusVenc(c: any): string {
+  function statusVenc(c: ContaPagar): string {
     if (c.status === "pago") return "pago";
     const d = diasVenc(c);
     if (d < 0) return "vencida";
@@ -140,7 +159,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
     }
   }
 
-  function preencherDeModelo(m: any) {
+  function preencherDeModelo(m: ModeloPagar) {
     setDescricao(m.descricao);
     setCategoria(m.categoria || "outro");
     setValor(m.valor ? String(m.valor) : "");
@@ -195,7 +214,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
 
   async function excluirModelo(id: string) {
     await supabase.from("contas_pagar_modelos").delete().eq("id", id);
-    setModelos(prev => prev.filter((m: any) => m.id !== id));
+    setModelos(prev => prev.filter(m => m.id !== id));
   }
 
   const totais = useMemo(() => {
@@ -240,7 +259,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
     return c[cat] || "bg-slate-100 text-slate-700";
   }
 
-  function estiloCard(c: any) {
+  function estiloCard(c: ContaPagar) {
     const sv = statusVenc(c);
     if (sv === "pago")       return "border-emerald-200 bg-white";
     if (sv === "vencida")    return "border-red-300 bg-red-50";
@@ -249,7 +268,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
     return "border-slate-200 bg-white";
   }
 
-  function badgeVenc(c: any) {
+  function badgeVenc(c: ContaPagar) {
     const sv = statusVenc(c);
     if (sv === "vencida")    return <span className="text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full">Vencida</span>;
     if (sv === "vence_hoje") return <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">Vence hoje</span>;
@@ -429,7 +448,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Contas salvas — clique para preencher</p>
                 <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pb-1">
-                  {modelos.map((m: any) => (
+                  {modelos.map((m) => (
                     <div key={m.id} className="flex items-center rounded-full border border-blue-200 bg-blue-50 overflow-hidden">
                       <button type="button" onClick={() => preencherDeModelo(m)}
                         className="h-7 px-2.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition">
@@ -456,7 +475,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
                   placeholder="Ex: Aluguel sala, Energia elétrica..."
                   className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 <datalist id="sugestoes-contas">
-                  {modelos.map((m: any) => <option key={m.id} value={m.descricao} />)}
+                  {modelos.map((m) => <option key={m.id} value={m.descricao} />)}
                 </datalist>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -515,9 +534,9 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: any) {
 // =============================================
 type ItemEsp = { especialidade: string; qtd: string; valor_sessao: string };
 
-function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
-  const [contas, setContas] = useState<any[]>([]);
-  const [criancas, setCriancas] = useState<any[]>([]);
+function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
+  const [contas, setContas] = useState<ContaReceber[]>([]);
+  const [criancas, setCriancas] = useState<CriancaSimples[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -545,7 +564,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
 
   useEffect(() => { carregar(); }, [mesAno]);
 
-  const criancaSelecionada = criancas.find((c: any) => c.id === criancaId);
+  const criancaSelecionada = criancas.find(c => c.id === criancaId);
   useEffect(() => {
     if (criancaSelecionada) setPlano(criancaSelecionada.plano_saude || "");
   }, [criancaId]);
@@ -614,7 +633,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
   async function confirmarAlteracao() {
     if (!confirmando) return;
     setProcessando(true);
-    const update: any = { status: confirmando.novoStatus };
+    const update: Record<string, unknown> = { status: confirmando.novoStatus };
     if (confirmando.novoStatus === "faturado") update.faturado_em = new Date().toISOString().slice(0, 10);
     if (confirmando.novoStatus === "recebido") update.recebido_em = new Date().toISOString().slice(0, 10);
     await supabase.from("contas_receber").update(update).eq("id", confirmando.id);
@@ -674,7 +693,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
       ) : (
         <div className="space-y-3">
           {contas.map(c => {
-            const esps: any[] = c.especialidades || [];
+            const esps: ItemEsp[] = c.especialidades || [];
             const valorFinal = c.valor_liquido ?? c.valor_total;
             return (
               <div key={c.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
@@ -689,7 +708,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
                     <p className="text-xs text-slate-400 mt-0.5">Ref: {c.mes_referencia}</p>
                     {esps.length > 0 ? (
                       <div className="mt-2 space-y-1">
-                        {esps.map((e: any, i: number) => (
+                        {esps.map((e, i) => (
                           <div key={i} className="flex justify-between text-xs text-slate-500">
                             <span>{e.especialidade} — {e.qtd}x R$ {Number(e.valor_sessao).toFixed(2)}</span>
                             <span className="font-semibold">R$ {Number(e.subtotal).toFixed(2)}</span>
@@ -783,7 +802,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
                   <select value={criancaId} onChange={e => setCriancaId(e.target.value)}
                     className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">Selecione...</option>
-                    {criancas.map((c: any) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                    {criancas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                   </select>
                 </div>
                 <div>
@@ -932,7 +951,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: any) {
 // =============================================
 // ABA FLUXO DE CAIXA
 // =============================================
-function AbaFluxo({ supabase, mesAno }: any) {
+function AbaFluxo({ supabase, mesAno }: AbaFluxoProps) {
   const [loading, setLoading] = useState(true);
   const [d, setD] = useState({
     entradas: 0, saidasContas: 0, saidasFolha: 0,
@@ -979,9 +998,9 @@ function AbaFluxo({ supabase, mesAno }: any) {
         supabase.from("folha_pagamento").select("valor_final").eq("mes", prevD.getMonth() + 1).eq("ano", prevD.getFullYear()).eq("status", "pago"),
       ]);
 
-      const sumLiq = (arr: any[]) => (arr || []).reduce((acc: number, r: any) =>
+      const sumLiq = (arr: Record<string, unknown>[]) => (arr || []).reduce((acc: number, r) =>
         acc + Number(r.valor_liquido ?? r.valor_total ?? 0), 0);
-      const sumK = (arr: any[], k: string) => (arr || []).reduce((acc: number, r: any) => acc + Number(r[k] || 0), 0);
+      const sumK = (arr: Record<string, unknown>[], k: string) => (arr || []).reduce((acc: number, r) => acc + Number(r[k] || 0), 0);
 
       setD({
         entradas:     sumLiq(recebidos),
