@@ -134,10 +134,9 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   ];
 
   const menuAuxAdm = [
-    { href: "/auxiliar/agenda", label: "Atendimentos",  icon: "📅" },
-    { href: "/auxiliar/pauta",  label: "Agenda Simone", icon: "🗓️" },
-    { href: "/mural",           label: "Mural",         icon: "📢" },
-    { href: "/chat",            label: "Chat",          icon: "💬" },
+    { href: "/auxiliar/pauta", label: "Agenda Simone", icon: "🗓️" },
+    { href: "/mural",          label: "Mural",         icon: "📢" },
+    { href: "/chat",           label: "Chat",          icon: "💬" },
   ];
 
   const menu = isAdmin ? menuAdmin
