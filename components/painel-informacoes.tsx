@@ -10,9 +10,30 @@ type WeatherData = {
     weatherDesc: Array<{ value: string }>;
     humidity: string;
     windspeedKmph: string;
+    winddir16Point: string;
+    winddirDegree: string;
     FeelsLikeC: string;
+    uvIndex: string;
+    pressure: string;
+    visibility: string;
   }>;
   weather?: Array<{ maxtempC: string; mintempC: string }>;
+  nearest_area?: Array<{
+    areaName: Array<{ value: string }>;
+    region:   Array<{ value: string }>;
+    country:  Array<{ value: string }>;
+    latitude: string;
+    longitude: string;
+  }>;
+};
+
+type AirQuality = {
+  current?: {
+    european_aqi: number;
+    us_aqi: number;
+    pm10: number;
+    pm2_5: number;
+  };
 };
 
 function weatherEmoji(code: number): string {
@@ -81,6 +102,40 @@ function descClima(code: number, fallback: string): string {
   return WEATHER_PT[code] ?? fallback;
 }
 
+const WIND_PT: Record<string, string> = {
+  N:"Norte", NNE:"Norte-Nordeste", NE:"Nordeste", ENE:"Leste-Nordeste",
+  E:"Leste", ESE:"Leste-Sudeste", SE:"Sudeste", SSE:"Sul-Sudeste",
+  S:"Sul", SSW:"Sul-Sudoeste", SW:"Sudoeste", WSW:"Oeste-Sudoeste",
+  W:"Oeste", WNW:"Oeste-Noroeste", NW:"Noroeste", NNW:"Norte-Noroeste",
+};
+
+function aqiLabel(aqi: number): { label: string; cor: string } {
+  if (aqi <= 20)  return { label: "Boa",              cor: "text-emerald-400" };
+  if (aqi <= 40)  return { label: "Razoável",          cor: "text-green-400"   };
+  if (aqi <= 60)  return { label: "Moderada",          cor: "text-yellow-400"  };
+  if (aqi <= 80)  return { label: "Ruim",              cor: "text-orange-400"  };
+  if (aqi <= 100) return { label: "Muito ruim",        cor: "text-red-400"     };
+  return              { label: "Extremamente ruim", cor: "text-purple-400"  };
+}
+
+function posicaoCardinal(lat: number, lon: number): string {
+  const ns = lat >= 0 ? "N" : "S";
+  const lo = lon >= 0 ? "L" : "O";
+  const latAbs = Math.abs(lat).toFixed(2);
+  const lonAbs = Math.abs(lon).toFixed(2);
+  return `${latAbs}°${ns} · ${lonAbs}°${lo}`;
+}
+
+function regiaooBrasil(lat: number, lon: number): string {
+  if (lat > -5  && lon < -44) return "Norte";
+  if (lat > -18 && lon > -48) return "Nordeste";
+  if (lat > -5  && lon > -44) return "Nordeste";
+  if (lat <= -22)             return "Sul";
+  if (lat <= -18 && lat > -22 && lon > -50) return "Sudeste";
+  if (lon < -50)              return "Centro-Oeste";
+  return "Sudeste";
+}
+
 function saudacao(nome?: string) {
   const h = new Date().getHours();
   const turno = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
@@ -113,6 +168,7 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
   const [cidadeInput, setCidadeInput] = useState("");
   const [cidadeAtual, setCidadeAtual] = useState("Salvador, BA");
   const [loadingClima, setLoadingClima] = useState(true);
+  const [ar, setAr]               = useState<AirQuality | null>(null);
   const [noticias, setNoticias] = useState<Record<string, Noticia[]>>({ brasil: [], mundo: [], inclusao: [] });
   const [abaNoticia, setAbaNoticia] = useState<"brasil" | "mundo" | "inclusao">("brasil");
   const [loadingNoticias, setLoadingNoticias] = useState(true);
@@ -140,6 +196,12 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
         if (d.error) { setClimaErro(true); } else {
           setClima(d);
           setCidadeAtual(alvo.replace(",", ", "));
+          // Busca qualidade do ar com as coordenadas retornadas
+          const area = d.nearest_area?.[0];
+          if (area?.latitude && area?.longitude) {
+            fetch(`/api/air-quality?lat=${area.latitude}&lon=${area.longitude}`)
+              .then(r => r.json()).then(setAr).catch(() => {});
+          }
         }
       })
       .catch(() => setClimaErro(true))
@@ -163,9 +225,14 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
     carregar();
   }, []);
 
-  const cc = clima?.current_condition?.[0];
-  const wt = clima?.weather?.[0];
+  const cc   = clima?.current_condition?.[0];
+  const wt   = clima?.weather?.[0];
+  const area = clima?.nearest_area?.[0];
   const code = parseInt(cc?.weatherCode ?? "116");
+  const aqi  = ar?.current?.european_aqi ?? null;
+  const aqiInfo = aqi !== null ? aqiLabel(aqi) : null;
+  const lat  = area ? parseFloat(area.latitude)  : null;
+  const lon  = area ? parseFloat(area.longitude) : null;
 
   const abas = [
     { key: "brasil",   label: "🇧🇷 Brasil" },
@@ -211,15 +278,36 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
             ) : climaErro ? (
               <p className="text-red-300 text-xs">Cidade não encontrada.</p>
             ) : cc ? (
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{weatherEmoji(code)}</span>
-                <div>
-                  <p className="text-white font-bold text-2xl leading-none">{cc.temp_C}°C</p>
-                  <p className="text-slate-300 text-xs mt-0.5">{descClima(code, cc.weatherDesc[0]?.value)}</p>
-                  <p className="text-slate-400 text-xs mt-0.5">
-                    ↑{wt?.maxtempC}° ↓{wt?.mintempC}° · 💧{cc.humidity}%
+              <div className="space-y-2.5">
+                {/* Temperatura principal */}
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{weatherEmoji(code)}</span>
+                  <div>
+                    <p className="text-white font-bold text-2xl leading-none">{cc.temp_C}°C</p>
+                    <p className="text-slate-300 text-xs mt-0.5">{descClima(code, cc.weatherDesc[0]?.value)}</p>
+                  </div>
+                </div>
+                {/* Grade de detalhes */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <p className="text-slate-400 text-xs">🌡️ Sensação: <span className="text-slate-200">{cc.FeelsLikeC}°C</span></p>
+                  <p className="text-slate-400 text-xs">↑{wt?.maxtempC}° ↓{wt?.mintempC}°</p>
+                  <p className="text-slate-400 text-xs">💧 Umidade: <span className="text-slate-200">{cc.humidity}%</span></p>
+                  <p className="text-slate-400 text-xs">💨 {cc.windspeedKmph} km/h</p>
+                  <p className="text-slate-400 text-xs col-span-2">
+                    🧭 Vento: <span className="text-slate-200">{WIND_PT[cc.winddir16Point] ?? cc.winddir16Point}</span>
                   </p>
-                  <p className="text-slate-500 text-[10px] mt-0.5">📍 {cidadeAtual}</p>
+                  {aqiInfo && (
+                    <p className="text-slate-400 text-xs col-span-2">
+                      🌿 Ar: <span className={`font-semibold ${aqiInfo.cor}`}>{aqiInfo.label}</span>
+                      <span className="text-slate-500 ml-1">(IQA {aqi})</span>
+                    </p>
+                  )}
+                  {lat !== null && lon !== null && (
+                    <p className="text-slate-500 text-[10px] col-span-2 mt-0.5">
+                      📍 {cidadeAtual} · {posicaoCardinal(lat, lon)}
+                      {regiaooBrasil(lat, lon) !== "Sudeste" || lat < -5 ? ` · ${regiaooBrasil(lat, lon)}` : ""}
+                    </p>
+                  )}
                 </div>
               </div>
             ) : null}
