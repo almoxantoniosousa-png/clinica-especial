@@ -21,6 +21,7 @@ type FormDiario = {
   lanche?: string; comeu_tudo?: boolean;
   atividades_sala?: string; tarefa_casa?: string;
   materiais_pedir?: string; obs_gerais?: string;
+  obs_supervisora?: string;
 };
 
 export default function FamiliaDashboardPage() {
@@ -269,7 +270,7 @@ function AbaDiario({ criancaId }: { criancaId: string }) {
           <div key={s.titulo}>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">{s.titulo}</p>
             <div className="space-y-2">
-              {(s.itens as { label: string; valor: string }[]).map((item) => (
+              {(s.itens as { label: string; valor: string; alerta?: boolean }[]).map((item) => (
                 <div key={item.label}
                   className={`rounded-xl px-4 py-3 ${item.alerta ? "bg-red-50 border border-red-200" : "bg-slate-50 border border-slate-100"}`}>
                   <p className="text-[10px] font-bold uppercase tracking-wide mb-0.5 ${item.alerta ? 'text-red-500' : 'text-slate-400'}">{item.label}</p>

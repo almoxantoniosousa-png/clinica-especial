@@ -38,7 +38,7 @@ export default function AdmDashboardPage() {
   const [aniversariantes, setAniversariantes] = useState<Aniversariante[]>([]);
 
   // ── estado analytics ─────────────────────────────────────────
-  const [historicoFinanceiro, setHistoricoFinanceiro] = useState<ChartData<"line"> | null>(null);
+  const [historicoFinanceiro, setHistoricoFinanceiro] = useState<ChartData<"bar"> | null>(null);
   const [distribuicaoPlanos, setDistribuicaoPlanos] = useState<ChartData<"pie"> | null>(null);
   const [topProfissionais, setTopProfissionais] = useState<ChartData<"bar"> | null>(null);
   const [kpisExtra, setKpisExtra] = useState({ totalCriancas: 0, melhorProfissional: "", mediaAtend: 0 });
@@ -206,6 +206,7 @@ export default function AdmDashboardPage() {
     });
     (agendaMesData || []).forEach((a: { especialista_id?: string }) => {
       const id = a.especialista_id;
+      if (!id) return;
       if (!ranking[id]) ranking[id] = { nome: nomesEsp[id] || "Especialista", role: "especialista", count: 0 };
       ranking[id].count++;
     });

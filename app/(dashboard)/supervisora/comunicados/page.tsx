@@ -9,7 +9,7 @@ type MostrarFeedbackFn = (tipo: "sucesso" | "erro", msg: string) => void;
 type AbaProps = { mostrarFeedback: MostrarFeedbackFn };
 
 type FormularioEscolar = {
-  id: string; created_at: string; status: string;
+  id: string; created_at: string; status: string; data: string;
   enviado_familia?: boolean; obs_supervisora?: string | null;
   hora_chegada?: string; interacao?: string[];
   autonomia_nivel?: number; idas_banheiro?: number;
@@ -311,7 +311,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
       3: { label: "Independência Parcial",  cor: "bg-blue-100 text-blue-700 border-blue-200" },
       4: { label: "Independência Total",    cor: "bg-emerald-100 text-emerald-700 border-emerald-200" },
     };
-    const autonomia = autonomiaLabel[form.autonomia_nivel];
+    const autonomia = form.autonomia_nivel != null ? autonomiaLabel[form.autonomia_nivel] : undefined;
 
     const secoes = [
       {
@@ -437,7 +437,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
                   <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
                     {f.criancas?.foto_url
                       ? <img src={f.criancas.foto_url} alt={f.criancas.nome} className="w-full h-full object-cover"/>
-                      : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">{iniciais(f.criancas?.nome)}</div>}
+                      : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">{iniciais(f.criancas?.nome || "?")}</div>}
                   </div>
                   <div>
                     <p className="font-bold text-slate-800 text-sm">{f.criancas?.nome}</p>

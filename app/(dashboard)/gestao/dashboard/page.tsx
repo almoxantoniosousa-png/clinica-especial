@@ -11,10 +11,10 @@ import {
   LineElement, PointElement, ArcElement, Tooltip, Legend, Filler
 } from "chart.js";
 
-type Liminar    = { id: string; crianca_id?: string; criancas?: { nome: string }; status?: string };
-type Membro     = { id: string; nome: string; role: string; logo_url?: string };
-type Relatorio  = { id: string; created_at: string; criancas?: { nome: string }; tipo?: string };
-type AgendaItem = { id: string; hora_inicio?: string; criancas?: { nome: string }; atendentes?: { nome: string }; status?: string };
+type Liminar    = { id: string; crianca_id?: string; criancas?: { nome: string }; status?: string; data_vencimento: string; numero_processo?: string; vara?: string };
+type Membro     = { nome: string; role: string; email?: string; logo_url?: string };
+type Relatorio  = { id: string; created_at: string; titulo?: string; autor_nome?: string; criancas?: { nome: string }; tipo?: string };
+type AgendaItem = { id: string; hora?: string; hora_inicio?: string; servico?: string; profissional_nome?: string; criancas?: { nome: string }; atendentes?: { nome: string }; status?: string };
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement,
@@ -137,7 +137,7 @@ export default function GestaoDashboardPage() {
         .in("tipo", ["prontuario", "relatorio", "relatorio_diario"])
         .order("created_at", { ascending: false })
         .limit(5);
-      setUltimosRelatorios(relatoriosDados || []);
+      setUltimosRelatorios((relatoriosDados || []).map(r => ({ ...r, criancas: Array.isArray(r.criancas) ? r.criancas[0] : r.criancas })) as Relatorio[]);
 
       // Agenda de hoje
       const { data: agendaDados } = await supabase
@@ -145,7 +145,7 @@ export default function GestaoDashboardPage() {
         .select("id, hora, servico, profissional_nome, criancas(nome)")
         .eq("data", hoje)
         .order("hora");
-      setAgendaHoje(agendaDados || []);
+      setAgendaHoje((agendaDados || []).map(a => ({ ...a, criancas: Array.isArray(a.criancas) ? a.criancas[0] : a.criancas })) as AgendaItem[]);
 
       setLoading(false);
     }
@@ -272,7 +272,7 @@ export default function GestaoDashboardPage() {
     setLoadingAnalytics(false);
   }
 
-  const roleLabel: Record<string, string> = {
+  const roleLabel: Record<string, { label: string; color: string }> = {
     gestao: { label: "Gestão", color: "bg-purple-100 text-purple-700" },
     adm: { label: "ADM", color: "bg-blue-100 text-blue-700" },
     financeiro: { label: "Financeiro", color: "bg-emerald-100 text-emerald-700" },

@@ -10,15 +10,17 @@ type SupabaseClient = ReturnType<typeof createSupabaseBrowserClient>;
 type ContaPagar = {
   id: string; descricao: string; categoria: string;
   valor: number; vencimento: string; status: string;
-  observacao?: string | null; data_pagamento?: string | null; valor_pago?: number | null;
+  observacao?: string | null; pago_em?: string | null;
 };
-type ModeloPagar = { id: string; descricao: string; categoria: string; valor: number };
+type ModeloPagar = { id: string; descricao: string; categoria: string; valor: number; observacao?: string | null };
 type ContaReceber = {
   id: string; crianca_id: string; mes_referencia: string;
   valor_total: number; valor_liquido?: number | null; valor_iss?: number | null;
   status: string; plano: string;
   numero_nota_fiscal?: string | null; data_envio?: string | null; observacao?: string | null;
   especialidades?: ItemEsp[];
+  sessoes_realizadas?: number | null; valor_sessao?: number | null;
+  plano_saude?: string | null; desconto_iss?: number | null;
   criancas?: { nome: string };
 };
 type CriancaSimples = { id: string; nome: string; plano_saude?: string | null };
@@ -532,7 +534,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
 // =============================================
 // ABA CONTAS A RECEBER
 // =============================================
-type ItemEsp = { especialidade: string; qtd: string; valor_sessao: string };
+type ItemEsp = { especialidade: string; qtd: string; valor_sessao: string; subtotal?: number };
 
 function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [contas, setContas] = useState<ContaReceber[]>([]);
@@ -548,7 +550,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [descontoISS, setDescontoISS] = useState("");
   const [observacao, setObservacao] = useState("");
 
-  type Confirmacao = { id: string; novoStatus: string; nomeLabel: string; valor: number } | null;
+  type Confirmacao = { id: string; novoStatus: string; nomeLabel?: string; valor: number } | null;
   const [confirmando, setConfirmando] = useState<Confirmacao>(null);
   const [processando, setProcessando] = useState(false);
 
@@ -725,7 +727,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    {c.desconto_iss > 0 && (
+                    {(c.desconto_iss || 0) > 0 && (
                       <>
                         <p className="text-xs text-slate-400 line-through">R$ {Number(c.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                         <p className="text-xs text-red-400">ISS -R$ {Number(c.desconto_iss).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>

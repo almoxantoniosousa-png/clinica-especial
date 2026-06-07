@@ -221,9 +221,10 @@ export default function ChatPage() {
       .order("created_at", { ascending: false });
     if (error) console.error("Erro ao carregar conversas:", error.message);
     if (!data) return;
-    const ids = [...new Set(data.flatMap(c => [c.participante_a, c.participante_b].filter(Boolean)))];
+    const rows = data as Omit<Conversa, "perfil_a" | "perfil_b">[];
+    const ids = [...new Set(rows.flatMap(c => [c.participante_a, c.participante_b].filter(Boolean)))];
     const perfisMap = await resolverPerfis(ids);
-    const enriched = data.map(c => ({
+    const enriched = rows.map(c => ({
       ...c,
       perfil_a: perfisMap[c.participante_a] ?? { id: c.participante_a, nome: "—", role: "" },
       perfil_b: perfisMap[c.participante_b] ?? { id: c.participante_b, nome: "—", role: "" },
