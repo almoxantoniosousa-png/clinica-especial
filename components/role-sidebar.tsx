@@ -27,7 +27,8 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   const isEspecialista = role === "especialista";
   const isGestao = role === "gestao";
   const isFamilia = role === "familia";
-  const isAuxAdm = role === "aux_adm";
+  const isAuxAdm      = role === "aux_adm";
+  const isFinanceiro  = role === "financeiro";
 
   useEffect(() => {
     if (
@@ -133,6 +134,12 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/chat",                     label: "Chat",         icon: "💬" },
   ];
 
+  const menuFinanceiro = [
+    { href: "/adm/financeiro",      label: "Faturamento",       icon: "💰" },
+    { href: "/adm/folha-pagamento", label: "Folha de Pagamento", icon: "💵" },
+    { href: "/chat",                label: "Chat",              icon: "💬" },
+  ];
+
   const menuAuxAdm = [
     { href: "/auxiliar/pauta", label: "Agenda Simone", icon: "🗓️" },
     { href: "/mural",          label: "Mural",         icon: "📢" },
@@ -145,6 +152,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     : isEspecialista ? menuEspecialista
     : isFamilia ? menuFamilia
     : isAuxAdm ? menuAuxAdm
+    : isFinanceiro ? menuFinanceiro
     : menuAtendente;
 
   const roleLabel = isAdmin ? "Administrador"
@@ -153,6 +161,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     : isEspecialista ? "Especialista"
     : isFamilia ? "Família"
     : isAuxAdm ? "Aux. Administrativo"
+    : isFinanceiro ? "Financeiro"
     : "Atendente";
 
   const Logo = ({ size }: { size: "sm" | "md" }) => {

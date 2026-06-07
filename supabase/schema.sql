@@ -569,6 +569,7 @@ create table if not exists public.mensagens_chat (
   autor_id    uuid not null,
   conteudo    text not null,
   lida        boolean not null default false,
+  reacoes     jsonb,
   created_at  timestamptz not null default now()
 );
 
@@ -689,6 +690,26 @@ create policy "chat_uploads_insert" on storage.objects
 create policy "chat_uploads_delete" on storage.objects
   for delete to authenticated
   using (bucket_id = 'chat-uploads' and auth.uid() = owner);
+
+-- Pauta pessoal da diretora (gerida pela aux_adm, confirmada pela gestão)
+create table if not exists public.pauta_diretora (
+  id         uuid primary key default gen_random_uuid(),
+  data       date not null,
+  hora       text,
+  hora_fim   text,
+  tipo       text not null default 'outro',
+  titulo     text not null,
+  modalidade text,
+  observacao text,
+  status     text not null default 'pendente',
+  obs_simone text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.pauta_diretora enable row level security;
+
+create policy "acesso_autenticado" on public.pauta_diretora
+  for all using (auth.uid() is not null);
 
 -- ---------------------------------------------------------------------------
 -- NOTAS DE DÉBITO TÉCNICO
