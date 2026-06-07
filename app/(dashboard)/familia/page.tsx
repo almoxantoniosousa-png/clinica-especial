@@ -6,11 +6,28 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 
 type Aba = "diario" | "comunicados" | "momentos" | "evolucao";
 
+type CriancaInfo = {
+  id: string; nome: string;
+  foto_url?: string | null; diagnostico?: string | null; data_nascimento?: string | null;
+};
+type Responsavel = {
+  id: string; nome: string; email: string; criancas: CriancaInfo;
+};
+type FormDiario = {
+  hora_chegada?: string; interacao?: string[];
+  autonomia_nivel?: number; idas_banheiro?: number;
+  evacuou?: boolean; periodo_menstrual?: boolean;
+  socializacao?: string[]; atencao?: string[];
+  lanche?: string; comeu_tudo?: boolean;
+  atividades_sala?: string; tarefa_casa?: string;
+  materiais_pedir?: string; obs_gerais?: string;
+};
+
 export default function FamiliaDashboardPage() {
   const supabaseClient = useMemo(() => createSupabaseBrowserClient(), []);
   const [aba, setAba] = useState<Aba>("diario");
-  const [responsavel, setResponsavel] = useState<any>(null);
-  const [crianca, setCrianca] = useState<any>(null);
+  const [responsavel, setResponsavel] = useState<Responsavel | null>(null);
+  const [crianca, setCrianca] = useState<CriancaInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -210,7 +227,7 @@ function AbaDiario({ criancaId }: { criancaId: string }) {
     4: "Independência Total",
   };
 
-  function renderConteudo(d: any) {
+  function renderConteudo(d: FormDiario) {
     const secoes = [
       {
         titulo: "🏁 Chegada",
@@ -252,7 +269,7 @@ function AbaDiario({ criancaId }: { criancaId: string }) {
           <div key={s.titulo}>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">{s.titulo}</p>
             <div className="space-y-2">
-              {(s.itens as any[]).map((item: any) => (
+              {(s.itens as { label: string; valor: string }[]).map((item) => (
                 <div key={item.label}
                   className={`rounded-xl px-4 py-3 ${item.alerta ? "bg-red-50 border border-red-200" : "bg-slate-50 border border-slate-100"}`}>
                   <p className="text-[10px] font-bold uppercase tracking-wide mb-0.5 ${item.alerta ? 'text-red-500' : 'text-slate-400'}">{item.label}</p>

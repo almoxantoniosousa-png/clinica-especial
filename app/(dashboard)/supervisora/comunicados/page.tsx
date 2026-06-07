@@ -5,6 +5,28 @@ import { supabase } from "@/lib/supabaseClient";
 import { registrarLog } from "@/lib/auditoria";
 
 type Aba = "dashboard" | "comunicados" | "momentos" | "evolucao" | "avisos";
+type MostrarFeedbackFn = (tipo: "sucesso" | "erro", msg: string) => void;
+type AbaProps = { mostrarFeedback: MostrarFeedbackFn };
+
+type FormularioEscolar = {
+  id: string; created_at: string; status: string;
+  enviado_familia?: boolean; obs_supervisora?: string | null;
+  hora_chegada?: string; interacao?: string[];
+  autonomia_nivel?: number; idas_banheiro?: number;
+  evacuou?: boolean; periodo_menstrual?: boolean;
+  socializacao?: string[]; atencao?: string[];
+  lanche?: string; comeu_tudo?: boolean;
+  atividades_sala?: string; tarefa_casa?: string;
+  materiais_pedir?: string; obs_gerais?: string;
+  criancas?: { nome: string; foto_url?: string | null };
+};
+
+type SecaoItem = {
+  label: string;
+  valor: string | string[];
+  tipo: "texto" | "tags" | "badge" | "alerta";
+  cor?: string;
+};
 
 export default function SupervisoraPage() {
   const [aba, setAba] = useState<Aba>("comunicados");
@@ -226,11 +248,11 @@ function AbaDashboard() {
 // ABA COMUNICADOS DIÁRIOS — novo fluxo:
 // supervisora revisa e envia direto para família
 // =============================================
-function AbaComunicadosDiarios({ mostrarFeedback }: any) {
-  const [formularios, setFormularios] = useState<any[]>([]);
+function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
+  const [formularios, setFormularios] = useState<FormularioEscolar[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState<"pendentes" | "enviados" | "todos">("pendentes");
-  const [detalhe, setDetalhe] = useState<any | null>(null);
+  const [detalhe, setDetalhe] = useState<FormularioEscolar | null>(null);
   const [obs, setObs] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -282,7 +304,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: any) {
     return nome?.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase() || "?";
   }
 
-  function renderDetalhe(form: any) {
+  function renderDetalhe(form: FormularioEscolar) {
     const autonomiaLabel: Record<number, { label: string; cor: string }> = {
       1: { label: "Dependência Total",      cor: "bg-red-100 text-red-700 border-red-200" },
       2: { label: "Ajuda Física/Verbal",    cor: "bg-amber-100 text-amber-700 border-amber-200" },
@@ -345,7 +367,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: any) {
           <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">{secao.titulo}</p>
         </div>
         <div className="bg-white divide-y divide-slate-50">
-          {(secao.itens as any[]).map((item: any) => (
+          {(secao.itens as SecaoItem[]).map((item) => (
             <div key={item.label} className="px-4 py-3">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">{item.label}</p>
               {item.tipo === "tags" && (
@@ -507,7 +529,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: any) {
 // =============================================
 // ABA MOMENTOS
 // =============================================
-function AbaMomentos({ mostrarFeedback }: any) {
+function AbaMomentos({ mostrarFeedback }: AbaProps) {
   const [momentos, setMomentos] = useState<any[]>([]);
   const [criancas, setCriancas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -621,7 +643,7 @@ function AbaMomentos({ mostrarFeedback }: any) {
 // =============================================
 // ABA EVOLUÇÃO
 // =============================================
-function AbaEvolucao({ mostrarFeedback }: any) {
+function AbaEvolucao({ mostrarFeedback }: AbaProps) {
   const [evolucoes, setEvolucoes] = useState<any[]>([]);
   const [criancas, setCriancas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -747,7 +769,7 @@ function AbaEvolucao({ mostrarFeedback }: any) {
 // =============================================
 // ABA AVISOS
 // =============================================
-function AbaAvisos({ mostrarFeedback }: any) {
+function AbaAvisos({ mostrarFeedback }: AbaProps) {
   const [avisos, setAvisos] = useState<any[]>([]);
   const [criancas, setCriancas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
