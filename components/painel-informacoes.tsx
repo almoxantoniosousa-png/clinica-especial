@@ -26,6 +26,61 @@ function weatherEmoji(code: number): string {
   return "🌤️";
 }
 
+const WEATHER_PT: Record<number, string> = {
+  113: "Ensolarado",
+  116: "Parcialmente nublado",
+  119: "Nublado",
+  122: "Encoberto",
+  143: "Névoa",
+  176: "Possibilidade de chuva",
+  179: "Possibilidade de neve",
+  182: "Possibilidade de granizo",
+  185: "Garoa gelada",
+  200: "Possibilidade de trovoada",
+  227: "Neve com vento",
+  230: "Tempestade de neve",
+  248: "Névoa",
+  260: "Névoa gelada",
+  263: "Garoa leve",
+  266: "Garoa",
+  281: "Garoa gelada",
+  284: "Garoa gelada intensa",
+  293: "Chuva leve",
+  296: "Chuva leve",
+  299: "Chuva moderada",
+  302: "Chuva moderada",
+  305: "Chuva forte",
+  308: "Chuva forte",
+  311: "Chuva gelada leve",
+  314: "Chuva gelada",
+  317: "Granizo leve",
+  320: "Granizo",
+  323: "Neve leve",
+  326: "Neve leve",
+  329: "Neve moderada",
+  332: "Neve moderada",
+  335: "Neve intensa",
+  338: "Neve intensa",
+  350: "Granizo",
+  353: "Pancada de chuva leve",
+  356: "Pancada de chuva",
+  359: "Chuva torrencial",
+  362: "Granizo leve",
+  365: "Granizo",
+  368: "Neve com chuva leve",
+  371: "Neve com chuva",
+  374: "Granizo leve",
+  377: "Granizo",
+  386: "Chuva com trovoada",
+  389: "Tempestade com chuva forte",
+  392: "Neve com trovoada",
+  395: "Tempestade de neve",
+};
+
+function descClima(code: number, fallback: string): string {
+  return WEATHER_PT[code] ?? fallback;
+}
+
 function saudacao(nome?: string) {
   const h = new Date().getHours();
   const turno = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
@@ -160,7 +215,7 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
                 <span className="text-3xl">{weatherEmoji(code)}</span>
                 <div>
                   <p className="text-white font-bold text-2xl leading-none">{cc.temp_C}°C</p>
-                  <p className="text-slate-300 text-xs mt-0.5">{cc.weatherDesc[0]?.value}</p>
+                  <p className="text-slate-300 text-xs mt-0.5">{descClima(code, cc.weatherDesc[0]?.value)}</p>
                   <p className="text-slate-400 text-xs mt-0.5">
                     ↑{wt?.maxtempC}° ↓{wt?.mintempC}° · 💧{cc.humidity}%
                   </p>

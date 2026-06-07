@@ -79,9 +79,48 @@ export default function MinhaAgendaPage() {
   async function marcarNaoRealizado(id: string) {
     setSalvando(id);
     const obs = obsTexto.trim() || null;
+    const ev  = eventos.find(e => e.id === id);
     await supabase.from("pauta_diretora").update({ status: "nao_realizado", obs_simone: obs }).eq("id", id);
     setEventos(prev => prev.map(e => e.id === id ? { ...e, status: "nao_realizado", obs_simone: obs } : e));
+    if (ev) await notificarFatima(ev, obs);
     setObsAberta(null); setObsTexto(""); setSalvando(null);
+  }
+
+  async function notificarFatima(ev: Evento, obs: string | null) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const [{ data: simone }, { data: fatima }] = await Promise.all([
+      supabase.from("usuarios").select("id, nome").eq("email", user.email).maybeSingle(),
+      supabase.from("usuarios").select("id").eq("role", "aux_adm").maybeSingle(),
+    ]);
+    if (!simone || !fatima) return;
+
+    // Busca ou cria conversa entre Simone e Fátima
+    const { data: existente } = await supabase
+      .from("conversas").select("id")
+      .or(`and(participante_a.eq.${simone.id},participante_b.eq.${fatima.id}),and(participante_a.eq.${fatima.id},participante_b.eq.${simone.id})`)
+      .maybeSingle();
+
+    let conversa_id = existente?.id;
+    if (!conversa_id) {
+      const { data: nova } = await supabase
+        .from("conversas")
+        .insert({ tipo: "privado", participante_a: simone.id, participante_b: fatima.id })
+        .select("id").single();
+      conversa_id = nova?.id;
+    }
+    if (!conversa_id) return;
+
+    const c    = info(ev.tipo);
+    const hora = ev.hora ? ` — ${ev.hora}${ev.hora_fim ? ` às ${ev.hora_fim}` : ""}` : "";
+    const texto = `⚠️ Compromisso não realizado: ${c.emoji} ${ev.titulo}${hora}${obs ? `\n💬 ${obs}` : "\nPor favor, remarque um novo horário."}`;
+
+    await supabase.from("mensagens_chat").insert({
+      conversa_id,
+      autor_id: simone.id,
+      conteudo: texto,
+    });
   }
 
   async function desfazer(id: string) {
