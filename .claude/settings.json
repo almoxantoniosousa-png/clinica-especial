@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --yes playwright --version)",
+      "Bash(npm ls *)",
+      "Bash(npm root *)",
+      "Bash(npx --yes -p playwright node /tmp/respcheck/check.js)",
+      "Bash(find / -maxdepth 6 -iname \"playwright-core\" -type d 2>/dev/null | head -10; find / -maxdepth 8 -path \"*_npx*playwright*\" -maxdepth 8 -type d 2>/dev/null | head -10)",
+      "Read(//c//**)",
+      "Bash(cp /tmp/respcheck/check.js \"/c/Users/Antonio x Solange/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/check.js\")",
+      "Bash(node check.js)",
+      "Bash(npx playwright *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} in %{time_total}s\\\\n\" http://localhost:3000/login --max-time 20)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} in %{time_total}s\\\\n\" http://localhost:3000/login --max-time 90)",
+      "Bash(curl -v http://127.0.0.1:3000/ --max-time 15)",
+      "Bash(curl -v http://127.0.0.1:3000/login --max-time 60)",
+      "Bash(curl -s -o /tmp/login_resp.html -w \"HTTP %{http_code} in %{time_total}s, size %{size_download} bytes\\\\n\" http://127.0.0.1:3000/login --max-time 240)",
+      "Bash(npx tsc *)",
+      "Bash(claude mcp list*)",
+      "Bash(claude mcp get *)",
+      "mcp__supabase__execute_sql"
+    ]
+  }
+}

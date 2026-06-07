@@ -5,7 +5,7 @@ import { LoginForm } from "../../components/login-form";
 
 export default function LoginPage() {
   return (
-    <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-950 via-blue-900 to-blue-800 flex items-center justify-center px-5">
+    <div className="relative h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-950 via-blue-900 to-blue-800 flex items-center justify-center px-5">
 
       {/* Círculos decorativos de fundo */}
       <div className="absolute top-0 left-0 w-72 h-72 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"/>
