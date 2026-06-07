@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
+import { registrarLog } from "@/lib/auditoria";
 import { Plus, Pencil, Trash2, X, Check, Send, ClipboardCheck, ChevronDown } from "lucide-react";
 
 const CARGOS = [
@@ -107,6 +108,15 @@ export default function ProtocolosPage() {
       : await supabase.from("protocolos_conduta").insert([payload]);
     if (error) mostrarFeedback("erro", "Erro ao salvar. Tente novamente.");
     else {
+      const { data: { user } } = await supabase.auth.getUser();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        usuario_nome: eu?.nome,
+        acao: editando ? "Editou" : "Criou",
+        tabela: "protocolos_conduta",
+        registro_id: editando?.id,
+        descricao: `${editando ? "Editou" : "Criou"} o protocolo de conduta "${form.titulo.trim()}" (${form.cargo})`,
+      });
       mostrarFeedback("sucesso", editando ? "Protocolo atualizado!" : "Protocolo criado!");
       fecharModal();
       await carregar();
@@ -121,6 +131,15 @@ export default function ProtocolosPage() {
     setExcluindo(false);
     if (error) mostrarFeedback("erro", "Erro ao remover. Tente novamente.");
     else {
+      const { data: { user } } = await supabase.auth.getUser();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        usuario_nome: eu?.nome,
+        acao: "Excluiu",
+        tabela: "protocolos_conduta",
+        registro_id: deletando.id,
+        descricao: `Excluiu o protocolo de conduta "${deletando.titulo}" (${deletando.cargo})`,
+      });
       mostrarFeedback("sucesso", "Protocolo removido.");
       setProtocolos(prev => prev.filter(p => p.id !== deletando.id));
     }
@@ -176,6 +195,16 @@ export default function ProtocolosPage() {
         .from("mensagens_chat")
         .insert({ conversa_id: conversaId, autor_id: eu.id, conteudo: texto, lida: false });
       if (errMsg) throw errMsg;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        usuario_nome: eu.nome,
+        acao: "Enviou",
+        tabela: "protocolos_conduta",
+        registro_id: enviando.id,
+        descricao: `Enviou o protocolo "${enviando.titulo}" (${enviando.cargo}) pelo chat para ${destinatario.nome}`,
+      });
 
       mostrarFeedback("sucesso", `Protocolo enviado para ${destinatario.nome}.`);
       fecharEnvio();

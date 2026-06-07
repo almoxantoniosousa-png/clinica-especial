@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
+import { registrarLog } from "@/lib/auditoria";
 import { Check, ClipboardCheck } from "lucide-react";
 
 // Mapeia o role do usuário logado para o(s) cargo(s) de protocolo correspondentes
@@ -74,6 +75,16 @@ export default function MeusProtocolosPage() {
     if (error) { mostrarFeedback("erro", "Erro ao confirmar. Tente novamente."); return; }
     setConfirmacoes(prev => ({ ...prev, [p.id]: new Date().toISOString() }));
     mostrarFeedback("sucesso", "Leitura confirmada!");
+
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      usuario_nome: eu.nome,
+      acao: "Confirmou leitura",
+      tabela: "protocolos_conduta",
+      registro_id: p.id,
+      descricao: `Confirmou a leitura do protocolo "${p.titulo}" (${p.cargo})`,
+    });
   }
 
   return (
