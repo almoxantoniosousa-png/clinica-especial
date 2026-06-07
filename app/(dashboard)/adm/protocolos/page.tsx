@@ -17,6 +17,42 @@ const CARGOS = [
 
 const ROLE_LABEL: Record<string, string> = { supervisora: "Supervisora", gestao: "Gestão" };
 
+const ORIENTACAO_POR_CARGO: Record<string, { titulo: string; conteudo: string }> = {
+  "Especialista": {
+    titulo: "Ex: Deveres diários do Especialista",
+    conteudo: "Descreva as atividades diárias do Especialista: condutas no atendimento às crianças, registros e relatórios obrigatórios, comunicação com a equipe e família, e normas de conduta esperadas...",
+  },
+  "Acompanhante Terapêutico (AT)": {
+    titulo: "Ex: Conduta do AT durante o atendimento",
+    conteudo: "Descreva como o AT deve se portar durante os atendimentos, acompanhamento da criança na escola/casa, comunicação com a equipe e a família, e registros esperados...",
+  },
+  "Supervisora": {
+    titulo: "Ex: Responsabilidades da Supervisora",
+    conteudo: "Descreva as responsabilidades de supervisão da equipe, acompanhamento dos atendimentos, comunicação com famílias e escolas, e normas de conduta esperadas...",
+  },
+  "Auxiliar Administrativo": {
+    titulo: "Ex: Rotina do Auxiliar Administrativo",
+    conteudo: "Descreva as tarefas administrativas diárias, organização de agenda e documentos, sigilo das informações e normas de conduta no atendimento ao público...",
+  },
+  "Agente de Limpeza": {
+    titulo: "Ex: Rotina de limpeza e higienização",
+    conteudo: "Descreva os horários e áreas de limpeza, uso correto de materiais e produtos, cuidados ao circular em ambientes com crianças, e normas de conduta esperadas...",
+  },
+  "Gestão": {
+    titulo: "Ex: Diretrizes de conduta da Gestão",
+    conteudo: "Descreva as responsabilidades de gestão institucional, tomada de decisões, comunicação com equipes e parceiros, e normas de conduta esperadas...",
+  },
+  "Financeiro": {
+    titulo: "Ex: Normas do setor Financeiro",
+    conteudo: "Descreva o sigilo das informações financeiras, prazos de pagamentos e recebimentos, organização de documentos e normas de conduta esperadas...",
+  },
+};
+
+const ORIENTACAO_PADRAO = {
+  titulo: "Ex: Deveres diários do colaborador",
+  conteudo: "Descreva as diretrizes, deveres e normas de conduta esperadas para este cargo...",
+};
+
 type Protocolo = { id: string; cargo: string; titulo: string; conteudo: string; created_at: string };
 type Pessoa = { id: string; nome: string; role: string };
 type Confirmacao = { protocolo_id: string; pessoa_nome: string; pessoa_role: string; confirmado_em: string };
@@ -349,12 +385,12 @@ export default function ProtocolosPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Título *</label>
                 <input type="text" value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
-                  placeholder="Ex: Deveres diários do Especialista" className={inp} />
+                  placeholder={(ORIENTACAO_POR_CARGO[form.cargo] || ORIENTACAO_PADRAO).titulo} className={inp} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Conteúdo *</label>
                 <textarea rows={8} value={form.conteudo} onChange={e => setForm(f => ({ ...f, conteudo: e.target.value }))}
-                  placeholder="Descreva as diretrizes, deveres e normas de conduta..."
+                  placeholder={(ORIENTACAO_POR_CARGO[form.cargo] || ORIENTACAO_PADRAO).conteudo}
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
               </div>
             </div>
