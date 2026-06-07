@@ -194,22 +194,42 @@ export default function ChatPage() {
     })();
   }, []);
 
+  // ── Resolver perfis por IDs (busca nas 3 tabelas) ────────────────────────
+
+  const resolverPerfis = useCallback(async (ids: string[]): Promise<Record<string, Perfil>> => {
+    if (!ids.length) return {};
+    const [{ data: dp }, { data: da }, { data: du }] = await Promise.all([
+      supabase.from("perfis").select("id, nome, role").in("id", ids),
+      supabase.from("atendentes").select("id, nome, role, logo_url").in("id", ids),
+      supabase.from("usuarios").select("id, nome, role, foto_url").in("id", ids),
+    ]);
+    const map: Record<string, Perfil> = {};
+    (dp || []).forEach((p: any) => { map[p.id] = { id: p.id, nome: p.nome, role: p.role }; });
+    (da || []).forEach((a: any) => { map[a.id] = { id: a.id, nome: a.nome, role: a.role, foto_url: a.logo_url }; });
+    (du || []).forEach((u: any) => { map[u.id] = { id: u.id, nome: u.nome, role: u.role, foto_url: u.foto_url }; });
+    return map;
+  }, []);
+
   // ── Carregar conversas ────────────────────────────────────────────────────
 
   const carregarConversas = useCallback(async () => {
     if (!eu) return;
     const { data, error } = await supabase
       .from("conversas")
-      .select(`
-        id, tipo, created_at, participante_a, participante_b,
-        perfil_a:perfis!participante_a(id, nome, role),
-        perfil_b:perfis!participante_b(id, nome, role)
-      `)
+      .select("id, tipo, created_at, participante_a, participante_b")
       .or(`participante_a.eq.${eu.id},participante_b.eq.${eu.id}`)
       .order("created_at", { ascending: false });
     if (error) console.error("Erro ao carregar conversas:", error.message);
-    if (data) setConversas(data as unknown as Conversa[]);
-  }, [eu]);
+    if (!data) return;
+    const ids = [...new Set(data.flatMap(c => [c.participante_a, c.participante_b].filter(Boolean)))];
+    const perfisMap = await resolverPerfis(ids);
+    const enriched = data.map(c => ({
+      ...c,
+      perfil_a: perfisMap[c.participante_a] ?? { id: c.participante_a, nome: "—", role: "" },
+      perfil_b: perfisMap[c.participante_b] ?? { id: c.participante_b, nome: "—", role: "" },
+    }));
+    setConversas(enriched as Conversa[]);
+  }, [eu, resolverPerfis]);
 
   useEffect(() => { carregarConversas(); }, [carregarConversas]);
 
@@ -494,14 +514,10 @@ export default function ChatPage() {
       const { data, error } = await supabase
         .from("conversas")
         .insert({ nome: `${eu.nome} ↔ ${alvo.nome}`, tipo: "privado", participante_a: eu.id, participante_b: alvo.id })
-        .select(`
-          id, tipo, created_at, participante_a, participante_b,
-          perfil_a:perfis!participante_a(id, nome, role),
-          perfil_b:perfis!participante_b(id, nome, role)
-        `)
+        .select("id, tipo, created_at, participante_a, participante_b")
         .single();
       if (error) throw error;
-      const nova = data as unknown as Conversa;
+      const nova: Conversa = { ...data, perfil_a: eu, perfil_b: alvo };
       setConversas(prev => [nova, ...prev]);
       setAtiva(nova);
       setModal(false);
@@ -518,14 +534,29 @@ export default function ChatPage() {
     if (!roles.length) return;
     (async () => {
       const [{ data: dp }, { data: da }, { data: du }] = await Promise.all([
-        supabase.from("perfis").select("id, nome, role").in("role", roles).neq("id", eu.id),
-        supabase.from("atendentes").select("id, nome, role").in("role", roles).neq("id", eu.id),
-        supabase.from("usuarios").select("id, nome, role").in("role", roles).neq("id", eu.id),
+        supabase.from("perfis").select("id, nome, role, email").in("role", roles).neq("id", eu.id),
+        supabase.from("atendentes").select("id, nome, role, email, logo_url").in("role", roles).neq("id", eu.id),
+        supabase.from("usuarios").select("id, nome, role, email, foto_url").in("role", roles).neq("id", eu.id),
       ]);
-      const todos = [...(dp || []), ...(da || []), ...(du || [])]
-        .filter((u, i, arr) => arr.findIndex(x => x.id === u.id) === i)
-        .sort((a: any, b: any) => a.nome.localeCompare(b.nome));
-      if (todos.length) setUsuarios(todos as Perfil[]);
+      // Prioridade: usuarios > atendentes > perfis (legado); deduplicar por email
+      const vistos = new Set<string>();
+      const todos: Perfil[] = [];
+      // usuarios têm prioridade (dados mais atualizados)
+      for (const u of (du || []) as any[]) {
+        if (u.email) vistos.add(u.email);
+        todos.push({ id: u.id, nome: u.nome, role: u.role, foto_url: u.foto_url });
+      }
+      for (const a of (da || []) as any[]) {
+        if (a.email && vistos.has(a.email)) continue;
+        if (a.email) vistos.add(a.email);
+        todos.push({ id: a.id, nome: a.nome, role: a.role, foto_url: a.logo_url });
+      }
+      for (const p of (dp || []) as any[]) {
+        if (p.email && vistos.has(p.email)) continue;
+        todos.push({ id: p.id, nome: p.nome, role: p.role });
+      }
+      todos.sort((a, b) => a.nome.localeCompare(b.nome));
+      if (todos.length) setUsuarios(todos);
     })();
   }, [modal, eu]);
 
