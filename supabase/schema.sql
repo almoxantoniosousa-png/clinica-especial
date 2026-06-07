@@ -642,17 +642,32 @@ alter table public.contas_pagar          enable row level security;
 alter table public.contas_receber        enable row level security;
 alter table public.folha_pagamento       enable row level security;
 
--- Política base: usuário autenticado acessa tudo (refinamento futuro por role)
+-- Funções auxiliares para políticas RLS
+create or replace function public.meu_role()
+returns text language sql security definer stable as $$
+  select coalesce(
+    (select role::text from public.usuarios   where auth_id = auth.uid()),
+    (select role::text from public.atendentes where email   = auth.email()),
+    ''
+  )
+$$;
+
+create or replace function public.meu_atendente_id()
+returns uuid language sql security definer stable as $$
+  select id from public.atendentes where email = auth.email()
+$$;
+
+create or replace function public.minha_crianca_id()
+returns uuid language sql security definer stable as $$
+  select crianca_id from public.responsaveis
+  where email = auth.email() and ativo = true limit 1
+$$;
+
+-- Tabelas operacionais — qualquer autenticado (baixo risco, refinamento futuro)
 create policy "acesso_autenticado" on public.criancas
   for all using (auth.uid() is not null);
 
 create policy "acesso_autenticado" on public.atendimentos
-  for all using (auth.uid() is not null);
-
-create policy "acesso_autenticado" on public.prontuarios
-  for all using (auth.uid() is not null);
-
-create policy "acesso_autenticado" on public.formularios_escolares
   for all using (auth.uid() is not null);
 
 create policy "acesso_autenticado" on public.agenda
@@ -672,6 +687,57 @@ create policy "acesso_autenticado" on public.conversas
 
 create policy "acesso_autenticado" on public.mensagens_chat
   for all using (auth.uid() is not null);
+
+-- Prontuários — especialista vê os seus; adm/gestao/supervisora veem tudo
+create policy "prontuario_select" on public.prontuarios
+  for select using (
+    public.meu_role() in ('adm', 'admin', 'gestao', 'supervisora')
+    or autor_id = public.meu_atendente_id()
+  );
+create policy "prontuario_insert" on public.prontuarios
+  for insert with check (public.meu_role() in ('adm', 'admin', 'gestao', 'especialista'));
+create policy "prontuario_update" on public.prontuarios
+  for update using (public.meu_role() in ('adm', 'admin', 'gestao') or autor_id = public.meu_atendente_id());
+create policy "prontuario_delete" on public.prontuarios
+  for delete using (public.meu_role() in ('adm', 'admin', 'gestao'));
+
+-- Formulários escolares — família lê só da sua criança; atendente escreve os seus
+create policy "formulario_select" on public.formularios_escolares
+  for select using (
+    public.meu_role() in ('adm', 'admin', 'gestao', 'supervisora', 'atendente', 'at')
+    or crianca_id = public.minha_crianca_id()
+  );
+create policy "formulario_insert" on public.formularios_escolares
+  for insert with check (public.meu_role() in ('atendente', 'at', 'adm', 'admin', 'gestao'));
+create policy "formulario_update" on public.formularios_escolares
+  for update using (
+    public.meu_role() in ('adm', 'admin', 'gestao', 'supervisora')
+    or (public.meu_role() in ('atendente', 'at') and at_id = public.meu_atendente_id())
+  );
+
+-- Tabelas financeiras — só adm e financeiro
+create policy "financeiro_acesso" on public.contas_pagar
+  for all using (public.meu_role() in ('adm', 'admin', 'financeiro'));
+create policy "financeiro_acesso" on public.contas_receber
+  for all using (public.meu_role() in ('adm', 'admin', 'financeiro'));
+create policy "financeiro_acesso" on public.folha_pagamento
+  for all using (public.meu_role() in ('adm', 'admin', 'financeiro', 'gestao'));
+
+-- Usuários — adm/gestao veem todos; cada um vê/edita o próprio
+create policy "usuarios_select" on public.usuarios
+  for select using (public.meu_role() in ('adm', 'admin', 'gestao') or auth_id = auth.uid());
+create policy "usuarios_update" on public.usuarios
+  for update using (public.meu_role() in ('adm', 'admin') or auth_id = auth.uid());
+
+-- Atendentes — adm/gestao/supervisora veem todos; cada um vê/edita o próprio
+create policy "atendentes_select" on public.atendentes
+  for select using (public.meu_role() in ('adm', 'admin', 'gestao', 'supervisora') or email = auth.email());
+create policy "atendentes_update" on public.atendentes
+  for update using (public.meu_role() in ('adm', 'admin', 'gestao') or email = auth.email());
+create policy "atendentes_insert" on public.atendentes
+  for insert with check (public.meu_role() in ('adm', 'admin', 'gestao'));
+create policy "atendentes_delete" on public.atendentes
+  for delete using (public.meu_role() in ('adm', 'admin'));
 
 -- ---------------------------------------------------------------------------
 -- STORAGE (buckets criados via Supabase Dashboard)
