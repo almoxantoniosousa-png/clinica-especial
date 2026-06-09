@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition, useRef, useMemo } from "react";
+import { Printer } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
@@ -228,6 +229,86 @@ export default function AdmCriancasPage() {
     return `${anos} anos`;
   }
 
+  function imprimirFicha(c: any) {
+    const w = window.open("", "_blank");
+    if (!w) return;
+    const escola = c.escolas?.nome || "—";
+    const esc = (v: string | null | undefined) => (v ?? "—").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const nascimento = c.data_nascimento
+      ? new Date(c.data_nascimento + "T12:00:00").toLocaleDateString("pt-BR")
+      : "—";
+    w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+      <meta charset="UTF-8"/>
+      <title>Ficha — ${c.nome}</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 12px; color: #1e293b; padding: 40px; max-width: 720px; margin: auto; }
+        .header { border-bottom: 2px solid #1e40af; padding-bottom: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .clinica { font-size: 16px; font-weight: 700; color: #0f172a; }
+        .sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .nome { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+        .idade { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+        .secao { margin-bottom: 18px; }
+        .secao-titulo { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
+        .campo { margin-bottom: 6px; }
+        .campo-label { font-size: 10px; color: #94a3b8; margin-bottom: 1px; }
+        .campo-val { font-size: 12px; color: #1e293b; }
+        .campo-val.destaque { color: #dc2626; font-weight: 600; }
+        .assinatura { margin-top: 48px; display: flex; gap: 40px; }
+        .assinatura-item { flex: 1; }
+        .linha { border-bottom: 1px solid #94a3b8; margin-bottom: 6px; height: 32px; }
+        .label { font-size: 10px; color: #64748b; }
+        .rodape { font-size: 10px; color: #94a3b8; margin-top: 32px; text-align: right; }
+        @media print { body { padding: 24px; } }
+      </style>
+    </head><body>
+      <div class="header">
+        <div>
+          <div class="clinica">Clínica Abraço</div>
+          <div class="sub">Ficha da Criança</div>
+        </div>
+        <div class="sub">Nº Processo: ${esc(c.numero_processo)}</div>
+      </div>
+      <div class="nome">${esc(c.nome)}</div>
+      <div class="idade">${nascimento}${c.data_nascimento ? " · " + calcularIdade(c.data_nascimento) : ""} · ${esc(c.sexo)}</div>
+      <div class="secao">
+        <div class="secao-titulo">Responsável</div>
+        <div class="grid">
+          <div class="campo"><div class="campo-label">Nome</div><div class="campo-val">${esc(c.responsavel)}</div></div>
+          <div class="campo"><div class="campo-label">Telefone</div><div class="campo-val">${esc(c.telefone_responsavel)}</div></div>
+          <div class="campo"><div class="campo-label">E-mail</div><div class="campo-val">${esc(c.email_responsavel)}</div></div>
+          <div class="campo"><div class="campo-label">CPF da criança</div><div class="campo-val">${esc(c.cpf)}</div></div>
+        </div>
+      </div>
+      <div class="secao">
+        <div class="secao-titulo">Escola & Plano</div>
+        <div class="grid">
+          <div class="campo"><div class="campo-label">Escola</div><div class="campo-val">${esc(escola)}</div></div>
+          <div class="campo"><div class="campo-label">Plano de saúde</div><div class="campo-val">${esc(c.plano_saude)}</div></div>
+        </div>
+      </div>
+      <div class="secao">
+        <div class="secao-titulo">Diagnóstico</div>
+        <div class="grid">
+          <div class="campo"><div class="campo-label">Diagnóstico</div><div class="campo-val">${esc(c.diagnostico)}</div></div>
+          <div class="campo"><div class="campo-label">CID</div><div class="campo-val">${esc(c.cid)}</div></div>
+        </div>
+      </div>
+      ${c.alergias ? `<div class="secao"><div class="secao-titulo">Alergias</div><div class="campo-val destaque">${esc(c.alergias)}</div></div>` : ""}
+      ${c.medicamentos ? `<div class="secao"><div class="secao-titulo">Medicamentos</div><div class="campo-val">${esc(c.medicamentos)}</div></div>` : ""}
+      ${c.observacoes ? `<div class="secao"><div class="secao-titulo">Observações</div><div class="campo-val">${esc(c.observacoes)}</div></div>` : ""}
+      <div class="assinatura">
+        <div class="assinatura-item"><div class="linha"></div><div class="label">Assinatura do responsável</div></div>
+        <div class="assinatura-item"><div class="linha"></div><div class="label">Data</div></div>
+        <div class="assinatura-item"><div class="linha"></div><div class="label">Assinatura da gestão / ADM</div></div>
+      </div>
+      <div class="rodape">Impresso em ${new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+      <script>window.onload = () => { window.print(); }<\/script>
+    </body></html>`);
+    w.document.close();
+  }
+
   const inputClass = "w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 bg-white";
   const labelClass = "block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1";
 
@@ -434,6 +515,11 @@ export default function AdmCriancasPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => imprimirFicha(c)}
+                        title="Imprimir ficha"
+                        className="h-9 px-3 flex items-center gap-1.5 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 active:scale-95 rounded-lg border border-violet-100 transition-all">
+                        <Printer className="h-3.5 w-3.5" /> Ficha
+                      </button>
                       <button onClick={() => abrirEdicao(c)}
                         className="h-9 px-3 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95 rounded-lg border border-blue-100 transition-all">
                         Editar

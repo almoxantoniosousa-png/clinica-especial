@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
-import { DollarSign, Check, Clock, Plus, Pencil, X, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
+import { DollarSign, Check, Clock, Plus, Pencil, X, ChevronDown, ChevronRight, Trash2, Printer } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -202,6 +202,70 @@ export default function FolhaPagamentoPage() {
   const folhasPendentes = folhas.filter(f => f.status === "pendente");
   const folhasPagas     = folhas.filter(f => f.status === "pago");
 
+  function imprimirHolerite(folha: Folha) {
+    const prof = profissionais.find(p => p.id === folha.profissional_id);
+    const w = window.open("", "_blank");
+    if (!w) return;
+    const desconto = Number(folha.adiantamento) + Number(folha.desconto);
+    w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+      <meta charset="UTF-8"/>
+      <title>Holerite — ${prof?.nome || ""} — ${MESES[folha.mes - 1]}/${folha.ano}</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; padding: 40px; max-width: 680px; margin: auto; }
+        .header { border-bottom: 2px solid #1e40af; padding-bottom: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .clinica { font-size: 16px; font-weight: 700; color: #0f172a; }
+        .sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .badge { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .nome { font-size: 18px; font-weight: 700; margin: 16px 0 4px; }
+        .cargo { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background: #f1f5f9; text-align: left; padding: 8px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
+        td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+        .valor-pos { color: #15803d; font-weight: 600; }
+        .valor-neg { color: #dc2626; font-weight: 600; }
+        .total-row td { font-size: 15px; font-weight: 700; border-top: 2px solid #1e40af; border-bottom: none; padding-top: 12px; }
+        .status { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .pago { background: #dcfce7; color: #15803d; }
+        .pendente { background: #ffedd5; color: #c2410c; }
+        .assinatura { margin-top: 48px; display: flex; justify-content: space-between; gap: 32px; }
+        .assinatura-item { flex: 1; }
+        .linha { border-bottom: 1px solid #94a3b8; margin-bottom: 6px; height: 32px; }
+        .label { font-size: 10px; color: #64748b; }
+        .rodape { font-size: 10px; color: #94a3b8; margin-top: 32px; text-align: right; }
+        @media print { body { padding: 24px; } }
+      </style>
+    </head><body>
+      <div class="header">
+        <div>
+          <div class="clinica">Clínica Abraço</div>
+          <div class="sub">Comprovante de Pagamento</div>
+        </div>
+        <div class="badge">${MESES[folha.mes - 1]} / ${folha.ano}</div>
+      </div>
+      <div class="nome">${prof?.nome || "—"}</div>
+      <div class="cargo">${prof?.especialidade || prof?.role || "—"}</div>
+      <table>
+        <tr><th>Descrição</th><th>Valor</th></tr>
+        <tr><td>Salário base</td><td class="valor-pos">${Number(folha.valor_base).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td></tr>
+        ${folha.adiantamento > 0 ? `<tr><td>Adiantamento</td><td class="valor-neg">- ${Number(folha.adiantamento).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td></tr>` : ""}
+        ${folha.desconto > 0 ? `<tr><td>Desconto</td><td class="valor-neg">- ${Number(folha.desconto).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td></tr>` : ""}
+        <tr class="total-row"><td>Valor líquido</td><td>${Number(folha.valor_final).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td></tr>
+      </table>
+      <p>Status: <span class="status ${folha.status === "pago" ? "pago" : "pendente"}">${folha.status === "pago" ? "✓ Pago" : "⏳ Pendente"}</span>
+      ${folha.data_pagamento ? ` &nbsp; Data: ${new Date(folha.data_pagamento + "T12:00:00").toLocaleDateString("pt-BR")}` : ""}</p>
+      ${folha.observacao ? `<p style="margin-top:10px;font-size:12px;color:#64748b;">Obs: ${folha.observacao}</p>` : ""}
+      <div class="assinatura">
+        <div class="assinatura-item"><div class="linha"></div><div class="label">Assinatura do(a) colaborador(a)</div></div>
+        <div class="assinatura-item"><div class="linha"></div><div class="label">Data de recebimento</div></div>
+        <div class="assinatura-item"><div class="linha"></div><div class="label">Assinatura da gestão / ADM</div></div>
+      </div>
+      <div class="rodape">Impresso em ${new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+      <script>window.onload = () => { window.print(); }<\/script>
+    </body></html>`);
+    w.document.close();
+  }
+
   function CardFolha({ folha }: { folha: Folha }) {
     const prof = profissionais.find(p => p.id === folha.profissional_id);
     return (
@@ -254,6 +318,11 @@ export default function FolhaPagamentoPage() {
                   Confirmar PIX
                 </button>
               )}
+              <button onClick={() => imprimirHolerite(folha)}
+                title="Imprimir holerite"
+                className="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition">
+                <Printer className="h-4 w-4" />
+              </button>
               <button onClick={() => abrirEditar(folha)}
                 className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
                 <Pencil className="h-4 w-4" />
