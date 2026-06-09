@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
-import { Plus, Pencil, Trash2, X, Check, Send, ClipboardCheck, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Check, Send, ClipboardCheck, ChevronDown, Printer } from "lucide-react";
 
 const CARGOS = [
   "Especialista",
@@ -203,6 +203,54 @@ export default function ProtocolosPage() {
 
   function fecharEnvio() { setEnviando(null); setEnviandoPara(null); }
 
+  function imprimir(p: Protocolo) {
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+      <meta charset="UTF-8"/>
+      <title>Protocolo — ${p.cargo}</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; padding: 40px; max-width: 720px; margin: auto; }
+        .header { border-bottom: 2px solid #1e40af; padding-bottom: 16px; margin-bottom: 24px; }
+        .clinica { font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .cargo-badge { display: inline-block; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 10px; }
+        h1 { font-size: 18px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+        .conteudo { line-height: 1.8; white-space: pre-wrap; margin: 24px 0; }
+        .assinatura { margin-top: 48px; border-top: 1px solid #cbd5e1; padding-top: 24px; display: flex; justify-content: space-between; gap: 32px; }
+        .assinatura-item { flex: 1; }
+        .linha { border-bottom: 1px solid #94a3b8; margin-bottom: 6px; height: 32px; }
+        .label { font-size: 10px; color: #64748b; }
+        .data-impressao { font-size: 10px; color: #94a3b8; margin-top: 32px; text-align: right; }
+        @media print { body { padding: 24px; } }
+      </style>
+    </head><body>
+      <div class="header">
+        <div class="clinica">Clínica Abraço — Protocolo de Conduta</div>
+        <div class="cargo-badge">${p.cargo}</div>
+        <h1>${p.titulo}</h1>
+      </div>
+      <div class="conteudo">${p.conteudo.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+      <div class="assinatura">
+        <div class="assinatura-item">
+          <div class="linha"></div>
+          <div class="label">Assinatura do(a) colaborador(a)</div>
+        </div>
+        <div class="assinatura-item">
+          <div class="linha"></div>
+          <div class="label">Data de recebimento</div>
+        </div>
+        <div class="assinatura-item">
+          <div class="linha"></div>
+          <div class="label">Assinatura da gestão / ADM</div>
+        </div>
+      </div>
+      <div class="data-impressao">Impresso em ${new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+      <script>window.onload = () => { window.print(); }<\/script>
+    </body></html>`);
+    w.document.close();
+  }
+
   async function enviarPara(destinatario: Pessoa) {
     if (!enviando || !eu) return;
     setEnviandoPara(destinatario.id);
@@ -321,6 +369,10 @@ export default function ProtocolosPage() {
                   <button onClick={() => abrirEnvio(p)}
                     className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-100 transition">
                     <Send className="h-3 w-3" /> Enviar
+                  </button>
+                  <button onClick={() => imprimir(p)}
+                    className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg border border-violet-100 transition">
+                    <Printer className="h-3 w-3" /> Imprimir
                   </button>
                   <button onClick={() => abrirEditar(p)}
                     className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
