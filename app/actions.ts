@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { registrarLog } from "@/lib/auditoria";
 
 // ============================
 // LOGIN
@@ -44,6 +45,13 @@ export async function loginWithPassword(
     console.log("Usuario role:", role);
     revalidatePath("/", "layout");
 
+    await registrarLog(supabase, {
+      usuario_email: email,
+      usuario_nome: usuario.nome,
+      acao: "Login",
+      descricao: `${usuario.nome || email} entrou no sistema (${role})`,
+    });
+
     if (role === "adm" || role === "admin") redirect("/adm/dashboard");
     if (role === "gestao") redirect("/gestao/dashboard");
     if (role === "supervisora") redirect("/supervisora/comunicados");
@@ -67,6 +75,13 @@ export async function loginWithPassword(
     const role = atendente.role?.toString().trim().toLowerCase();
     console.log("Atendente role:", role);
     revalidatePath("/", "layout");
+
+    await registrarLog(supabase, {
+      usuario_email: email,
+      usuario_nome: atendente.nome,
+      acao: "Login",
+      descricao: `${atendente.nome || email} entrou no sistema (${role})`,
+    });
 
     if (role === "adm" || role === "admin") redirect("/adm/dashboard");
     if (role === "gestao") redirect("/gestao/dashboard");

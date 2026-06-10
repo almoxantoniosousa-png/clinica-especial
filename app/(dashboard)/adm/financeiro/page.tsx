@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { Check } from "lucide-react";
+import { registrarLog } from "@/lib/auditoria";
 
 type Aba = "contas_pagar" | "contas_receber" | "fluxo";
 type SupabaseClient = ReturnType<typeof createSupabaseBrowserClient>;
@@ -183,9 +184,9 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   async function salvar() {
     if (!descricao || !valor || !vencimento) { mostrarFeedback("erro", "Preencha todos os campos obrigatórios."); return; }
     setSalvando(true);
-    const { error } = await supabase.from("contas_pagar").insert([{
+    const { data: nova, error } = await supabase.from("contas_pagar").insert([{
       descricao, categoria, valor: Number(valor), vencimento, observacao, status: "pendente"
-    }]);
+    }]).select().single();
     if (!error && salvarModelo) {
       const jaExiste = modelos.some(m => m.descricao.toLowerCase() === descricao.toLowerCase());
       if (!jaExiste) {
@@ -194,7 +195,18 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     }
     setSalvando(false);
     if (error) mostrarFeedback("erro", "Erro ao salvar: " + error.message);
-    else { mostrarFeedback("sucesso", "Conta registrada!"); fecharModal(); carregar(); }
+    else {
+      mostrarFeedback("sucesso", "Conta registrada!");
+      const { data: { user } } = await supabase.auth.getUser();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Criou",
+        tabela: "contas_pagar",
+        registro_id: nova?.id,
+        descricao: `Lançou conta a pagar: ${descricao} — R$ ${Number(valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} (venc. ${new Date(vencimento + "T12:00:00").toLocaleDateString("pt-BR")})`,
+      });
+      fecharModal(); carregar();
+    }
   }
 
   async function marcarPago() {
@@ -202,14 +214,33 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     setProcessando(true);
     await supabase.from("contas_pagar").update({ status: "pago", pago_em: hoje }).eq("id", confirmandoId);
     mostrarFeedback("sucesso", "Marcado como pago!");
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: "Pagou",
+      tabela: "contas_pagar",
+      registro_id: confirmandoId,
+      descricao: `Pagou conta: ${confirmandoDescricao} — R$ ${confirmandoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+    });
     setConfirmandoId(null); setConfirmandoDescricao(""); setConfirmandoValor(0); setProcessando(false);
     carregar();
   }
 
   async function excluir(id: string) {
     setExcluindoId(id);
+    const conta = contas.find(c => c.id === id);
     await supabase.from("contas_pagar").delete().eq("id", id);
     mostrarFeedback("sucesso", "Conta removida.");
+    if (conta) {
+      const { data: { user } } = await supabase.auth.getUser();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Excluiu",
+        tabela: "contas_pagar",
+        registro_id: id,
+        descricao: `Removeu conta a pagar: ${conta.descricao} — R$ ${Number(conta.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+      });
+    }
     setExcluindoId(null);
     carregar();
   }
@@ -607,7 +638,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     }));
     const bruto = espComSubtotal.reduce((acc, e) => acc + e.subtotal, 0);
     const iss = Math.min(Number(descontoISS) || 0, bruto);
-    const { error } = await supabase.from("contas_receber").insert([{
+    const { data: nova, error } = await supabase.from("contas_receber").insert([{
       crianca_id: criancaId,
       mes_referencia: mesAno,
       especialidades: espComSubtotal,
@@ -621,11 +652,20 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       data_envio: dataEnvio || null,
       observacao,
       status: "pendente",
-    }]);
+    }]).select().single();
     setSalvando(false);
     if (error) mostrarFeedback("erro", "Erro: " + error.message);
     else {
       mostrarFeedback("sucesso", "Fatura registrada!");
+      const nomeCrianca = criancas.find(c => c.id === criancaId)?.nome;
+      const { data: { user } } = await supabase.auth.getUser();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Criou",
+        tabela: "contas_receber",
+        registro_id: nova?.id,
+        descricao: `Lançou fatura de ${nomeCrianca} — Ref. ${mesAno} — R$ ${(bruto - iss).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+      });
       setModalAberto(false);
       resetForm();
       carregar();
@@ -640,6 +680,14 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     if (confirmando.novoStatus === "recebido") update.recebido_em = new Date().toISOString().slice(0, 10);
     await supabase.from("contas_receber").update(update).eq("id", confirmando.id);
     mostrarFeedback("sucesso", "Status atualizado!");
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: confirmando.novoStatus === "recebido" ? "Recebeu" : "Faturou",
+      tabela: "contas_receber",
+      registro_id: confirmando.id,
+      descricao: `Marcou fatura de ${confirmando.nomeLabel} como ${confirmando.novoStatus} — R$ ${confirmando.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+    });
     setConfirmando(null);
     setProcessando(false);
     carregar();
