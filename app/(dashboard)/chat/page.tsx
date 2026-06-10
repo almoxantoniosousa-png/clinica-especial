@@ -53,6 +53,8 @@ type Mensagem = {
   created_at: string;
   lida: boolean;
   reacoes?: Record<string, string[]>;
+  editado?: boolean;
+  apagada?: boolean;
 };
 
 type Perfil = { id: string; nome: string; role: string; foto_url?: string | null };
@@ -146,6 +148,10 @@ export default function ChatPage() {
   // Reações
   const [reacaoAberta, setReacaoAberta] = useState<string | null>(null);
   const EMOJIS_REACAO = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
+
+  // Opções da mensagem (editar/apagar)
+  const [opcoesAbertas, setOpcoesAbertas] = useState<string | null>(null);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
 
   // Não lidas
   const [naoLidas, setNaoLidas] = useState<Record<string, number>>({});
@@ -297,7 +303,13 @@ export default function ChatPage() {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "mensagens_chat", filter: `conversa_id=eq.${ativa.id}` },
         (payload: { new: Mensagem }) => {
-          setMensagens(prev => prev.map(m => m.id === payload.new.id ? { ...m, reacoes: payload.new.reacoes } : m));
+          setMensagens(prev => prev.map(m => m.id === payload.new.id ? {
+            ...m,
+            reacoes: payload.new.reacoes,
+            conteudo: payload.new.conteudo,
+            editado: payload.new.editado,
+            apagada: payload.new.apagada,
+          } : m));
         }
       )
       .on("broadcast", { event: "typing" }, (payload: { payload: { userId: string; nome: string } }) => {
@@ -343,6 +355,24 @@ export default function ChatPage() {
   const enviar = async (override?: string) => {
     const conteudo = override ?? texto.trim();
     if (!conteudo || !ativa || !eu) return;
+
+    if (editandoId && !override) {
+      const idEditado = editandoId;
+      const novoConteudo = JSON.stringify({ tipo: "texto", texto: conteudo });
+      setTexto("");
+      setEditandoId(null);
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
+
+      const { error } = await supabase
+        .from("mensagens_chat")
+        .update({ conteudo: novoConteudo, editado: true })
+        .eq("id", idEditado);
+
+      if (error) { console.error(error.message); return; }
+      setMensagens(prev => prev.map(m => m.id === idEditado ? { ...m, conteudo: novoConteudo, editado: true } : m));
+      return;
+    }
+
     if (!override) {
       setTexto("");
       if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -497,6 +527,32 @@ export default function ChatPage() {
     await supabase.from("mensagens_chat").update({ reacoes }).eq("id", msgId);
     setMensagens(prev => prev.map(m => m.id === msgId ? { ...m, reacoes } : m));
     setReacaoAberta(null);
+  }
+
+  // ── Editar / apagar mensagem ─────────────────────────────────────────────
+
+  function iniciarEdicao(msg: Mensagem) {
+    const c = parseConteudo(msg.conteudo);
+    if (c.tipo !== "texto") return;
+    setEditandoId(msg.id);
+    setTexto(c.texto);
+    setOpcoesAbertas(null);
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }
+
+  function cancelarEdicao() {
+    setEditandoId(null);
+    setTexto("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+  }
+
+  async function apagarMensagem(msgId: string) {
+    setOpcoesAbertas(null);
+    if (!window.confirm("Apagar esta mensagem para todos?")) return;
+    const { error } = await supabase.from("mensagens_chat").update({ apagada: true }).eq("id", msgId);
+    if (error) { console.error(error.message); return; }
+    setMensagens(prev => prev.map(m => m.id === msgId ? { ...m, apagada: true } : m));
+    if (editandoId === msgId) cancelarEdicao();
   }
 
   // ── Abrir / criar conversa ────────────────────────────────────────────────
@@ -783,24 +839,50 @@ export default function ChatPage() {
                         <div className={`flex flex-col ${minha ? "items-end" : "items-start"} relative group`}>
 
                           {/* Botão de reação (aparece no hover) */}
-                          <div className={`absolute top-1 ${minha ? "left-0 -translate-x-8" : "right-0 translate-x-8"} opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
-                            <button onClick={() => setReacaoAberta(reacaoAberta === msg.id ? null : msg.id)}
-                              className="w-6 h-6 rounded-full bg-white shadow border border-slate-200 flex items-center justify-center text-sm hover:bg-slate-50">
-                              😊
-                            </button>
-                            {reacaoAberta === msg.id && (
-                              <div className={`absolute bottom-8 ${minha ? "right-0" : "left-0"} bg-white rounded-2xl shadow-xl border border-slate-200 px-2 py-1.5 flex gap-1 z-20`}>
-                                {EMOJIS_REACAO.map(emoji => (
-                                  <button key={emoji} onClick={() => toggleReacao(msg.id, emoji)}
-                                    className={`text-xl hover:scale-125 transition-transform p-0.5 rounded ${
-                                      (msg.reacoes?.[emoji] ?? []).includes(eu?.id ?? "") ? "bg-blue-50" : ""
-                                    }`}>
-                                    {emoji}
+                          {!msg.apagada && (
+                            <div className={`absolute top-1 ${minha ? "left-0 -translate-x-8" : "right-0 translate-x-8"} opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
+                              <button onClick={() => setReacaoAberta(reacaoAberta === msg.id ? null : msg.id)}
+                                className="w-6 h-6 rounded-full bg-white shadow border border-slate-200 flex items-center justify-center text-sm hover:bg-slate-50">
+                                😊
+                              </button>
+                              {reacaoAberta === msg.id && (
+                                <div className={`absolute bottom-8 ${minha ? "right-0" : "left-0"} bg-white rounded-2xl shadow-xl border border-slate-200 px-2 py-1.5 flex gap-1 z-20`}>
+                                  {EMOJIS_REACAO.map(emoji => (
+                                    <button key={emoji} onClick={() => toggleReacao(msg.id, emoji)}
+                                      className={`text-xl hover:scale-125 transition-transform p-0.5 rounded ${
+                                        (msg.reacoes?.[emoji] ?? []).includes(eu?.id ?? "") ? "bg-blue-50" : ""
+                                      }`}>
+                                      {emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Botão de opções (editar/apagar) — só na própria mensagem */}
+                          {minha && !msg.apagada && (
+                            <div className="absolute top-1 left-0 -translate-x-16 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              <button onClick={() => setOpcoesAbertas(opcoesAbertas === msg.id ? null : msg.id)}
+                                className="w-6 h-6 rounded-full bg-white shadow border border-slate-200 flex items-center justify-center text-sm hover:bg-slate-50">
+                                ⋮
+                              </button>
+                              {opcoesAbertas === msg.id && (
+                                <div className="absolute bottom-8 right-0 bg-white rounded-xl shadow-xl border border-slate-200 py-1 flex flex-col z-20 whitespace-nowrap">
+                                  {c.tipo === "texto" && (
+                                    <button onClick={() => iniciarEdicao(msg)}
+                                      className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 text-left">
+                                      ✏️ Editar
+                                    </button>
+                                  )}
+                                  <button onClick={() => apagarMensagem(msg.id)}
+                                    className="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 text-left">
+                                    🗑️ Apagar
                                   </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
 
                           {/* Balão */}
                           <div className={`max-w-xs sm:max-w-sm lg:max-w-md rounded-2xl overflow-hidden shadow-sm text-sm ${
@@ -809,46 +891,57 @@ export default function ChatPage() {
                               : "bg-white text-slate-800 rounded-bl-sm"
                           }`}>
 
-                            {c.tipo === "texto" && (
-                              <p className="px-4 pt-2.5 pb-1 break-words whitespace-pre-wrap leading-relaxed">
-                                {c.texto}
+                            {msg.apagada ? (
+                              <p className="px-4 pt-2.5 pb-1 italic text-slate-400 flex items-center gap-1.5">
+                                🚫 Mensagem apagada
                               </p>
-                            )}
+                            ) : (
+                              <>
+                                {c.tipo === "texto" && (
+                                  <p className="px-4 pt-2.5 pb-1 break-words whitespace-pre-wrap leading-relaxed">
+                                    {c.texto}
+                                  </p>
+                                )}
 
-                            {c.tipo === "imagem" && (
-                              <button onClick={() => window.open(c.url, "_blank")} className="block">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={c.url} alt={c.nome} className="max-w-full max-h-56 object-cover" />
-                              </button>
-                            )}
+                                {c.tipo === "imagem" && (
+                                  <button onClick={() => window.open(c.url, "_blank")} className="block">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={c.url} alt={c.nome} className="max-w-full max-h-56 object-cover" />
+                                  </button>
+                                )}
 
-                            {c.tipo === "arquivo" && (
-                              <a href={c.url} target="_blank" rel="noreferrer"
-                                className="flex items-center gap-3 px-4 pt-3 pb-1 text-slate-600">
-                                <FileText className="h-8 w-8 shrink-0 text-slate-400" />
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium truncate">{c.nome}</p>
-                                  <p className="text-xs text-slate-400">{formatarTamanho(c.tamanho)}</p>
-                                </div>
-                                <Download className="h-4 w-4 shrink-0" />
-                              </a>
-                            )}
+                                {c.tipo === "arquivo" && (
+                                  <a href={c.url} target="_blank" rel="noreferrer"
+                                    className="flex items-center gap-3 px-4 pt-3 pb-1 text-slate-600">
+                                    <FileText className="h-8 w-8 shrink-0 text-slate-400" />
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-sm font-medium truncate">{c.nome}</p>
+                                      <p className="text-xs text-slate-400">{formatarTamanho(c.tamanho)}</p>
+                                    </div>
+                                    <Download className="h-4 w-4 shrink-0" />
+                                  </a>
+                                )}
 
-                            {c.tipo === "audio" && (
-                              <div className="px-3 pt-2.5 pb-1 min-w-[220px]">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-lg">🎤</span>
-                                  <span className="text-xs text-slate-500">{formatDuracao(c.duracao)}</span>
-                                </div>
-                                <audio src={c.url} controls preload="metadata"
-                                  className="w-full"
-                                  style={{ height: "40px", accentColor: "#128C7E" }}
-                                />
-                              </div>
+                                {c.tipo === "audio" && (
+                                  <div className="px-3 pt-2.5 pb-1 min-w-[220px]">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-lg">🎤</span>
+                                      <span className="text-xs text-slate-500">{formatDuracao(c.duracao)}</span>
+                                    </div>
+                                    <audio src={c.url} controls preload="metadata"
+                                      className="w-full"
+                                      style={{ height: "40px", accentColor: "#128C7E" }}
+                                    />
+                                  </div>
+                                )}
+                              </>
                             )}
 
                             {/* Horário + status */}
                             <div className="flex items-center justify-end gap-1 px-3 pb-1.5 pt-0.5 text-slate-500">
+                              {msg.editado && !msg.apagada && (
+                                <span className="text-xs italic">editada</span>
+                              )}
                               <span className="text-xs">
                                 {new Date(msg.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                               </span>
@@ -941,6 +1034,14 @@ export default function ChatPage() {
             </div>
           )}
 
+          {/* Editando mensagem */}
+          {editandoId && (
+            <div className="mx-3 mb-1 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 flex items-center justify-between shrink-0">
+              <span>✏️ Editando mensagem</span>
+              <button onClick={cancelarEdicao}><X className="h-3.5 w-3.5" /></button>
+            </div>
+          )}
+
           {/* Barra de input */}
           <div className="p-3 flex items-end gap-2 shrink-0 bg-[#f0f2f5]">
 
@@ -984,8 +1085,11 @@ export default function ChatPage() {
                     e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
                     broadcastTyping();
                   }}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); } }}
-                  placeholder="Mensagem… (Enter envia · Shift+Enter nova linha)"
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); }
+                    if (e.key === "Escape" && editandoId) cancelarEdicao();
+                  }}
+                  placeholder={editandoId ? "Editar mensagem… (Enter salva · Esc cancela)" : "Mensagem… (Enter envia · Shift+Enter nova linha)"}
                   rows={1}
                   className="flex-1 rounded-2xl border-0 bg-white px-4 py-2 text-sm focus:outline-none shadow-sm resize-none overflow-y-auto leading-5 transition-all"
                   style={{ minHeight: "38px", maxHeight: "200px" }}
