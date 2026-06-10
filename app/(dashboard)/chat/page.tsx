@@ -75,6 +75,7 @@ function parseConteudo(conteudo: string): MensagemConteudo {
   try {
     const p = JSON.parse(conteudo);
     if (p.tipo === "imagem" || p.tipo === "arquivo" || p.tipo === "audio") return p;
+    if (p.tipo === "texto") return { tipo: "texto", texto: p.texto };
   } catch {}
   return { tipo: "texto", texto: conteudo };
 }
@@ -358,18 +359,17 @@ export default function ChatPage() {
 
     if (editandoId && !override) {
       const idEditado = editandoId;
-      const novoConteudo = JSON.stringify({ tipo: "texto", texto: conteudo });
       setTexto("");
       setEditandoId(null);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
 
       const { error } = await supabase
         .from("mensagens_chat")
-        .update({ conteudo: novoConteudo, editado: true })
+        .update({ conteudo, editado: true })
         .eq("id", idEditado);
 
       if (error) { console.error(error.message); return; }
-      setMensagens(prev => prev.map(m => m.id === idEditado ? { ...m, conteudo: novoConteudo, editado: true } : m));
+      setMensagens(prev => prev.map(m => m.id === idEditado ? { ...m, conteudo, editado: true } : m));
       return;
     }
 
@@ -459,6 +459,11 @@ export default function ChatPage() {
 
   async function iniciarGravacao() {
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setUploadErro("Gravação de áudio só funciona em https ou em localhost (não funciona acessando por IP na rede local).");
+        setTimeout(() => setUploadErro(null), 6000);
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       // Detecta o melhor formato suportado pelo navegador
@@ -491,7 +496,15 @@ export default function ChatPage() {
       mediaRecorderRef.current = recorder;
       setGravando(true);
       timerGravacaoRef.current = setInterval(() => setTempoGravacao(t => t + 1), 1000);
-    } catch { setUploadErro("Microfone não disponível ou sem permissão."); setTimeout(() => setUploadErro(null), 4000); }
+    } catch (e: unknown) {
+      let msg = "Microfone não disponível ou sem permissão.";
+      if (e instanceof DOMException) {
+        if (e.name === "NotAllowedError") msg = "Permissão de microfone negada. Habilite o microfone para este site nas configurações do navegador.";
+        else if (e.name === "NotFoundError") msg = "Nenhum microfone foi encontrado neste dispositivo.";
+      }
+      setUploadErro(msg);
+      setTimeout(() => setUploadErro(null), 5000);
+    }
   }
 
   function pararGravacao() {
