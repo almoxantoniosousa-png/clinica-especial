@@ -92,6 +92,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/chat",             label: "Chat",      icon: "💬" },
     { href: "/escala",           label: "Escala",    icon: "📅" },
     { href: "/adm/auditoria",    label: "Auditoria", icon: "🔍" },
+    { href: "/ajuda",            label: "Ajuda",     icon: "❓" },
   ];
 
   const menuGestao = [
@@ -106,10 +107,12 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/chat",                label: "Chat",         icon: "💬" },
     { href: "/gestao/escala",       label: "Escala",       icon: "📅" },
     { href: "/gestao/comunicados",  label: "Família",      icon: "💬" },
+    { href: "/ajuda",                label: "Ajuda",        icon: "❓" },
   ];
 
   const menuFamilia = [
     { href: "/familia", label: "Meu Portal", icon: "🏠" },
+    { href: "/ajuda",   label: "Ajuda",      icon: "❓" },
   ];
 
   const menuAtendente = [
@@ -121,6 +124,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/protocolos",                   label: "Protocolos",        icon: "📜" },
     { href: "/mural",                        label: "Mural",             icon: "📢" },
     { href: "/chat",                         label: "Chat",              icon: "💬" },
+    { href: "/ajuda",                        label: "Ajuda",             icon: "❓" },
   ];
 
   const menuSupervisora = [
@@ -128,6 +132,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/protocolos",              label: "Protocolos",  icon: "📜" },
     { href: "/mural",                   label: "Mural",       icon: "📢" },
     { href: "/chat",                    label: "Chat",        icon: "💬" },
+    { href: "/ajuda",                   label: "Ajuda",       icon: "❓" },
   ];
 
   const menuEspecialista = [
@@ -137,6 +142,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/protocolos",               label: "Protocolos",   icon: "📜" },
     { href: "/mural",                    label: "Mural",        icon: "📢" },
     { href: "/chat",                     label: "Chat",         icon: "💬" },
+    { href: "/ajuda",                    label: "Ajuda",        icon: "❓" },
   ];
 
   const menuFinanceiro = [
@@ -144,6 +150,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/adm/folha-pagamento", label: "Folha de Pagamento", icon: "💵" },
     { href: "/protocolos",          label: "Protocolos",        icon: "📜" },
     { href: "/chat",                label: "Chat",              icon: "💬" },
+    { href: "/ajuda",                label: "Ajuda",            icon: "❓" },
   ];
 
   const menuAuxAdm = [
@@ -151,6 +158,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/protocolos",     label: "Protocolos",    icon: "📜" },
     { href: "/mural",          label: "Mural",         icon: "📢" },
     { href: "/chat",           label: "Chat",          icon: "💬" },
+    { href: "/ajuda",          label: "Ajuda",         icon: "❓" },
   ];
 
   const menu = isAdmin ? menuAdmin
