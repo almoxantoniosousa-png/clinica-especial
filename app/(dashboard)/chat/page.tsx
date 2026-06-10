@@ -211,15 +211,23 @@ export default function ChatPage() {
       if (!user) return;
       const { data: p } = await supabase
         .from("perfis").select("id, nome, role").eq("id", user.id).single();
-      if (p) { setEu(p as Perfil); return; }
+      if (p) {
+        // a foto fica em atendentes.logo_url ou usuarios.foto_url, com o mesmo id
+        const [{ data: a }, { data: u }] = await Promise.all([
+          supabase.from("atendentes").select("logo_url").eq("id", p.id).maybeSingle(),
+          supabase.from("usuarios").select("foto_url").eq("id", p.id).maybeSingle(),
+        ]);
+        setEu({ ...p, foto_url: u?.foto_url ?? a?.logo_url ?? null } as Perfil);
+        return;
+      }
       // especialistas/supervisora/gestao ficam em atendentes, não em perfis
       const { data: a } = await supabase
         .from("atendentes").select("id, nome, role, logo_url").eq("email", user.email).maybeSingle();
-      if (a) setEu({ ...a, foto_url: a.logo_url } as Perfil);
       // usuarios (adm, gestao, supervisora via usuarios)
       const { data: u } = await supabase
         .from("usuarios").select("id, nome, role, foto_url").eq("email", user.email).maybeSingle();
-      if (u) setEu(u as Perfil);
+      if (u) setEu({ ...u, foto_url: u.foto_url ?? a?.logo_url } as Perfil);
+      else if (a) setEu({ ...a, foto_url: a.logo_url } as Perfil);
     })();
   }, []);
 
