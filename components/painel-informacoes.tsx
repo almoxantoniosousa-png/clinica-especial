@@ -245,11 +245,11 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
 
       {/* Cabeçalho: saudação + relógio + data */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <p className="text-slate-400 text-sm">{saudacao(nome)}</p>
+            <p className="text-blue-100 text-sm">{saudacao(nome)}</p>
             <p className="text-4xl font-black text-white tracking-tight font-mono mt-1">{hora}</p>
-            <p className="text-slate-400 text-xs mt-1 capitalize">{data}</p>
+            <p className="text-blue-100 text-xs mt-1 capitalize">{data}</p>
           </div>
 
           {/* Clima */}
@@ -273,10 +273,10 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
             {loadingClima ? (
               <div className="flex gap-2 items-center">
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
-                <p className="text-slate-400 text-xs">Carregando...</p>
+                <p className="text-blue-100 text-xs">Carregando...</p>
               </div>
             ) : climaErro ? (
-              <p className="text-red-300 text-xs">Cidade não encontrada.</p>
+              <p className="text-red-100 text-xs">Cidade não encontrada.</p>
             ) : cc ? (
               <div className="space-y-2.5">
                 {/* Temperatura principal */}
@@ -284,26 +284,26 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
                   <span className="text-3xl">{weatherEmoji(code)}</span>
                   <div>
                     <p className="text-white font-bold text-2xl leading-none">{cc.temp_C}°C</p>
-                    <p className="text-slate-300 text-xs mt-0.5">{descClima(code, cc.weatherDesc[0]?.value)}</p>
+                    <p className="text-blue-100 text-xs mt-0.5">{descClima(code, cc.weatherDesc[0]?.value)}</p>
                   </div>
                 </div>
                 {/* Grade de detalhes */}
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <p className="text-slate-400 text-xs">🌡️ Sensação: <span className="text-slate-200">{cc.FeelsLikeC}°C</span></p>
-                  <p className="text-slate-400 text-xs">↑{wt?.maxtempC}° ↓{wt?.mintempC}°</p>
-                  <p className="text-slate-400 text-xs">💧 Umidade: <span className="text-slate-200">{cc.humidity}%</span></p>
-                  <p className="text-slate-400 text-xs">💨 {cc.windspeedKmph} km/h</p>
-                  <p className="text-slate-400 text-xs col-span-2">
-                    🧭 Vento: <span className="text-slate-200">{WIND_PT[cc.winddir16Point] ?? cc.winddir16Point}</span>
+                  <p className="text-blue-100 text-xs">🌡️ Sensação: <span className="text-white">{cc.FeelsLikeC}°C</span></p>
+                  <p className="text-blue-100 text-xs">↑{wt?.maxtempC}° ↓{wt?.mintempC}°</p>
+                  <p className="text-blue-100 text-xs">💧 Umidade: <span className="text-white">{cc.humidity}%</span></p>
+                  <p className="text-blue-100 text-xs">💨 {cc.windspeedKmph} km/h</p>
+                  <p className="text-blue-100 text-xs col-span-2">
+                    🧭 Vento: <span className="text-white">{WIND_PT[cc.winddir16Point] ?? cc.winddir16Point}</span>
                   </p>
                   {aqiInfo && (
-                    <p className="text-slate-400 text-xs col-span-2">
+                    <p className="text-blue-100 text-xs col-span-2">
                       🌿 Ar: <span className={`font-semibold ${aqiInfo.cor}`}>{aqiInfo.label}</span>
-                      <span className="text-slate-500 ml-1">(IQA {aqi})</span>
+                      <span className="text-blue-200 ml-1">(IQA {aqi})</span>
                     </p>
                   )}
                   {lat !== null && lon !== null && (
-                    <p className="text-slate-500 text-[10px] col-span-2 mt-0.5">
+                    <p className="text-blue-200 text-[10px] col-span-2 mt-0.5">
                       📍 {cidadeAtual} · {posicaoCardinal(lat, lon)}
                       {regiaooBrasil(lat, lon) !== "Sudeste" || lat < -5 ? ` · ${regiaooBrasil(lat, lon)}` : ""}
                     </p>

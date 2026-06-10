@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import {
   MessageCircle, Send, Paperclip, Image as ImageIcon, Images, Check, CheckCheck,
-  X, FileText, Download, Search, PenSquare, Camera, ChevronLeft,
+  X, FileText, Download, Search, PenSquare, Camera, ChevronLeft, Video,
 } from "lucide-react";
 
 // ─── Permissões por role ─────────────────────────────────────────────────────
@@ -44,7 +44,8 @@ type MensagemConteudo =
   | { tipo: "texto";   texto: string }
   | { tipo: "imagem";  url: string; nome: string }
   | { tipo: "arquivo"; url: string; nome: string; tamanho: number }
-  | { tipo: "audio";   url: string; duracao: number };
+  | { tipo: "audio";   url: string; duracao: number }
+  | { tipo: "reuniao"; url: string; autor: string };
 
 type Mensagem = {
   id: string;
@@ -74,10 +75,23 @@ type Conversa = {
 function parseConteudo(conteudo: string): MensagemConteudo {
   try {
     const p = JSON.parse(conteudo);
-    if (p.tipo === "imagem" || p.tipo === "arquivo" || p.tipo === "audio") return p;
+    if (p.tipo === "imagem" || p.tipo === "arquivo" || p.tipo === "audio" || p.tipo === "reuniao") return p;
     if (p.tipo === "texto") return { tipo: "texto", texto: p.texto };
   } catch {}
   return { tipo: "texto", texto: conteudo };
+}
+
+function renderTextoComLink(texto: string) {
+  const partes = texto.split(/(https?:\/\/[^\s]+)/g);
+  return partes.map((parte, i) =>
+    /^https?:\/\//.test(parte) ? (
+      <a key={i} href={parte} target="_blank" rel="noreferrer" className="underline text-blue-600 break-all">
+        {parte}
+      </a>
+    ) : (
+      parte
+    )
+  );
 }
 
 function formatDuracao(s: number) {
@@ -386,6 +400,15 @@ export default function ChatPage() {
     if (error) { console.error(error.message); if (!override) setTexto(conteudo); return; }
     if (data) setMensagens(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data]);
   };
+
+  // ── Videochamada (Jitsi Meet) ─────────────────────────────────────────────
+
+  function iniciarVideochamada() {
+    if (!ativa || !eu) return;
+    const url = `https://meet.jit.si/ClinicaAbraco-${ativa.id}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    enviar(JSON.stringify({ tipo: "reuniao", url, autor: eu.nome }));
+  }
 
   // ── Upload de arquivo ─────────────────────────────────────────────────────
 
@@ -806,6 +829,10 @@ export default function ChatPage() {
                 }
               </p>
             </div>
+            <button onClick={iniciarVideochamada} title="Iniciar videochamada"
+              className="w-9 h-9 flex items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white transition shrink-0">
+              <Video className="h-5 w-5" />
+            </button>
           </div>
 
           {/* Área de mensagens */}
@@ -912,8 +939,23 @@ export default function ChatPage() {
                               <>
                                 {c.tipo === "texto" && (
                                   <p className="px-4 pt-2.5 pb-1 break-words whitespace-pre-wrap leading-relaxed">
-                                    {c.texto}
+                                    {renderTextoComLink(c.texto)}
                                   </p>
+                                )}
+
+                                {c.tipo === "reuniao" && (
+                                  <div className="px-4 pt-3 pb-2 space-y-2 min-w-[220px]">
+                                    <p className="font-semibold flex items-center gap-1.5">
+                                      🎥 Videochamada
+                                    </p>
+                                    <p className="text-xs text-slate-500">
+                                      {c.autor} iniciou uma reunião por vídeo.
+                                    </p>
+                                    <a href={c.url} target="_blank" rel="noreferrer"
+                                      className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-[#128C7E] text-white text-sm font-semibold hover:bg-[#0f7a6c] transition">
+                                      <Video className="h-4 w-4" /> Entrar na reunião
+                                    </a>
+                                  </div>
                                 )}
 
                                 {c.tipo === "imagem" && (
