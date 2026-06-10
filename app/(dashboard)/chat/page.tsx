@@ -49,6 +49,7 @@ type MensagemConteudo =
 
 type Mensagem = {
   id: string;
+  conversa_id: string;
   conteudo: string;
   autor_id: string;
   created_at: string;
@@ -171,6 +172,11 @@ export default function ChatPage() {
   // Não lidas
   const [naoLidas, setNaoLidas] = useState<Record<string, number>>({});
 
+  // Notificações do navegador
+  const [notifPermissao, setNotifPermissao] = useState<NotificationPermission | null>(null);
+  const [notifAvisoDispensado, setNotifAvisoDispensado] = useState(false);
+  const ativaRef = useRef<Conversa | null>(null);
+
   // Modal nova conversa
   const [modal, setModal] = useState(false);
   const [usuarios, setUsuarios] = useState<Perfil[]>([]);
@@ -193,9 +199,11 @@ export default function ChatPage() {
 
   useEffect(() => {
     setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    if (typeof Notification !== "undefined") setNotifPermissao(Notification.permission);
     try {
       const s = localStorage.getItem("chat_leituras");
       if (s) leiturasRef.current = JSON.parse(s);
+      if (localStorage.getItem("chat_notif_dispensado") === "1") setNotifAvisoDispensado(true);
     } catch {}
 
     (async () => {
@@ -275,6 +283,59 @@ export default function ChatPage() {
       setNaoLidas(map);
     })();
   }, [conversas, eu]);
+
+  // ── Notificações do navegador (mensagens de qualquer conversa) ───────────
+
+  useEffect(() => { ativaRef.current = ativa; }, [ativa]);
+
+  function pedirPermissaoNotificacao() {
+    if (typeof Notification === "undefined") return;
+    Notification.requestPermission().then(setNotifPermissao);
+  }
+
+  useEffect(() => {
+    if (!eu || conversas.length === 0) return;
+    const ids = conversas.map(c => c.id);
+    const canal = supabase
+      .channel(`chat-notif-${eu.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "mensagens_chat", filter: `conversa_id=in.(${ids.join(",")})` },
+        (payload: { new: Mensagem }) => {
+          const msg = payload.new;
+          if (msg.autor_id === eu.id) return;
+
+          const estaAberta = msg.conversa_id === ativaRef.current?.id && !document.hidden;
+          if (!estaAberta) {
+            setNaoLidas(prev => ({ ...prev, [msg.conversa_id]: (prev[msg.conversa_id] ?? 0) + 1 }));
+          }
+
+          if (estaAberta || typeof Notification === "undefined" || Notification.permission !== "granted") return;
+
+          const conversa = conversas.find(c => c.id === msg.conversa_id);
+          const remetente = conversa ? outro(conversa, eu.id) : null;
+          const conteudo = parseConteudo(msg.conteudo);
+          const corpo =
+            conteudo.tipo === "texto"   ? conteudo.texto :
+            conteudo.tipo === "reuniao" ? "🎥 Iniciou uma videochamada — toque para entrar" :
+            conteudo.tipo === "imagem"  ? "📷 Enviou uma imagem" :
+            conteudo.tipo === "audio"   ? "🎤 Enviou um áudio" :
+            "📎 Enviou um arquivo";
+
+          const notif = new Notification(remetente?.nome ?? "Nova mensagem", {
+            body: corpo, icon: "/logo.png", tag: msg.conversa_id,
+          });
+          notif.onclick = () => {
+            window.focus();
+            if (conversa) setAtiva(conversa);
+            notif.close();
+          };
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(canal); };
+  }, [eu, conversas]);
 
   // ── Carregar mensagens + realtime ─────────────────────────────────────────
 
@@ -752,6 +813,22 @@ export default function ChatPage() {
             )}
           </div>
         </div>
+
+        {/* Aviso de notificações */}
+        {notifPermissao === "default" && !notifAvisoDispensado && (
+          <div className="px-4 py-2.5 bg-blue-50 border-b border-blue-100 flex items-center justify-between gap-2 shrink-0">
+            <p className="text-xs text-blue-700">🔔 Ativar notificações de novas mensagens?</p>
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={pedirPermissaoNotificacao}
+                className="text-xs font-semibold text-blue-700 hover:underline">
+                Ativar
+              </button>
+              <button onClick={() => { setNotifAvisoDispensado(true); try { localStorage.setItem("chat_notif_dispensado", "1"); } catch {} }} title="Dispensar">
+                <X className="h-3.5 w-3.5 text-blue-400" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Lista */}
         <div className="flex-1 overflow-y-auto">
