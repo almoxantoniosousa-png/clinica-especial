@@ -233,9 +233,19 @@ export default function ChatPage() {
       supabase.from("usuarios").select("id, nome, role, foto_url").in("id", ids),
     ]);
     const map: Record<string, Perfil> = {};
-    (dp || []).forEach((p: any) => { map[p.id] = { id: p.id, nome: p.nome, role: p.role }; });
-    (da || []).forEach((a: any) => { map[a.id] = { id: a.id, nome: a.nome, role: a.role, foto_url: a.logo_url }; });
-    (du || []).forEach((u: any) => { map[u.id] = { id: u.id, nome: u.nome, role: u.role, foto_url: u.foto_url }; });
+    const aplicar = (rows: { id: string; nome: string; role: string; foto_url?: string | null }[] | null) => {
+      (rows || []).forEach((r) => {
+        map[r.id] = {
+          id: r.id,
+          nome: r.nome,
+          role: r.role,
+          foto_url: r.foto_url ?? map[r.id]?.foto_url,
+        };
+      });
+    };
+    aplicar((dp || []).map((p: any) => ({ id: p.id, nome: p.nome, role: p.role })));
+    aplicar((da || []).map((a: any) => ({ id: a.id, nome: a.nome, role: a.role, foto_url: a.logo_url })));
+    aplicar((du || []).map((u: any) => ({ id: u.id, nome: u.nome, role: u.role, foto_url: u.foto_url })));
     return map;
   }, []);
 
