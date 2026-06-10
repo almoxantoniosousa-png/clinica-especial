@@ -5,6 +5,7 @@ export interface AjudaItem {
   titulo: string;
   texto: string;
   mockup: MockupTipo;
+  reflexo?: string;
 }
 
 export interface AjudaConteudo {
@@ -23,23 +24,28 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "👶", titulo: "Crianças", mockup: "lista-cards",
-      texto: "Lista de todas as crianças atendidas pela clínica, com cadastro completo: dados pessoais, responsável, escola, plano de saúde, diagnóstico/CID, alergias e medicações.\n\nClique no lápis para editar os dados de uma criança, na lixeira para excluir (pede confirmação) e no botão \"Ficha\" para gerar a ficha completa da criança pronta para impressão/PDF."
+      texto: "Lista de todas as crianças atendidas pela clínica, com cadastro completo: dados pessoais, responsável, escola, plano de saúde, diagnóstico/CID, alergias e medicações.\n\nClique no lápis para editar os dados de uma criança, na lixeira para excluir (pede confirmação) e no botão \"Ficha\" para gerar a ficha completa da criança pronta para impressão/PDF.",
+      reflexo: "A criança cadastrada aqui passa a aparecer para a Gestão (lista de Crianças) e para os Atendentes e Especialistas, que podem selecioná-la ao registrar atendimentos, comunicados e prontuários."
     },
     {
       icone: "🏫", titulo: "Escolas", mockup: "form-lista",
-      texto: "Cadastro das escolas parceiras onde as crianças são atendidas.\n\nClique em \"Nova escola\" para cadastrar (nome, coordenação, telefone e endereço). Use o lápis para editar e a lixeira para excluir (com confirmação). O campo de busca ajuda a encontrar uma escola rapidamente."
+      texto: "Cadastro das escolas parceiras onde as crianças são atendidas.\n\nClique em \"Nova escola\" para cadastrar (nome, coordenação, telefone e endereço). Use o lápis para editar e a lixeira para excluir (com confirmação). O campo de busca ajuda a encontrar uma escola rapidamente.",
+      reflexo: "A escola cadastrada aqui fica disponível para vincular no cadastro de cada Criança, e passa a aparecer também na lista de Escolas da Gestão."
     },
     {
       icone: "👨‍👩‍👧", titulo: "Família", mockup: "form-lista",
-      texto: "Portal da Família — aqui você cadastra os responsáveis que terão acesso ao portal para acompanhar a criança (diário, avisos, fotos e evolução).\n\nClique em \"Novo\" para cadastrar (nome, e-mail de login, vínculo com a criança, CPF, telefone, endereço). Use \"Ativar\"/\"Desativar\" para controlar o acesso ao portal, o lápis para editar e a lixeira para remover."
+      texto: "Portal da Família — aqui você cadastra os responsáveis que terão acesso ao portal para acompanhar a criança (diário, avisos, fotos e evolução).\n\nClique em \"Novo\" para cadastrar (nome, e-mail de login, vínculo com a criança, CPF, telefone, endereço). Use \"Ativar\"/\"Desativar\" para controlar o acesso ao portal, o lápis para editar e a lixeira para remover.",
+      reflexo: "Ao ativar o acesso, o responsável passa a poder fazer login no Portal da Família e ver tudo o que a equipe publicar para aquela criança (Diário, Avisos, Momentos e Evolução)."
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
-      texto: "Mural de comunicados internos, visível para a equipe.\n\nClique em \"+ Novo Comunicado\" para publicar um aviso (título, mensagem e destinatário: Para todos / Apenas Atendentes / Apenas ADM). Marque \"📌 Fixar no topo\" para avisos importantes que devem aparecer sempre primeiro.\n\nVocê pode fixar/desafixar e excluir qualquer comunicado."
+      texto: "Mural de comunicados internos, visível para a equipe.\n\nClique em \"+ Novo Comunicado\" para publicar um aviso (título, mensagem e destinatário: Para todos / Apenas Atendentes / Apenas ADM). Marque \"📌 Fixar no topo\" para avisos importantes que devem aparecer sempre primeiro.\n\nVocê pode fixar/desafixar e excluir qualquer comunicado.",
+      reflexo: "O comunicado publicado aqui aparece automaticamente no Mural de todos os perfis (Gestão, Supervisora, Especialistas, Atendentes, Financeiro e Aux. Administrativo)."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
-      texto: "Documentos com diretrizes de conduta para cada cargo da clínica (Especialista, AT, Supervisora, Auxiliar Administrativo, Gestão, Financeiro etc.).\n\nClique em \"Novo Protocolo\" para criar um (escolha o cargo, título e conteúdo). Use \"Enviar\" para mandar pelo chat, \"Imprimir\" para gerar uma versão em PDF com campos de assinatura, e acompanhe quem já confirmou a leitura de cada protocolo."
+      texto: "Documentos com diretrizes de conduta para cada cargo da clínica (Especialista, AT, Supervisora, Auxiliar Administrativo, Gestão, Financeiro etc.).\n\nClique em \"Novo Protocolo\" para criar um (escolha o cargo, título e conteúdo). Use \"Enviar\" para mandar pelo chat, \"Imprimir\" para gerar uma versão em PDF com campos de assinatura, e acompanhe quem já confirmou a leitura de cada protocolo.",
+      reflexo: "O protocolo criado aqui aparece na tela Protocolos do cargo escolhido — cada pessoa precisa abrir e confirmar a leitura, e você acompanha aqui quem já confirmou."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
@@ -47,31 +53,38 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "📅", titulo: "Escala", mockup: "escala",
-      texto: "Escala semanal de atendimentos, organizada por dia e horário.\n\nUse os filtros de criança e tipo de serviço para visualizar atendimentos específicos. Clique em \"+ Novo atendimento\" para cadastrar um horário (dia, horário, criança, serviço e profissional). Use o lápis/lixeira para editar ou excluir. A legenda no final mostra a cor de cada tipo de serviço."
+      texto: "Escala semanal de atendimentos, organizada por dia e horário.\n\nUse os filtros de criança e tipo de serviço para visualizar atendimentos específicos. Clique em \"+ Novo atendimento\" para cadastrar um horário (dia, horário, criança, serviço e profissional). Use o lápis/lixeira para editar ou excluir. A legenda no final mostra a cor de cada tipo de serviço.",
+      reflexo: "O atendimento cadastrado aqui aparece na 'Minha Escala' do Especialista ou Atendente responsável, e também na Escala consultada pela Gestão."
     },
     {
       icone: "🔍", titulo: "Auditoria", mockup: "tabela",
-      texto: "Histórico de tudo que acontece no sistema: quem criou, editou, excluiu, pagou uma conta, fez login etc., com data e hora.\n\nUse a busca e os filtros (ação e período) para investigar uma alteração específica. O \"Resumo por usuário\" mostra quantas ações cada pessoa realizou — clique em um nome para filtrar só as ações dessa pessoa."
+      texto: "Histórico de tudo que acontece no sistema: quem criou, editou, excluiu, pagou uma conta, fez login etc., com data e hora.\n\nUse a busca e os filtros (ação e período) para investigar uma alteração específica. O \"Resumo por usuário\" mostra quantas ações cada pessoa realizou — clique em um nome para filtrar só as ações dessa pessoa.",
+      reflexo: "Toda ação relevante feita nas demais telas do sistema (cadastros, edições, exclusões, pagamentos, login) gera automaticamente um registro aqui."
     },
     {
       icone: "👤", titulo: "Acompanhantes (Colaboradores)", mockup: "form-lista",
-      texto: "Cadastro dos Acompanhantes Terapêuticos (ATs).\n\nPreencha o formulário no topo (nome, e-mail, CPF, RG, data de nascimento, WhatsApp, especialidade, registro profissional e endereço) e clique em \"Cadastrar Acompanhante\". O CPF é formatado e validado automaticamente. Na lista abaixo, use \"Editar\" ou \"Excluir\" para gerenciar os já cadastrados."
+      texto: "Cadastro dos Acompanhantes Terapêuticos (ATs).\n\nPreencha o formulário no topo (nome, e-mail, CPF, RG, data de nascimento, WhatsApp, especialidade, registro profissional e endereço) e clique em \"Cadastrar Acompanhante\". O CPF é formatado e validado automaticamente. Na lista abaixo, use \"Editar\" ou \"Excluir\" para gerenciar os já cadastrados.",
+      reflexo: "Depois de cadastrado, o Acompanhante pode fazer login no sistema, aparece na lista de Colaboradores da Gestão e pode ser escalado na tela Escala."
     },
     {
       icone: "🩺", titulo: "Especialistas (Colaboradores)", mockup: "form-lista",
-      texto: "Cadastro dos especialistas da clínica (psicólogos, fonoaudiólogos, terapeutas ocupacionais etc.).\n\nFunciona como o cadastro de Acompanhantes, mas com campos específicos de área de atuação e registro profissional (CRP, CRM, CREFONO etc.). Clique em \"Cadastrar Especialista\" para salvar, e use \"Editar\"/\"Excluir\" na lista."
+      texto: "Cadastro dos especialistas da clínica (psicólogos, fonoaudiólogos, terapeutas ocupacionais etc.).\n\nFunciona como o cadastro de Acompanhantes, mas com campos específicos de área de atuação e registro profissional (CRP, CRM, CREFONO etc.). Clique em \"Cadastrar Especialista\" para salvar, e use \"Editar\"/\"Excluir\" na lista.",
+      reflexo: "Depois de cadastrado, o Especialista pode fazer login no sistema, aparece na lista de Colaboradores da Gestão e pode ser escalado na tela Escala."
     },
     {
       icone: "🏠", titulo: "Internas (Colaboradores)", mockup: "form-lista",
-      texto: "Cadastro das colaboradoras internas (Auxiliar Administrativa e Agente de Limpeza).\n\nClique em \"Nova colaboradora\" para cadastrar (nome, cargo, CPF, RG, datas de nascimento e admissão, e-mail, WhatsApp e endereço). Use o lápis para editar e a lixeira para excluir."
+      texto: "Cadastro das colaboradoras internas (Auxiliar Administrativa e Agente de Limpeza).\n\nClique em \"Nova colaboradora\" para cadastrar (nome, cargo, CPF, RG, datas de nascimento e admissão, e-mail, WhatsApp e endereço). Use o lápis para editar e a lixeira para excluir.",
+      reflexo: "Depois de cadastrada, a colaboradora pode fazer login no sistema com o cargo definido (Auxiliar Administrativo ou Limpeza) e passa a aparecer na lista de Colaboradores da Gestão."
     },
     {
       icone: "💰", titulo: "Faturamento (Financeiro)", mockup: "financeiro",
-      texto: "Controle financeiro de Contas a Pagar e Contas a Receber da clínica.\n\nLance uma nova conta preenchendo descrição, categoria, valor e vencimento. Marque uma conta como \"Pago\" ou \"Recebido\" quando o pagamento acontecer. Todas essas ações ficam registradas automaticamente na Auditoria."
+      texto: "Controle financeiro de Contas a Pagar e Contas a Receber da clínica.\n\nLance uma nova conta preenchendo descrição, categoria, valor e vencimento. Marque uma conta como \"Pago\" ou \"Recebido\" quando o pagamento acontecer. Todas essas ações ficam registradas automaticamente na Auditoria.",
+      reflexo: "Ao marcar uma conta como Pago/Recebido, o valor entra nos gráficos de receita/despesa do Dashboard."
     },
     {
       icone: "💵", titulo: "Folha de Pagamento (Financeiro)", mockup: "financeiro",
-      texto: "Controle do pagamento da equipe por período (mês/quinzena).\n\nAcompanhe os valores de cada colaborador, marque como pago, edite valores quando necessário, e use o ícone da impressora para gerar o holerite individual em PDF."
+      texto: "Controle do pagamento da equipe por período (mês/quinzena).\n\nAcompanhe os valores de cada colaborador, marque como pago, edite valores quando necessário, e use o ícone da impressora para gerar o holerite individual em PDF.",
+      reflexo: "O pagamento marcado aqui também fica registrado na Auditoria, e o holerite gerado pode ser entregue ao colaborador."
     },
   ],
 };
@@ -86,7 +99,8 @@ const GESTAO: AjudaConteudo = {
     },
     {
       icone: "🗓️", titulo: "Minha Agenda", mockup: "agenda-semana",
-      texto: "Sua agenda semanal pessoal de compromissos (treinos, atendimentos, reuniões etc.), organizada de segunda a domingo. Use as setas para navegar entre semanas.\n\nPara cada compromisso pendente, clique em \"Realizado\" ou \"Não realizei\" (que abre um campo opcional para escrever um recado, enviado automaticamente pelo chat para a auxiliar administrativa). Use \"Desfazer\" se marcar algo por engano."
+      texto: "Sua agenda semanal pessoal de compromissos (treinos, atendimentos, reuniões etc.), organizada de segunda a domingo. Use as setas para navegar entre semanas.\n\nPara cada compromisso pendente, clique em \"Realizado\" ou \"Não realizei\" (que abre um campo opcional para escrever um recado, enviado automaticamente pelo chat para a auxiliar administrativa). Use \"Desfazer\" se marcar algo por engano.",
+      reflexo: "Os compromissos desta agenda também podem ser cadastrados/editados pela Auxiliar Administrativa em \"Agenda Simone\". Quando você marca \"Não realizei\", o recado é enviado automaticamente pelo Chat para ela organizar a remarcação."
     },
     {
       icone: "👶", titulo: "Crianças", mockup: "lista-cards",
@@ -106,7 +120,8 @@ const GESTAO: AjudaConteudo = {
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
-      texto: "Diretrizes de conduta da sua função. Cada protocolo pode ser aberto para leitura — clique em \"Confirmar leitura\" para registrar que está ciente. Depois de confirmado, mostra a data da confirmação."
+      texto: "Diretrizes de conduta da sua função. Cada protocolo pode ser aberto para leitura — clique em \"Confirmar leitura\" para registrar que está ciente. Depois de confirmado, mostra a data da confirmação.",
+      reflexo: "Ao confirmar a leitura, o ADM passa a ver seu nome (e a data) na lista de confirmações desse protocolo."
     },
     {
       icone: "📈", titulo: "Relatórios", mockup: "tabela",
@@ -122,7 +137,8 @@ const GESTAO: AjudaConteudo = {
     },
     {
       icone: "💬", titulo: "Comunicados (Família)", mockup: "abas",
-      texto: "Tela para se comunicar diretamente com as famílias pelo Portal da Família, com duas abas:\n\n• Avisos — clique em \"📢 Novo aviso\" para publicar um recado para uma criança específica (criança, título e mensagem opcional).\n\n• Evolução — clique em \"📊 Novo registro\" para publicar um relato de evolução da criança (criança, título e conteúdo).\n\nTudo o que for publicado aqui aparece para a família no Portal da Família. Itens podem ser excluídos (com confirmação)."
+      texto: "Tela para se comunicar diretamente com as famílias pelo Portal da Família, com duas abas:\n\n• Avisos — clique em \"📢 Novo aviso\" para publicar um recado para uma criança específica (criança, título e mensagem opcional).\n\n• Evolução — clique em \"📊 Novo registro\" para publicar um relato de evolução da criança (criança, título e conteúdo).\n\nTudo o que for publicado aqui aparece para a família no Portal da Família. Itens podem ser excluídos (com confirmação).",
+      reflexo: "Avisos publicados aqui aparecem na aba Avisos do Portal da Família, e os registros de evolução aparecem na aba Evolução — a família vê tudo isso assim que você publica."
     },
     {
       icone: "👥", titulo: "Colaboradores (Acompanhantes / Especialistas / Internas)", mockup: "lista-cards",
@@ -137,11 +153,13 @@ const SUPERVISORA: AjudaConteudo = {
   itens: [
     {
       icone: "📋", titulo: "Comunicados", mockup: "abas",
-      texto: "Seu painel principal, com 5 abas:\n\n• Dashboard — visão geral do dia: crianças em atendimento, comunicados pendentes de revisão, recebidos hoje, já enviados às famílias, agenda do dia e os últimos comunicados.\n\n• Comunicados Diários — lista os formulários enviados pela equipe, com filtros Pendentes/Enviados/Todos. Abra um registro, escreva uma observação se quiser, e clique em \"📨 Enviar para Família\" para liberá-lo no Portal da Família.\n\n• Momentos — clique em \"📸 Publicar momento\" para postar fotos do dia a dia das crianças (escolha a criança, a foto e uma descrição opcional).\n\n• Evolução — clique em \"📊 Novo registro\" para publicar uma observação de evolução/progresso de uma criança.\n\n• Avisos — clique em \"📢 Novo aviso\" para publicar um recado para a família de uma criança específica.\n\nDica: o alerta amarelo no Dashboard mostra quantos comunicados ainda precisam ser revisados — vale conferir todo dia."
+      texto: "Seu painel principal, com 5 abas:\n\n• Dashboard — visão geral do dia: crianças em atendimento, comunicados pendentes de revisão, recebidos hoje, já enviados às famílias, agenda do dia e os últimos comunicados.\n\n• Comunicados Diários — lista os formulários enviados pela equipe, com filtros Pendentes/Enviados/Todos. Abra um registro, escreva uma observação se quiser, e clique em \"📨 Enviar para Família\" para liberá-lo no Portal da Família.\n\n• Momentos — clique em \"📸 Publicar momento\" para postar fotos do dia a dia das crianças (escolha a criança, a foto e uma descrição opcional).\n\n• Evolução — clique em \"📊 Novo registro\" para publicar uma observação de evolução/progresso de uma criança.\n\n• Avisos — clique em \"📢 Novo aviso\" para publicar um recado para a família de uma criança específica.\n\nDica: o alerta amarelo no Dashboard mostra quantos comunicados ainda precisam ser revisados — vale conferir todo dia.",
+      reflexo: "O que você publica aqui aparece para a família no Portal da Família: Comunicados Diários enviados → aba Diário; Momentos → aba Momentos; Evolução → aba Evolução; Avisos → aba Avisos."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
-      texto: "Diretrizes de conduta da sua função. Abra um protocolo, leia o conteúdo e clique em \"Confirmar leitura\" para registrar que está ciente."
+      texto: "Diretrizes de conduta da sua função. Abra um protocolo, leia o conteúdo e clique em \"Confirmar leitura\" para registrar que está ciente.",
+      reflexo: "Ao confirmar a leitura, o ADM passa a ver seu nome na lista de confirmações desse protocolo."
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
@@ -164,15 +182,18 @@ const ESPECIALISTA: AjudaConteudo = {
     },
     {
       icone: "📋", titulo: "Prontuário", mockup: "form-simples",
-      texto: "Registro diário de cada sessão (\"Prontuário de Atendimento\"). Escolha a criança, a data e o tipo de sessão (Sessão, Avaliação ou Reunião), descreva o objetivo do atendimento e preencha os campos Avaliação, Resultados, Intervenção, Avanços e Conclusão.\n\nClique em \"Salvar e Enviar Prontuário\" para enviar para a Supervisora e a Gestão.\n\nDica: preencha os campos com asterisco (*) logo após cada sessão, enquanto os detalhes ainda estão frescos."
+      texto: "Registro diário de cada sessão (\"Prontuário de Atendimento\"). Escolha a criança, a data e o tipo de sessão (Sessão, Avaliação ou Reunião), descreva o objetivo do atendimento e preencha os campos Avaliação, Resultados, Intervenção, Avanços e Conclusão.\n\nClique em \"Salvar e Enviar Prontuário\" para enviar para a Supervisora e a Gestão.\n\nDica: preencha os campos com asterisco (*) logo após cada sessão, enquanto os detalhes ainda estão frescos.",
+      reflexo: "O prontuário enviado aqui aparece na tela Relatórios da Supervisora e da Gestão para acompanhamento."
     },
     {
       icone: "📝", titulo: "Relatório", mockup: "tabela",
-      texto: "Lista/histórico de tudo que você já enviou (prontuários e relatórios), com filtros por criança e por tipo. Clique em um item para abrir e ver os detalhes.\n\nUse \"+ Prontuário\" para ir ao registro diário de sessão, ou \"+ Relatório\" para preencher um Relatório de Evolução completo (período, evolução geral, objetivos trabalhados/alcançados, dificuldades e recomendações) — use este quando a supervisão/gestão solicitar."
+      texto: "Lista/histórico de tudo que você já enviou (prontuários e relatórios), com filtros por criança e por tipo. Clique em um item para abrir e ver os detalhes.\n\nUse \"+ Prontuário\" para ir ao registro diário de sessão, ou \"+ Relatório\" para preencher um Relatório de Evolução completo (período, evolução geral, objetivos trabalhados/alcançados, dificuldades e recomendações) — use este quando a supervisão/gestão solicitar.",
+      reflexo: "O Relatório de Evolução enviado aqui também aparece na tela Relatórios da Supervisora e da Gestão."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
-      texto: "Diretrizes de conduta da sua função. Abra um protocolo, leia o conteúdo e clique em \"Confirmar leitura\"."
+      texto: "Diretrizes de conduta da sua função. Abra um protocolo, leia o conteúdo e clique em \"Confirmar leitura\".",
+      reflexo: "Ao confirmar a leitura, o ADM passa a ver seu nome na lista de confirmações desse protocolo."
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
@@ -202,7 +223,8 @@ const ATENDENTE: AjudaConteudo = {
   itens: [
     {
       icone: "📝", titulo: "Novo Registro", mockup: "form-simples",
-      texto: "Tela para registrar o atendimento do dia. Mostra cartões com o total de horas acumuladas e o valor a receber (pendente de pagamento).\n\nEscolha se o atendimento foi em \"Casa\" ou na \"Escola\", informe o responsável/escola, horário de entrada e saída, data, a criança atendida e um relato do dia (ocorrência). As horas e o valor (R$ 30,00/h) são calculados automaticamente. Clique em \"Enviar Registro\" para salvar.\n\nDica: preencha entrada e saída corretamente, pois é a partir delas que o valor a receber é calculado."
+      texto: "Tela para registrar o atendimento do dia. Mostra cartões com o total de horas acumuladas e o valor a receber (pendente de pagamento).\n\nEscolha se o atendimento foi em \"Casa\" ou na \"Escola\", informe o responsável/escola, horário de entrada e saída, data, a criança atendida e um relato do dia (ocorrência). As horas e o valor (R$ 30,00/h) são calculados automaticamente. Clique em \"Enviar Registro\" para salvar.\n\nDica: preencha entrada e saída corretamente, pois é a partir delas que o valor a receber é calculado.",
+      reflexo: "O atendimento registrado aqui aparece em Faturamento (Financeiro) como pendente de pagamento, e entra nos indicadores do Dashboard do ADM/Gestão."
     },
     {
       icone: "📋", titulo: "Meus Atendimentos", mockup: "tabela",
@@ -210,7 +232,8 @@ const ATENDENTE: AjudaConteudo = {
     },
     {
       icone: "📄", titulo: "Comunicado Diário", mockup: "form-etapas",
-      texto: "Formulário em 4 passos sobre o dia da criança na escola:\n\n1. Entrada e Interação\n2. Autonomia e Higiene\n3. Recreio e Socialização\n4. Agenda e Recados\n\nSelecione a criança, informe o horário de chegada, marque as opções pedidas em cada passo e, no último, escreva o conteúdo trabalhado em sala, tarefa de casa, avisos urgentes e observações. Use \"Continuar →\" e \"← Anterior\" para navegar, e \"✓ Enviar Comunicado\" no final.\n\nDica: o comunicado vai primeiro para a supervisora revisar antes de chegar à família — preencha com cuidado, principalmente os avisos urgentes."
+      texto: "Formulário em 4 passos sobre o dia da criança na escola:\n\n1. Entrada e Interação\n2. Autonomia e Higiene\n3. Recreio e Socialização\n4. Agenda e Recados\n\nSelecione a criança, informe o horário de chegada, marque as opções pedidas em cada passo e, no último, escreva o conteúdo trabalhado em sala, tarefa de casa, avisos urgentes e observações. Use \"Continuar →\" e \"← Anterior\" para navegar, e \"✓ Enviar Comunicado\" no final.\n\nDica: o comunicado vai primeiro para a supervisora revisar antes de chegar à família — preencha com cuidado, principalmente os avisos urgentes.",
+      reflexo: "O comunicado enviado aqui vai primeiro para a Supervisora revisar; depois que ela enviar para a família, ele aparece no Portal da Família, na aba Diário."
     },
     {
       icone: "📬", titulo: "Meus Comunicados", mockup: "tabela",
@@ -222,7 +245,8 @@ const ATENDENTE: AjudaConteudo = {
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
-      texto: "Diretrizes de conduta da sua função. Abra um protocolo para ler o conteúdo completo e clique em \"Confirmar leitura\" para registrar que você está ciente — depois de confirmado, fica marcado com a data."
+      texto: "Diretrizes de conduta da sua função. Abra um protocolo para ler o conteúdo completo e clique em \"Confirmar leitura\" para registrar que você está ciente — depois de confirmado, fica marcado com a data.",
+      reflexo: "Ao confirmar a leitura, o ADM passa a ver seu nome (e a data) na lista de confirmações desse protocolo."
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
@@ -241,15 +265,18 @@ const FINANCEIRO: AjudaConteudo = {
   itens: [
     {
       icone: "💰", titulo: "Faturamento", mockup: "financeiro",
-      texto: "Controle de Contas a Pagar e Contas a Receber da clínica. Lance uma nova conta (descrição, categoria, valor, vencimento) e marque como \"Pago\"/\"Recebido\" quando o pagamento acontecer. Tudo fica registrado na Auditoria."
+      texto: "Controle de Contas a Pagar e Contas a Receber da clínica. Lance uma nova conta (descrição, categoria, valor, vencimento) e marque como \"Pago\"/\"Recebido\" quando o pagamento acontecer. Tudo fica registrado na Auditoria.",
+      reflexo: "Ao marcar uma conta como Pago/Recebido, o valor entra nos gráficos de receita/despesa do Dashboard do ADM/Gestão."
     },
     {
       icone: "💵", titulo: "Folha de Pagamento", mockup: "financeiro",
-      texto: "Controle do pagamento da equipe por período. Acompanhe valores, marque como pago, edite quando necessário e use o ícone da impressora para gerar o holerite de cada colaborador."
+      texto: "Controle do pagamento da equipe por período. Acompanhe valores, marque como pago, edite quando necessário e use o ícone da impressora para gerar o holerite de cada colaborador.",
+      reflexo: "O pagamento marcado aqui também fica registrado na Auditoria, e o holerite gerado pode ser entregue ao colaborador."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
-      texto: "Diretrizes de conduta da sua função. Abra um protocolo, leia o conteúdo e clique em \"Confirmar leitura\"."
+      texto: "Diretrizes de conduta da sua função. Abra um protocolo, leia o conteúdo e clique em \"Confirmar leitura\".",
+      reflexo: "Ao confirmar a leitura, o ADM passa a ver seu nome na lista de confirmações desse protocolo."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
@@ -264,11 +291,13 @@ const AUX_ADM: AjudaConteudo = {
   itens: [
     {
       icone: "🗓️", titulo: "Agenda Simone", mockup: "agenda-semana",
-      texto: "Organize a agenda semanal da diretora.\n\nNo topo há cartões coloridos por tipo de compromisso (Treinamento, Atend. Clínica, Atend. Casa, Atend. Escola, Espiritual, Reunião, Feriado/Livre) — clique em um para abrir o formulário de novo compromisso (data, horário e \"com quem/o quê\").\n\nAbaixo, veja a semana inteira com os compromissos já cadastrados; use o lápis/lixeira para editar ou excluir. Compromissos marcados como \"não realizados\" aparecem em vermelho com um recado pedindo remarcação.\n\nUse \"Copiar pauta\" para gerar um texto com toda a agenda da semana, pronto para colar no WhatsApp."
+      texto: "Organize a agenda semanal da diretora.\n\nNo topo há cartões coloridos por tipo de compromisso (Treinamento, Atend. Clínica, Atend. Casa, Atend. Escola, Espiritual, Reunião, Feriado/Livre) — clique em um para abrir o formulário de novo compromisso (data, horário e \"com quem/o quê\").\n\nAbaixo, veja a semana inteira com os compromissos já cadastrados; use o lápis/lixeira para editar ou excluir. Compromissos marcados como \"não realizados\" aparecem em vermelho com um recado pedindo remarcação.\n\nUse \"Copiar pauta\" para gerar um texto com toda a agenda da semana, pronto para colar no WhatsApp.",
+      reflexo: "Os compromissos cadastrados aqui aparecem em \"Minha Agenda\" da Simone (Gestão); quando ela marcar um compromisso como \"Não realizei\", você recebe o recado automaticamente pelo Chat para organizar a remarcação."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
-      texto: "Diretrizes de conduta da sua função. Abra um protocolo, leia o conteúdo e clique em \"Confirmar leitura\"."
+      texto: "Diretrizes de conduta da sua função. Abra um protocolo, leia o conteúdo e clique em \"Confirmar leitura\".",
+      reflexo: "Ao confirmar a leitura, o ADM passa a ver seu nome na lista de confirmações desse protocolo."
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",

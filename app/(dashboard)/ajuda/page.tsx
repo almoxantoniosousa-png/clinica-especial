@@ -70,6 +70,12 @@ export default async function AjudaPage() {
             <div className="px-5 pb-4 pt-3 border-t border-slate-100 text-sm text-slate-600 leading-relaxed">
               <AjudaMockup tipo={item.mockup} />
               <p className="whitespace-pre-line">{item.texto}</p>
+              {item.reflexo && (
+                <div className="mt-3 bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-800">
+                  <p className="font-semibold mb-1">👀 Reflexo</p>
+                  <p>{item.reflexo}</p>
+                </div>
+              )}
             </div>
           </details>
         ))}
