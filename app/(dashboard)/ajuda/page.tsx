@@ -41,7 +41,7 @@ export default async function AjudaPage() {
 
   if (!roleFinal) redirect("/login");
 
-  const { roleLabel, intro, itens } = getAjudaConteudo(roleFinal);
+  const { roleLabel, intro, itens, contato } = getAjudaConteudo(roleFinal);
 
   return (
     <div className="space-y-6 pb-10">
@@ -82,7 +82,7 @@ export default async function AjudaPage() {
       </div>
 
       <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 text-sm text-blue-800">
-        💡 Ainda com dúvidas? Use o <strong>Chat</strong> para falar com a Administração ou Supervisão.
+        💡 {contato}
       </div>
     </div>
   );

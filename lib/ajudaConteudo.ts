@@ -12,11 +12,13 @@ export interface AjudaConteudo {
   roleLabel: string;
   intro: string;
   itens: AjudaItem[];
+  contato: string;
 }
 
 const ADM: AjudaConteudo = {
   roleLabel: "Administrador(a)",
   intro: "Aqui você encontra uma explicação rápida de cada tela do menu. Clique em um item para abrir os detalhes.",
+  contato: "Encontrou um problema técnico ou tem uma sugestão de melhoria para o sistema? Entre em contato com o suporte técnico.",
   itens: [
     {
       icone: "📊", titulo: "Dashboard", mockup: "dashboard",
@@ -92,6 +94,7 @@ const ADM: AjudaConteudo = {
 const GESTAO: AjudaConteudo = {
   roleLabel: "Gestão",
   intro: "Aqui você encontra uma explicação rápida de cada tela do menu. Clique em um item para abrir os detalhes.",
+  contato: "Ainda com dúvidas? Use o Chat para falar com a Administração.",
   itens: [
     {
       icone: "📊", titulo: "Dashboard", mockup: "dashboard",
@@ -150,6 +153,7 @@ const GESTAO: AjudaConteudo = {
 const SUPERVISORA: AjudaConteudo = {
   roleLabel: "Supervisora",
   intro: "Aqui você encontra uma explicação rápida de cada tela do menu. Clique em um item para abrir os detalhes.",
+  contato: "Ainda com dúvidas? Use o Chat para falar com a Administração.",
   itens: [
     {
       icone: "📋", titulo: "Comunicados", mockup: "abas",
@@ -175,6 +179,7 @@ const SUPERVISORA: AjudaConteudo = {
 const ESPECIALISTA: AjudaConteudo = {
   roleLabel: "Especialista",
   intro: "Aqui você encontra uma explicação rápida de cada tela do menu. Clique em um item para abrir os detalhes.",
+  contato: "Ainda com dúvidas? Use o Chat para falar com a Supervisora ou a Administração.",
   itens: [
     {
       icone: "📅", titulo: "Minha Escala", mockup: "escala",
@@ -209,6 +214,7 @@ const ESPECIALISTA: AjudaConteudo = {
 const FAMILIA: AjudaConteudo = {
   roleLabel: "Família",
   intro: "Bem-vindo(a) ao Portal da Família! Aqui você acompanha o dia a dia da criança na clínica.",
+  contato: "Ainda com dúvidas? Fale com a equipe da clínica durante o atendimento ou pelo telefone/WhatsApp da clínica.",
   itens: [
     {
       icone: "🏠", titulo: "Meu Portal", mockup: "abas",
@@ -220,6 +226,7 @@ const FAMILIA: AjudaConteudo = {
 const ATENDENTE: AjudaConteudo = {
   roleLabel: "Atendente / Acompanhante Terapêutico",
   intro: "Aqui você encontra uma explicação rápida de cada tela do menu. Clique em um item para abrir os detalhes.",
+  contato: "Ainda com dúvidas? Use o Chat para falar com a Supervisora ou a Administração.",
   itens: [
     {
       icone: "📝", titulo: "Novo Registro", mockup: "form-simples",
@@ -262,6 +269,7 @@ const ATENDENTE: AjudaConteudo = {
 const FINANCEIRO: AjudaConteudo = {
   roleLabel: "Financeiro",
   intro: "Aqui você encontra uma explicação rápida de cada tela do menu. Clique em um item para abrir os detalhes.",
+  contato: "Ainda com dúvidas? Use o Chat para falar com a Administração.",
   itens: [
     {
       icone: "💰", titulo: "Faturamento", mockup: "financeiro",
@@ -288,6 +296,7 @@ const FINANCEIRO: AjudaConteudo = {
 const AUX_ADM: AjudaConteudo = {
   roleLabel: "Aux. Administrativo",
   intro: "Aqui você encontra uma explicação rápida de cada tela do menu. Clique em um item para abrir os detalhes.",
+  contato: "Ainda com dúvidas? Use o Chat para falar com a Administração ou a Gestão.",
   itens: [
     {
       icone: "🗓️", titulo: "Agenda Simone", mockup: "agenda-semana",
