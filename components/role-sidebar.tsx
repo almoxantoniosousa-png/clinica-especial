@@ -103,6 +103,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/gestao/agenda",       label: "Agenda",       icon: "📅" },
     { href: "/adm/mural",           label: "Mural",        icon: "📢" },
     { href: "/protocolos",          label: "Protocolos",   icon: "📜" },
+    { href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" },
     { href: "/gestao/relatorios",   label: "Relatórios",   icon: "📈" },
     { href: "/chat",                label: "Chat",         icon: "💬" },
     { href: "/gestao/escala",       label: "Escala",       icon: "📅" },
@@ -121,6 +122,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/atendente/formulario-escolar", label: "Comunicado Diário", icon: "📄" },
     { href: "/atendente/meus-comunicados",   label: "Meus Comunicados",  icon: "📬" },
     { href: "/atendente/escala",             label: "Minha Escala",      icon: "📅" },
+    { href: "/materiais-adaptados",          label: "Materiais Adaptados", icon: "📚" },
     { href: "/protocolos",                   label: "Protocolos",        icon: "📜" },
     { href: "/mural",                        label: "Mural",             icon: "📢" },
     { href: "/chat",                         label: "Chat",              icon: "💬" },
@@ -129,6 +131,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
 
   const menuSupervisora = [
     { href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" },
+    { href: "/materiais-adaptados",     label: "Materiais Adaptados", icon: "📚" },
     { href: "/protocolos",              label: "Protocolos",  icon: "📜" },
     { href: "/mural",                   label: "Mural",       icon: "📢" },
     { href: "/chat",                    label: "Chat",        icon: "💬" },
@@ -154,11 +157,11 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
   ];
 
   const menuAuxAdm = [
-    { href: "/auxiliar/pauta", label: "Agenda Simone", icon: "🗓️" },
-    { href: "/protocolos",     label: "Protocolos",    icon: "📜" },
-    { href: "/mural",          label: "Mural",         icon: "📢" },
-    { href: "/chat",           label: "Chat",          icon: "💬" },
-    { href: "/ajuda",          label: "Ajuda",         icon: "❓" },
+    { href: "/auxiliar/pauta",       label: "Agenda Simone", icon: "🗓️" },
+    { href: "/protocolos",           label: "Protocolos",    icon: "📜" },
+    { href: "/mural",                label: "Mural",         icon: "📢" },
+    { href: "/chat",                 label: "Chat",          icon: "💬" },
+    { href: "/ajuda",                label: "Ajuda",         icon: "❓" },
   ];
 
   const menu = isAdmin ? menuAdmin
