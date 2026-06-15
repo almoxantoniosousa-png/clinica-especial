@@ -56,7 +56,7 @@ export default function MeusComunicadosPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Meus Comunicados</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Histórico e envio para família</p>
+          <p className="text-xs text-slate-400 mt-0.5">Histórico e status de aprovação</p>
         </div>
       </div>
 
