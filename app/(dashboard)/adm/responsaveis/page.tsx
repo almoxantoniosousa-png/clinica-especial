@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
-import { Users, Plus, Pencil, Trash2, X, Check } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, X, Check, Mail, Phone, Baby, Power, User, MapPin, CreditCard } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 
 export default function ResponsaveisPage() {
@@ -144,8 +144,8 @@ export default function ResponsaveisPage() {
     return nome.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
   }
 
-  const inputClass = "w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 bg-white";
-  const labelClass = "block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1";
+  const inputClass = "w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-blue-500 text-slate-800 text-sm focus:outline-none transition placeholder:text-slate-400 bg-white";
+  const labelClass = "text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5";
 
   return (
     <div className="space-y-6 pb-10">
@@ -187,41 +187,42 @@ export default function ResponsaveisPage() {
       ) : (
         <div className="space-y-3">
           {filtrados.map((r) => (
-            <div key={r.id} className={`bg-white rounded-2xl border p-4 flex items-center justify-between gap-4 transition
-              ${r.ativo ? "border-slate-200 hover:border-blue-200" : "border-slate-100 opacity-60"}`}>
+            <div key={r.id} className={`bg-white rounded-2xl border p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition
+              ${r.ativo ? "border-slate-200 hover:border-blue-200 hover:shadow-sm" : "border-slate-100 bg-slate-50/60 opacity-70"}`}>
               <div className="flex items-center gap-4 min-w-0">
-                <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-sm">
+                <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-sm ring-1 ring-slate-100">
                   {r.criancas?.foto_url ? (
                     <img src={r.criancas.foto_url} alt={r.criancas.nome} className="w-full h-full object-cover"/>
                   ) : (
                     <div className={`w-full h-full flex items-center justify-center font-bold text-sm
-                      ${r.ativo ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-500"}`}>
+                      ${r.ativo ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400"}`}>
                       {iniciais(r.nome)}
                     </div>
                   )}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-slate-800 text-sm">{r.nome}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.ativo ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                      {r.ativo ? "Ativo" : "Inativo"}
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold tracking-wide ${r.ativo ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>
+                      {r.ativo ? "ATIVO" : "INATIVO"}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">{r.email}</p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {r.telefone && <span className="text-xs text-slate-400">📱 {r.telefone}</span>}
-                    {r.criancas?.nome && (
-                      <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-                        👶 {r.criancas.nome}
-                      </span>
-                    )}
+                  <div className="flex items-center gap-4 flex-wrap text-xs text-slate-400">
+                    <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> {r.email}</span>
+                    {r.telefone && <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" /> {r.telefone}</span>}
                   </div>
+                  {r.criancas?.nome && (
+                    <span className="inline-flex items-center gap-1.5 text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium">
+                      <Baby className="h-3.5 w-3.5" /> {r.criancas.nome}
+                    </span>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1.5 flex-shrink-0 sm:border-l border-slate-100 sm:pl-4 self-end sm:self-center">
                 <button onClick={() => toggleAtivo(r.id, r.ativo, r.nome)}
-                  className={`h-8 px-3 text-xs font-semibold rounded-lg border transition
+                  className={`flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-lg border transition
                     ${r.ativo ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100" : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"}`}>
+                  <Power className="h-3.5 w-3.5" />
                   {r.ativo ? "Desativar" : "Ativar"}
                 </button>
                 <button onClick={() => abrirEditar(r)}
@@ -258,7 +259,7 @@ export default function ResponsaveisPage() {
             </div>
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <label className={labelClass}>👶 Criança vinculada *</label>
+                <label className={labelClass}><Baby className="h-3.5 w-3.5" /> Criança vinculada *</label>
                 <select value={form.crianca_id} onChange={(e) => setForm({ ...form, crianca_id: e.target.value })}
                   className={inputClass}>
                   <option value="">Selecione a criança...</option>
@@ -267,40 +268,40 @@ export default function ResponsaveisPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className={labelClass}>Nome completo *</label>
+                  <label className={labelClass}><User className="h-3.5 w-3.5" /> Nome completo *</label>
                   <input type="text" placeholder="Nome do responsável" value={form.nome}
                     onChange={(e) => setForm({ ...form, nome: e.target.value })} autoFocus className={inputClass}/>
                 </div>
                 <div>
-                  <label className={labelClass}>CPF</label>
+                  <label className={labelClass}><CreditCard className="h-3.5 w-3.5" /> CPF</label>
                   <input type="text" placeholder="000.000.000-00" value={form.cpf}
                     onChange={(e) => setForm({ ...form, cpf: e.target.value })} className={inputClass}/>
                 </div>
                 <div>
-                  <label className={labelClass}>Telefone / WhatsApp</label>
+                  <label className={labelClass}><Phone className="h-3.5 w-3.5" /> Telefone / WhatsApp</label>
                   <input type="text" placeholder="(71) 99999-9999" value={form.telefone}
                     onChange={(e) => setForm({ ...form, telefone: e.target.value })} className={inputClass}/>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelClass}>E-mail * (usado para login)</label>
+                  <label className={labelClass}><Mail className="h-3.5 w-3.5" /> E-mail * (usado para login)</label>
                   <input type="email" placeholder="email@exemplo.com" value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass}/>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelClass}>Endereço</label>
+                  <label className={labelClass}><MapPin className="h-3.5 w-3.5" /> Endereço</label>
                   <input type="text" placeholder="Rua, número - Bairro - Salvador/BA" value={form.endereco}
                     onChange={(e) => setForm({ ...form, endereco: e.target.value })} className={inputClass}/>
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setModalAberto(false)}
-                  className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                  className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
                   Cancelar
                 </button>
                 <button onClick={salvar} disabled={salvando || !form.nome.trim() || !form.email.trim() || !form.crianca_id}
-                  className="flex-1 h-11 rounded-xl bg-gradient-to-r from-blue-900 to-blue-700 text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                  className="flex-1 h-11 rounded-xl bg-gradient-to-r from-blue-900 to-blue-700 text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg">
                   <Check className="h-4 w-4" />
-                  {salvando ? "Salvando..." : "Salvar"}
+                  {salvando ? "Salvando..." : "Salvar responsável"}
                 </button>
               </div>
             </div>
