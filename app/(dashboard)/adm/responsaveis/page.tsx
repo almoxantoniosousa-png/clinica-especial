@@ -207,15 +207,21 @@ export default function ResponsaveisPage() {
                       {r.ativo ? "ATIVO" : "INATIVO"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 flex-wrap text-xs text-slate-400">
-                    <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> {r.email}</span>
-                    {r.telefone && <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" /> {r.telefone}</span>}
+                  <div className="flex flex-wrap gap-2">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
+                      <Mail className="h-3.5 w-3.5 text-slate-400" /> {r.email}
+                    </div>
+                    {r.telefone && (
+                      <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
+                        <Phone className="h-3.5 w-3.5 text-slate-400" /> {r.telefone}
+                      </div>
+                    )}
+                    {r.criancas?.nome && (
+                      <div className="flex items-center gap-1.5 text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-2.5 py-1.5 font-medium">
+                        <Baby className="h-3.5 w-3.5" /> {r.criancas.nome}
+                      </div>
+                    )}
                   </div>
-                  {r.criancas?.nome && (
-                    <span className="inline-flex items-center gap-1.5 text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium">
-                      <Baby className="h-3.5 w-3.5" /> {r.criancas.nome}
-                    </span>
-                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1.5 flex-shrink-0 sm:border-l border-slate-100 sm:pl-4 self-end sm:self-center">
