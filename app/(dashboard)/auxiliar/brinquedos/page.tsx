@@ -3,6 +3,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { Package, ClipboardList, Trophy, ArrowDownToLine, Undo2, Plus, Trash2, Camera } from "lucide-react";
+import { Bar, Pie } from "react-chartjs-2";
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement,
+  ArcElement, Tooltip, Legend,
+} from "chart.js";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
 type Emprestimo = {
   id: string;
@@ -138,6 +145,39 @@ export default function BrinquedosAuxAdmPage() {
 
   const inputClass = "w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-blue-500 text-slate-800 text-sm focus:outline-none transition placeholder:text-slate-400 bg-white";
 
+  const optBarH = {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: "y" as const,
+    plugins: { legend: { display: false }, tooltip: { cornerRadius: 8 } },
+    scales: {
+      x: { grid: { color: "#f1f5f9" }, ticks: { color: "#94a3b8", font: { size: 11 } }, beginAtZero: true },
+      y: { grid: { display: false }, ticks: { color: "#475569", font: { size: 12 } } },
+    },
+  };
+
+  const optPie = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: "bottom" as const, labels: { font: { size: 11 }, color: "#64748b", padding: 12 } }, tooltip: { cornerRadius: 8 } },
+  };
+
+  const coresBarra = ["#6366f1", "#10b981", "#f97316", "#3b82f6", "#ec4899"];
+  const coresPizza = ["#6366f1", "#10b981", "#f97316", "#3b82f6", "#ec4899"];
+
+  const chartBrinquedos = rankingBrinquedos.length > 0 ? {
+    labels: rankingBrinquedos.map(([n]) => n),
+    datasets: [{ data: rankingBrinquedos.map(([, v]) => v), backgroundColor: coresBarra, borderRadius: 6 }],
+  } : null;
+
+  const chartColaboradoras = rankingColaboradoras.length > 0 ? {
+    labels: rankingColaboradoras.map(([n]) => n),
+    datasets: [{ data: rankingColaboradoras.map(([, v]) => v), backgroundColor: "#6366f1", borderRadius: 6 }],
+  } : null;
+
+  const chartCriancas = rankingCriancas.length > 0 ? {
+    labels: rankingCriancas.map(([n]) => n),
+    datasets: [{ data: rankingCriancas.map(([, v]) => v), backgroundColor: coresPizza, hoverOffset: 8, borderWidth: 2, borderColor: "#fff" }],
+  } : null;
+
   function CardEmprestimo({ e, acoes }: { e: Emprestimo; acoes?: React.ReactNode }) {
     const cfg = STATUS_CFG[e.status];
     return (
@@ -166,26 +206,11 @@ export default function BrinquedosAuxAdmPage() {
     );
   }
 
-  function RankingCard({ titulo, emoji, dados }: { titulo: string; emoji: string; dados: [string, number][] }) {
-    const medals = ["🥇", "🥈", "🥉", "4º", "5º"];
+  function GraficoCard({ titulo, emoji, children }: { titulo: string; emoji: string; children: React.ReactNode }) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-5">
-        <p className="font-bold text-slate-700 mb-3">{emoji} {titulo}</p>
-        {dados.length === 0 ? (
-          <p className="text-xs text-slate-400">Nenhum registro ainda.</p>
-        ) : (
-          <div className="space-y-2">
-            {dados.map(([nome, count], i) => (
-              <div key={nome} className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-sm w-6 flex-shrink-0">{medals[i]}</span>
-                  <span className="text-sm text-slate-700 truncate">{nome}</span>
-                </div>
-                <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-2 py-0.5 flex-shrink-0">{count}×</span>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <p className="font-bold text-slate-700 mb-4">{emoji} {titulo}</p>
+        {children}
       </div>
     );
   }
@@ -362,9 +387,23 @@ export default function BrinquedosAuxAdmPage() {
                 </div>
               ) : (
                 <>
-                  <RankingCard titulo="Brinquedo mais solicitado" emoji="🧸" dados={rankingBrinquedos} />
-                  <RankingCard titulo="Colaboradora que mais solicita" emoji="👤" dados={rankingColaboradoras} />
-                  <RankingCard titulo="Criança que mais usa" emoji="👶" dados={rankingCriancas} />
+                  <GraficoCard titulo="Brinquedo mais solicitado" emoji="🧸">
+                    {chartBrinquedos
+                      ? <div style={{ height: Math.max(120, rankingBrinquedos.length * 44) }}><Bar data={chartBrinquedos} options={optBarH} /></div>
+                      : <p className="text-xs text-slate-400">Sem dados.</p>}
+                  </GraficoCard>
+
+                  <GraficoCard titulo="Colaboradora que mais solicita" emoji="👤">
+                    {chartColaboradoras
+                      ? <div style={{ height: Math.max(120, rankingColaboradoras.length * 44) }}><Bar data={chartColaboradoras} options={optBarH} /></div>
+                      : <p className="text-xs text-slate-400">Sem dados.</p>}
+                  </GraficoCard>
+
+                  <GraficoCard titulo="Criança que mais usa" emoji="👶">
+                    {chartCriancas
+                      ? <div style={{ height: 220 }}><Pie data={chartCriancas} options={optPie} /></div>
+                      : <p className="text-xs text-slate-400">Sem dados.</p>}
+                  </GraficoCard>
                 </>
               )}
             </div>
