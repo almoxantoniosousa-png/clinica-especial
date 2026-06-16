@@ -50,6 +50,8 @@ export default function BrinquedosAuxAdmPage() {
   const [salvandoCatalogo, setSalvandoCatalogo] = useState(false);
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [catalogoExpandido, setCatalogoExpandido] = useState(false);
+  const CATALOGO_LIMITE = 8;
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -354,25 +356,44 @@ export default function BrinquedosAuxAdmPage() {
                   <p className="text-sm text-slate-400">Catálogo vazio. Adicione brinquedos ou eles aparecerão automaticamente com as solicitações.</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {brinquedos.map(b => (
-                    <div key={b.id} className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center justify-between gap-3 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        {b.foto_url ? (
-                          <img src={b.foto_url} alt={b.nome} className="w-10 h-10 rounded-lg object-cover border border-slate-200 flex-shrink-0" />
-                        ) : (
-                          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-                            <Package className="h-5 w-5 text-slate-400" />
-                          </div>
-                        )}
-                        <span className="text-sm font-medium text-slate-800">{b.nome}</span>
-                      </div>
-                      <button onClick={() => excluirBrinquedo(b.id, b.nome)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
-                        <Trash2 className="h-4 w-4" />
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Catálogo ({brinquedos.length} {brinquedos.length === 1 ? "item" : "itens"})
+                    </p>
+                    {brinquedos.length > CATALOGO_LIMITE && (
+                      <button onClick={() => setCatalogoExpandido(v => !v)}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition">
+                        {catalogoExpandido ? "▲ Recolher" : `▼ Ver todos (${brinquedos.length})`}
                       </button>
-                    </div>
-                  ))}
+                    )}
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {(catalogoExpandido ? brinquedos : brinquedos.slice(0, CATALOGO_LIMITE)).map(b => (
+                      <div key={b.id} className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition">
+                        <div className="flex items-center gap-3">
+                          {b.foto_url ? (
+                            <img src={b.foto_url} alt={b.nome} className="w-10 h-10 rounded-lg object-cover border border-slate-200 flex-shrink-0" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                              <Package className="h-5 w-5 text-slate-400" />
+                            </div>
+                          )}
+                          <span className="text-sm font-medium text-slate-800">{b.nome}</span>
+                        </div>
+                        <button onClick={() => excluirBrinquedo(b.id, b.nome)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {!catalogoExpandido && brinquedos.length > CATALOGO_LIMITE && (
+                    <button onClick={() => setCatalogoExpandido(true)}
+                      className="w-full py-3 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition border-t border-slate-100">
+                      Ver mais {brinquedos.length - CATALOGO_LIMITE} itens...
+                    </button>
+                  )}
                 </div>
               )}
             </div>
