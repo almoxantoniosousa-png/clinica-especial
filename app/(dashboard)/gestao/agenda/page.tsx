@@ -128,7 +128,7 @@ export default function GestaoAgendaPage() {
             </svg>
           </button>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Agenda</h1>
+            <h1 className="text-xl font-bold text-slate-900">Agenda Clínica</h1>
             <p className="text-xs text-slate-400 mt-0.5">Visão geral de todos os atendimentos</p>
           </div>
         </div>

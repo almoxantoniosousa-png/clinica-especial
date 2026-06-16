@@ -102,7 +102,7 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     { href: "/gestao/minha-agenda", label: "Minha Agenda", icon: "🗓️" },
     { href: "/gestao/criancas",     label: "Crianças",     icon: "👶" },
     { href: "/gestao/escolas",      label: "Escolas",      icon: "🏫" },
-    { href: "/gestao/agenda",       label: "Agenda",       icon: "📅" },
+    { href: "/gestao/agenda",       label: "Agenda Clínica", icon: "📅" },
     { href: "/adm/mural",           label: "Mural",        icon: "📢" },
     { href: "/protocolos",          label: "Protocolos",   icon: "📜" },
     { href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" },
