@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { Package, ClipboardList, Trophy, ArrowDownToLine, Undo2, Plus, Trash2, X } from "lucide-react";
+import { registrarLog } from "@/lib/auditoria";
 
 type Emprestimo = {
   id: string;
@@ -66,6 +67,15 @@ export default function BrinquedosAdmPage() {
       .update({ status: "retirado", data_retirada: new Date().toISOString() })
       .eq("id", id);
     if (error) { mostrarFeedback("erro", "Erro ao registrar retirada."); return; }
+    const emp = emprestimos.find(e => e.id === id);
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: "Registrou retirada de brinquedo",
+      tabela: "brinquedos_emprestimos",
+      registro_id: id,
+      descricao: `Brinquedo: ${emp?.brinquedo_nome || id} | Solicitante: ${emp?.solicitante_nome || ""} | Criança: ${emp?.crianca_nome || ""}`,
+    });
     mostrarFeedback("sucesso", "Retirada registrada!");
     carregar();
   }
@@ -76,6 +86,15 @@ export default function BrinquedosAdmPage() {
       .update({ status: "devolvido", data_devolucao: new Date().toISOString() })
       .eq("id", id);
     if (error) { mostrarFeedback("erro", "Erro ao registrar devolução."); return; }
+    const emp = emprestimos.find(e => e.id === id);
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: "Registrou devolução de brinquedo",
+      tabela: "brinquedos_emprestimos",
+      registro_id: id,
+      descricao: `Brinquedo: ${emp?.brinquedo_nome || id} | Solicitante: ${emp?.solicitante_nome || ""} | Criança: ${emp?.crianca_nome || ""}`,
+    });
     mostrarFeedback("sucesso", "Devolução registrada!");
     carregar();
   }
@@ -84,9 +103,17 @@ export default function BrinquedosAdmPage() {
     const nome = novoBrinquedo.trim();
     if (!nome) return;
     setSalvandoCatalogo(true);
-    const { error } = await supabase.from("brinquedos").insert({ nome });
+    const { data: novoCat, error } = await supabase.from("brinquedos").insert({ nome }).select().single();
     setSalvandoCatalogo(false);
     if (error) { mostrarFeedback("erro", "Erro ou brinquedo já existe no catálogo."); return; }
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: "Adicionou brinquedo ao catálogo",
+      tabela: "brinquedos",
+      registro_id: novoCat?.id,
+      descricao: `Brinquedo: ${nome}`,
+    });
     setNovoBrinquedo("");
     mostrarFeedback("sucesso", `"${nome}" adicionado ao catálogo.`);
     carregar();
@@ -95,6 +122,14 @@ export default function BrinquedosAdmPage() {
   async function excluirBrinquedo(id: string, nome: string) {
     const { error } = await supabase.from("brinquedos").delete().eq("id", id);
     if (error) { mostrarFeedback("erro", "Não foi possível excluir."); return; }
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: "Removeu brinquedo do catálogo",
+      tabela: "brinquedos",
+      registro_id: id,
+      descricao: `Brinquedo: ${nome}`,
+    });
     mostrarFeedback("sucesso", `"${nome}" removido do catálogo.`);
     carregar();
   }

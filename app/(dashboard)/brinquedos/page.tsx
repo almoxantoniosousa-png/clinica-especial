@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../lib/supabaseBrowserClient";
 import { Package, Plus, ChevronDown } from "lucide-react";
+import { registrarLog } from "@/lib/auditoria";
 
 type Crianca = { id: string; nome: string };
 type Brinquedo = { id: string; nome: string };
@@ -32,7 +33,7 @@ const labelClass = "text-xs font-bold text-slate-500 uppercase tracking-wider fl
 
 export default function BrinquedosPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [eu, setEu] = useState<{ id: string; nome: string; role: string } | null>(null);
+  const [eu, setEu] = useState<{ id: string; nome: string; role: string; email: string } | null>(null);
   const [criancas, setCriancas] = useState<Crianca[]>([]);
   const [catalogo, setCatalogo] = useState<Brinquedo[]>([]);
   const [meusPedidos, setMeusPedidos] = useState<Emprestimo[]>([]);
@@ -66,7 +67,7 @@ export default function BrinquedosPage() {
       const { data: pData } = await supabase.from("perfis").select("nome, role").eq("id", user.id).maybeSingle();
       if (pData) { perfilNome = (pData as any).nome || ""; perfilRole = (pData as any).role || ""; }
     }
-    setEu({ id: user.id, nome: perfilNome, role: perfilRole });
+    setEu({ id: user.id, nome: perfilNome, role: perfilRole, email: user.email || "" });
 
     const [{ data: cri }, { data: cat }, { data: pedidos }] = await Promise.all([
       supabase.from("criancas").select("id, nome").order("nome"),
@@ -129,6 +130,14 @@ export default function BrinquedosPage() {
 
     setSalvando(false);
     if (error) { mostrarFeedback("erro", "Erro ao enviar solicitação."); return; }
+
+    await registrarLog(supabase, {
+      usuario_email: eu.email,
+      usuario_nome: eu.nome,
+      acao: "Solicitou brinquedo",
+      tabela: "brinquedos_emprestimos",
+      descricao: `Brinquedo: ${nomeBrinquedo} | Criança: ${criancas.find(c => c.id === criancaSel)?.nome || criancaSel}`,
+    });
 
     mostrarFeedback("sucesso", `Solicitação de "${nomeBrinquedo}" enviada!`);
     setCriancaSel(""); setBrinquedoSel(""); setBrinquedoTexto(""); setObs(""); setModalAberto(false);

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../lib/supabaseBrowserClient";
 import { ShoppingCart, Plus, Link, ChevronDown, AlertCircle } from "lucide-react";
+import { registrarLog } from "@/lib/auditoria";
 
 type Requisicao = {
   id: string;
@@ -33,7 +34,7 @@ const labelClass = "text-xs font-bold text-slate-500 uppercase tracking-wider fl
 
 export default function RequisicoesPagina() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [eu, setEu] = useState<{ id: string; nome: string; role: string } | null>(null);
+  const [eu, setEu] = useState<{ id: string; nome: string; role: string; email: string } | null>(null);
   const [requisicoes, setRequisicoes] = useState<Requisicao[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
@@ -66,7 +67,7 @@ export default function RequisicoesPagina() {
       const { data: pData } = await supabase.from("perfis").select("nome, role").eq("id", user.id).maybeSingle();
       if (pData) { nome = (pData as any).nome || ""; role = (pData as any).role || ""; }
     }
-    setEu({ id: user.id, nome, role });
+    setEu({ id: user.id, nome, role, email: user.email || "" });
 
     const { data } = await supabase.from("requisicoes_compra").select("*")
       .eq("solicitante_id", user.id).order("created_at", { ascending: false });
@@ -91,6 +92,15 @@ export default function RequisicoesPagina() {
     });
     setSalvando(false);
     if (error) { mostrarFeedback("erro", "Erro ao enviar requisição."); return; }
+
+    await registrarLog(supabase, {
+      usuario_email: eu.email,
+      usuario_nome: eu.nome,
+      acao: "Criou requisição de compra",
+      tabela: "requisicoes_compra",
+      descricao: `Produto: ${produto.trim()} | Qtd: ${quantidade} | Urgência: ${urgencia}`,
+    });
+
     mostrarFeedback("sucesso", `Requisição de "${produto.trim()}" enviada ao ADM!`);
     limparForm(); setModalAberto(false); inicializar();
   }

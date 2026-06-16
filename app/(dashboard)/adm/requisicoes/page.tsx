@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { ShoppingCart, Link, AlertCircle, ChevronDown, X } from "lucide-react";
+import { registrarLog } from "@/lib/auditoria";
 
 type Requisicao = {
   id: string;
@@ -82,6 +83,16 @@ export default function RequisicoesPaginaAdm() {
       .eq("id", modalReq.id);
     setSalvando(false);
     if (error) { mostrarFeedback("erro", "Erro ao atualizar."); return; }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: "Atualizou requisição de compra",
+      tabela: "requisicoes_compra",
+      registro_id: modalReq.id,
+      descricao: `Produto: ${modalReq.produto} | Solicitante: ${modalReq.solicitante_nome} | Status: ${novoStatus}`,
+    });
+
     mostrarFeedback("sucesso", "Requisição atualizada!");
     setModalReq(null); carregar();
   }

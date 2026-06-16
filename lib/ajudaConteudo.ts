@@ -60,8 +60,8 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "🔍", titulo: "Auditoria", mockup: "tabela",
-      texto: "Histórico de tudo que acontece no sistema: quem criou, editou, excluiu, pagou uma conta, fez login etc., com data e hora.\n\nUse a busca e os filtros (ação e período) para investigar uma alteração específica. O \"Resumo por usuário\" mostra quantas ações cada pessoa realizou — clique em um nome para filtrar só as ações dessa pessoa.",
-      reflexo: "Toda ação relevante feita nas demais telas do sistema (cadastros, edições, exclusões, pagamentos, login) gera automaticamente um registro aqui."
+      texto: "Histórico de tudo que acontece no sistema: quem criou, editou, excluiu, pagou uma conta, fez login etc., com data e hora.\n\nUse a busca e os filtros (ação e período) para investigar uma alteração específica. O \"Resumo por usuário\" mostra quantas ações cada pessoa realizou — clique em um nome para filtrar só as ações dessa pessoa.\n\nTodas as funcionalidades do sistema registram eventos aqui: solicitações de brinquedos, retiradas, devoluções, requisições de compra, atualizações de status e muito mais.",
+      reflexo: "Toda ação relevante feita nas demais telas do sistema (cadastros, edições, exclusões, pagamentos, login, brinquedos, requisições) gera automaticamente um registro aqui."
     },
     {
       icone: "👤", titulo: "Acompanhantes (Colaboradores)", mockup: "form-lista",
@@ -87,6 +87,16 @@ const ADM: AjudaConteudo = {
       icone: "💵", titulo: "Folha de Pagamento (Financeiro)", mockup: "financeiro",
       texto: "Controle do pagamento da equipe por período (mês/quinzena).\n\nAcompanhe os valores de cada colaborador, marque como pago, edite valores quando necessário, e use o ícone da impressora para gerar o holerite individual em PDF.",
       reflexo: "O pagamento marcado aqui também fica registrado na Auditoria, e o holerite gerado pode ser entregue ao colaborador."
+    },
+    {
+      icone: "🧸", titulo: "Brinquedos", mockup: "abas",
+      texto: "Visão geral do sistema de empréstimo de brinquedos — as mesmas 5 abas da Aux. Adm.\n\n• Solicitações — pedidos da equipe aguardando retirada.\n• Em Posse — brinquedos que estão com as colaboradoras.\n• Histórico — empréstimos encerrados (devolvidos).\n• Catálogo — lista de brinquedos com fotos. Você pode adicionar, editar e registrar retiradas/devoluções.\n• Ranking — gráficos de brinquedos mais usados, colaboradoras e crianças.\n\nTodas as ações (solicitação, retirada, devolução, cadastro no catálogo) ficam registradas na Auditoria.",
+      reflexo: "O catálogo cresce automaticamente quando alguém solicita um brinquedo novo — cada retirada e devolução fica rastreada na Auditoria."
+    },
+    {
+      icone: "🛒", titulo: "Requisições de Compra", mockup: "abas",
+      texto: "Central de pedidos de produtos da equipe (Supervisora, Gestão e Especialistas).\n\nOrganizado em 6 abas: Pendentes (com contador laranja), Em análise, Comprados, Entregues, Recusados e Todos.\n\nResumo no topo mostra quantos pedidos estão pendentes e em análise. Clique em \"Atualizar\" para mudar o status e adicionar uma observação visível ao solicitante.\n\nDica: monitore a aba Pendentes diariamente — cada mudança de status fica registrada na Auditoria.",
+      reflexo: "Quando você altera o status ou adiciona uma observação, o solicitante vê a resposta direto na tela de Requisições dele. A ação fica registrada na Auditoria."
     },
   ],
 };
@@ -114,7 +124,7 @@ const GESTAO: AjudaConteudo = {
       texto: "Lista de escolas parceiras, com nome, coordenação e endereço (apenas consulta).\n\nUse a busca para filtrar por nome, coordenação ou bairro. Clique no endereço para abrir no Google Maps, no telefone para ligar, ou em \"WA\" para abrir o WhatsApp da escola."
     },
     {
-      icone: "📅", titulo: "Agenda", mockup: "agenda-semana",
+      icone: "📅", titulo: "Agenda Clínica", mockup: "agenda-semana",
       texto: "Agenda geral de todos os atendimentos da clínica, organizada por semana e dia.\n\nNavegue entre semanas com as setas; cada dia mostra quantos atendimentos tem marcados. Clique em um dia para ver a lista detalhada (horário, criança, profissional, serviço e observações). Use \"Ir para hoje\" para voltar à data atual."
     },
     {
@@ -148,6 +158,16 @@ const GESTAO: AjudaConteudo = {
       icone: "👥", titulo: "Colaboradores (Acompanhantes / Especialistas / Internas)", mockup: "lista-cards",
       texto: "Listas de consulta da equipe: Acompanhantes Terapêuticos, Especialistas e Colaboradoras Internas, com dados de contato (nome, e-mail, especialidade/cargo, WhatsApp etc.).\n\nUse a busca para filtrar por nome ou especialidade/cargo, e \"Ver mais\" para carregar mais resultados. Em cada cartão há botões para abrir WhatsApp ou e-mail diretamente."
     },
+    {
+      icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
+      texto: "Solicite brinquedos para usar com as crianças nos atendimentos.\n\nClique em \"Nova solicitação\" para abrir o formulário: escolha a criança, o brinquedo (com autocomplete do catálogo) e a urgência. Se o brinquedo não existir no catálogo, ele é adicionado automaticamente.\n\nAcompanhe o histórico das suas solicitações e o status de cada uma: Pendente → Em posse → Devolvido.",
+      reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido. Cada etapa fica registrada na Auditoria."
+    },
+    {
+      icone: "🛒", titulo: "Requisições de Compra", mockup: "tabela",
+      texto: "Solicite produtos ao ADM — materiais, equipamentos, itens de escritório, ou qualquer coisa que a clínica precise comprar.\n\nClique em \"Nova requisição\" para preencher: produto, quantidade, descrição (para que serve), link do produto (opcional, ex: Amazon ou Shopee) e urgência (Normal ou Urgente).\n\nAcompanhe o histórico e receba a resposta do ADM com o status atualizado: Pendente → Em análise → Comprado → Entregue.",
+      reflexo: "O ADM vê sua requisição, atualiza o status e pode deixar uma observação para você — que aparece direto nesta tela. A ação fica registrada na Auditoria."
+    },
   ],
 };
 
@@ -174,6 +194,16 @@ const SUPERVISORA: AjudaConteudo = {
       icone: "💬", titulo: "Chat", mockup: "chat",
       texto: "Conversas internas estilo aplicativo de mensagens. Clique no lápis para iniciar uma nova conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo para abrir uma sala de reunião por vídeo em uma nova aba — um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado automaticamente para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
+    {
+      icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
+      texto: "Solicite brinquedos para usar com as crianças nos atendimentos.\n\nClique em \"Nova solicitação\" para abrir o formulário: escolha a criança, o brinquedo (com autocomplete do catálogo) e a urgência. Se o brinquedo não existir no catálogo, ele é adicionado automaticamente.\n\nAcompanhe o histórico das suas solicitações e o status de cada uma: Pendente → Em posse → Devolvido.",
+      reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido. Cada etapa fica registrada na Auditoria."
+    },
+    {
+      icone: "🛒", titulo: "Requisições de Compra", mockup: "tabela",
+      texto: "Solicite produtos ao ADM — materiais ou equipamentos que a clínica precise comprar.\n\nClique em \"Nova requisição\" para preencher: produto, quantidade, descrição (para que serve), link do produto (opcional) e urgência (Normal ou Urgente).\n\nAcompanhe o histórico e receba a resposta do ADM com o status atualizado: Pendente → Em análise → Comprado → Entregue.",
+      reflexo: "O ADM vê sua requisição, atualiza o status e pode deixar uma observação para você — que aparece direto nesta tela."
+    },
   ],
 };
 
@@ -184,7 +214,7 @@ const ESPECIALISTA: AjudaConteudo = {
   itens: [
     {
       icone: "📅", titulo: "Minha Escala", mockup: "escala",
-      texto: "Seus horários de atendimento da semana (Segunda a Sexta). Navegue entre os dias usando as setas ou clicando no nome do dia. Para cada dia, veja horário, criança e tipo de serviço (cada um com uma cor). No final aparece o total de atendimentos da semana. Tela apenas de consulta."
+      texto: "Seus horários de atendimento da semana (Segunda a Domingo). Navegue entre os dias usando as setas ou clicando no nome do dia. Para cada dia, veja horário, criança e tipo de serviço (cada um com uma cor). No final aparece o total de atendimentos da semana. Tela apenas de consulta."
     },
     {
       icone: "📋", titulo: "Prontuário", mockup: "form-simples",
@@ -204,6 +234,16 @@ const ESPECIALISTA: AjudaConteudo = {
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
       texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo."
+    },
+    {
+      icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
+      texto: "Solicite brinquedos para usar com as crianças nos atendimentos.\n\nClique em \"Nova solicitação\" para abrir o formulário: escolha a criança, o brinquedo (com autocomplete do catálogo) e a urgência. Se o brinquedo não existir no catálogo, ele é adicionado automaticamente.\n\nAcompanhe o histórico das suas solicitações e o status de cada uma: Pendente → Em posse → Devolvido.",
+      reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido."
+    },
+    {
+      icone: "🛒", titulo: "Requisições de Compra", mockup: "tabela",
+      texto: "Solicite materiais ou equipamentos que você precisa para os atendimentos.\n\nClique em \"Nova requisição\" para preencher: produto, quantidade, descrição (para que serve), link do produto (opcional) e urgência (Normal ou Urgente).\n\nAcompanhe o histórico e receba a resposta do ADM: Pendente → Em análise → Comprado → Entregue.",
+      reflexo: "O ADM vê sua requisição, atualiza o status e pode deixar uma observação para você — que aparece direto nesta tela."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
@@ -249,7 +289,7 @@ const ATENDENTE: AjudaConteudo = {
     },
     {
       icone: "📅", titulo: "Minha Escala", mockup: "escala",
-      texto: "Seus horários de atendimento da semana (Segunda a Sexta), agrupados por faixa de horário (ex: \"13:00 – 13:30\"). Dentro de cada faixa, mostra quais crianças, serviços e profissionais estão envolvidos.\n\nNavegue entre os dias da semana, veja o total de atendimentos da semana e confira a legenda de cores dos serviços no final. Tela apenas de consulta."
+      texto: "Seus horários de atendimento da semana (Segunda a Domingo), agrupados por faixa de horário (ex: \"13:00 – 13:30\"). Dentro de cada faixa, mostra quais crianças, serviços e profissionais estão envolvidos.\n\nNavegue entre os dias da semana, veja o total de atendimentos da semana e confira a legenda de cores dos serviços no final. Tela apenas de consulta."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
@@ -259,6 +299,11 @@ const ATENDENTE: AjudaConteudo = {
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
       texto: "Mural de avisos da equipe. Os avisos fixados (📌) aparecem sempre no topo. Tela de consulta."
+    },
+    {
+      icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
+      texto: "Solicite brinquedos para usar com as crianças nos atendimentos.\n\nClique em \"Nova solicitação\" para abrir o formulário: escolha a criança, o brinquedo (com autocomplete do catálogo) e a urgência. Se o brinquedo não existir no catálogo, ele é adicionado automaticamente.\n\nAcompanhe o histórico das suas solicitações e o status de cada uma: Pendente → Em posse → Devolvido.",
+      reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
@@ -303,6 +348,11 @@ const AUX_ADM: AjudaConteudo = {
       icone: "🗓️", titulo: "Agenda Simone", mockup: "agenda-semana",
       texto: "Organize a agenda semanal da diretora.\n\nNo topo há cartões coloridos por tipo de compromisso (Treinamento, Atend. Clínica, Atend. Casa, Atend. Escola, Espiritual, Reunião, Feriado/Livre) — clique em um para abrir o formulário de novo compromisso (data, horário e \"com quem/o quê\").\n\nAbaixo, veja a semana inteira com os compromissos já cadastrados; use o lápis/lixeira para editar ou excluir. Compromissos marcados como \"não realizados\" aparecem em vermelho com um recado pedindo remarcação.\n\nUse \"Copiar pauta\" para gerar um texto com toda a agenda da semana, pronto para colar no WhatsApp.",
       reflexo: "Os compromissos cadastrados aqui aparecem em \"Minha Agenda\" da Simone (Gestão); quando ela marcar um compromisso como \"Não realizei\", você recebe o recado automaticamente pelo Chat para organizar a remarcação."
+    },
+    {
+      icone: "🧸", titulo: "Brinquedos", mockup: "abas",
+      texto: "Central de gestão de empréstimos de brinquedos da clínica, organizada em 5 abas:\n\n• Solicitações — pedidos recebidos da equipe (Atendentes, Especialistas, Supervisora e Gestão). Clique em \"Registrar Retirada\" quando a colaboradora vier buscar o brinquedo.\n\n• Em Posse — brinquedos que estão com as colaboradoras. Clique em \"Registrar Devolução\" quando o item for devolvido.\n\n• Histórico — todos os empréstimos encerrados (devolvidos).\n\n• Catálogo — lista de brinquedos cadastrados, com foto opcional. Clique em \"Adicionar ao catálogo\" para incluir novos itens. A lista é retrátil: mostra 8 por padrão e expande com \"Ver todos\".\n\n• Ranking — gráficos de brinquedos mais solicitados, colaboradoras que mais solicitam e crianças que mais usam.\n\nTodas as ações ficam registradas na Auditoria.",
+      reflexo: "O catálogo cresce automaticamente quando alguém solicita um brinquedo que ainda não existe — você só precisa confirmar a retirada e a devolução. Cada etapa fica rastreada."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
