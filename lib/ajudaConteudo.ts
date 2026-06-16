@@ -159,6 +159,11 @@ const GESTAO: AjudaConteudo = {
       texto: "Listas de consulta da equipe: Acompanhantes Terapêuticos, Especialistas e Colaboradoras Internas, com dados de contato (nome, e-mail, especialidade/cargo, WhatsApp etc.).\n\nUse a busca para filtrar por nome ou especialidade/cargo, e \"Ver mais\" para carregar mais resultados. Em cada cartão há botões para abrir WhatsApp ou e-mail diretamente."
     },
     {
+      icone: "📚", titulo: "Materiais Adaptados", mockup: "abas",
+      texto: "Biblioteca de materiais pedagógicos adaptados para as crianças atendidas, com 3 abas:\n\n• Acervo — materiais aprovados disponíveis para toda a equipe. Use a busca por título, matéria ou série.\n\n• Meus Materiais — materiais que você criou. Clique em \"+ Novo material\" para cadastrar (livro, matéria, série, criança, nível de adaptação e observações). Adicione fotos. Depois de salvar, clique em \"Enviar para revisão\" para a Supervisora avaliar.\n\n• Em Revisão — materiais enviados aguardando avaliação (visível para quem pode revisar).\n\nNíveis de adaptação: Pictogramas/CAA, Leitura Fácil, Texto Ampliado, Resumo Simplificado e Outro.",
+      reflexo: "O material enviado para revisão aparece na aba Em Revisão da Supervisora e Gestão. Quando aprovado, entra automaticamente no Acervo para toda a equipe consultar."
+    },
+    {
       icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
       texto: "Solicite brinquedos para usar com as crianças nos atendimentos.\n\nClique em \"Nova solicitação\" para abrir o formulário: escolha a criança, o brinquedo (com autocomplete do catálogo) e a urgência. Se o brinquedo não existir no catálogo, ele é adicionado automaticamente.\n\nAcompanhe o histórico das suas solicitações e o status de cada uma: Pendente → Em posse → Devolvido.",
       reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido. Cada etapa fica registrada na Auditoria."
@@ -193,6 +198,11 @@ const SUPERVISORA: AjudaConteudo = {
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
       texto: "Conversas internas estilo aplicativo de mensagens. Clique no lápis para iniciar uma nova conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo para abrir uma sala de reunião por vídeo em uma nova aba — um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado automaticamente para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
+    },
+    {
+      icone: "📚", titulo: "Materiais Adaptados", mockup: "abas",
+      texto: "Biblioteca de materiais pedagógicos adaptados, com 3 abas:\n\n• Acervo — materiais aprovados disponíveis para toda a equipe.\n\n• Meus Materiais — materiais que você criou. Use \"+ Novo material\" para cadastrar e \"Enviar para revisão\" para avaliação.\n\n• Em Revisão — materiais enviados pela equipe aguardando sua avaliação. Clique em \"Aprovar\" para colocar no acervo, ou \"Solicitar ajustes\" para devolver ao criador com observações.\n\nNíveis de adaptação: Pictogramas/CAA, Leitura Fácil, Texto Ampliado, Resumo Simplificado e Outro.",
+      reflexo: "Ao aprovar um material, ele vai automaticamente ao Acervo para toda a equipe. Ao solicitar ajustes, o criador recebe um aviso com suas observações."
     },
     {
       icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
@@ -299,6 +309,11 @@ const ATENDENTE: AjudaConteudo = {
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
       texto: "Mural de avisos da equipe. Os avisos fixados (📌) aparecem sempre no topo. Tela de consulta."
+    },
+    {
+      icone: "📚", titulo: "Materiais Adaptados", mockup: "abas",
+      texto: "Biblioteca de materiais pedagógicos adaptados para as crianças atendidas, com 3 abas:\n\n• Acervo — materiais já aprovados disponíveis para toda a equipe. Use a busca por título, matéria ou série.\n\n• Meus Materiais — materiais que você criou. Clique em \"+ Novo material\" para cadastrar (livro, matéria, série, criança, nível de adaptação e observações), adicione fotos e clique em \"Enviar para revisão\" para a Supervisora avaliar.\n\n• Em Revisão — materiais aguardando avaliação (somente para quem pode revisar).\n\nNíveis de adaptação: Pictogramas/CAA, Leitura Fácil, Texto Ampliado, Resumo Simplificado e Outro.",
+      reflexo: "O material que você enviar para revisão aparece para a Supervisora e Gestão avaliarem. Quando aprovado, entra automaticamente no Acervo para toda a equipe usar."
     },
     {
       icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
