@@ -79,6 +79,11 @@ export default function MateriaisAdaptadosPage() {
   const [fotosPreviews, setFotosPreviews] = useState<string[]>([]);
   const [salvando, setSalvando] = useState(false);
 
+  // Busca de pictogramas (ARASAAC)
+  const [buscaPictograma, setBuscaPictograma] = useState("");
+  const [resultadosPictogramas, setResultadosPictogramas] = useState<{ id: number; url: string; keyword: string }[]>([]);
+  const [buscandoPictogramas, setBuscandoPictogramas] = useState(false);
+
   // Modal de revisão
   const [revisando, setRevisando] = useState<Material | null>(null);
   const [obsRevisao, setObsRevisao] = useState("");
@@ -166,6 +171,7 @@ export default function MateriaisAdaptadosPage() {
     setTituloLivro(""); setMateria(""); setSerie(""); setCriancaId("");
     setNivelAdaptacao(""); setObservacoes("");
     setFotosExistentes([]); setFotosNovas([]); setFotosPreviews([]);
+    setBuscaPictograma(""); setResultadosPictogramas([]);
     setModalAberto(true);
   }
 
@@ -179,7 +185,33 @@ export default function MateriaisAdaptadosPage() {
     setObservacoes(m.observacoes || "");
     setFotosExistentes(m.fotos || []);
     setFotosNovas([]); setFotosPreviews([]);
+    setBuscaPictograma(""); setResultadosPictogramas([]);
     setModalAberto(true);
+  }
+
+  async function buscarPictogramas() {
+    const termo = buscaPictograma.trim();
+    if (!termo) return;
+    setBuscandoPictogramas(true);
+    try {
+      const resp = await fetch(`https://api.arasaac.org/api/pictograms/pt/bestsearch/${encodeURIComponent(termo)}`);
+      const data = await resp.json();
+      setResultadosPictogramas(
+        (Array.isArray(data) ? data : []).slice(0, 12).map((p: any) => ({
+          id: p._id,
+          url: `https://static.arasaac.org/pictograms/${p._id}/${p._id}_300.png`,
+          keyword: p.keywords?.[0]?.keyword || termo,
+        }))
+      );
+    } catch {
+      mostrarFeedback("erro", "Não foi possível buscar pictogramas agora. Tente de novo.");
+    } finally {
+      setBuscandoPictogramas(false);
+    }
+  }
+
+  function adicionarPictograma(url: string) {
+    setFotosExistentes(prev => [...prev, url]);
   }
 
   function adicionarFotos(files: FileList | null) {
@@ -551,6 +583,34 @@ export default function MateriaisAdaptadosPage() {
                 <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={3}
                   placeholder="Descreva a adaptação feita, particularidades da criança, etc."
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"/>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">🔎 Buscar pictogramas (ARASAAC)</label>
+                <div className="flex gap-2">
+                  <input type="text" value={buscaPictograma}
+                    onChange={e => setBuscaPictograma(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); buscarPictogramas(); } }}
+                    placeholder="Ex: escola, comer, feliz..."
+                    className="flex-1 h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button type="button" onClick={buscarPictogramas} disabled={buscandoPictogramas || !buscaPictograma.trim()}
+                    className="h-11 px-4 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition disabled:opacity-50 shrink-0">
+                    {buscandoPictogramas ? "..." : "Buscar"}
+                  </button>
+                </div>
+                {resultadosPictogramas.length > 0 && (
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
+                    {resultadosPictogramas.map(p => (
+                      <button key={p.id} type="button" onClick={() => adicionarPictograma(p.url)} title={`Adicionar "${p.keyword}"`}
+                        className="aspect-square bg-white border border-slate-200 rounded-lg p-1 hover:border-blue-400 hover:shadow-sm transition">
+                        <img src={p.url} alt={p.keyword} className="w-full h-full object-contain"/>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {resultadosPictogramas.length === 0 && !buscandoPictogramas && (
+                  <p className="text-[10px] text-slate-400 mt-1">Pictogramas: ARASAAC (arasaac.org) · Governo de Aragão, licença CC BY-NC-SA</p>
+                )}
               </div>
 
               <div>
