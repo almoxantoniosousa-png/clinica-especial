@@ -83,6 +83,8 @@ export default function MateriaisAdaptadosPage() {
   const [buscaPictograma, setBuscaPictograma] = useState("");
   const [resultadosPictogramas, setResultadosPictogramas] = useState<{ id: number; url: string; keyword: string }[]>([]);
   const [buscandoPictogramas, setBuscandoPictogramas] = useState(false);
+  const [erroPictograma, setErroPictograma] = useState<string | null>(null);
+  const [jaBuscouPictograma, setJaBuscouPictograma] = useState(false);
 
   // Modal de revisão
   const [revisando, setRevisando] = useState<Material | null>(null);
@@ -172,6 +174,7 @@ export default function MateriaisAdaptadosPage() {
     setNivelAdaptacao(""); setObservacoes("");
     setFotosExistentes([]); setFotosNovas([]); setFotosPreviews([]);
     setBuscaPictograma(""); setResultadosPictogramas([]);
+    setErroPictograma(null); setJaBuscouPictograma(false);
     setModalAberto(true);
   }
 
@@ -186,6 +189,7 @@ export default function MateriaisAdaptadosPage() {
     setFotosExistentes(m.fotos || []);
     setFotosNovas([]); setFotosPreviews([]);
     setBuscaPictograma(""); setResultadosPictogramas([]);
+    setErroPictograma(null); setJaBuscouPictograma(false);
     setModalAberto(true);
   }
 
@@ -193,9 +197,11 @@ export default function MateriaisAdaptadosPage() {
     const termo = buscaPictograma.trim();
     if (!termo) return;
     setBuscandoPictogramas(true);
+    setErroPictograma(null);
     try {
       const resp = await fetch(`https://api.arasaac.org/api/pictograms/pt/bestsearch/${encodeURIComponent(termo)}`);
-      const data = await resp.json();
+      if (!resp.ok && resp.status !== 404) throw new Error("status " + resp.status);
+      const data = resp.status === 404 ? [] : await resp.json();
       setResultadosPictogramas(
         (Array.isArray(data) ? data : []).slice(0, 12).map((p: any) => ({
           id: p._id,
@@ -203,8 +209,11 @@ export default function MateriaisAdaptadosPage() {
           keyword: p.keywords?.[0]?.keyword || termo,
         }))
       );
+      setJaBuscouPictograma(true);
     } catch {
-      mostrarFeedback("erro", "Não foi possível buscar pictogramas agora. Tente de novo.");
+      setResultadosPictogramas([]);
+      setJaBuscouPictograma(true);
+      setErroPictograma("Não foi possível buscar pictogramas agora (verifique a internet). Tente de novo.");
     } finally {
       setBuscandoPictogramas(false);
     }
@@ -595,9 +604,18 @@ export default function MateriaisAdaptadosPage() {
                     className="flex-1 h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                   <button type="button" onClick={buscarPictogramas} disabled={buscandoPictogramas || !buscaPictograma.trim()}
                     className="h-11 px-4 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition disabled:opacity-50 shrink-0">
-                    {buscandoPictogramas ? "..." : "Buscar"}
+                    {buscandoPictogramas ? "Buscando..." : "Buscar"}
                   </button>
                 </div>
+                {buscandoPictogramas && (
+                  <p className="text-xs text-slate-400 mt-2">🔄 Buscando pictogramas...</p>
+                )}
+                {erroPictograma && !buscandoPictogramas && (
+                  <p className="text-xs text-red-600 mt-2">⚠️ {erroPictograma}</p>
+                )}
+                {!buscandoPictogramas && !erroPictograma && jaBuscouPictograma && resultadosPictogramas.length === 0 && (
+                  <p className="text-xs text-slate-400 mt-2">Nenhum pictograma encontrado para "{buscaPictograma.trim()}".</p>
+                )}
                 {resultadosPictogramas.length > 0 && (
                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
                     {resultadosPictogramas.map(p => (
@@ -608,7 +626,7 @@ export default function MateriaisAdaptadosPage() {
                     ))}
                   </div>
                 )}
-                {resultadosPictogramas.length === 0 && !buscandoPictogramas && (
+                {!jaBuscouPictograma && !buscandoPictogramas && (
                   <p className="text-[10px] text-slate-400 mt-1">Pictogramas: ARASAAC (arasaac.org) · Governo de Aragão, licença CC BY-NC-SA</p>
                 )}
               </div>
