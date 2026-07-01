@@ -14,9 +14,9 @@ const PODE_CONTATAR: Record<string, string[]> = {
   especialista:["adm", "supervisora", "gestao"],
   gestao:      ["adm", "supervisora", "especialista", "aux_adm"],
   supervisora: ["adm", "gestao", "especialista", "atendente", "supervisora", "aux_adm", "familia"],
-  adm:         ["adm", "gestao", "especialista", "atendente", "supervisora", "aux_adm", "familia"],
+  adm:         ["adm", "gestao", "especialista", "atendente", "supervisora", "aux_adm"],
   aux_adm:     ["adm", "gestao", "supervisora"],
-  familia:     ["supervisora", "adm"],
+  familia:     ["supervisora", "gestao"],
 };
 
 const ROLE_LABEL: Record<string, string> = {
