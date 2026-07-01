@@ -25,6 +25,8 @@ export default function EspecialistasPage() {
   const [rg, setRg] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
   const [endereco, setEndereco] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [razaoSocial, setRazaoSocial] = useState("");
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -82,6 +84,8 @@ export default function EspecialistasPage() {
       cpf, rg,
       data_nascimento: dataNascimento || null,
       endereco,
+      cnpj: cnpj || null,
+      razao_social: razaoSocial || null,
       role: "especialista",
     }]).select().single();
 
@@ -256,6 +260,16 @@ export default function EspecialistasPage() {
             <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Endereco</label>
             <input type="text" placeholder="Ex: Rua das Flores, 123 - Bairro - Salvador/BA" value={endereco} onChange={(e) => setEndereco(e.target.value)} className={inputClass} />
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CNPJ</label>
+              <input type="text" placeholder="00.000.000/0001-00" value={cnpj} onChange={(e) => setCnpj(e.target.value)} className={inputClass} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Razão Social</label>
+              <input type="text" placeholder="Nome da empresa (MEI, etc.)" value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} className={inputClass} />
+            </div>
+          </div>
           <button type="submit" disabled={loading}
             className="w-full h-12 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 shadow-sm">
             {loading ? "Cadastrando..." : "Cadastrar Especialista"}
@@ -309,6 +323,8 @@ export default function EspecialistasPage() {
                             {esp.whatsapp && <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">{esp.whatsapp}</span>}
                           </div>
                           {esp.endereco && <p className="text-xs text-slate-400 mt-1 truncate">📍 {esp.endereco}</p>}
+                          {esp.cnpj && <p className="text-xs text-slate-400 mt-1">🏢 CNPJ: {esp.cnpj}</p>}
+                          {esp.razao_social && <p className="text-xs text-slate-400 truncate">📋 {esp.razao_social}</p>}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">

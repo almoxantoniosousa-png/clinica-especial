@@ -25,6 +25,8 @@ export default function CadastrarAtendentePage() {
   const [rg, setRg] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
   const [endereco, setEndereco] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [razaoSocial, setRazaoSocial] = useState("");
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -82,6 +84,8 @@ export default function CadastrarAtendentePage() {
       cpf, rg,
       data_nascimento: dataNascimento || null,
       endereco,
+      cnpj: cnpj || null,
+      razao_social: razaoSocial || null,
       role: "atendente",
     }]).select().single();
 
@@ -99,6 +103,7 @@ export default function CadastrarAtendentePage() {
       mostrarFeedback("sucesso", "Acompanhante cadastrado com sucesso!");
       setNome(""); setEmail(""); setWhatsapp(""); setEspecialidade("");
       setRegistro(""); setCpf(""); setRg(""); setDataNascimento(""); setEndereco("");
+      setCnpj(""); setRazaoSocial("");
       carregarAtendentes();
     }
     setLoading(false);
@@ -256,6 +261,16 @@ export default function CadastrarAtendentePage() {
             <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Endereco</label>
             <input type="text" placeholder="Ex: Rua das Flores, 123 - Bairro - Salvador/BA" value={endereco} onChange={(e) => setEndereco(e.target.value)} className={inputClass} />
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CNPJ</label>
+              <input type="text" placeholder="00.000.000/0001-00" value={cnpj} onChange={(e) => setCnpj(e.target.value)} className={inputClass} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Razão Social</label>
+              <input type="text" placeholder="Nome da empresa (MEI, etc.)" value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} className={inputClass} />
+            </div>
+          </div>
           <button type="submit" disabled={loading}
             className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 shadow-sm">
             {loading ? "Cadastrando..." : "Cadastrar Acompanhante"}
@@ -309,6 +324,8 @@ export default function CadastrarAtendentePage() {
                             {at.whatsapp && <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">{at.whatsapp}</span>}
                           </div>
                           {at.endereco && <p className="text-xs text-slate-400 mt-1 truncate">📍 {at.endereco}</p>}
+                          {at.cnpj && <p className="text-xs text-slate-400 mt-1">🏢 CNPJ: {at.cnpj}</p>}
+                          {at.razao_social && <p className="text-xs text-slate-400 truncate">📋 {at.razao_social}</p>}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
@@ -389,6 +406,18 @@ export default function CadastrarAtendentePage() {
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Endereco</label>
                 <input type="text" value={editando.endereco || ""} onChange={(e) => setEditando({ ...editando, endereco: e.target.value })}
                   className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CNPJ</label>
+                  <input type="text" value={editando.cnpj || ""} onChange={(e) => setEditando({ ...editando, cnpj: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Razão Social</label>
+                  <input type="text" value={editando.razao_social || ""} onChange={(e) => setEditando({ ...editando, razao_social: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                </div>
               </div>
             </div>
             <div className="flex gap-3 pt-1">
