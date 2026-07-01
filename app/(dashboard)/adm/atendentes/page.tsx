@@ -28,6 +28,15 @@ export default function CadastrarAtendentePage() {
   const [cnpj, setCnpj] = useState("");
   const [razaoSocial, setRazaoSocial] = useState("");
   const [dataDemissao, setDataDemissao] = useState("");
+  const [motivoSaida, setMotivoSaida] = useState("");
+
+  const MOTIVOS_SAIDA = [
+    "Pedido de demissão",
+    "Demissão sem justa causa",
+    "Demissão por justa causa",
+    "Término de contrato",
+    "Abandono de emprego",
+  ];
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -88,6 +97,7 @@ export default function CadastrarAtendentePage() {
       cnpj: cnpj || null,
       razao_social: razaoSocial || null,
       data_demissao: dataDemissao || null,
+      motivo_saida: motivoSaida || null,
       role: "atendente",
     }]).select().single();
 
@@ -105,7 +115,7 @@ export default function CadastrarAtendentePage() {
       mostrarFeedback("sucesso", "Acompanhante cadastrado com sucesso!");
       setNome(""); setEmail(""); setWhatsapp(""); setEspecialidade("");
       setRegistro(""); setCpf(""); setRg(""); setDataNascimento(""); setEndereco("");
-      setCnpj(""); setRazaoSocial(""); setDataDemissao("");
+      setCnpj(""); setRazaoSocial(""); setDataDemissao(""); setMotivoSaida("");
       carregarAtendentes();
     }
     setLoading(false);
@@ -127,6 +137,11 @@ export default function CadastrarAtendentePage() {
       rg: editando.rg,
       data_nascimento: editando.data_nascimento || null,
       endereco: editando.endereco,
+      cnpj: editando.cnpj || null,
+      razao_social: editando.razao_social || null,
+      data_demissao: editando.data_demissao || null,
+      motivo_saida: editando.motivo_saida || null,
+      ativo: editando.ativo !== false,
     }).eq("id", editando.id);
 
     if (!error) {
@@ -171,9 +186,18 @@ export default function CadastrarAtendentePage() {
     }
   }
 
+  const [mostrarInativosAt, setMostrarInativosAt] = useState(false);
+
   const atendenteFiltrados = atendentes.filter((a) =>
-    a.nome.toLowerCase().includes(busca.toLowerCase()) ||
-    (a.especialidade || "").toLowerCase().includes(busca.toLowerCase())
+    a.ativo !== false &&
+    (a.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    (a.especialidade || "").toLowerCase().includes(busca.toLowerCase()))
+  );
+
+  const inativosAt = atendentes.filter((a) =>
+    a.ativo === false &&
+    (a.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    (a.especialidade || "").toLowerCase().includes(busca.toLowerCase()))
   );
 
   function iniciais(nome: string) {
@@ -248,6 +272,13 @@ export default function CadastrarAtendentePage() {
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Data de Demissão</label>
               <input type="date" value={dataDemissao} onChange={(e) => setDataDemissao(e.target.value)} className={inputClass} />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Motivo de Saída</label>
+            <select value={motivoSaida} onChange={(e) => setMotivoSaida(e.target.value)} className={inputClass}>
+              <option value="">— Selecione —</option>
+              {MOTIVOS_SAIDA.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -334,6 +365,8 @@ export default function CadastrarAtendentePage() {
                           {at.endereco && <p className="text-xs text-slate-400 mt-1 truncate">📍 {at.endereco}</p>}
                           {at.cnpj && <p className="text-xs text-slate-400 mt-1">🏢 CNPJ: {at.cnpj}</p>}
                           {at.razao_social && <p className="text-xs text-slate-400 truncate">📋 {at.razao_social}</p>}
+                          {at.data_demissao && <p className="text-xs text-red-400 mt-1">📅 Demissão: {new Date(at.data_demissao).toLocaleDateString("pt-BR")}</p>}
+                          {at.motivo_saida && <p className="text-xs text-red-400">⚠️ {at.motivo_saida}</p>}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
@@ -353,12 +386,46 @@ export default function CadastrarAtendentePage() {
             )}
             {!loadingLista && atendenteFiltrados.length > 0 && (
               <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
-                <p className="text-xs text-slate-400">Mostrando {atendenteFiltrados.length} de {atendentes.length} acompanhante{atendentes.length !== 1 ? "s" : ""}</p>
+                <p className="text-xs text-slate-400">Mostrando {atendenteFiltrados.length} acompanhante{atendenteFiltrados.length !== 1 ? "s" : ""} ativo{atendenteFiltrados.length !== 1 ? "s" : ""}</p>
               </div>
             )}
           </>
         )}
       </div>
+
+      {inativosAt.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <button
+            onClick={() => setMostrarInativosAt(!mostrarInativosAt)}
+            className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left border-b border-slate-100"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-slate-600 text-sm">Acompanhantes Inativos</h3>
+              <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">{inativosAt.length}</span>
+            </div>
+            <span className="text-slate-400 text-sm">{mostrarInativosAt ? "▾" : "▸"}</span>
+          </button>
+          {mostrarInativosAt && (
+            <ul className="divide-y divide-slate-100">
+              {inativosAt.map((at) => (
+                <li key={at.id} className="px-5 py-4 opacity-70">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm shrink-0">
+                      {at.nome.split(" ").slice(0,2).map((p: string) => p[0]).join("").toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-700 text-sm">{at.nome}</p>
+                      <p className="text-xs text-slate-400">{at.especialidade || "AT"}</p>
+                      {at.data_demissao && <p className="text-xs text-red-400">📅 Demissão: {new Date(at.data_demissao).toLocaleDateString("pt-BR")}</p>}
+                      {at.motivo_saida && <p className="text-xs text-red-400">⚠️ {at.motivo_saida}</p>}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {editando && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
@@ -425,6 +492,25 @@ export default function CadastrarAtendentePage() {
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Razão Social</label>
                   <input type="text" value={editando.razao_social || ""} onChange={(e) => setEditando({ ...editando, razao_social: e.target.value })}
                     className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Motivo de Saída</label>
+                  <select value={editando.motivo_saida || ""} onChange={(e) => setEditando({ ...editando, motivo_saida: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                    <option value="">— Selecione —</option>
+                    {MOTIVOS_SAIDA.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-end pb-1">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <div onClick={() => setEditando({ ...editando, ativo: !editando.ativo })}
+                      className={`w-12 h-6 rounded-full transition-colors ${editando.ativo !== false ? "bg-emerald-500" : "bg-red-400"} relative`}>
+                      <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${editando.ativo !== false ? "left-6" : "left-0.5"}`} />
+                    </div>
+                    <span className="text-sm font-medium text-slate-700">{editando.ativo !== false ? "Ativo" : "Inativo"}</span>
+                  </label>
                 </div>
               </div>
             </div>

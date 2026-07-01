@@ -20,11 +20,21 @@ export default function InternasPage() {
   const [deletandoNome, setDeletandoNome] = useState<string>("");
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
 
+  const MOTIVOS_SAIDA = [
+    "Pedido de demissão",
+    "Demissão sem justa causa",
+    "Demissão por justa causa",
+    "Término de contrato",
+    "Abandono de emprego",
+  ];
+
   const [form, setForm] = useState({
     nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "",
     data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "",
-    cnpj: "", razao_social: "", data_demissao: "",
+    cnpj: "", razao_social: "", data_demissao: "", motivo_saida: "",
+    ativo: true,
   });
+  const [mostrarInativos, setMostrarInativos] = useState(false);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -47,7 +57,7 @@ export default function InternasPage() {
 
   function abrirNovo() {
     setEditando(null);
-    setForm({ nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "", data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "", cnpj: "", razao_social: "", data_demissao: "" });
+    setForm({ nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "", data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "", cnpj: "", razao_social: "", data_demissao: "", motivo_saida: "", ativo: true });
     setModalAberto(true);
   }
 
@@ -59,7 +69,8 @@ export default function InternasPage() {
       data_nascimento: col.data_nascimento || "", data_admissao: col.data_admissao || "",
       whatsapp: col.whatsapp || "", endereco: col.endereco || "",
       cnpj: col.cnpj || "", razao_social: col.razao_social || "",
-      data_demissao: col.data_demissao || "",
+      data_demissao: col.data_demissao || "", motivo_saida: col.motivo_saida || "",
+      ativo: col.ativo !== false,
     });
     setModalAberto(true);
   }
@@ -72,6 +83,8 @@ export default function InternasPage() {
       data_nascimento: form.data_nascimento || null,
       data_admissao: form.data_admissao || null,
       data_demissao: form.data_demissao || null,
+      motivo_saida: form.motivo_saida || null,
+      ativo: form.ativo,
     };
     const user = await getUsuarioLogado();
 
@@ -132,8 +145,11 @@ export default function InternasPage() {
     c.cargo.toLowerCase().includes(busca.toLowerCase())
   );
 
-  const auxAdm = filtradas.filter(c => c.cargo === "Auxiliar Administrativa");
-  const limpeza = filtradas.filter(c => c.cargo === "Agente de Limpeza");
+  const ativas = filtradas.filter(c => c.ativo !== false);
+  const inativas = filtradas.filter(c => c.ativo === false);
+
+  const auxAdm = ativas.filter(c => c.cargo === "Auxiliar Administrativa");
+  const limpeza = ativas.filter(c => c.cargo === "Agente de Limpeza");
 
   function iniciais(nome: string) {
     return nome.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
@@ -143,7 +159,7 @@ export default function InternasPage() {
 
   function CardColaboradora({ col }: { col: any }) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 p-4 hover:border-blue-200 transition">
+      <div className={`bg-white rounded-xl border p-4 hover:border-blue-200 transition ${col.ativo === false ? "border-red-200 opacity-75" : "border-slate-200"}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-bold text-sm shrink-0">
@@ -169,7 +185,8 @@ export default function InternasPage() {
           {col.whatsapp && <p className="text-xs text-slate-400">📱 {col.whatsapp}</p>}
           {col.cpf && <p className="text-xs text-slate-400">CPF: {col.cpf}</p>}
           {col.data_admissao && <p className="text-xs text-slate-400">📅 Admissão: {new Date(col.data_admissao).toLocaleDateString("pt-BR")}</p>}
-          {col.data_demissao && <p className="text-xs text-slate-400">📅 Demissão: {new Date(col.data_demissao).toLocaleDateString("pt-BR")}</p>}
+          {col.data_demissao && <p className="text-xs text-red-400">📅 Demissão: {new Date(col.data_demissao).toLocaleDateString("pt-BR")}</p>}
+          {col.motivo_saida && <p className="text-xs text-red-400">⚠️ {col.motivo_saida}</p>}
           {col.endereco && <p className="text-xs text-slate-400">📍 {col.endereco}</p>}
           {col.cnpj && <p className="text-xs text-slate-400">🏢 CNPJ: {col.cnpj}</p>}
           {col.razao_social && <p className="text-xs text-slate-400">📋 Razão Social: {col.razao_social}</p>}
@@ -231,6 +248,23 @@ export default function InternasPage() {
         <div className="space-y-8">
           <SecaoLista titulo="Auxiliar Administrativa" items={auxAdm} cor="bg-purple-100 text-purple-700" />
           <SecaoLista titulo="Agente de Limpeza" items={limpeza} cor="bg-emerald-100 text-emerald-700" />
+
+          {inativas.length > 0 && (
+            <div>
+              <button
+                onClick={() => setMostrarInativos(!mostrarInativos)}
+                className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-700 mb-3"
+              >
+                <span>{mostrarInativos ? "▾" : "▸"}</span>
+                <span>Colaboradoras Inativas ({inativas.length})</span>
+              </button>
+              {mostrarInativos && (
+                <div className="grid grid-cols-1 gap-4">
+                  {inativas.map(col => <CardColaboradora key={col.id} col={col} />)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -301,6 +335,26 @@ export default function InternasPage() {
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Endereço</label>
                 <input type="text" placeholder="Rua, número - Bairro - Salvador/BA" value={form.endereco}
                   onChange={(e) => setForm({ ...form, endereco: e.target.value })} className={`mt-1 ${inputClass}`} />
+              </div>
+            </div>
+
+            {/* Demissão e Motivo */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Motivo de Saída</label>
+                <select value={form.motivo_saida} onChange={(e) => setForm({ ...form, motivo_saida: e.target.value })} className={`mt-1 ${inputClass}`}>
+                  <option value="">— Selecione —</option>
+                  {MOTIVOS_SAIDA.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div className="flex items-end pb-0.5">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <div onClick={() => setForm({ ...form, ativo: !form.ativo })}
+                    className={`w-12 h-6 rounded-full transition-colors ${form.ativo ? "bg-emerald-500" : "bg-red-400"} relative`}>
+                    <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${form.ativo ? "left-6" : "left-0.5"}`} />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">{form.ativo ? "Ativo" : "Inativo"}</span>
+                </label>
               </div>
             </div>
 
