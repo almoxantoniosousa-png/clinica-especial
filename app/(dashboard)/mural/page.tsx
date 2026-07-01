@@ -8,7 +8,7 @@ export default function MuralPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [comunicados, setComunicados] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [podePublicar, setPodePublicar] = useState(false);
   const [autorNome, setAutorNome] = useState("");
   const [autorId, setAutorId] = useState("");
 
@@ -17,6 +17,8 @@ export default function MuralPage() {
   const [conteudo, setConteudo] = useState("");
   const [destinatario, setDestinatario] = useState("todos");
   const [fixado, setFixado] = useState(false);
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [mostrarForm, setMostrarForm] = useState(false);
 
@@ -45,7 +47,7 @@ export default function MuralPage() {
         .maybeSingle();
       if (perfil) {
         setAutorNome(perfil.nome);
-        setIsAdmin(perfil.role === "adm");
+        setPodePublicar(["adm", "gestao", "supervisora"].includes(perfil.role));
       }
     }
 
@@ -66,12 +68,24 @@ export default function MuralPage() {
     if (!titulo.trim() || !conteudo.trim()) return;
     setSalvando(true);
 
+    let foto_url: string | null = null;
+    if (fotoFile) {
+      const ext = fotoFile.name.split(".").pop() || "jpg";
+      const path = `mural/${autorId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("materiais-adaptados").upload(path, fotoFile);
+      if (!upErr) {
+        const { data: { publicUrl } } = supabase.storage.from("materiais-adaptados").getPublicUrl(path);
+        foto_url = publicUrl;
+      }
+    }
+
     const { error } = await supabase.from("mural").insert([{
       autor_id: autorId,
       titulo: titulo.trim(),
       conteudo: conteudo.trim(),
       destinatario,
       fixado,
+      foto_url,
     }]);
 
     setSalvando(false);
@@ -80,6 +94,7 @@ export default function MuralPage() {
     } else {
       mostrarFeedback("sucesso", "Comunicado publicado com sucesso!");
       setTitulo(""); setConteudo(""); setDestinatario("todos"); setFixado(false);
+      setFotoFile(null); setFotoPreview(null);
       setMostrarForm(false);
       carregar();
     }
@@ -102,9 +117,10 @@ export default function MuralPage() {
   }
 
   const badgeDestinatario: any = {
-    todos: { label: "Para todos", color: "bg-blue-50 text-blue-700 border-blue-100" },
-    adm: { label: "Apenas ADM", color: "bg-purple-50 text-purple-700 border-purple-100" },
-    atendente: { label: "Atendentes", color: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+    todos:     { label: "Para todos",      color: "bg-blue-50 text-blue-700 border-blue-100" },
+    adm:       { label: "Apenas ADM",      color: "bg-purple-50 text-purple-700 border-purple-100" },
+    atendente: { label: "Atendentes",      color: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+    familia:   { label: "Famílias",        color: "bg-rose-50 text-rose-700 border-rose-100" },
   };
 
   return (
@@ -122,7 +138,7 @@ export default function MuralPage() {
           </p>
         </div>
 
-        {isAdmin && (
+        {podePublicar && (
           <button
             onClick={() => setMostrarForm(!mostrarForm)}
             className="self-start sm:self-auto flex items-center gap-2 h-10 px-5 bg-blue-900 hover:bg-blue-800
@@ -145,7 +161,7 @@ export default function MuralPage() {
       )}
 
       {/* FORM NOVO COMUNICADO */}
-      {mostrarForm && isAdmin && (
+      {mostrarForm && podePublicar && (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
           <h2 className="font-semibold text-slate-800">Novo Comunicado</h2>
           <form onSubmit={salvarComunicado} className="space-y-4">
@@ -188,6 +204,7 @@ export default function MuralPage() {
                   <option value="todos">Para todos</option>
                   <option value="atendente">Apenas Atendentes</option>
                   <option value="adm">Apenas ADM</option>
+                  <option value="familia">Para as Famílias 👨‍👩‍👧</option>
                 </select>
               </div>
 
@@ -202,6 +219,30 @@ export default function MuralPage() {
                   />
                   <span className="text-sm font-medium text-slate-700">📌 Fixar no topo</span>
                 </label>
+              </div>
+            </div>
+
+            {/* Upload de foto opcional */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Foto (opcional)</label>
+              <div className="flex gap-3 items-center">
+                <label className="flex items-center gap-2 h-10 px-4 rounded-xl border border-slate-200
+                  bg-slate-50 hover:bg-slate-100 cursor-pointer text-sm text-slate-600 transition">
+                  📷 Adicionar foto
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      setFotoFile(f);
+                      setFotoPreview(f ? URL.createObjectURL(f) : null);
+                    }} />
+                </label>
+                {fotoPreview && (
+                  <div className="relative">
+                    <img src={fotoPreview} alt="" className="w-16 h-16 object-cover rounded-lg border border-slate-200" />
+                    <button type="button" onClick={() => { setFotoFile(null); setFotoPreview(null); }}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">✕</button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -250,7 +291,7 @@ export default function MuralPage() {
                   </span>
                 </div>
 
-                {isAdmin && (
+                {podePublicar && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={() => toggleFixado(c.id, c.fixado)}
@@ -274,6 +315,12 @@ export default function MuralPage() {
 
               {/* Conteúdo */}
               <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{c.conteudo}</p>
+
+              {/* Foto (opcional) */}
+              {c.foto_url && (
+                <img src={c.foto_url} alt="Foto do comunicado"
+                  className="w-full max-h-64 object-cover rounded-xl border border-slate-200 mt-1" />
+              )}
 
               {/* Rodapé */}
               <div className="flex items-center gap-2 pt-1 border-t border-slate-100">

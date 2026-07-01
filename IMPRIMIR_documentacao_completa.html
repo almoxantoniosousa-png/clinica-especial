@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documentação Completa — Sistema de Gestão Clínica Abraço</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'default', fontSize: 12 });</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10.5pt; color: #1e293b; line-height: 1.6; background: white; }
+  .container { max-width: 960px; margin: 0 auto; padding: 40px; }
+
+  .header { background: #1e3a5f; color: white; padding: 32px 40px; margin-bottom: 32px; }
+  .header h1 { font-size: 20pt; font-weight: 700; margin-bottom: 4px; }
+  .header h2 { font-size: 12pt; font-weight: 400; opacity: 0.85; margin-bottom: 14px; }
+  .header .meta { display: flex; gap: 24px; font-size: 9.5pt; opacity: 0.8; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 10px; flex-wrap: wrap; }
+
+  h2.section { font-size: 14pt; color: white; background: #1e3a5f; padding: 8px 16px; margin: 36px 0 16px; }
+  h3 { font-size: 11.5pt; color: #1e3a5f; border-left: 4px solid #3b82f6; padding-left: 10px; margin: 24px 0 10px; }
+  h4 { font-size: 10.5pt; color: #334155; margin: 16px 0 8px; font-weight: 700; }
+  p { margin-bottom: 10px; }
+  ul, ol { margin: 6px 0 12px 22px; }
+  li { margin-bottom: 3px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 9.5pt; }
+  th { background: #1e3a5f; color: white; padding: 7px 10px; text-align: left; font-weight: 600; }
+  td { padding: 6px 10px; border: 1px solid #e2e8f0; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  .uc-box { border: 1px solid #cbd5e1; border-radius: 4px; margin: 20px 0; overflow: hidden; }
+  .uc-header { background: #1e3a5f; color: white; padding: 8px 16px; font-weight: 700; font-size: 10pt; }
+  .uc-body { padding: 12px 16px; }
+  .uc-row { display: flex; border-bottom: 1px solid #f1f5f9; padding: 6px 0; }
+  .uc-row:last-child { border-bottom: none; }
+  .uc-label { font-weight: 700; color: #475569; min-width: 160px; font-size: 9pt; }
+  .uc-value { flex: 1; font-size: 9.5pt; }
+
+  .flow-step { background: #f8fafc; border-left: 3px solid #3b82f6; padding: 5px 10px; margin: 4px 0; font-size: 9.5pt; }
+  .alt-step { background: #fff7ed; border-left: 3px solid #f59e0b; padding: 5px 10px; margin: 4px 0; font-size: 9.5pt; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 8pt; font-weight: 700; }
+  .badge-blue { background: #dbeafe; color: #1e3a5f; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-amber { background: #fef9c3; color: #713f12; }
+
+  .mermaid { margin: 16px 0; overflow-x: auto; }
+
+  .footer { margin-top: 48px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 8.5pt; color: #94a3b8; text-align: center; }
+
+  @media print {
+    body { font-size: 9.5pt; }
+    .container { padding: 10px; max-width: 100%; }
+    .header { page-break-after: avoid; }
+    h2.section { page-break-before: auto; page-break-after: avoid; }
+    h3 { page-break-after: avoid; }
+    .uc-box { page-break-inside: avoid; }
+    table { page-break-inside: auto; font-size: 8.5pt; }
+    .mermaid { page-break-inside: avoid; }
+    @page { margin: 20mm; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>Documentação Completa de Software</h1>
+  <h2>Sistema de Gestão Clínica Abraço — ABA Núcleo de Intervenção Comportamental</h2>
+  <div class="meta">
+    <span>📅 Julho de 2026</span>
+    <span>🌐 clinica-especial.vercel.app</span>
+    <span>📋 SRS — Especificação de Requisitos de Software</span>
+    <span>📦 Versão 1.0</span>
+  </div>
+  <div style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.3); display:flex; gap:32px; font-size:9.5pt; flex-wrap:wrap;">
+    <span>👨‍💻 <strong>Desenvolvedor:</strong> Antonio de Sousa Silva — Desenvolvedor Júnior</span>
+    <span>📆 <strong>Período de desenvolvimento:</strong> Novembro de 2025 — Julho de 2026 (8 meses)</span>
+    <span>📊 <strong>Total de entregas:</strong> 199 versões</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<h2 class="section">1. DESCRIÇÃO DO SISTEMA</h2>
+
+<h3>1.1 Contexto e Objetivo</h3>
+<p>A Clínica Abraço é um núcleo de intervenção comportamental ABA que atende crianças com Transtorno do Espectro Autista (TEA) e outras condições do neurodesenvolvimento. O sistema substitui planilhas, cadernos e aplicativos genéricos por uma plataforma web centralizada, acessível de qualquer dispositivo com internet.</p>
+
+<h3>1.2 Tecnologias Utilizadas</h3>
+<table>
+  <tr><th>Camada</th><th>Tecnologia</th><th>Função</th></tr>
+  <tr><td>Frontend</td><td>Next.js 16 + TypeScript + Tailwind CSS</td><td>Interface web responsiva (mobile-first)</td></tr>
+  <tr><td>Backend / BaaS</td><td>Supabase (PostgreSQL + Auth + Storage + Realtime)</td><td>Banco de dados, autenticação, arquivos, chat ao vivo</td></tr>
+  <tr><td>Hospedagem</td><td>Vercel (CDN global)</td><td>Deploy automático, HTTPS, alta disponibilidade</td></tr>
+  <tr><td>Controle de versão</td><td>Git + GitHub</td><td>Versionamento de código (199 commits)</td></tr>
+  <tr><td>Segurança de dados</td><td>RLS (Row Level Security)</td><td>Cada usuário acessa apenas seus próprios dados</td></tr>
+</table>
+
+<h3>1.3 Perfis de Usuário</h3>
+<table>
+  <tr><th>Perfil (role)</th><th>Quem usa</th><th>Descrição</th></tr>
+  <tr><td><span class="badge badge-blue">adm</span></td><td>Administrador</td><td>Acesso total a todos os módulos e configurações</td></tr>
+  <tr><td><span class="badge badge-blue">gestao</span></td><td>Coordenadora (Simone)</td><td>Crianças, equipe, agenda, relatórios, financeiro, escala</td></tr>
+  <tr><td><span class="badge badge-blue">supervisora</span></td><td>Supervisora clínica</td><td>Comunicados, revisão e aprovação de materiais adaptados</td></tr>
+  <tr><td><span class="badge badge-blue">especialista</span></td><td>Psicólogo, fonoaudiólogo etc.</td><td>Escala, prontuários, relatórios de evolução</td></tr>
+  <tr><td><span class="badge badge-blue">atendente</span></td><td>Acompanhante Terapêutico (AT)</td><td>Registro de atendimentos, formulário escolar, materiais, escala</td></tr>
+  <tr><td><span class="badge badge-blue">financeiro</span></td><td>Setor financeiro</td><td>Contas a pagar/receber, folha de pagamento</td></tr>
+  <tr><td><span class="badge badge-blue">aux_adm</span></td><td>Auxiliar administrativo</td><td>Agenda da diretora, brinquedos</td></tr>
+  <tr><td><span class="badge badge-blue">familia</span></td><td>Responsável da criança</td><td>Portal de acompanhamento (somente leitura)</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════ -->
+<h2 class="section">2. DIAGRAMA DE CASOS DE USO</h2>
+
+<div class="mermaid">
+graph TD
+    ADM[👤 Administrador]
+    GESTAO[👤 Gestão]
+    SUPER[👤 Supervisora]
+    ESPEC[👤 Especialista]
+    AT[👤 AT - Acompanhante]
+    FIN[👤 Financeiro]
+    AUX[👤 Aux. Administrativo]
+    FAM[👤 Família]
+
+    UC01[UC01 - Autenticar no sistema]
+    UC02[UC02 - Gerenciar crianças]
+    UC03[UC03 - Gerenciar colaboradores]
+    UC04[UC04 - Visualizar escala]
+    UC05[UC05 - Registrar atendimento]
+    UC06[UC06 - Preencher formulário escolar]
+    UC07[UC07 - Criar e aprovar prontuários]
+    UC08[UC08 - Acessar portal da família]
+    UC09[UC09 - Usar chat interno]
+    UC10[UC10 - Gerenciar mural]
+    UC11[UC11 - Gerenciar protocolos]
+    UC12[UC12 - Cadastrar materiais adaptados]
+    UC13[UC13 - Aprovar material adaptado]
+    UC14[UC14 - Gerenciar brinquedos]
+    UC15[UC15 - Abrir requisição de compra]
+    UC16[UC16 - Módulo financeiro]
+    UC17[UC17 - Agenda da diretora]
+    UC18[UC18 - Consultar auditoria]
+
+    ADM --> UC01
+    ADM --> UC02
+    ADM --> UC03
+    ADM --> UC04
+    ADM --> UC10
+    ADM --> UC11
+    ADM --> UC12
+    ADM --> UC13
+    ADM --> UC14
+    ADM --> UC15
+    ADM --> UC16
+    ADM --> UC18
+
+    GESTAO --> UC01
+    GESTAO --> UC02
+    GESTAO --> UC03
+    GESTAO --> UC04
+    GESTAO --> UC07
+    GESTAO --> UC09
+    GESTAO --> UC10
+    GESTAO --> UC11
+    GESTAO --> UC13
+    GESTAO --> UC16
+    GESTAO --> UC17
+
+    SUPER --> UC01
+    SUPER --> UC04
+    SUPER --> UC06
+    SUPER --> UC07
+    SUPER --> UC09
+    SUPER --> UC10
+    SUPER --> UC13
+
+    ESPEC --> UC01
+    ESPEC --> UC04
+    ESPEC --> UC07
+    ESPEC --> UC09
+
+    AT --> UC01
+    AT --> UC04
+    AT --> UC05
+    AT --> UC06
+    AT --> UC09
+    AT --> UC12
+    AT --> UC14
+    AT --> UC15
+
+    FIN --> UC01
+    FIN --> UC16
+
+    AUX --> UC01
+    AUX --> UC14
+    AUX --> UC17
+
+    FAM --> UC01
+    FAM --> UC08
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<h2 class="section">3. ESPECIFICAÇÃO DETALHADA DOS CASOS DE USO</h2>
+
+<!-- UC01 -->
+<div class="uc-box">
+  <div class="uc-header">UC01 — Autenticar no Sistema</div>
+  <div class="uc-body">
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">Qualquer usuário cadastrado (todos os perfis)</span></div>
+    <div class="uc-row"><span class="uc-label">Pré-condição</span><span class="uc-value">Usuário deve estar cadastrado no banco de autenticação (Supabase Auth) com e-mail e senha válidos</span></div>
+    <div class="uc-row"><span class="uc-label">Gatilho</span><span class="uc-value">Usuário acessa a URL do sistema e é redirecionado para a tela de login</span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo principal</span><span class="uc-value">
+      <div class="flow-step">1. Usuário acessa https://clinica-especial.vercel.app</div>
+      <div class="flow-step">2. Sistema redireciona para /login (proteção de rota)</div>
+      <div class="flow-step">3. Usuário preenche e-mail e senha e clica em "Entrar"</div>
+      <div class="flow-step">4. Sistema envia as credenciais ao Supabase Auth</div>
+      <div class="flow-step">5. Supabase valida e retorna token JWT</div>
+      <div class="flow-step">6. Sistema busca o perfil (role) do usuário nas tabelas usuarios ou atendentes</div>
+      <div class="flow-step">7. Sistema registra o login no log de auditoria</div>
+      <div class="flow-step">8. Sistema redireciona para o dashboard correspondente ao perfil</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo alternativo A</span><span class="uc-value">
+      <div class="alt-step">3a. Credenciais inválidas → Sistema exibe "E-mail ou senha incorretos" → retorna ao passo 3</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo alternativo B</span><span class="uc-value">
+      <div class="alt-step">3b. Usuário clica em "Esqueci minha senha" → Preenche e-mail → Sistema envia link de redefinição → Usuário redefine a senha → Retorna ao passo 3</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Pós-condição</span><span class="uc-value">Usuário autenticado com sessão ativa, redirecionado ao dashboard do seu perfil</span></div>
+    <div class="uc-row"><span class="uc-label">Regra de negócio</span><span class="uc-value">Cada perfil é redirecionado para uma rota específica: adm→/adm/dashboard, gestao→/gestao/dashboard, atendente→/atendente/meus-atendimentos, familia→/familia, etc.</span></div>
+  </div>
+</div>
+
+<!-- UC02 -->
+<div class="uc-box">
+  <div class="uc-header">UC02 — Gerenciar Crianças</div>
+  <div class="uc-body">
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">Administrador, Gestão</span></div>
+    <div class="uc-row"><span class="uc-label">Pré-condição</span><span class="uc-value">Usuário autenticado com perfil adm ou gestao</span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo principal (Cadastrar)</span><span class="uc-value">
+      <div class="flow-step">1. Ator acessa o módulo "Crianças"</div>
+      <div class="flow-step">2. Clica em "Nova criança"</div>
+      <div class="flow-step">3. Preenche: nome, data de nascimento, CID (diagnóstico), escola, série, plano de saúde, número do processo judicial, modalidade, valor da sessão, responsável, alergias, medicamentos e observações</div>
+      <div class="flow-step">4. Clica em "Salvar"</div>
+      <div class="flow-step">5. Sistema insere na tabela criancas com RLS aplicado</div>
+      <div class="flow-step">6. Sistema registra ação no log de auditoria</div>
+      <div class="flow-step">7. Nova criança aparece na lista</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Sub-fluxo: Vincular equipe</span><span class="uc-value">
+      <div class="flow-step">1. Na ficha da criança, ator seleciona "Equipe"</div>
+      <div class="flow-step">2. Vincula AT(s) e Especialista(s) responsáveis</div>
+      <div class="flow-step">3. Sistema insere registros na tabela equipe_crianca</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Pós-condição</span><span class="uc-value">Criança cadastrada e disponível para vinculação com atendimentos, comunicados, prontuários e portal da família</span></div>
+    <div class="uc-row"><span class="uc-label">Campos obrigatórios</span><span class="uc-value">Nome da criança</span></div>
+  </div>
+</div>
+
+<!-- UC03 -->
+<div class="uc-box">
+  <div class="uc-header">UC03 — Gerenciar Colaboradores (ATs e Especialistas)</div>
+  <div class="uc-body">
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">Administrador</span></div>
+    <div class="uc-row"><span class="uc-label">Pré-condição</span><span class="uc-value">Usuário autenticado com perfil adm</span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo principal</span><span class="uc-value">
+      <div class="flow-step">1. ADM acessa "Acompanhantes Terapêuticos" ou "Especialistas"</div>
+      <div class="flow-step">2. Clica em "+ Cadastrar"</div>
+      <div class="flow-step">3. Preenche: nome, e-mail, CPF, RG, data de nascimento, WhatsApp, endereço, especialidade/formação, conselho profissional e registro</div>
+      <div class="flow-step">4. Sistema insere na tabela atendentes com role correspondente</div>
+      <div class="flow-step">5. Colaborador aparece na listagem com busca por nome/especialidade</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo alternativo</span><span class="uc-value">
+      <div class="alt-step">CPF inválido → Sistema valida dígitos verificadores e exibe erro antes de salvar</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Pós-condição</span><span class="uc-value">Colaborador cadastrado, disponível para vinculação com crianças e escalas</span></div>
+  </div>
+</div>
+
+<!-- UC04 -->
+<div class="uc-box">
+  <div class="uc-header">UC04 — Registrar Atendimento (AT)</div>
+  <div class="uc-body">
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">Acompanhante Terapêutico (AT)</span></div>
+    <div class="uc-row"><span class="uc-label">Pré-condição</span><span class="uc-value">AT autenticado; pelo menos uma criança cadastrada e vinculada a ele</span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo principal</span><span class="uc-value">
+      <div class="flow-step">1. AT acessa "Novo Registro"</div>
+      <div class="flow-step">2. Seleciona a criança atendida no dia</div>
+      <div class="flow-step">3. Informa data, horário de início e horário de término</div>
+      <div class="flow-step">4. Sistema calcula automaticamente a duração e o valor (duração em horas × R$30,00)</div>
+      <div class="flow-step">5. AT adiciona observações (opcional)</div>
+      <div class="flow-step">6. Clica em "Salvar"</div>
+      <div class="flow-step">7. Sistema insere na tabela atendimentos</div>
+      <div class="flow-step">8. Atendimento aparece em "Meus Atendimentos" com filtro por mês</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Regra de negócio</span><span class="uc-value">Valor = (hora_fim − hora_início) em horas × R$30,00 (valor configurável por criança)</span></div>
+    <div class="uc-row"><span class="uc-label">Pós-condição</span><span class="uc-value">Atendimento registrado e disponível para relatórios financeiros e de gestão</span></div>
+  </div>
+</div>
+
+<!-- UC05 -->
+<div class="uc-box">
+  <div class="uc-header">UC05 — Preencher Comunicado Diário (Formulário Escolar)</div>
+  <div class="uc-body">
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">Acompanhante Terapêutico (AT)</span></div>
+    <div class="uc-row"><span class="uc-label">Pré-condição</span><span class="uc-value">AT autenticado; atendimento realizado no dia</span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo principal</span><span class="uc-value">
+      <div class="flow-step">1. AT acessa "Comunicado Diário"</div>
+      <div class="flow-step">2. Seleciona a criança e a data</div>
+      <div class="flow-step">3. Formulário multi-etapas — Etapa 1: Presença (presente/ausente, motivo)</div>
+      <div class="flow-step">4. Etapa 2: Atividades realizadas no dia</div>
+      <div class="flow-step">5. Etapa 3: Comportamento e humor da criança</div>
+      <div class="flow-step">6. Etapa 4: Intercorrências (quedas, choro, conflitos, etc.)</div>
+      <div class="flow-step">7. Etapa 5: Observações gerais e recados</div>
+      <div class="flow-step">8. AT revisa e clica em "Enviar"</div>
+      <div class="flow-step">9. Sistema salva na tabela formularios_escolares</div>
+      <div class="flow-step">10. Gestão e Supervisora recebem o comunicado em tempo real</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Pós-condição</span><span class="uc-value">Comunicado disponível para Gestão, Supervisora e ADM consultarem</span></div>
+  </div>
+</div>
+
+<!-- UC06 -->
+<div class="uc-box">
+  <div class="uc-header">UC06 — Criar e Aprovar Material Adaptado</div>
+  <div class="uc-body">
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">AT (cria) | Supervisora / Gestão (revisam e aprovam)</span></div>
+    <div class="uc-row"><span class="uc-label">Pré-condição</span><span class="uc-value">Usuário autenticado; bucket de Storage "materiais-adaptados" configurado no Supabase</span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo principal</span><span class="uc-value">
+      <div class="flow-step">1. AT clica em "+ Novo material"</div>
+      <div class="flow-step">2. Preenche: título do livro/material, matéria, série, criança (opcional), nível de adaptação</div>
+      <div class="flow-step">3. Opcionalmente busca pictogramas ARASAAC por palavra-chave e adiciona ao material com 1 clique</div>
+      <div class="flow-step">4. Fotografa o material físico com a câmera do celular ou seleciona da galeria</div>
+      <div class="flow-step">5. Clica em "Salvar rascunho" (status: rascunho) ou "Enviar para revisão" (status: em_revisao)</div>
+      <div class="flow-step">6. Supervisora/Gestão veem na aba "Em Revisão"</div>
+      <div class="flow-step">7. Revisor abre o material e analisa fotos e descrição</div>
+      <div class="flow-step">8a. Clica "✓ Aprovar" → status muda para aprovado → material entra no Acervo</div>
+      <div class="flow-step">8b. Clica "⚠️ Solicitar ajustes" → digita o que precisa ser corrigido → AT recebe o feedback</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo alternativo</span><span class="uc-value">
+      <div class="alt-step">AT busca pictograma mas API ARASAAC está fora → Sistema exibe mensagem de erro dentro do formulário (não bloqueia o restante do cadastro)</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Pós-condição</span><span class="uc-value">Material aprovado disponível no Acervo para reaproveitamento por qualquer membro da equipe</span></div>
+    <div class="uc-row"><span class="uc-label">Regra de negócio</span><span class="uc-value">Pictogramas ARASAAC são licenciados CC BY-NC-SA (uso não comercial com atribuição — adequado ao uso clínico)</span></div>
+  </div>
+</div>
+
+<!-- UC07 -->
+<div class="uc-box">
+  <div class="uc-header">UC07 — Chat Interno</div>
+  <div class="uc-body">
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">Todos os perfis (exceto Família)</span></div>
+    <div class="uc-row"><span class="uc-label">Pré-condição</span><span class="uc-value">Usuário autenticado; perfil origem tem permissão para contatar o perfil destino</span></div>
+    <div class="uc-row"><span class="uc-label">Regras de contato por perfil</span><span class="uc-value">
+      AT: pode contatar ADM e Supervisora<br>
+      Especialista: pode contatar ADM, Supervisora e Gestão<br>
+      Gestão: pode contatar ADM, Supervisora e Especialistas<br>
+      Supervisora e ADM: podem contatar qualquer perfil
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo principal</span><span class="uc-value">
+      <div class="flow-step">1. Usuário acessa "Chat"</div>
+      <div class="flow-step">2. Clica em "+ Nova conversa" → sistema exibe apenas os usuários que pode contatar</div>
+      <div class="flow-step">3. Seleciona o destinatário</div>
+      <div class="flow-step">4. Sistema cria conversa 1:1 (ou abre a existente se já houver)</div>
+      <div class="flow-step">5. Usuário digita mensagem e pressiona Enter ou clica enviar</div>
+      <div class="flow-step">6. Mensagem salva na tabela mensagens_chat via Supabase Realtime</div>
+      <div class="flow-step">7. Destinatário vê a mensagem em tempo real (WebSocket), sem precisar recarregar</div>
+      <div class="flow-step">8. Ícone ✓ aparece quando enviado; ✓✓ quando lido pelo destinatário</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Funcionalidades adicionais</span><span class="uc-value">Envio de imagens e arquivos; reações com emoji; indicador de digitação; videochamada integrada; notificação push mesmo com app fechado</span></div>
+    <div class="uc-row"><span class="uc-label">Pós-condição</span><span class="uc-value">Mensagem persistida no banco e entregue em tempo real ao destinatário</span></div>
+  </div>
+</div>
+
+<!-- UC08 -->
+<div class="uc-box">
+  <div class="uc-header">UC08 — Portal da Família</div>
+  <div class="uc-body">
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">Responsável pela criança (perfil: familia)</span></div>
+    <div class="uc-row"><span class="uc-label">Pré-condição</span><span class="uc-value">Responsável cadastrado com perfil familia; criança vinculada à conta do responsável</span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo principal</span><span class="uc-value">
+      <div class="flow-step">1. Responsável acessa o sistema com seu login</div>
+      <div class="flow-step">2. É redirecionado automaticamente ao Portal da Família (/familia)</div>
+      <div class="flow-step">3. Visualiza aba "Diário": resumo do dia enviado pela equipe</div>
+      <div class="flow-step">4. Visualiza aba "Momentos": fotos e registros compartilhados pela equipe</div>
+      <div class="flow-step">5. Visualiza aba "Evolução": relatórios de progresso terapêutico</div>
+      <div class="flow-step">6. Visualiza aba "Avisos": comunicados enviados pela clínica</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Restrição</span><span class="uc-value">Acesso SOMENTE LEITURA. Família não pode editar, criar ou excluir nenhum dado.</span></div>
+    <div class="uc-row"><span class="uc-label">Pós-condição</span><span class="uc-value">Família informada sobre o dia, progresso e avisos da criança</span></div>
+  </div>
+</div>
+
+<!-- UC09 -->
+<div class="uc-box">
+  <div class="uc-header">UC09 — Protocolo de Conduta</div>
+  <div class="uc-body">
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">ADM / Gestão (publica) | Todos os colaboradores (confirmam leitura)</span></div>
+    <div class="uc-row"><span class="uc-label">Pré-condição</span><span class="uc-value">Usuário autenticado</span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo de publicação</span><span class="uc-value">
+      <div class="flow-step">1. ADM/Gestão cria protocolo com título e texto descritivo</div>
+      <div class="flow-step">2. Define os perfis que devem confirmar leitura</div>
+      <div class="flow-step">3. Publica o protocolo → fica disponível para os destinatários</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo de confirmação</span><span class="uc-value">
+      <div class="flow-step">1. Colaborador acessa "Protocolos"</div>
+      <div class="flow-step">2. Lê o conteúdo do protocolo</div>
+      <div class="flow-step">3. Clica em "Confirmar leitura"</div>
+      <div class="flow-step">4. Sistema registra confirmação na tabela protocolos_confirmacoes com data/hora</div>
+      <div class="flow-step">5. Gestão/ADM visualizam relatório: quem confirmou e quem não confirmou ainda</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Pós-condição</span><span class="uc-value">Protocolo com rastreio completo de leitura por colaborador</span></div>
+  </div>
+</div>
+
+<!-- UC10 -->
+<div class="uc-box">
+  <div class="uc-header">UC10 — Requisição de Compra</div>
+  <div class="uc-body">
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">Qualquer colaborador (solicita) | ADM (responde)</span></div>
+    <div class="uc-row"><span class="uc-label">Fluxo principal</span><span class="uc-value">
+      <div class="flow-step">1. Colaborador acessa "Requisições de Compra"</div>
+      <div class="flow-step">2. Preenche: produto, quantidade, urgência (normal/urgente), link de compra (opcional) e descrição</div>
+      <div class="flow-step">3. Envia a requisição (status: Pendente)</div>
+      <div class="flow-step">4. ADM visualiza todas as requisições pendentes</div>
+      <div class="flow-step">5. ADM atualiza o status conforme o andamento:</div>
+      <div class="flow-step">&nbsp;&nbsp;&nbsp;Pendente → Em análise → Aprovado / Negado → Em compra → Concluído</div>
+      <div class="flow-step">6. ADM pode adicionar observações em cada atualização</div>
+      <div class="flow-step">7. Solicitante acompanha o status da sua requisição em tempo real</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Pós-condição</span><span class="uc-value">Requisição registrada com histórico completo de status e observações</span></div>
+  </div>
+</div>
+
+<!-- UC11 -->
+<div class="uc-box">
+  <div class="uc-header">UC11 — Auditoria de Ações</div>
+  <div class="uc-body">
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">Administrador (consulta) | Sistema (registra automaticamente)</span></div>
+    <div class="uc-row"><span class="uc-label">Funcionamento</span><span class="uc-value">
+      <div class="flow-step">1. Toda ação crítica (login, criar, editar, excluir) chama a função registrarLog() automaticamente</div>
+      <div class="flow-step">2. Log salvo na tabela log_auditoria com: data/hora, e-mail do usuário, nome do usuário, ação, tabela afetada, ID do registro e descrição</div>
+      <div class="flow-step">3. ADM acessa /adm/auditoria</div>
+      <div class="flow-step">4. Visualiza histórico completo com filtros por usuário, data e tipo de ação</div>
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Exemplos registrados</span><span class="uc-value">
+      "Criou criança: João Pedro" | "Aprovou material adaptado: Histórias de Contos" | "Excluiu atendimento: Maria 24/06" | "Login: at@clinica.com"
+    </span></div>
+    <div class="uc-row"><span class="uc-label">Pós-condição</span><span class="uc-value">Rastreabilidade total de todas as ações realizadas no sistema por qualquer usuário</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<h2 class="section">4. DIAGRAMA DE CLASSES (MODELO DE DADOS)</h2>
+
+<div class="mermaid">
+classDiagram
+    class usuarios {
+        +uuid id
+        +text email
+        +text nome
+        +user_role role
+        +text cpf
+        +timestamptz created_at
+    }
+
+    class atendentes {
+        +uuid id
+        +text email
+        +text nome
+        +user_role role
+        +text especialidade
+        +text conselho
+        +text cpf
+        +text rg
+        +date data_nascimento
+        +text whatsapp
+        +text endereco
+        +text logo_url
+        +uuid usuario_id
+    }
+
+    class criancas {
+        +uuid id
+        +text nome
+        +date data_nascimento
+        +text diagnostico
+        +text cid
+        +text serie
+        +integer idade
+        +text plano_saude
+        +numeric valor_sessao
+        +text modalidade
+        +text numero_processo
+        +boolean ativo
+        +text alergias
+        +text medicamentos
+        +text observacoes
+        +uuid escola_id
+    }
+
+    class responsaveis {
+        +uuid id
+        +text nome
+        +text email
+        +text telefone
+        +uuid crianca_id
+    }
+
+    class escolas {
+        +uuid id
+        +text nome
+        +text endereco
+        +text telefone
+        +text email
+    }
+
+    class equipe_crianca {
+        +uuid id
+        +uuid crianca_id
+        +uuid atendente_id
+        +text papel
+    }
+
+    class atendimentos {
+        +uuid id
+        +uuid crianca_id
+        +uuid atendente_id
+        +date data
+        +time hora_inicio
+        +time hora_fim
+        +numeric valor
+        +text tipo
+        +text observacoes
+        +timestamptz created_at
+    }
+
+    class formularios_escolares {
+        +uuid id
+        +uuid crianca_id
+        +uuid atendente_id
+        +date data
+        +text presenca
+        +text atividades
+        +text comportamento
+        +text intercorrencias
+        +text observacoes
+        +timestamptz created_at
+    }
+
+    class prontuarios {
+        +uuid id
+        +uuid crianca_id
+        +uuid autor_id
+        +text tipo
+        +text titulo
+        +text conteudo
+        +timestamptz created_at
+    }
+
+    class materiais_adaptados {
+        +uuid id
+        +text titulo_livro
+        +text materia
+        +text serie
+        +uuid crianca_id
+        +text nivel_adaptacao
+        +text observacoes
+        +text[] fotos
+        +text status
+        +text observacao_revisao
+        +uuid criado_por
+        +text criado_por_nome
+        +timestamptz created_at
+    }
+
+    class mural {
+        +uuid id
+        +text titulo
+        +text conteudo
+        +text autor_nome
+        +text autor_role
+        +text[] roles_destino
+        +timestamptz created_at
+    }
+
+    class conversas {
+        +uuid id
+        +uuid participante_a
+        +uuid participante_b
+        +timestamptz created_at
+    }
+
+    class mensagens_chat {
+        +uuid id
+        +uuid conversa_id
+        +uuid autor_id
+        +text texto
+        +text arquivo_url
+        +jsonb reacoes
+        +timestamptz created_at
+    }
+
+    class protocolos_conduta {
+        +uuid id
+        +text titulo
+        +text conteudo
+        +text[] roles_destino
+        +timestamptz created_at
+    }
+
+    class protocolos_confirmacoes {
+        +uuid id
+        +uuid protocolo_id
+        +text usuario_email
+        +timestamptz confirmado_em
+    }
+
+    class brinquedos_emprestimos {
+        +uuid id
+        +text brinquedo_nome
+        +uuid solicitante_id
+        +text solicitante_nome
+        +text status
+        +date data_solicitacao
+        +date data_retirada
+        +date data_devolucao
+    }
+
+    class requisicoes_compra {
+        +uuid id
+        +text produto
+        +int quantidade
+        +text descricao
+        +text link_compra
+        +text urgencia
+        +text status
+        +text obs_adm
+        +text solicitante_nome
+        +text solicitante_role
+        +timestamptz created_at
+    }
+
+    class log_auditoria {
+        +uuid id
+        +text usuario_email
+        +text usuario_nome
+        +text acao
+        +text tabela
+        +uuid registro_id
+        +text descricao
+        +timestamptz created_at
+    }
+
+    class notificacoes {
+        +uuid id
+        +uuid destinatario_id
+        +text tipo
+        +text titulo
+        +text mensagem
+        +boolean lida
+        +timestamptz created_at
+    }
+
+    criancas --> escolas : escola_id
+    criancas --> responsaveis : 1 para N
+    equipe_crianca --> criancas : crianca_id
+    equipe_crianca --> atendentes : atendente_id
+    atendimentos --> criancas : crianca_id
+    atendimentos --> atendentes : atendente_id
+    formularios_escolares --> criancas : crianca_id
+    formularios_escolares --> atendentes : atendente_id
+    prontuarios --> criancas : crianca_id
+    materiais_adaptados --> criancas : crianca_id
+    mensagens_chat --> conversas : conversa_id
+    protocolos_confirmacoes --> protocolos_conduta : protocolo_id
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<h2 class="section">5. ARQUITETURA DO SISTEMA</h2>
+
+<div class="mermaid">
+graph TB
+    subgraph CLIENTES["Clientes (Dispositivos)"]
+        CEL[📱 Celular]
+        PC[💻 Computador]
+        TAB[📱 Tablet]
+    end
+
+    subgraph VERCEL["Vercel — Hospedagem e Deploy"]
+        SSR["Next.js Server Components\n(Autenticação, proteção de rotas)"]
+        CSR["Next.js Client Components\n(Interface interativa)"]
+        API["API Routes\n(Serviços externos)"]
+        HOOK["Pre-push Hook\n(tsc — verificação de tipos)"]
+    end
+
+    subgraph SUPABASE["Supabase — Backend como Serviço (BaaS)"]
+        AUTH["Supabase Auth\nJWT + bcrypt"]
+        DB[("PostgreSQL\nSão Paulo sa-east-1")]
+        STORAGE["Storage\nFotos e arquivos"]
+        RT["Realtime\nWebSocket — Chat ao vivo"]
+        RLS["RLS Policies\nSegurança por linha"]
+    end
+
+    subgraph EXTERNOS["Serviços Externos"]
+        ARASAAC["ARASAAC API\nPictogramas CAA"]
+        PUSH["Web Push API\nNotificações"]
+        GH["GitHub\nRepositório + CI/CD"]
+    end
+
+    CEL --> SSR
+    PC --> SSR
+    TAB --> SSR
+    SSR --> CSR
+    CSR --> AUTH
+    CSR --> DB
+    CSR --> STORAGE
+    CSR --> RT
+    CSR --> ARASAAC
+    CSR --> PUSH
+    DB --> RLS
+    GH --> HOOK
+    GH --> VERCEL
+</div>
+
+<h3>5.1 Fluxo de Deploy Automático</h3>
+<div class="mermaid">
+sequenceDiagram
+    participant DEV as Desenvolvedor
+    participant HOOK as Pre-push Hook
+    participant TSC as TypeScript (tsc)
+    participant GH as GitHub
+    participant VERCEL as Vercel CI/CD
+    participant PROD as Produção
+
+    DEV->>HOOK: git push
+    HOOK->>TSC: npm run typecheck
+    alt Erros de tipo encontrados
+        TSC-->>HOOK: ❌ Erro
+        HOOK-->>DEV: Push bloqueado
+    else Sem erros
+        TSC-->>HOOK: ✅ OK
+        HOOK->>GH: Push liberado
+        GH->>VERCEL: Webhook de deploy
+        VERCEL->>VERCEL: Build + Testes
+        VERCEL->>PROD: Deploy automático
+        PROD-->>DEV: Versão nova no ar
+    end
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<h2 class="section">6. DIAGRAMAS DE SEQUÊNCIA — FLUXOS PRINCIPAIS</h2>
+
+<h3>6.1 Login e Redirecionamento por Perfil</h3>
+<div class="mermaid">
+sequenceDiagram
+    actor U as Usuário
+    participant L as /login
+    participant SA as Server Action
+    participant AUTH as Supabase Auth
+    participant DB as PostgreSQL
+    participant AUDIT as log_auditoria
+
+    U->>L: Digita e-mail e senha
+    L->>SA: loginWithPassword(email, senha)
+    SA->>AUTH: signInWithPassword()
+    alt Credenciais válidas
+        AUTH-->>SA: Token JWT
+        SA->>DB: SELECT role FROM usuarios WHERE email = ?
+        DB-->>SA: role = 'gestao'
+        SA->>AUDIT: INSERT (login, email, ação)
+        SA-->>L: redirect('/gestao/dashboard')
+        L-->>U: Dashboard da Gestão
+    else Credenciais inválidas
+        AUTH-->>SA: Erro de autenticação
+        SA-->>L: { error: 'E-mail ou senha incorretos' }
+        L-->>U: Mensagem de erro
+    end
+</div>
+
+<h3>6.2 Registro de Atendimento</h3>
+<div class="mermaid">
+sequenceDiagram
+    actor AT as AT
+    participant UI as /atendente/novo-registro
+    participant SB as Supabase Client
+    participant DB as PostgreSQL
+
+    AT->>UI: Seleciona criança, data, 08h–10h
+    UI->>UI: Calcula: 2h × R$30 = R$60,00
+    AT->>UI: Confirma e clica Salvar
+    UI->>SB: insert('atendimentos', dados)
+    SB->>DB: INSERT com user_id = auth.uid()
+    DB-->>SB: Registro salvo
+    SB-->>UI: Sucesso
+    UI-->>AT: Atendimento registrado
+</div>
+
+<h3>6.3 Busca de Pictograma ARASAAC e Vinculação ao Material</h3>
+<div class="mermaid">
+sequenceDiagram
+    actor AT as AT
+    participant UI as Modal Material Adaptado
+    participant API as api.arasaac.org
+    participant CDN as static.arasaac.org
+
+    AT->>UI: Digita "escola" → clica Buscar
+    UI->>API: GET /pictograms/pt/bestsearch/escola
+    alt API disponível
+        API-->>UI: [{id: 3082, keywords:[{keyword:'escola'}]}, ...]
+        loop Para cada pictograma
+            UI->>CDN: Carrega imagem 3082_300.png
+            CDN-->>UI: Imagem PNG
+        end
+        UI-->>AT: Grid com até 12 pictogramas
+        AT->>UI: Clica no pictograma desejado
+        UI->>UI: Adiciona URL da imagem à lista fotos[]
+    else API indisponível
+        API-->>UI: Erro de rede
+        UI-->>AT: Mensagem de erro inline
+    end
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<h2 class="section">7. REQUISITOS FUNCIONAIS DETALHADOS</h2>
+
+<table>
+  <tr><th>Código</th><th>Módulo</th><th>Descrição da funcionalidade</th><th>Perfis autorizados</th></tr>
+  <tr><td>RF01.1</td><td>Auth</td><td>Login com e-mail e senha</td><td>Todos</td></tr>
+  <tr><td>RF01.2</td><td>Auth</td><td>Redirecionamento automático por perfil após login</td><td>Todos</td></tr>
+  <tr><td>RF01.3</td><td>Auth</td><td>Recuperação de senha por e-mail</td><td>Todos</td></tr>
+  <tr><td>RF01.4</td><td>Auth</td><td>Proteção de rotas — acesso negado redireciona para /login</td><td>Sistema</td></tr>
+  <tr><td>RF02.1</td><td>Crianças</td><td>Cadastrar criança com dados completos</td><td>ADM, Gestão</td></tr>
+  <tr><td>RF02.2</td><td>Crianças</td><td>Editar e excluir dados de criança</td><td>ADM, Gestão</td></tr>
+  <tr><td>RF02.3</td><td>Crianças</td><td>Vincular AT e Especialistas à criança (equipe)</td><td>ADM, Gestão</td></tr>
+  <tr><td>RF03.1</td><td>Colaboradores</td><td>Cadastrar AT com CPF validado (dígitos verificadores)</td><td>ADM</td></tr>
+  <tr><td>RF03.2</td><td>Colaboradores</td><td>Cadastrar Especialista com registro profissional</td><td>ADM</td></tr>
+  <tr><td>RF04.1</td><td>Escala</td><td>Visualizar escala semanal com sábado e domingo</td><td>ADM, Gestão, AT, Especialista, Supervisora</td></tr>
+  <tr><td>RF05.1</td><td>Atendimento</td><td>Registrar atendimento com cálculo automático de valor</td><td>AT</td></tr>
+  <tr><td>RF05.2</td><td>Atendimento</td><td>Visualizar histórico por mês/ano</td><td>AT, ADM, Gestão</td></tr>
+  <tr><td>RF06.1</td><td>Form. Escolar</td><td>Preencher comunicado diário multi-etapas</td><td>AT</td></tr>
+  <tr><td>RF06.2</td><td>Form. Escolar</td><td>Visualizar todos os comunicados da equipe</td><td>Gestão, Supervisora, ADM</td></tr>
+  <tr><td>RF07.1</td><td>Prontuários</td><td>Criar e editar prontuários clínicos</td><td>Especialista</td></tr>
+  <tr><td>RF07.2</td><td>Prontuários</td><td>Notificar Gestão/Supervisora ao criar relatório</td><td>Sistema</td></tr>
+  <tr><td>RF08.1</td><td>Fam. Portal</td><td>Exibir diário, fotos, evolução e avisos para a família</td><td>Familia</td></tr>
+  <tr><td>RF09.1</td><td>Chat</td><td>Mensagens privadas em tempo real (WebSocket)</td><td>Todos exceto Familia</td></tr>
+  <tr><td>RF09.2</td><td>Chat</td><td>Envio de imagens e arquivos</td><td>Todos exceto Familia</td></tr>
+  <tr><td>RF09.3</td><td>Chat</td><td>Videochamada integrada</td><td>Todos exceto Familia</td></tr>
+  <tr><td>RF09.4</td><td>Chat</td><td>Indicador de digitação em tempo real</td><td>Sistema</td></tr>
+  <tr><td>RF10.1</td><td>Mural</td><td>Publicar e visualizar avisos gerais</td><td>ADM, Gestão, Supervisora (pub.) | Todos (viz.)</td></tr>
+  <tr><td>RF11.1</td><td>Protocolos</td><td>Publicar protocolo com confirmação de leitura obrigatória</td><td>ADM, Gestão</td></tr>
+  <tr><td>RF11.2</td><td>Protocolos</td><td>Relatório de confirmações pendentes e realizadas</td><td>ADM, Gestão</td></tr>
+  <tr><td>RF12.1</td><td>Mat. Adaptados</td><td>Cadastrar material com fotos e nível de adaptação</td><td>AT</td></tr>
+  <tr><td>RF12.2</td><td>Mat. Adaptados</td><td>Buscar e inserir pictogramas ARASAAC</td><td>AT</td></tr>
+  <tr><td>RF12.3</td><td>Mat. Adaptados</td><td>Fluxo de aprovação: rascunho → revisão → aprovado</td><td>Sistema</td></tr>
+  <tr><td>RF12.4</td><td>Mat. Adaptados</td><td>Acervo compartilhado com busca por título/matéria/série</td><td>Todos</td></tr>
+  <tr><td>RF13.1</td><td>Brinquedos</td><td>Controlar empréstimo e devolução com ranking de uso</td><td>AT, Aux.ADM, ADM</td></tr>
+  <tr><td>RF14.1</td><td>Requisições</td><td>Abrir requisição de compra com 6 status</td><td>Todos (solicita) | ADM (responde)</td></tr>
+  <tr><td>RF15.1</td><td>Financeiro</td><td>Registrar contas a pagar e receber</td><td>ADM, Financeiro</td></tr>
+  <tr><td>RF15.2</td><td>Financeiro</td><td>Gerar folha de pagamento mensal</td><td>ADM, Financeiro</td></tr>
+  <tr><td>RF16.1</td><td>Agenda</td><td>Gerenciar agenda de compromissos da diretora</td><td>Aux.ADM (gerencia) | Gestão (visualiza)</td></tr>
+  <tr><td>RF17.1</td><td>Auditoria</td><td>Registrar automaticamente toda ação crítica</td><td>Sistema</td></tr>
+  <tr><td>RF17.2</td><td>Auditoria</td><td>Consultar log com filtros por usuário, data e ação</td><td>ADM</td></tr>
+  <tr><td>RF18.1</td><td>Notificações</td><td>Enviar notificações push mesmo com app fechado</td><td>Sistema</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════ -->
+<h2 class="section">8. REQUISITOS NÃO FUNCIONAIS</h2>
+
+<table>
+  <tr><th>Código</th><th>Categoria</th><th>Requisito</th><th>Critério</th></tr>
+  <tr><td>RNF01</td><td>Desempenho</td><td>Tempo de carregamento</td><td>Inferior a 3s em rede 4G</td></tr>
+  <tr><td>RNF02</td><td>Desempenho</td><td>Resposta de operações CRUD</td><td>Feedback ao usuário em &lt;2s</td></tr>
+  <tr><td>RNF03</td><td>Segurança</td><td>Criptografia em trânsito</td><td>HTTPS obrigatório (TLS 1.3)</td></tr>
+  <tr><td>RNF04</td><td>Segurança</td><td>Isolamento de dados</td><td>RLS no banco — cada linha acessível apenas pelo dono</td></tr>
+  <tr><td>RNF05</td><td>Segurança</td><td>Senhas</td><td>Nunca armazenadas em texto plano (bcrypt via Supabase Auth)</td></tr>
+  <tr><td>RNF06</td><td>Usabilidade</td><td>Responsividade</td><td>Funcional em telas de 390px a 1920px</td></tr>
+  <tr><td>RNF07</td><td>Usabilidade</td><td>Mobile-first</td><td>Fluxos principais acessíveis em até 3 toques no celular</td></tr>
+  <tr><td>RNF08</td><td>Disponibilidade</td><td>Uptime</td><td>Mínimo 99% garantido pela Vercel + Supabase</td></tr>
+  <tr><td>RNF09</td><td>Compatibilidade</td><td>Navegadores</td><td>Chrome 110+, Firefox 110+, Safari 16+</td></tr>
+  <tr><td>RNF10</td><td>Compatibilidade</td><td>Dispositivos</td><td>Android 10+ e iOS 15+</td></tr>
+  <tr><td>RNF11</td><td>Legal</td><td>LGPD</td><td>Dados em servidor no Brasil (São Paulo) — RLS aplicado</td></tr>
+  <tr><td>RNF12</td><td>Manutenibilidade</td><td>Qualidade de código</td><td>100% tipado (TypeScript strict) — push bloqueado com erros</td></tr>
+  <tr><td>RNF13</td><td>Manutenibilidade</td><td>Deploy</td><td>Automático a cada commit via GitHub → Vercel (CI/CD)</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════ -->
+<h2 class="section">9. PLANO DE TESTES</h2>
+
+<h3>9.1 Estratégia</h3>
+<p>Combinação de: <strong>verificação estática automatizada</strong> (TypeScript), <strong>testes end-to-end</strong> (Playwright/Chromium headless) e <strong>testes de aceitação</strong> com o cliente real em ambiente de produção.</p>
+
+<h3>9.2 Casos de Teste</h3>
+<table>
+  <tr><th>ID</th><th>Caso de Teste</th><th>Entrada</th><th>Resultado Esperado</th><th>Status</th></tr>
+  <tr><td>CT-01</td><td>Login com credenciais válidas</td><td>E-mail e senha corretos de AT</td><td>Redirect para /atendente/meus-atendimentos</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-02</td><td>Login com credenciais inválidas</td><td>Senha incorreta</td><td>Mensagem "E-mail ou senha incorretos"</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-03</td><td>Acesso a rota não autorizada</td><td>AT tenta acessar /adm/auditoria</td><td>Redirect para /login</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-04</td><td>Registro de atendimento</td><td>Criança + 08h00–10h00</td><td>Valor calculado = R$60,00 e salvo no banco</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-05</td><td>Busca de pictograma ARASAAC</td><td>Termo "escola"</td><td>Grid com 3+ pictogramas renderizados</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-06</td><td>Adicionar pictograma ao material</td><td>Clique em miniatura do pictograma</td><td>Imagem adicionada à lista de fotos do material</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-07</td><td>Fluxo de aprovação de material</td><td>AT envia → Supervisora aprova</td><td>Status muda de "em_revisao" para "aprovado"</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-08</td><td>Chat em tempo real</td><td>Usuário A envia mensagem para B</td><td>B recebe sem recarregar a página (WebSocket)</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-09</td><td>Responsividade mobile (Pixel 5)</td><td>Acesso via celular 393px</td><td>Header visível, botões acessíveis, modais funcionando</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-10</td><td>Isolamento de dados (RLS)</td><td>AT tenta acessar prontuários de criança não vinculada</td><td>Retorno vazio — acesso negado no banco</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-11</td><td>Hook pre-push TypeScript</td><td>git push com erro de tipo no código</td><td>Push bloqueado — "❌ Erros de tipo encontrados"</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-12</td><td>Formulário escolar multi-etapas</td><td>AT preenche todas as 5 etapas</td><td>Comunicado salvo e visível para Gestão</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-13</td><td>Confirmação de protocolo de conduta</td><td>Colaborador lê e confirma leitura</td><td>Confirmação registrada com data/hora; aparece no relatório</td><td>✅ Aprovado</td></tr>
+  <tr><td>CT-14</td><td>Notificação push</td><td>Novo relatório criado por Especialista</td><td>Gestão e Supervisora recebem push notification</td><td>✅ Aprovado</td></tr>
+</table>
+
+<h3>9.3 Bugs Encontrados e Corrigidos</h3>
+<table>
+  <tr><th>ID</th><th>Descrição</th><th>Módulo</th><th>Causa</th><th>Solução</th></tr>
+  <tr><td>BUG-01</td><td>Header fixo mobile sobrepondo botões de ação</td><td>Layout global</td><td>Container flex-row não empilhava o espaçador antes do main</td><td>Alterado para flex-col em mobile (md:flex-row)</td></tr>
+  <tr><td>BUG-02</td><td>Transações de meses futuros aparecendo no mês atual</td><td>Financeiro (Pessoal)</td><td>Query sem limite superior de data (só gte, sem lt)</td><td>Adicionado .lt(inicioProximoMes) na consulta</td></tr>
+  <tr><td>BUG-03</td><td>Erro de busca ARASAAC invisível com modal aberto</td><td>Materiais Adaptados</td><td>Toast de erro com z-index inferior ao modal overlay</td><td>Mensagem de erro renderizada inline dentro do modal</td></tr>
+  <tr><td>BUG-04</td><td>PWA travado em versão antiga após deploys</td><td>Service Worker</td><td>Estratégia cache-first com nome fixo "v1" nunca atualizava</td><td>Trocado para network-first com cache versionado "v2"</td></tr>
+  <tr><td>BUG-05</td><td>Sábado e domingo ausentes na escala do AT</td><td>Escala</td><td>Array de dias não incluía finais de semana</td><td>Adicionados Sábado/Domingo com destaque visual âmbar</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════ -->
+<h2 class="section">10. ECOSSISTEMA ÁGIL E METODOLOGIA</h2>
+
+<h3>10.1 Abordagem Adotada</h3>
+<p>O desenvolvimento seguiu os princípios do <strong>desenvolvimento ágil</strong> com características de <strong>Extreme Programming (XP)</strong> e <strong>Kanban contínuo</strong>, com entregas frequentes e feedback imediato do cliente em cada ciclo.</p>
+
+<h3>10.2 Ciclo de Desenvolvimento</h3>
+<div class="mermaid">
+graph LR
+    A["💬 Levantamento\ncom o cliente"] --> B["👨‍💻 Desenvolvimento\nda funcionalidade"]
+    B --> C["✅ Testes\nautomatizados"]
+    C --> D["🚀 Deploy\nautomático"]
+    D --> E["📱 Uso real\npela equipe"]
+    E --> A
+</div>
+
+<h3>10.3 Princípios Ágeis Aplicados</h3>
+<table>
+  <tr><th>Princípio</th><th>Como foi aplicado</th></tr>
+  <tr><td>Entrega contínua</td><td>Deploy automático a cada feature (GitHub → Vercel)</td></tr>
+  <tr><td>Colaboração com o cliente</td><td>Cliente participou de todas as decisões em tempo real</td></tr>
+  <tr><td>Software funcionando</td><td>Sistema foi para produção desde os primeiros módulos</td></tr>
+  <tr><td>Resposta à mudança</td><td>Requisitos evoluíram com base no uso real da equipe</td></tr>
+  <tr><td>Feedback rápido</td><td>Cada funcionalidade testada pelo cliente imediatamente</td></tr>
+  <tr><td>Integração contínua</td><td>Hook pre-push bloqueia código com erros de tipo</td></tr>
+</table>
+
+<h3>10.4 Métricas do Projeto</h3>
+<table>
+  <tr><th>Métrica</th><th>Valor</th></tr>
+  <tr><td>Total de versões entregues (commits)</td><td><strong>199</strong></td></tr>
+  <tr><td>Módulos entregues</td><td>20+</td></tr>
+  <tr><td>Perfis de acesso</td><td>8</td></tr>
+  <tr><td>Tabelas no banco de dados</td><td>25+</td></tr>
+  <tr><td>Telas desenvolvidas</td><td>55+</td></tr>
+  <tr><td>Casos de uso especificados</td><td>18</td></tr>
+  <tr><td>Requisitos funcionais</td><td>35+</td></tr>
+  <tr><td>Bugs encontrados e corrigidos</td><td>5 críticos</td></tr>
+</table>
+
+<div class="footer">
+  <p>Sistema de Gestão Clínica Abraço — ABA Núcleo de Intervenção Comportamental</p>
+  <p>Documentação Técnica — Especificação de Requisitos de Software (SRS) — Julho de 2026</p>
+  <p><strong>Desenvolvedor:</strong> Antonio de Sousa Silva — Desenvolvedor Júnior</p>
+  <p>Período: Novembro de 2025 – Julho de 2026 (8 meses) | 199 versões entregues | clinica-especial.vercel.app</p>
+</div>
+
+</div>
+</body>
+</html>

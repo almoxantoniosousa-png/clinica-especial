@@ -420,9 +420,21 @@ function AbaAvisos({ criancaId }: { criancaId: string }) {
   useEffect(() => {
     const carregar = async () => {
       setLoading(true);
-      const { data } = await supabase2.from("portal_comunicados")
-        .select("*").eq("crianca_id", criancaId).order("created_at", { ascending: false });
-      setAvisos(data || []);
+      const [{ data: comunicados }, { data: muralPosts }] = await Promise.all([
+        supabase2.from("portal_comunicados")
+          .select("*").eq("crianca_id", criancaId).order("created_at", { ascending: false }),
+        supabase2.from("mural")
+          .select("id, titulo, conteudo, foto_url, created_at")
+          .in("destinatario", ["familia", "todos"])
+          .order("created_at", { ascending: false })
+          .limit(20),
+      ]);
+      const muralFormatados = (muralPosts || []).map((m: any) => ({
+        ...m,
+        descricao: m.conteudo,
+        _tipo: "mural",
+      }));
+      setAvisos([...muralFormatados, ...(comunicados || [])]);
       setLoading(false);
     };
     carregar();

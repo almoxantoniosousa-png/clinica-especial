@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Gestão — Apresentação Supervisoras</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; }
+
+  .slide {
+    width: 297mm;
+    min-height: 210mm;
+    background: white;
+    margin: 12px auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    position: relative;
+  }
+
+  .slide-header {
+    background: #1e3a5f;
+    color: white;
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 9pt;
+    flex-shrink: 0;
+  }
+  .slide-header .clinic { font-weight: 700; font-size: 10pt; }
+  .slide-header .slide-num { opacity: 0.6; }
+
+  .slide-body { flex: 1; padding: 28px 40px; display: flex; flex-direction: column; justify-content: center; }
+
+  /* Slide 1 — Título */
+  .slide-title { background: linear-gradient(135deg, #1e3a5f 60%, #2563eb); color: white; }
+  .slide-title .slide-header { background: rgba(0,0,0,0.2); }
+  .slide-title .slide-body { align-items: center; text-align: center; gap: 16px; }
+  .slide-title h1 { font-size: 28pt; font-weight: 800; line-height: 1.2; }
+  .slide-title h2 { font-size: 14pt; opacity: 0.85; font-weight: 400; }
+  .slide-title .tag { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); padding: 6px 20px; border-radius: 20px; font-size: 11pt; margin-top: 8px; }
+  .slide-title .url { font-size: 12pt; opacity: 0.8; margin-top: 16px; font-weight: 600; }
+
+  /* Slides comuns */
+  h2.slide-main-title { font-size: 20pt; color: #1e3a5f; margin-bottom: 20px; border-bottom: 3px solid #3b82f6; padding-bottom: 8px; }
+  h3.sub { font-size: 12pt; color: #475569; font-weight: 600; margin: 14px 0 8px; }
+
+  /* Cards grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 16px; }
+
+  .card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+    background: #f8fafc;
+  }
+  .card-blue { background: #eff6ff; border-color: #93c5fd; }
+  .card-green { background: #f0fdf4; border-color: #86efac; }
+  .card-amber { background: #fffbeb; border-color: #fcd34d; }
+  .card-purple { background: #faf5ff; border-color: #c4b5fd; }
+  .card-red { background: #fef2f2; border-color: #fca5a5; }
+
+  .card-icon { font-size: 26pt; margin-bottom: 8px; }
+  .card-title { font-size: 11pt; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .card-desc { font-size: 9.5pt; color: #64748b; line-height: 1.5; }
+
+  /* Lista com bullets estilizados */
+  .list-check { list-style: none; margin: 0; }
+  .list-check li { padding: 5px 0; font-size: 10.5pt; color: #334155; display: flex; align-items: flex-start; gap: 8px; }
+  .list-check li::before { content: "✅"; flex-shrink: 0; font-size: 11pt; }
+
+  /* Fluxo de passos */
+  .steps { display: flex; gap: 0; margin-top: 16px; flex-wrap: wrap; }
+  .step { flex: 1; min-width: 120px; text-align: center; position: relative; }
+  .step-num { width: 40px; height: 40px; background: #1e3a5f; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13pt; margin: 0 auto 8px; }
+  .step-text { font-size: 9pt; color: #334155; line-height: 1.4; }
+  .step-arrow { position: absolute; right: -8px; top: 12px; color: #94a3b8; font-size: 16pt; z-index: 1; }
+
+  /* Tela mockup */
+  .mockup { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+  .mockup-bar { background: #1e3a5f; color: white; padding: 6px 12px; font-size: 8.5pt; font-weight: 700; }
+  .mockup-body { padding: 10px 12px; font-size: 8.5pt; color: #475569; }
+  .mockup-row { padding: 5px 0; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 8px; }
+  .mockup-btn { background: #1e3a5f; color: white; padding: 3px 8px; border-radius: 4px; font-size: 7.5pt; font-weight: 600; }
+  .mockup-btn-green { background: #16a34a; }
+  .mockup-btn-amber { background: #d97706; }
+  .badge-status { padding: 2px 8px; border-radius: 12px; font-size: 7.5pt; font-weight: 700; }
+  .badge-review { background: #fef9c3; color: #713f12; }
+  .badge-ok { background: #dcfce7; color: #166534; }
+  .badge-fix { background: #fee2e2; color: #991b1b; }
+
+  /* Slide de acesso */
+  .access-box { background: #1e3a5f; color: white; border-radius: 12px; padding: 24px 32px; text-align: center; margin-top: 20px; }
+  .access-url { font-size: 20pt; font-weight: 800; margin: 12px 0; letter-spacing: 1px; }
+  .access-sub { opacity: 0.8; font-size: 10pt; }
+
+  /* Rodapé dos slides */
+  .slide-footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 6px 32px; font-size: 8pt; color: #94a3b8; display: flex; justify-content: space-between; flex-shrink: 0; }
+
+  /* IMPRESSÃO */
+  @media print {
+    body { background: white; }
+    .slide { width: 100%; margin: 0; box-shadow: none; page-break-after: always; min-height: 100vh; }
+    .slide:last-child { page-break-after: auto; }
+    @page { size: A4 landscape; margin: 0; }
+  }
+
+  @media screen {
+    .print-tip { background: #1e3a5f; color: white; text-align: center; padding: 10px; font-size: 10pt; position: sticky; top: 0; z-index: 100; }
+  }
+  @media print { .print-tip { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="print-tip">
+  💡 Para imprimir: pressione <strong>Ctrl+P</strong> → selecione a impressora → <strong>Orientação: Paisagem</strong> → Imprimir
+</div>
+
+<!-- ═══ SLIDE 1 — TÍTULO ═══════════════════════════════════════════════ -->
+<div class="slide slide-title">
+  <div class="slide-header">
+    <span class="clinic">🏥 Clínica Abraço — ABA Núcleo de Intervenção Comportamental</span>
+    <span class="slide-num">1 / 8</span>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:52pt; margin-bottom:8px;">🏥</div>
+    <h1>Sistema de Gestão<br>Clínica Abraço</h1>
+    <h2>Apresentação para a equipe de Supervisoras</h2>
+    <div class="tag">Julho de 2026</div>
+    <div class="url">clinica-especial.vercel.app</div>
+  </div>
+  <div class="slide-footer">
+    <span>Desenvolvedor: Antonio de Sousa Silva</span>
+    <span>Desenvolvimento: nov/2025 – jul/2026 (8 meses)</span>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 2 — O QUE É O SISTEMA ═══════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="clinic">🏥 Clínica Abraço — Sistema de Gestão</span>
+    <span class="slide-num">2 / 8</span>
+  </div>
+  <div class="slide-body">
+    <h2 class="slide-main-title">O que é o Sistema de Gestão?</h2>
+    <div class="grid-2" style="margin-top:8px;">
+      <div>
+        <p style="font-size:11pt; color:#334155; margin-bottom:16px;">Uma plataforma web que <strong>centraliza toda a operação da clínica</strong> em um único lugar — acessível de qualquer celular, tablet ou computador, sem precisar instalar nada.</p>
+        <ul class="list-check">
+          <li>Substitui planilhas e cadernos</li>
+          <li>Cada profissional acessa só o que é seu</li>
+          <li>Funciona no celular com perfeição</li>
+          <li>Dados seguros na nuvem (Brasil)</li>
+          <li>Atualizações automáticas</li>
+        </ul>
+      </div>
+      <div class="grid-2" style="margin-top:0;">
+        <div class="card card-blue">
+          <div class="card-icon">👶</div>
+          <div class="card-title">Crianças</div>
+          <div class="card-desc">Fichas, equipe, escola e evolução</div>
+        </div>
+        <div class="card card-green">
+          <div class="card-icon">📋</div>
+          <div class="card-title">Atendimentos</div>
+          <div class="card-desc">Registros diários dos ATs</div>
+        </div>
+        <div class="card card-purple">
+          <div class="card-icon">💬</div>
+          <div class="card-title">Comunicação</div>
+          <div class="card-desc">Chat, mural e protocolos</div>
+        </div>
+        <div class="card card-amber">
+          <div class="card-icon">📚</div>
+          <div class="card-title">Materiais</div>
+          <div class="card-desc">Acervo e revisão de materiais adaptados</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>8 perfis de acesso | 55+ telas | 199 versões entregues</span>
+    <span>clinica-especial.vercel.app</span>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 3 — O QUE A SUPERVISORA FAZ ════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="clinic">🏥 Clínica Abraço — Sistema de Gestão</span>
+    <span class="slide-num">3 / 8</span>
+  </div>
+  <div class="slide-body">
+    <h2 class="slide-main-title">O que a Supervisora faz no sistema?</h2>
+    <div class="grid-3">
+      <div class="card card-purple">
+        <div class="card-icon">📚</div>
+        <div class="card-title">Revisar Materiais Adaptados</div>
+        <div class="card-desc">Recebe materiais enviados pelos ATs, analisa e aprova ou solicita ajustes com observação.</div>
+      </div>
+      <div class="card card-blue">
+        <div class="card-icon">📄</div>
+        <div class="card-title">Acompanhar Comunicados</div>
+        <div class="card-desc">Vê os comunicados diários preenchidos pelos ATs após cada atendimento escolar.</div>
+      </div>
+      <div class="card card-green">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Relatórios de Evolução</div>
+        <div class="card-desc">Recebe notificação quando um especialista cria um novo relatório de evolução de criança.</div>
+      </div>
+      <div class="card card-amber">
+        <div class="card-icon">💬</div>
+        <div class="card-title">Chat Interno</div>
+        <div class="card-desc">Conversa privada com ADM, Gestão, ATs e Especialistas. Suporte a imagens e videochamada.</div>
+      </div>
+      <div class="card" style="background:#f0f9ff; border-color:#7dd3fc;">
+        <div class="card-icon">📢</div>
+        <div class="card-title">Mural de Comunicados</div>
+        <div class="card-desc">Pode publicar avisos gerais para toda a equipe e visualizar os da gestão.</div>
+      </div>
+      <div class="card" style="background:#fff1f2; border-color:#fda4af;">
+        <div class="card-icon">📜</div>
+        <div class="card-title">Protocolos de Conduta</div>
+        <div class="card-desc">Confirma a leitura dos protocolos publicados pela gestão/ADM.</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Perfil: supervisora</span>
+    <span>clinica-especial.vercel.app</span>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 4 — MATERIAIS ADAPTADOS ════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="clinic">🏥 Clínica Abraço — Sistema de Gestão</span>
+    <span class="slide-num">4 / 8</span>
+  </div>
+  <div class="slide-body">
+    <h2 class="slide-main-title">📚 Materiais Adaptados — Como funciona a revisão?</h2>
+    <div class="grid-2">
+      <div>
+        <h3 class="sub">Fluxo do material</h3>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">AT cadastra o material e envia para revisão</div>
+            <div class="step-arrow">→</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">Supervisora recebe e analisa na aba "Em Revisão"</div>
+            <div class="step-arrow">→</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">Aprova OU pede ajustes com observação</div>
+          </div>
+        </div>
+        <div style="margin-top:16px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px; padding:12px;">
+          <p style="font-size:9.5pt; color:#14532d;"><strong>✅ Aprovado:</strong> Material vai direto para o Acervo, disponível para toda a equipe reutilizar.</p>
+        </div>
+        <div style="margin-top:8px; background:#fef2f2; border:1.5px solid #fca5a5; border-radius:8px; padding:12px;">
+          <p style="font-size:9.5pt; color:#7f1d1d;"><strong>⚠️ Ajustes solicitados:</strong> AT recebe a observação da supervisora e pode corrigir e reenviar.</p>
+        </div>
+      </div>
+      <div>
+        <h3 class="sub">Como fica na tela</h3>
+        <div class="mockup">
+          <div class="mockup-bar">📚 Materiais Adaptados — Em Revisão</div>
+          <div class="mockup-body">
+            <div class="mockup-row">
+              <span>📖</span>
+              <div style="flex:1;">
+                <div style="font-weight:700; font-size:9pt;">Histórias em Quadrinhos — Cap. 3</div>
+                <div style="font-size:8pt; color:#94a3b8;">Português · 4º ano · por Carla AT</div>
+              </div>
+              <span class="badge-status badge-review">⏳ Em revisão</span>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:8px; padding-top:8px; border-top:1px solid #f1f5f9;">
+              <button class="mockup-btn mockup-btn-amber" style="flex:1; border:none; cursor:pointer; padding:5px; border-radius:4px; font-size:8pt;">⚠️ Solicitar ajustes</button>
+              <button class="mockup-btn mockup-btn-green" style="flex:1; border:none; cursor:pointer; padding:5px; border-radius:4px; font-size:8pt;">✓ Aprovar</button>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:12px; background:#faf5ff; border:1.5px solid #c4b5fd; border-radius:8px; padding:10px; font-size:9pt; color:#4c1d95;">
+          💡 <strong>Dica:</strong> Materiais aprovados ficam no <strong>Acervo</strong> para toda a equipe reutilizar — ninguém precisa adaptar o mesmo material duas vezes!
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Funcionalidade: Materiais Adaptados</span>
+    <span>clinica-especial.vercel.app</span>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 5 — COMUNICADOS E CHAT ════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="clinic">🏥 Clínica Abraço — Sistema de Gestão</span>
+    <span class="slide-num">5 / 8</span>
+  </div>
+  <div class="slide-body">
+    <h2 class="slide-main-title">💬 Comunicação Interna</h2>
+    <div class="grid-2">
+      <div>
+        <h3 class="sub">💬 Chat — Conversa privada</h3>
+        <div class="mockup" style="margin-bottom:12px;">
+          <div class="mockup-bar">💬 Chat — Carla AT</div>
+          <div class="mockup-body">
+            <div style="background:#dbeafe; border-radius:8px; padding:6px 10px; margin-bottom:6px; max-width:80%; font-size:8.5pt;">Supervisora, tive dificuldade com o João hoje na escola...</div>
+            <div style="background:#f8fafc; border-radius:8px; padding:6px 10px; margin-left:auto; max-width:80%; font-size:8.5pt; text-align:right;">Entendido, vamos conversar amanhã! ✓✓</div>
+          </div>
+        </div>
+        <ul class="list-check" style="font-size:9.5pt;">
+          <li>Conversa privada (1:1)</li>
+          <li>Envio de fotos e arquivos</li>
+          <li>Indicador ✓✓ de mensagem lida</li>
+          <li>Videochamada integrada</li>
+          <li>Notificação no celular</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="sub">📢 Mural de comunicados</h3>
+        <div class="mockup" style="margin-bottom:12px;">
+          <div class="mockup-bar">📢 Mural</div>
+          <div class="mockup-body">
+            <div class="mockup-row">
+              <div style="flex:1;">
+                <div style="font-weight:700; font-size:9pt;">⚠️ Reunião de equipe — 15/07</div>
+                <div style="font-size:8pt; color:#94a3b8;">Publicado pela Supervisora · Hoje</div>
+              </div>
+            </div>
+            <div class="mockup-row">
+              <div style="flex:1;">
+                <div style="font-weight:700; font-size:9pt;">📋 Novo protocolo disponível</div>
+                <div style="font-size:8pt; color:#94a3b8;">Publicado pela Gestão · 10/07</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <h3 class="sub">📜 Protocolos de Conduta</h3>
+        <div style="background:#fff7ed; border:1.5px solid #fcd34d; border-radius:8px; padding:10px; font-size:9pt; color:#713f12;">
+          Quando um novo protocolo é publicado, a supervisora precisa <strong>clicar em "Confirmar leitura"</strong> para registrar que leu e está ciente.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Funcionalidades: Chat, Mural e Protocolos</span>
+    <span>clinica-especial.vercel.app</span>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 6 — COMUNICADOS DIÁRIOS E RELATÓRIOS ══════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="clinic">🏥 Clínica Abraço — Sistema de Gestão</span>
+    <span class="slide-num">6 / 8</span>
+  </div>
+  <div class="slide-body">
+    <h2 class="slide-main-title">📋 Acompanhamento Clínico</h2>
+    <div class="grid-2">
+      <div>
+        <h3 class="sub">📄 Comunicados diários dos ATs</h3>
+        <p style="font-size:9.5pt; color:#475569; margin-bottom:10px;">Ao final de cada dia de atendimento escolar, o AT preenche um comunicado. A supervisora pode acompanhar tudo em tempo real.</p>
+        <div class="mockup">
+          <div class="mockup-bar">📄 Comunicados — João Pedro · 10/07</div>
+          <div class="mockup-body">
+            <div class="mockup-row"><strong style="min-width:90px; font-size:8pt;">Presença:</strong> <span style="font-size:8.5pt;">✅ Presente</span></div>
+            <div class="mockup-row"><strong style="min-width:90px; font-size:8pt;">Atividades:</strong> <span style="font-size:8.5pt;">Leitura adaptada, atividade motora</span></div>
+            <div class="mockup-row"><strong style="min-width:90px; font-size:8pt;">Comportamento:</strong> <span style="font-size:8.5pt;">Calmo, receptivo</span></div>
+            <div class="mockup-row"><strong style="min-width:90px; font-size:8pt;">Intercorrências:</strong> <span style="font-size:8.5pt;">Nenhuma</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 class="sub">📊 Relatórios de Evolução</h3>
+        <p style="font-size:9.5pt; color:#475569; margin-bottom:10px;">Quando um especialista (psicólogo, fonoaudiólogo etc.) cria um relatório de evolução de uma criança, a supervisora recebe uma notificação automática.</p>
+        <div style="background:#eff6ff; border:1.5px solid #93c5fd; border-radius:8px; padding:14px;">
+          <div style="font-size:22pt; margin-bottom:6px;">🔔</div>
+          <div style="font-size:9.5pt; color:#1e3a5f; font-weight:700; margin-bottom:4px;">Nova notificação</div>
+          <div style="font-size:9pt; color:#334155;">Dra. Renata criou um novo relatório de evolução para <strong>Maria Santos</strong>.</div>
+          <div style="margin-top:8px;"><span class="mockup-btn" style="font-size:8pt; display:inline-block;">Ver relatório</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Funcionalidades: Comunicados e Prontuários</span>
+    <span>clinica-especial.vercel.app</span>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 7 — COMO ACESSAR ═══════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="clinic">🏥 Clínica Abraço — Sistema de Gestão</span>
+    <span class="slide-num">7 / 8</span>
+  </div>
+  <div class="slide-body">
+    <h2 class="slide-main-title">🔑 Como acessar o sistema</h2>
+    <div class="grid-2" style="align-items:start;">
+      <div>
+        <div class="steps" style="flex-direction:column; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="step-num" style="flex-shrink:0;">1</div>
+            <div>
+              <div style="font-weight:700; font-size:11pt; color:#1e293b;">Abra o navegador</div>
+              <div style="font-size:9.5pt; color:#64748b;">Chrome, Firefox ou Safari no celular ou computador</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="step-num" style="flex-shrink:0;">2</div>
+            <div>
+              <div style="font-weight:700; font-size:11pt; color:#1e293b;">Digite o endereço</div>
+              <div style="font-size:10pt; color:#1e3a5f; font-weight:700; background:#eff6ff; padding:4px 10px; border-radius:6px; display:inline-block; margin-top:4px;">clinica-especial.vercel.app</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="step-num" style="flex-shrink:0;">3</div>
+            <div>
+              <div style="font-weight:700; font-size:11pt; color:#1e293b;">Faça login</div>
+              <div style="font-size:9.5pt; color:#64748b;">E-mail e senha fornecidos pela gestão</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="step-num" style="flex-shrink:0;">4</div>
+            <div>
+              <div style="font-weight:700; font-size:11pt; color:#1e293b;">Pronto!</div>
+              <div style="font-size:9.5pt; color:#64748b;">O sistema abre direto na sua área de supervisora</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="access-box">
+          <div style="font-size:13pt; opacity:0.8;">Endereço do sistema</div>
+          <div class="access-url">clinica-especial<br>.vercel.app</div>
+          <div class="access-sub">Funciona em qualquer celular ou computador<br>Não precisa instalar nada</div>
+        </div>
+        <div style="margin-top:14px; background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px; padding:12px; font-size:9.5pt; color:#14532d;">
+          💡 <strong>Dica no celular:</strong> No Chrome, toque nos 3 pontinhos → "Adicionar à tela inicial" para criar um atalho que parece um aplicativo!
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>Suporte: entre em contato com a gestão</span>
+    <span>clinica-especial.vercel.app</span>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 8 — ENCERRAMENTO ═══════════════════════════════════════ -->
+<div class="slide slide-title">
+  <div class="slide-header">
+    <span class="clinic">🏥 Clínica Abraço — Sistema de Gestão</span>
+    <span class="slide-num">8 / 8</span>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:48pt; margin-bottom:16px;">🙌</div>
+    <h1 style="font-size:26pt; margin-bottom:12px;">Dúvidas?</h1>
+    <h2 style="font-size:13pt; opacity:0.85; margin-bottom:24px;">Estamos aqui para ajudar no que for preciso.</h2>
+    <div class="grid-3" style="margin-top:8px; gap:12px;">
+      <div style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); border-radius:10px; padding:16px; text-align:center;">
+        <div style="font-size:24pt; margin-bottom:6px;">📱</div>
+        <div style="font-size:10pt; opacity:0.9;">Funciona no celular</div>
+        <div style="font-size:8.5pt; opacity:0.7; margin-top:4px;">Sem instalar nada</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); border-radius:10px; padding:16px; text-align:center;">
+        <div style="font-size:24pt; margin-bottom:6px;">🔒</div>
+        <div style="font-size:10pt; opacity:0.9;">Seus dados são seguros</div>
+        <div style="font-size:8.5pt; opacity:0.7; margin-top:4px;">Servidor no Brasil</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); border-radius:10px; padding:16px; text-align:center;">
+        <div style="font-size:24pt; margin-bottom:6px;">🚀</div>
+        <div style="font-size:10pt; opacity:0.9;">Sempre atualizado</div>
+        <div style="font-size:8.5pt; opacity:0.7; margin-top:4px;">Melhorias contínuas</div>
+      </div>
+    </div>
+    <div class="url" style="margin-top:24px;">clinica-especial.vercel.app</div>
+  </div>
+  <div class="slide-footer">
+    <span>Desenvolvedor: Antonio de Sousa Silva — Desenvolvedor Júnior</span>
+    <span>nov/2025 – jul/2026 · 8 meses de desenvolvimento</span>
+  </div>
+</div>
+
+</body>
+</html>

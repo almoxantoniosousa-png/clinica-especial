@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Gestão Clínica Abraço</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #1e293b; line-height: 1.6; background: white; }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px; }
+
+  /* Cabeçalho */
+  .header { background: #1e3a5f; color: white; padding: 32px 40px; margin-bottom: 32px; border-radius: 4px; }
+  .header h1 { font-size: 22pt; font-weight: 700; margin-bottom: 6px; }
+  .header h2 { font-size: 13pt; font-weight: 400; opacity: 0.85; margin-bottom: 16px; }
+  .header .meta { display: flex; gap: 32px; font-size: 10pt; opacity: 0.8; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 12px; margin-top: 12px; }
+
+  /* Seções */
+  h2 { font-size: 14pt; color: #1e3a5f; border-left: 4px solid #1e3a5f; padding-left: 12px; margin: 32px 0 16px; }
+  h3 { font-size: 11pt; color: #334155; margin: 20px 0 10px; font-weight: 600; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  a { color: #1e3a5f; }
+
+  /* Tabelas */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 10pt; }
+  th { background: #1e3a5f; color: white; padding: 8px 12px; text-align: left; font-weight: 600; }
+  td { padding: 7px 12px; border-bottom: 1px solid #e2e8f0; }
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  /* Destaque */
+  .highlight { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0; }
+
+  /* Rodapé */
+  .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 9pt; color: #94a3b8; text-align: center; }
+
+  /* Impressão */
+  @media print {
+    body { font-size: 10pt; }
+    .container { padding: 0; max-width: 100%; }
+    .header { border-radius: 0; }
+    h2 { page-break-before: auto; }
+    table { page-break-inside: avoid; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Sistema de Gestão Clínica Abraço</h1>
+    <h2>ABA — Núcleo de Intervenção Comportamental</h2>
+    <div class="meta">
+      <span>📅 Julho de 2026</span>
+      <span>🌐 clinica-especial.vercel.app</span>
+      <span>📄 Documento para a Direção</span>
+    </div>
+  </div>
+
+  <h2>1. Visão Geral</h2>
+  <p>O <strong>Sistema de Gestão Clínica Abraço</strong> é uma plataforma web completa desenvolvida sob medida para a clínica, substituindo planilhas, cadernos e aplicativos genéricos por uma solução unificada que organiza toda a operação clínica em um único lugar.</p>
+  <p>O sistema funciona em qualquer dispositivo (celular, tablet ou computador) com acesso à internet, sem necessidade de instalar nenhum programa. Pode inclusive ser instalado como aplicativo no celular (PWA), funcionando como um app nativo.</p>
+
+  <h2>2. Tecnologia e Infraestrutura</h2>
+  <table>
+    <tr><th>Item</th><th>Solução</th></tr>
+    <tr><td>Plataforma</td><td>Web — funciona em qualquer navegador</td></tr>
+    <tr><td>Hospedagem</td><td>Vercel — servidor global, com certificado de segurança HTTPS</td></tr>
+    <tr><td>Banco de dados</td><td>Supabase (PostgreSQL) — servidor em São Paulo, Brasil</td></tr>
+    <tr><td>Código-fonte</td><td>GitHub (repositório privado)</td></tr>
+    <tr><td>Autenticação</td><td>Supabase Auth — login com e-mail e senha, proteção por papel de usuário</td></tr>
+    <tr><td>Custo de infraestrutura</td><td>Gratuito no plano atual (Vercel Hobby + Supabase Free)</td></tr>
+  </table>
+
+  <h2>3. Perfis de Acesso</h2>
+  <p>O sistema possui <strong>8 perfis</strong> distintos, cada um com acesso restrito ao que lhe é pertinente:</p>
+  <table>
+    <tr><th>Perfil</th><th>Quem usa</th><th>O que acessa</th></tr>
+    <tr><td><strong>Administrador (ADM)</strong></td><td>Direção / TI</td><td>Controle total do sistema</td></tr>
+    <tr><td><strong>Gestão</strong></td><td>Coordenadora (Simone)</td><td>Crianças, equipe, agenda, relatórios, financeiro, escala</td></tr>
+    <tr><td><strong>Supervisora</strong></td><td>Supervisora clínica</td><td>Comunicados, revisão de materiais adaptados</td></tr>
+    <tr><td><strong>Especialista</strong></td><td>Psicólogo, fonoaudiólogo etc.</td><td>Escala, prontuários, relatórios de evolução</td></tr>
+    <tr><td><strong>Acompanhante Terapêutico (AT)</strong></td><td>ATs de campo</td><td>Registro de atendimento, formulário escolar, escala, materiais</td></tr>
+    <tr><td><strong>Financeiro</strong></td><td>Setor financeiro</td><td>Contas, folha de pagamento</td></tr>
+    <tr><td><strong>Auxiliar Administrativo</strong></td><td>Aux. administrativo</td><td>Agenda da diretora, brinquedos</td></tr>
+    <tr><td><strong>Família</strong></td><td>Responsáveis pela criança</td><td>Portal da família (somente leitura)</td></tr>
+  </table>
+
+  <h2>4. Módulos e Funcionalidades</h2>
+
+  <h3>4.1 Autenticação e Segurança</h3>
+  <ul>
+    <li>Login com e-mail e senha para todos os perfis</li>
+    <li>Cada usuário acessa <strong>apenas</strong> o que seu perfil permite</li>
+    <li>Recuperação de senha por e-mail</li>
+    <li><strong>Auditoria completa:</strong> toda ação é registrada com data, hora, usuário e descrição</li>
+  </ul>
+
+  <h3>4.2 Gestão de Crianças e Colaboradores</h3>
+  <ul>
+    <li>Cadastro completo de crianças: nome, diagnóstico (CID), escola, plano de saúde, responsável, alergias, medicamentos e valor da sessão</li>
+    <li>Cadastro de ATs e Especialistas com dados pessoais e profissionais</li>
+    <li>Gestão de escolas parceiras e equipe por criança</li>
+  </ul>
+
+  <h3>4.3 Escala e Atendimentos</h3>
+  <ul>
+    <li>Visualização semanal da escala (incluindo sábado e domingo)</li>
+    <li>AT registra cada atendimento com horário de início/fim — valor calculado automaticamente</li>
+    <li>Histórico completo por AT e por criança</li>
+  </ul>
+
+  <h3>4.4 Comunicação Interna</h3>
+  <ul>
+    <li><strong>Chat interno:</strong> conversas privadas com envio de imagens, reações, indicador de digitação, leitura e videochamada integrada</li>
+    <li><strong>Mural de comunicados:</strong> avisos gerais para toda a equipe</li>
+    <li><strong>Notificações push:</strong> celular recebe alertas mesmo com o app fechado</li>
+  </ul>
+
+  <h3>4.5 Comunicado Diário (Formulário Escolar)</h3>
+  <ul>
+    <li>AT preenche formulário multi-etapas ao final de cada dia</li>
+    <li>Cobre presença, atividades, comportamento e intercorrências</li>
+    <li>Gestão e Supervisora acompanham em tempo real</li>
+  </ul>
+
+  <h3>4.6 Prontuários e Relatórios de Evolução</h3>
+  <ul>
+    <li>Especialistas criam e mantêm prontuários clínicos por criança</li>
+    <li>Relatórios de evolução periódicos com notificação automática para a gestão</li>
+  </ul>
+
+  <h3>4.7 Portal da Família</h3>
+  <ul>
+    <li>Acesso exclusivo para o responsável da criança</li>
+    <li>Exibe: diário do dia, fotos/momentos, evolução terapêutica e avisos da clínica</li>
+    <li>Somente leitura — família acompanha sem editar nada</li>
+  </ul>
+
+  <h3>4.8 Protocolos de Conduta</h3>
+  <ul>
+    <li>Publicação de protocolos e diretrizes pela direção</li>
+    <li>Confirmação de leitura obrigatória por cada colaborador</li>
+    <li>Relatório de quem confirmou e quem ainda está pendente</li>
+  </ul>
+
+  <h3>4.9 Materiais Adaptados</h3>
+  <ul>
+    <li>Acervo digital de materiais (CAA, pictogramas, leitura fácil, texto ampliado)</li>
+    <li><strong>Busca integrada de pictogramas ARASAAC</strong> — AT encontra imagens dentro do sistema, sem precisar sair</li>
+    <li>Fluxo de aprovação: Rascunho → Em Revisão → Aprovado</li>
+    <li>Acervo compartilhado com toda a equipe para reaproveitamento</li>
+  </ul>
+
+  <h3>4.10 Brinquedos, Requisições e Financeiro</h3>
+  <ul>
+    <li>Controle de empréstimo e devolução de brinquedos com ranking de uso</li>
+    <li>Requisições de compra com 6 status e resposta do ADM</li>
+    <li>Módulo financeiro: contas a pagar/receber, folha de pagamento e relatórios</li>
+  </ul>
+
+  <h2>5. Diferenciais do Sistema</h2>
+  <table>
+    <tr><th>Característica</th><th>Benefício</th></tr>
+    <tr><td>Desenvolvido sob medida</td><td>Fluxos e vocabulário específicos da Clínica Abraço</td></tr>
+    <tr><td>Mobile-first</td><td>Funciona perfeitamente no celular dos ATs em campo</td></tr>
+    <tr><td>Acesso por papel</td><td>Cada pessoa vê exatamente o que precisa, sem excesso de informação</td></tr>
+    <tr><td>Rastreabilidade total</td><td>Toda ação é auditada — nada se perde ou é alterado sem registro</td></tr>
+    <tr><td>Sem custo de licença</td><td>Infraestrutura gratuita no plano atual</td></tr>
+    <tr><td>Privacidade dos dados</td><td>Banco de dados em servidor no Brasil (São Paulo), adequado à LGPD</td></tr>
+    <tr><td>Sem instalação</td><td>Funciona no navegador, sem depender de app store</td></tr>
+    <tr><td>Pode ser instalado</td><td>Opcionalmente, pode ser instalado como app no celular (PWA)</td></tr>
+  </table>
+
+  <h2>6. Números do Projeto</h2>
+  <div class="highlight">
+    <table style="border:none; margin:0;">
+      <tr><td style="border:none; padding: 4px 16px 4px 0;"><strong>Versões entregues (commits)</strong></td><td style="border:none; padding: 4px 0;"><strong>199</strong></td></tr>
+      <tr><td style="border:none; padding: 4px 16px 4px 0;">Módulos entregues</td><td style="border:none; padding: 4px 0;">20+</td></tr>
+      <tr><td style="border:none; padding: 4px 16px 4px 0;">Perfis de acesso</td><td style="border:none; padding: 4px 0;">8</td></tr>
+      <tr><td style="border:none; padding: 4px 16px 4px 0;">Tabelas no banco de dados</td><td style="border:none; padding: 4px 0;">25+</td></tr>
+      <tr><td style="border:none; padding: 4px 16px 4px 0;">Telas desenvolvidas</td><td style="border:none; padding: 4px 0;">55+</td></tr>
+    </table>
+  </div>
+
+  <h2>7. Acesso e Suporte</h2>
+  <ul>
+    <li><strong>URL de produção:</strong> <a href="https://clinica-especial.vercel.app">https://clinica-especial.vercel.app</a></li>
+    <li><strong>Repositório de código:</strong> GitHub (privado)</li>
+    <li><strong>Banco de dados:</strong> Supabase — painel em supabase.com</li>
+    <li><strong>Atualizações:</strong> publicadas automaticamente via GitHub → Vercel</li>
+    <li><strong>Suporte:</strong> em desenvolvimento contínuo com a equipe da clínica</li>
+  </ul>
+
+  <div class="footer">
+    <p>Sistema de Gestão Clínica Abraço — ABA Núcleo de Intervenção Comportamental</p>
+    <p>Documento elaborado em julho de 2026</p>
+  </div>
+
+</div>
+</body>
+</html>

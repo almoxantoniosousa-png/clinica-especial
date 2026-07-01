@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Guia Rápido — Supervisora</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1e293b; background: #f1f5f9; }
+
+  .page {
+    width: 210mm;
+    height: 297mm;
+    margin: 12px auto;
+    padding: 12mm 14mm;
+    background: white;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+  }
+
+  .header { background: #1e3a5f; color: white; padding: 10px 16px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+  .header h1 { font-size: 13pt; font-weight: 800; }
+  .header h2 { font-size: 8.5pt; opacity: 0.8; font-weight: 400; margin-top: 1px; }
+  .header .badge { background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 10px; font-size: 8.5pt; font-weight: 700; white-space: nowrap; }
+
+  h3.sec { font-size: 9.5pt; color: white; background: #1e3a5f; padding: 4px 10px; border-radius: 4px; margin: 8px 0 6px; flex-shrink: 0; }
+
+  .steps-inline { display: flex; gap: 4px; flex-wrap: nowrap; align-items: center; margin-bottom: 6px; }
+  .step-pill { background: #1e3a5f; color: white; padding: 3px 8px; border-radius: 10px; font-size: 7.5pt; font-weight: 600; white-space: nowrap; }
+  .step-arrow { color: #94a3b8; font-size: 10pt; }
+  .dica { background: #f0f9ff; border-left: 3px solid #38bdf8; padding: 5px 8px; border-radius: 0 4px 4px 0; font-size: 8.5pt; color: #0369a1; margin-bottom: 8px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex: 1; }
+  .func-card { border: 1.5px solid #e2e8f0; border-radius: 7px; padding: 8px 10px; }
+  .func-card.purple { border-color: #c4b5fd; background: #faf5ff; }
+  .func-card.blue { border-color: #93c5fd; background: #eff6ff; }
+  .func-card.amber { border-color: #fcd34d; background: #fffbeb; }
+  .func-card.green { border-color: #86efac; background: #f0fdf4; }
+  .func-card.sky { border-color: #7dd3fc; background: #f0f9ff; }
+  .func-card.red { border-color: #fca5a5; background: #fef2f2; }
+
+  .func-title { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 9.5pt; margin-bottom: 4px; }
+  .func-icon { font-size: 14pt; }
+  .func-desc { font-size: 8.5pt; color: #475569; line-height: 1.4; }
+  .func-steps { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+  .func-pill { padding: 2px 7px; border-radius: 8px; font-size: 7.5pt; font-weight: 600; color: white; white-space: nowrap; }
+
+  .footer { border-top: 1px solid #e2e8f0; padding-top: 5px; margin-top: 8px; display: flex; justify-content: space-between; font-size: 7pt; color: #94a3b8; flex-shrink: 0; }
+
+  /* PÁGINA 2 — SUGESTÕES */
+  .sug-header { background: #1e3a5f; color: white; padding: 12px 18px; border-radius: 8px; margin-bottom: 14px; flex-shrink: 0; }
+  .sug-header h1 { font-size: 14pt; font-weight: 800; }
+  .sug-header p { font-size: 9pt; opacity: 0.85; margin-top: 3px; }
+
+  .sug-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; flex-shrink: 0; }
+  .campo-label { font-size: 8pt; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; letter-spacing: 0.3px; }
+  .linha { border-bottom: 1.5px solid #94a3b8; height: 28px; width: 100%; }
+  .linhas-bloco { flex: 1; }
+  .linhas-bloco .linha { margin-bottom: 1px; }
+
+  .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+  .check-item { display: flex; align-items: center; gap: 6px; font-size: 9pt; color: #334155; }
+  .box { width: 16px; height: 16px; border: 1.5px solid #64748b; border-radius: 3px; flex-shrink: 0; }
+
+  .sug-section { margin-bottom: 10px; }
+  .sug-section.grow { flex: 1; display: flex; flex-direction: column; }
+
+  .nota { background: #fef9c3; border: 1.5px solid #fbbf24; border-radius: 6px; padding: 8px 12px; font-size: 8.5pt; color: #713f12; flex-shrink: 0; margin-top: 8px; }
+
+  @media print {
+    body { background: white; }
+    .page { margin: 0; box-shadow: none; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    .print-tip { display: none; }
+    @page { size: A4 portrait; margin: 0; }
+  }
+  @media screen {
+    .print-tip { background: #1e3a5f; color: white; text-align: center; padding: 8px; font-size: 9.5pt; position: sticky; top: 0; z-index: 100; }
+  }
+</style>
+</head>
+<body>
+
+<div class="print-tip">💡 Ctrl+P → Orientação: Retrato → Imprimir (2 páginas A4)</div>
+
+<!-- ══════════════════ PÁGINA 1 — GUIA DE USO ══════════════════ -->
+<div class="page">
+  <div class="header">
+    <div>
+      <h1>🏥 Guia Rápido — Supervisora</h1>
+      <h2>Sistema de Gestão Clínica Abraço · clinica-especial.vercel.app</h2>
+    </div>
+    <div class="badge">Perfil: Supervisora</div>
+  </div>
+
+  <h3 class="sec">🔑 Como acessar</h3>
+  <div class="steps-inline">
+    <div class="step-pill">1. Abrir Chrome</div>
+    <span class="step-arrow">→</span>
+    <div class="step-pill">2. clinica-especial.vercel.app</div>
+    <span class="step-arrow">→</span>
+    <div class="step-pill">3. Digitar e-mail e senha</div>
+    <span class="step-arrow">→</span>
+    <div class="step-pill">4. Entrar ✅</div>
+  </div>
+  <div class="dica">💡 No celular → Chrome → ⋮ três pontinhos → "Adicionar à tela inicial" para salvar como app.</div>
+
+  <h3 class="sec">⚙️ Suas funções no sistema</h3>
+
+  <div class="grid2">
+    <div class="func-card purple">
+      <div class="func-title"><span class="func-icon">📚</span> Revisar Materiais Adaptados</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#7c3aed;">Materiais Adaptados</span>
+        <span class="step-arrow">→</span>
+        <span class="func-pill" style="background:#7c3aed;">Em Revisão</span>
+      </div>
+      <div class="func-desc">Abre o material → vê fotos e descrição → clica:<br>
+      ✅ <strong>Aprovar</strong> → vai ao acervo de toda a equipe<br>
+      ⚠️ <strong>Ajustes</strong> → AT recebe o feedback e corrige</div>
+    </div>
+
+    <div class="func-card blue">
+      <div class="func-title"><span class="func-icon">📄</span> Ver Comunicados dos ATs</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#1d4ed8;">Supervisora</span>
+        <span class="step-arrow">→</span>
+        <span class="func-pill" style="background:#1d4ed8;">Comunicados</span>
+      </div>
+      <div class="func-desc">Acompanhe o que cada AT reportou ao final do dia: presença, atividades, comportamento e intercorrências das crianças na escola.</div>
+    </div>
+
+    <div class="func-card green">
+      <div class="func-title"><span class="func-icon">📊</span> Relatórios de Evolução</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#15803d;">🔔 Notificação automática</span>
+      </div>
+      <div class="func-desc">Quando um especialista cria um relatório de evolução, você recebe uma notificação. Clique para abrir e ler o relatório da criança.</div>
+    </div>
+
+    <div class="func-card amber">
+      <div class="func-title"><span class="func-icon">💬</span> Chat Interno</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#b45309;">Chat</span>
+        <span class="step-arrow">→</span>
+        <span class="func-pill" style="background:#b45309;">+ Nova conversa</span>
+      </div>
+      <div class="func-desc">Conversa privada com qualquer membro da equipe. Permite enviar fotos, arquivos e fazer videochamada. ✓✓ = mensagem lida.</div>
+    </div>
+
+    <div class="func-card sky">
+      <div class="func-title"><span class="func-icon">📢</span> Publicar no Mural</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#0369a1;">Mural</span>
+        <span class="step-arrow">→</span>
+        <span class="func-pill" style="background:#0369a1;">+ Novo aviso</span>
+      </div>
+      <div class="func-desc">Publique avisos gerais para toda a equipe (reuniões, recados, informações importantes). Todos os perfis visualizam o mural.</div>
+    </div>
+
+    <div class="func-card red">
+      <div class="func-title"><span class="func-icon">📜</span> Confirmar Protocolos</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#b91c1c;">Protocolos</span>
+        <span class="step-arrow">→</span>
+        <span class="func-pill" style="background:#b91c1c;">Confirmar leitura</span>
+      </div>
+      <div class="func-desc">Leia os protocolos de conduta publicados pela gestão e clique em "Confirmar leitura". Registra que você está ciente do conteúdo.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Sistema de Gestão Clínica Abraço · clinica-especial.vercel.app · Julho de 2026</span>
+    <span>Desenvolvedor: Antonio de Sousa Silva</span>
+  </div>
+</div>
+
+<!-- ══════════════════ PÁGINA 2 — SUGESTÕES ══════════════════ -->
+<div class="page">
+  <div class="sug-header">
+    <h1>✍️ Formulário de Sugestões e Feedback</h1>
+    <p>Após usar o sistema pela primeira vez, preencha este formulário e devolva ao desenvolvedor. Cada sugestão será avaliada para as próximas atualizações.</p>
+  </div>
+
+  <!-- Identificação -->
+  <div class="sug-section">
+    <div class="sug-row">
+      <div>
+        <div class="campo-label">Nome da Supervisora</div>
+        <div class="linha"></div>
+      </div>
+      <div>
+        <div class="campo-label">Data do primeiro uso</div>
+        <div class="linha"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Experiência geral -->
+  <div class="sug-section">
+    <div class="campo-label" style="margin-bottom:5px;">Como foi a sua primeira experiência com o sistema?</div>
+    <div class="check-grid">
+      <div class="check-item"><div class="box"></div> 😊 Muito fácil, me adaptei rápido</div>
+      <div class="check-item"><div class="box"></div> 🙂 Fácil, mas precisei de ajuda</div>
+      <div class="check-item"><div class="box"></div> 😐 Tive dificuldade no início</div>
+      <div class="check-item"><div class="box"></div> 😕 Achei confuso, preciso de mais suporte</div>
+    </div>
+  </div>
+
+  <!-- O que funcionou -->
+  <div class="sug-section">
+    <div class="campo-label" style="margin-bottom:5px;">O que funcionou bem? (marque tudo que se aplica)</div>
+    <div class="check-grid">
+      <div class="check-item"><div class="box"></div> Revisar materiais adaptados</div>
+      <div class="check-item"><div class="box"></div> Chat com a equipe</div>
+      <div class="check-item"><div class="box"></div> Ver comunicados dos ATs</div>
+      <div class="check-item"><div class="box"></div> Publicar avisos no mural</div>
+      <div class="check-item"><div class="box"></div> Receber notificações de relatórios</div>
+      <div class="check-item"><div class="box"></div> Confirmar leitura de protocolos</div>
+      <div class="check-item"><div class="box"></div> Usar no celular</div>
+      <div class="check-item"><div class="box"></div> Encontrar o que preciso rápido</div>
+    </div>
+  </div>
+
+  <!-- Sugestões de melhoria -->
+  <div class="sug-section grow">
+    <div class="campo-label" style="margin-bottom:4px;">Sugestões de melhoria / o que senti falta no sistema</div>
+    <div class="linhas-bloco" style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+      <div class="linha"></div>
+      <div class="linha"></div>
+      <div class="linha"></div>
+      <div class="linha"></div>
+      <div class="linha"></div>
+      <div class="linha"></div>
+    </div>
+  </div>
+
+  <!-- Funções diferentes -->
+  <div class="sug-section grow">
+    <div class="campo-label" style="margin-bottom:4px;">Alguma função que gostaria que funcionasse diferente? Como?</div>
+    <div class="linhas-bloco" style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+      <div class="linha"></div>
+      <div class="linha"></div>
+      <div class="linha"></div>
+      <div class="linha"></div>
+    </div>
+  </div>
+
+  <!-- Erros -->
+  <div class="sug-section grow">
+    <div class="campo-label" style="margin-bottom:4px;">Algo que não funcionou ou deu erro? Descreva o que aconteceu:</div>
+    <div class="linhas-bloco" style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+      <div class="linha"></div>
+      <div class="linha"></div>
+      <div class="linha"></div>
+      <div class="linha"></div>
+    </div>
+  </div>
+
+  <!-- Novas funções -->
+  <div class="sug-section grow">
+    <div class="campo-label" style="margin-bottom:4px;">Existe alguma função que não existe ainda e que ajudaria no seu trabalho?</div>
+    <div class="linhas-bloco" style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+      <div class="linha"></div>
+      <div class="linha"></div>
+      <div class="linha"></div>
+    </div>
+  </div>
+
+  <div class="nota">
+    📌 <strong>Devolva este formulário para Antonio (desenvolvedor)</strong> após a primeira semana de uso. Cada sugestão será analisada e as melhorias priorizadas conforme a necessidade da equipe da Clínica Abraço.
+  </div>
+
+  <div class="footer">
+    <span>Sistema de Gestão Clínica Abraço · clinica-especial.vercel.app · Julho de 2026</span>
+    <span>Desenvolvedor: Antonio de Sousa Silva</span>
+  </div>
+</div>
+
+</body>
+</html>
