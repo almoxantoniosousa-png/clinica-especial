@@ -23,7 +23,7 @@ export default function InternasPage() {
   const [form, setForm] = useState({
     nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "",
     data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "",
-    cnpj: "", razao_social: "",
+    cnpj: "", razao_social: "", data_demissao: "",
   });
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
@@ -47,7 +47,7 @@ export default function InternasPage() {
 
   function abrirNovo() {
     setEditando(null);
-    setForm({ nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "", data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "", cnpj: "", razao_social: "" });
+    setForm({ nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "", data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "", cnpj: "", razao_social: "", data_demissao: "" });
     setModalAberto(true);
   }
 
@@ -59,6 +59,7 @@ export default function InternasPage() {
       data_nascimento: col.data_nascimento || "", data_admissao: col.data_admissao || "",
       whatsapp: col.whatsapp || "", endereco: col.endereco || "",
       cnpj: col.cnpj || "", razao_social: col.razao_social || "",
+      data_demissao: col.data_demissao || "",
     });
     setModalAberto(true);
   }
@@ -70,6 +71,7 @@ export default function InternasPage() {
       ...form,
       data_nascimento: form.data_nascimento || null,
       data_admissao: form.data_admissao || null,
+      data_demissao: form.data_demissao || null,
     };
     const user = await getUsuarioLogado();
 
@@ -167,6 +169,7 @@ export default function InternasPage() {
           {col.whatsapp && <p className="text-xs text-slate-400">📱 {col.whatsapp}</p>}
           {col.cpf && <p className="text-xs text-slate-400">CPF: {col.cpf}</p>}
           {col.data_admissao && <p className="text-xs text-slate-400">📅 Admissão: {new Date(col.data_admissao).toLocaleDateString("pt-BR")}</p>}
+          {col.data_demissao && <p className="text-xs text-slate-400">📅 Demissão: {new Date(col.data_demissao).toLocaleDateString("pt-BR")}</p>}
           {col.endereco && <p className="text-xs text-slate-400">📍 {col.endereco}</p>}
           {col.cnpj && <p className="text-xs text-slate-400">🏢 CNPJ: {col.cnpj}</p>}
           {col.razao_social && <p className="text-xs text-slate-400">📋 Razão Social: {col.razao_social}</p>}
@@ -275,6 +278,11 @@ export default function InternasPage() {
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Admissão</label>
                   <input type="date" value={form.data_admissao}
                     onChange={(e) => setForm({ ...form, data_admissao: e.target.value })} className={`mt-1 ${inputClass}`} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Demissão</label>
+                  <input type="date" value={form.data_demissao}
+                    onChange={(e) => setForm({ ...form, data_demissao: e.target.value })} className={`mt-1 ${inputClass}`} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">

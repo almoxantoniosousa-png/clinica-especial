@@ -44,7 +44,8 @@
       "Bash(rm -f tmp-cleanup6.mjs tmp-test-parc.mjs tmp-parc-1.png tmp-parc-2.png)",
       "Bash(node tmp-test-links.mjs)",
       "Bash(rm -f tmp-test-links.mjs tmp-links.png)",
-      "mcp__supabase__apply_migration"
+      "mcp__supabase__apply_migration",
+      "Bash(curl -s -I \"https://clinica-especial.vercel.app\")"
     ]
   }
 }

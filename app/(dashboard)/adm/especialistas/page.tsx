@@ -27,6 +27,7 @@ export default function EspecialistasPage() {
   const [endereco, setEndereco] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [razaoSocial, setRazaoSocial] = useState("");
+  const [dataDemissao, setDataDemissao] = useState("");
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -86,6 +87,7 @@ export default function EspecialistasPage() {
       endereco,
       cnpj: cnpj || null,
       razao_social: razaoSocial || null,
+      data_demissao: dataDemissao || null,
       role: "especialista",
     }]).select().single();
 
@@ -241,6 +243,12 @@ export default function EspecialistasPage() {
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Data de Nascimento</label>
               <input type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} className={inputClass} />
             </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Data de Demissão</label>
+              <input type="date" value={dataDemissao} onChange={(e) => setDataDemissao(e.target.value)} className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">WhatsApp / Telefone</label>
               <input type="text" placeholder="Ex: (71) 99999-9999" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={inputClass} />
