@@ -23,6 +23,7 @@ export default function InternasPage() {
   const [form, setForm] = useState({
     nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "",
     data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "",
+    cnpj: "", razao_social: "",
   });
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
@@ -46,7 +47,7 @@ export default function InternasPage() {
 
   function abrirNovo() {
     setEditando(null);
-    setForm({ nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "", data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "" });
+    setForm({ nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "", data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "", cnpj: "", razao_social: "" });
     setModalAberto(true);
   }
 
@@ -57,6 +58,7 @@ export default function InternasPage() {
       cpf: col.cpf || "", rg: col.rg || "",
       data_nascimento: col.data_nascimento || "", data_admissao: col.data_admissao || "",
       whatsapp: col.whatsapp || "", endereco: col.endereco || "",
+      cnpj: col.cnpj || "", razao_social: col.razao_social || "",
     });
     setModalAberto(true);
   }
@@ -166,6 +168,8 @@ export default function InternasPage() {
           {col.cpf && <p className="text-xs text-slate-400">CPF: {col.cpf}</p>}
           {col.data_admissao && <p className="text-xs text-slate-400">📅 Admissão: {new Date(col.data_admissao).toLocaleDateString("pt-BR")}</p>}
           {col.endereco && <p className="text-xs text-slate-400">📍 {col.endereco}</p>}
+          {col.cnpj && <p className="text-xs text-slate-400">🏢 CNPJ: {col.cnpj}</p>}
+          {col.razao_social && <p className="text-xs text-slate-400">📋 Razão Social: {col.razao_social}</p>}
         </div>
       </div>
     );
@@ -291,6 +295,21 @@ export default function InternasPage() {
                   onChange={(e) => setForm({ ...form, endereco: e.target.value })} className={`mt-1 ${inputClass}`} />
               </div>
             </div>
+
+            {/* CNPJ e Razão Social */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">CNPJ</label>
+                <input type="text" placeholder="00.000.000/0001-00" value={form.cnpj}
+                  onChange={(e) => setForm({ ...form, cnpj: e.target.value })} className={`mt-1 ${inputClass}`} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Razão Social</label>
+                <input type="text" placeholder="Nome da empresa (MEI, etc.)" value={form.razao_social}
+                  onChange={(e) => setForm({ ...form, razao_social: e.target.value })} className={`mt-1 ${inputClass}`} />
+              </div>
+            </div>
+
             <div className="flex gap-3 pt-2">
               <button onClick={() => setModalAberto(false)}
                 className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
