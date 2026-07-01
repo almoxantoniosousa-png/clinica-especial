@@ -76,7 +76,7 @@
   <div style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.3); display:flex; gap:32px; font-size:9.5pt; flex-wrap:wrap;">
     <span>👨‍💻 <strong>Desenvolvedor:</strong> Antonio de Sousa Silva — Desenvolvedor Júnior</span>
     <span>📆 <strong>Período de desenvolvimento:</strong> Novembro de 2025 — Julho de 2026 (8 meses)</span>
-    <span>📊 <strong>Total de entregas:</strong> 199 versões</span>
+    <span>📊 <strong>Total de entregas:</strong> 201 versões</span>
   </div>
 </div>
 
@@ -92,7 +92,7 @@
   <tr><td>Frontend</td><td>Next.js 16 + TypeScript + Tailwind CSS</td><td>Interface web responsiva (mobile-first)</td></tr>
   <tr><td>Backend / BaaS</td><td>Supabase (PostgreSQL + Auth + Storage + Realtime)</td><td>Banco de dados, autenticação, arquivos, chat ao vivo</td></tr>
   <tr><td>Hospedagem</td><td>Vercel (CDN global)</td><td>Deploy automático, HTTPS, alta disponibilidade</td></tr>
-  <tr><td>Controle de versão</td><td>Git + GitHub</td><td>Versionamento de código (199 commits)</td></tr>
+  <tr><td>Controle de versão</td><td>Git + GitHub</td><td>Versionamento de código (201 commits)</td></tr>
   <tr><td>Segurança de dados</td><td>RLS (Row Level Security)</td><td>Cada usuário acessa apenas seus próprios dados</td></tr>
 </table>
 
@@ -348,13 +348,15 @@ graph TD
 <div class="uc-box">
   <div class="uc-header">UC07 — Chat Interno</div>
   <div class="uc-body">
-    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">Todos os perfis (exceto Família)</span></div>
+    <div class="uc-row"><span class="uc-label">Ator principal</span><span class="uc-value">Todos os perfis (incluindo Família — ver regras abaixo)</span></div>
     <div class="uc-row"><span class="uc-label">Pré-condição</span><span class="uc-value">Usuário autenticado; perfil origem tem permissão para contatar o perfil destino</span></div>
     <div class="uc-row"><span class="uc-label">Regras de contato por perfil</span><span class="uc-value">
       AT: pode contatar ADM e Supervisora<br>
       Especialista: pode contatar ADM, Supervisora e Gestão<br>
-      Gestão: pode contatar ADM, Supervisora e Especialistas<br>
-      Supervisora e ADM: podem contatar qualquer perfil
+      Gestão: pode contatar ADM, Supervisora, Especialistas e <strong>Família</strong><br>
+      Supervisora: pode contatar ADM, Gestão, Especialistas, ATs, Aux. ADM e <strong>Família</strong><br>
+      ADM: pode contatar ADM, Gestão, Especialistas, ATs, Supervisora e Aux. ADM (não conversa com Família)<br>
+      <strong>Família: pode iniciar conversa apenas com Gestão (Simone) e Supervisora</strong>
     </span></div>
     <div class="uc-row"><span class="uc-label">Fluxo principal</span><span class="uc-value">
       <div class="flow-step">1. Usuário acessa "Chat"</div>
@@ -841,12 +843,15 @@ sequenceDiagram
   <tr><td>RF06.2</td><td>Form. Escolar</td><td>Visualizar todos os comunicados da equipe</td><td>Gestão, Supervisora, ADM</td></tr>
   <tr><td>RF07.1</td><td>Prontuários</td><td>Criar e editar prontuários clínicos</td><td>Especialista</td></tr>
   <tr><td>RF07.2</td><td>Prontuários</td><td>Notificar Gestão/Supervisora ao criar relatório</td><td>Sistema</td></tr>
-  <tr><td>RF08.1</td><td>Fam. Portal</td><td>Exibir diário, fotos, evolução e avisos para a família</td><td>Familia</td></tr>
+  <tr><td>RF08.1</td><td>Fam. Portal</td><td>Exibir diário, fotos, evolução, avisos e comunicados do mural direcionados à família</td><td>Familia</td></tr>
   <tr><td>RF09.1</td><td>Chat</td><td>Mensagens privadas em tempo real (WebSocket)</td><td>Todos exceto Familia</td></tr>
   <tr><td>RF09.2</td><td>Chat</td><td>Envio de imagens e arquivos</td><td>Todos exceto Familia</td></tr>
   <tr><td>RF09.3</td><td>Chat</td><td>Videochamada integrada</td><td>Todos exceto Familia</td></tr>
   <tr><td>RF09.4</td><td>Chat</td><td>Indicador de digitação em tempo real</td><td>Sistema</td></tr>
-  <tr><td>RF10.1</td><td>Mural</td><td>Publicar e visualizar avisos gerais</td><td>ADM, Gestão, Supervisora (pub.) | Todos (viz.)</td></tr>
+  <tr><td>RF09.5</td><td>Chat</td><td>Família conversa diretamente com Gestão (Simone) e Supervisora — ADM não participa desse canal</td><td>Familia ↔ Gestão / Supervisora</td></tr>
+  <tr><td>RF10.1</td><td>Mural</td><td>Publicar avisos gerais com foto opcional</td><td>ADM, Gestão, Supervisora (pub.) | Todos (viz.)</td></tr>
+  <tr><td>RF10.2</td><td>Mural</td><td>Destinatário "Para as Famílias" — aviso aparece no Portal da Família (aba Avisos)</td><td>Gestão, Supervisora</td></tr>
+  <tr><td>RF10.3</td><td>Mural</td><td>Upload de foto no comunicado — exibida no card para todos os destinatários</td><td>ADM, Gestão, Supervisora</td></tr>
   <tr><td>RF11.1</td><td>Protocolos</td><td>Publicar protocolo com confirmação de leitura obrigatória</td><td>ADM, Gestão</td></tr>
   <tr><td>RF11.2</td><td>Protocolos</td><td>Relatório de confirmações pendentes e realizadas</td><td>ADM, Gestão</td></tr>
   <tr><td>RF12.1</td><td>Mat. Adaptados</td><td>Cadastrar material com fotos e nível de adaptação</td><td>AT</td></tr>
@@ -916,6 +921,8 @@ sequenceDiagram
   <tr><td>BUG-03</td><td>Erro de busca ARASAAC invisível com modal aberto</td><td>Materiais Adaptados</td><td>Toast de erro com z-index inferior ao modal overlay</td><td>Mensagem de erro renderizada inline dentro do modal</td></tr>
   <tr><td>BUG-04</td><td>PWA travado em versão antiga após deploys</td><td>Service Worker</td><td>Estratégia cache-first com nome fixo "v1" nunca atualizava</td><td>Trocado para network-first com cache versionado "v2"</td></tr>
   <tr><td>BUG-05</td><td>Sábado e domingo ausentes na escala do AT</td><td>Escala</td><td>Array de dias não incluía finais de semana</td><td>Adicionados Sábado/Domingo com destaque visual âmbar</td></tr>
+  <tr><td>BUG-06</td><td>Família sem canal de comunicação com a equipe clínica</td><td>Chat</td><td>Perfil familia não constava em PODE_CONTATAR</td><td>Família pode conversar com Gestão (Simone) e Supervisora</td></tr>
+  <tr><td>BUG-07</td><td>Mural sem suporte a foto e restrito apenas ao ADM</td><td>Mural</td><td>isAdmin checava apenas role=adm; sem campo foto_url</td><td>Gestão e Supervisora também publicam; adicionado upload de foto e destinatário Família</td></tr>
 </table>
 
 <!-- ══════════════════════════════════════════════════ -->
@@ -948,7 +955,7 @@ graph LR
 <h3>10.4 Métricas do Projeto</h3>
 <table>
   <tr><th>Métrica</th><th>Valor</th></tr>
-  <tr><td>Total de versões entregues (commits)</td><td><strong>199</strong></td></tr>
+  <tr><td>Total de versões entregues (commits)</td><td><strong>201</strong></td></tr>
   <tr><td>Módulos entregues</td><td>20+</td></tr>
   <tr><td>Perfis de acesso</td><td>8</td></tr>
   <tr><td>Tabelas no banco de dados</td><td>25+</td></tr>
@@ -962,7 +969,7 @@ graph LR
   <p>Sistema de Gestão Clínica Abraço — ABA Núcleo de Intervenção Comportamental</p>
   <p>Documentação Técnica — Especificação de Requisitos de Software (SRS) — Julho de 2026</p>
   <p><strong>Desenvolvedor:</strong> Antonio de Sousa Silva — Desenvolvedor Júnior</p>
-  <p>Período: Novembro de 2025 – Julho de 2026 (8 meses) | 199 versões entregues | clinica-especial.vercel.app</p>
+  <p>Período: Novembro de 2025 – Julho de 2026 (8 meses) | 201 versões entregues | clinica-especial.vercel.app</p>
 </div>
 
 </div>
