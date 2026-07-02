@@ -574,6 +574,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [criancaId, setCriancaId] = useState("");
+  const [mesAnoFatura, setMesAnoFatura] = useState(mesAno);
   const [especialidades, setEspecialidades] = useState<ItemEsp[]>([{ especialidade: "", qtd: "", valor_sessao: "" }]);
   const [plano, setPlano] = useState("");
   const [numeroNotaFiscal, setNumeroNotaFiscal] = useState("");
@@ -620,6 +621,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
 
   function resetForm() {
     setCriancaId("");
+    setMesAnoFatura(mesAno);
     setEspecialidades([{ especialidade: "", qtd: "", valor_sessao: "" }]);
     setPlano(""); setNumeroNotaFiscal(""); setDataEnvio(""); setDescontoISS(""); setObservacao("");
   }
@@ -640,7 +642,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     const iss = Math.min(Number(descontoISS) || 0, bruto);
     const { data: nova, error } = await supabase.from("contas_receber").insert([{
       crianca_id: criancaId,
-      mes_referencia: mesAno,
+      mes_referencia: mesAnoFatura,
       especialidades: espComSubtotal,
       sessoes_realizadas: espComSubtotal.reduce((acc, e) => acc + e.qtd, 0),
       valor_sessao: 0,
@@ -664,7 +666,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
         acao: "Criou",
         tabela: "contas_receber",
         registro_id: nova?.id,
-        descricao: `Lançou fatura de ${nomeCrianca} — Ref. ${mesAno} — R$ ${(bruto - iss).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+        descricao: `Lançou fatura de ${nomeCrianca} — Ref. ${mesAnoFatura} — R$ ${(bruto - iss).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
       });
       setModalAberto(false);
       resetForm();
@@ -857,8 +859,8 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-500 uppercase">Mês de Referência</label>
-                  <input type="text" value={mesAno} readOnly
-                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-slate-50 text-slate-500"/>
+                  <input type="month" value={mesAnoFatura} onChange={e => setMesAnoFatura(e.target.value)}
+                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
               </div>
 
