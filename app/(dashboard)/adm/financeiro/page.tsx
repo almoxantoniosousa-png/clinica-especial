@@ -882,10 +882,21 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                   {especialidades.map((e, i) => (
                     <div key={i} className="grid grid-cols-12 gap-1 items-center">
                       <div className="col-span-5">
-                        <input type="text" value={e.especialidade}
+                        <select value={e.especialidade}
                           onChange={ev => updateEspecialidade(i, "especialidade", ev.target.value)}
-                          placeholder="Ex: Fonoaudiologia"
-                          className="w-full h-9 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                          className="w-full h-9 px-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          <option value="">Selecione...</option>
+                          <option value="ABA">ABA</option>
+                          <option value="Artes">Artes</option>
+                          <option value="Capoeira">Capoeira</option>
+                          <option value="Fisioterapia">Fisioterapia</option>
+                          <option value="Fonoaudiologia">Fonoaudiologia</option>
+                          <option value="Pedagoga">Pedagoga</option>
+                          <option value="Psicologia">Psicologia</option>
+                          <option value="Psicopedagogia">Psicopedagogia</option>
+                          <option value="Psicomotricidade">Psicomotricidade</option>
+                          <option value="Terapia Ocupacional">Terapia Ocupacional</option>
+                        </select>
                       </div>
                       <div className="col-span-2">
                         <input type="number" min="0" value={e.qtd}
