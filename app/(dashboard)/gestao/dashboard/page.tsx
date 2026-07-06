@@ -380,7 +380,7 @@ export default function GestaoDashboardPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Crianças ativas",      valor: criancasAtivas,     sub: "em atendimento",           icon: "👶", bg: "bg-blue-50",    cor: "text-blue-600" },
+          { label: "Crianças ativas",      valor: criancasAtivas,     sub: "ativas na clínica",        icon: "👶", bg: "bg-blue-50",    cor: "text-blue-600" },
           { label: "Profissionais ativos", valor: equipeTotal,         sub: "na equipe",                icon: "👥", bg: "bg-purple-50",  cor: "text-purple-600" },
           { label: "Atendimentos hoje",    valor: atendimentosHoje,    sub: "registrados hoje",         icon: "📅", bg: "bg-amber-50",   cor: "text-amber-600" },
           { label: "Atendimentos no mês",  valor: atendimentosMes,     sub: `R$ ${receitaMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: "📋", bg: "bg-emerald-50", cor: "text-emerald-600" },

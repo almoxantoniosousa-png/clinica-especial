@@ -48,7 +48,7 @@
 
   .footer { border-top: 1px solid #e2e8f0; padding-top: 5px; margin-top: 8px; display: flex; justify-content: space-between; font-size: 7pt; color: #94a3b8; flex-shrink: 0; }
 
-  /* PÁGINA 2 — SUGESTÕES */
+  /* PÁGINA 3 — SUGESTÕES */
   .sug-header { background: #1e3a5f; color: white; padding: 12px 18px; border-radius: 8px; margin-bottom: 14px; flex-shrink: 0; }
   .sug-header h1 { font-size: 14pt; font-weight: 800; }
   .sug-header p { font-size: 9pt; opacity: 0.85; margin-top: 3px; }
@@ -82,9 +82,9 @@
 </head>
 <body>
 
-<div class="print-tip">💡 Ctrl+P → Orientação: Retrato → Imprimir (2 páginas A4)</div>
+<div class="print-tip">💡 Ctrl+P → Orientação: Retrato → Imprimir (3 páginas A4)</div>
 
-<!-- ══════════════════ PÁGINA 1 — GUIA DE USO ══════════════════ -->
+<!-- ══════════════════ PÁGINA 1 — GUIA DE USO (parte 1) ══════════════════ -->
 <div class="page">
   <div class="header">
     <div>
@@ -106,9 +106,74 @@
   </div>
   <div class="dica">💡 No celular → Chrome → ⋮ três pontinhos → "Adicionar à tela inicial" para salvar como app.</div>
 
-  <h3 class="sec">⚙️ Suas funções no sistema</h3>
+  <h3 class="sec">🔐 Esqueci minha senha</h3>
+  <div class="steps-inline">
+    <div class="step-pill">1. "Esqueci minha senha"</div>
+    <span class="step-arrow">→</span>
+    <div class="step-pill">2. Digite o e-mail → Enviar</div>
+    <span class="step-arrow">→</span>
+    <div class="step-pill">3. Abra o e-mail recebido</div>
+    <span class="step-arrow">→</span>
+    <div class="step-pill">4. Nova senha (mín. 6) → Salvar ✅</div>
+  </div>
+  <div class="dica">💡 Não existe reset manual pelo ADM — a redefinição é sempre pelo link de e-mail. Confira também a caixa de spam.</div>
+
+  <h3 class="sec">🗂️ Menu Lateral</h3>
+  <div class="dica" style="background:#faf5ff; border-left-color:#a78bfa; color:#5b21b6;">🗂️ Você tem <strong>8 itens de menu</strong>. Só "Comunicados" tem <strong>abas</strong> por dentro (Dashboard, Comunicados Diários, Momentos, Evolução, Avisos) — os outros 7 (Requisições, Brinquedos, Materiais Adaptados, Protocolos, Mural, Chat, Ajuda) levam direto pra tela.</div>
+
+  <h3 class="sec">⚙️ Seu dia a dia (1/2)</h3>
 
   <div class="grid2">
+    <div class="func-card blue">
+      <div class="func-title"><span class="func-icon">📊</span> Painel do Dia (Dashboard)</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#1d4ed8;">Supervisora → Comunicados</span>
+        <span class="step-arrow">→</span>
+        <span class="func-pill" style="background:#1d4ed8;">aba Dashboard</span>
+      </div>
+      <div class="func-desc"><strong>4 cards de métrica:</strong> Crianças (ativas na clínica), Pendentes (para revisar), Hoje (comunicados recebidos), Enviados (para famílias). <strong>+ 2 painéis:</strong> Agenda de Hoje e Últimos Comunicados.</div>
+    </div>
+
+    <div class="func-card green">
+      <div class="func-title"><span class="func-icon">📋</span> Revisar e Enviar Comunicados</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#15803d;">Comunicados Diários</span>
+        <span class="step-arrow">→</span>
+        <span class="func-pill" style="background:#15803d;">Abrir → Enviar</span>
+      </div>
+      <div class="func-desc">Veja o que o AT preencheu (chegada, autonomia, recreio, atenção, lanche, avisos urgentes), adicione uma observação se quiser e clique em <strong>Enviar para a Família</strong> — só você libera a informação pros pais.</div>
+    </div>
+
+    <div class="func-card sky">
+      <div class="func-title"><span class="func-icon">📸</span> Momentos</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#0369a1;">Comunicados</span>
+        <span class="step-arrow">→</span>
+        <span class="func-pill" style="background:#0369a1;">Momentos → + Novo</span>
+      </div>
+      <div class="func-desc">Escolha a criança, envie uma foto do dia e escreva uma legenda (opcional). Aparece na hora no Portal da Família.</div>
+    </div>
+
+    <div class="func-card amber">
+      <div class="func-title"><span class="func-icon">📈</span> Evolução</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#b45309;">Comunicados</span>
+        <span class="step-arrow">→</span>
+        <span class="func-pill" style="background:#b45309;">Evolução → + Novo</span>
+      </div>
+      <div class="func-desc">Registre o progresso da criança (título + texto). Os pais acompanham direto no Portal da Família.</div>
+    </div>
+
+    <div class="func-card red">
+      <div class="func-title"><span class="func-icon">📢</span> Avisos (para a família)</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#b91c1c;">Comunicados</span>
+        <span class="step-arrow">→</span>
+        <span class="func-pill" style="background:#b91c1c;">Avisos → + Novo</span>
+      </div>
+      <div class="func-desc">Publique um aviso dirigido a uma família específica — diferente do Mural, que é interno para a equipe.</div>
+    </div>
+
     <div class="func-card purple">
       <div class="func-title"><span class="func-icon">📚</span> Revisar Materiais Adaptados</div>
       <div class="func-steps">
@@ -120,23 +185,45 @@
       ✅ <strong>Aprovar</strong> → vai ao acervo de toda a equipe<br>
       ⚠️ <strong>Ajustes</strong> → AT recebe o feedback e corrige</div>
     </div>
+  </div>
 
+  <div class="footer">
+    <span>Sistema de Gestão Clínica Abraço · clinica-especial.vercel.app · Julho de 2026 · Página 1/3</span>
+    <span>Desenvolvedor: Antonio de Sousa Silva</span>
+  </div>
+</div>
+
+<!-- ══════════════════ PÁGINA 2 — GUIA DE USO (parte 2) ══════════════════ -->
+<div class="page">
+  <div class="header">
+    <div>
+      <h1>🏥 Guia Rápido — Supervisora (continuação)</h1>
+      <h2>Sistema de Gestão Clínica Abraço · clinica-especial.vercel.app</h2>
+    </div>
+    <div class="badge">Perfil: Supervisora</div>
+  </div>
+
+  <h3 class="sec">⚙️ Apoio e comunicação (2/2)</h3>
+
+  <div class="grid2">
     <div class="func-card blue">
-      <div class="func-title"><span class="func-icon">📄</span> Ver Comunicados dos ATs</div>
+      <div class="func-title"><span class="func-icon">🛒</span> Requisições de Compra</div>
       <div class="func-steps">
-        <span class="func-pill" style="background:#1d4ed8;">Supervisora</span>
+        <span class="func-pill" style="background:#1d4ed8;">Requisições</span>
         <span class="step-arrow">→</span>
-        <span class="func-pill" style="background:#1d4ed8;">Comunicados</span>
+        <span class="func-pill" style="background:#1d4ed8;">+ Nova Requisição</span>
       </div>
-      <div class="func-desc">Acompanhe o que cada AT reportou ao final do dia: presença, atividades, comportamento e intercorrências das crianças na escola.</div>
+      <div class="func-desc">Peça materiais ou equipamentos ao ADM. Acompanhe o status: Pendente → Em análise → Comprado → Entregue. Marque como <strong>Urgente</strong> se precisar.</div>
     </div>
 
     <div class="func-card green">
-      <div class="func-title"><span class="func-icon">📊</span> Relatórios de Evolução</div>
+      <div class="func-title"><span class="func-icon">🧸</span> Brinquedos</div>
       <div class="func-steps">
-        <span class="func-pill" style="background:#15803d;">🔔 Notificação automática</span>
+        <span class="func-pill" style="background:#15803d;">Brinquedos</span>
+        <span class="step-arrow">→</span>
+        <span class="func-pill" style="background:#15803d;">+ Solicitar</span>
       </div>
-      <div class="func-desc">Quando um especialista cria um relatório de evolução, você recebe uma notificação. Clique para abrir e ler o relatório da criança.</div>
+      <div class="func-desc">Peça emprestado um brinquedo do acervo pra usar em atendimento. Escolha a criança e o brinquedo. Status: Solicitado → Retirado → Devolvido.</div>
     </div>
 
     <div class="func-card amber">
@@ -156,10 +243,7 @@
         <span class="step-arrow">→</span>
         <span class="func-pill" style="background:#0369a1;">+ Novo aviso</span>
       </div>
-      <div class="func-desc">Publique avisos para a equipe ou para as famílias. Ao criar, escolha o destinatário:<br>
-      📋 <strong>"Para todos"</strong> → equipe + famílias veem<br>
-      👨‍👩‍👧 <strong>"Para as Famílias"</strong> → aparece no Portal da Família<br>
-      Você pode incluir uma <strong>foto</strong> no comunicado.</div>
+      <div class="func-desc">Publique avisos <strong>internos</strong>, para a equipe (não para a família — isso é feito em "Avisos"). Escolha o destinatário: Todos, Apenas Atendentes ou Apenas ADM. Pode fixar, desafixar, excluir e incluir foto.</div>
     </div>
 
     <div class="func-card red">
@@ -171,15 +255,23 @@
       </div>
       <div class="func-desc">Leia os protocolos de conduta publicados pela gestão e clique em "Confirmar leitura". Registra que você está ciente do conteúdo.</div>
     </div>
+
+    <div class="func-card purple">
+      <div class="func-title"><span class="func-icon">🔔</span> Notificação de Relatórios</div>
+      <div class="func-steps">
+        <span class="func-pill" style="background:#7c3aed;">🔔 Notificação automática</span>
+      </div>
+      <div class="func-desc">Quando um especialista cria um relatório de evolução (prontuário) de uma criança, você recebe um aviso automático. Clique para abrir e ler o relatório.</div>
+    </div>
   </div>
 
   <div class="footer">
-    <span>Sistema de Gestão Clínica Abraço · clinica-especial.vercel.app · Julho de 2026</span>
+    <span>Sistema de Gestão Clínica Abraço · clinica-especial.vercel.app · Julho de 2026 · Página 2/3</span>
     <span>Desenvolvedor: Antonio de Sousa Silva</span>
   </div>
 </div>
 
-<!-- ══════════════════ PÁGINA 2 — SUGESTÕES ══════════════════ -->
+<!-- ══════════════════ PÁGINA 3 — SUGESTÕES ══════════════════ -->
 <div class="page">
   <div class="sug-header">
     <h1>✍️ Formulário de Sugestões e Feedback</h1>
@@ -215,11 +307,13 @@
   <div class="sug-section">
     <div class="campo-label" style="margin-bottom:5px;">O que funcionou bem? (marque tudo que se aplica)</div>
     <div class="check-grid">
+      <div class="check-item"><div class="box"></div> Painel do Dia (Dashboard)</div>
+      <div class="check-item"><div class="box"></div> Revisar e enviar comunicados</div>
+      <div class="check-item"><div class="box"></div> Publicar Momentos, Evolução e Avisos</div>
       <div class="check-item"><div class="box"></div> Revisar materiais adaptados</div>
+      <div class="check-item"><div class="box"></div> Requisições e Brinquedos</div>
       <div class="check-item"><div class="box"></div> Chat com a equipe</div>
-      <div class="check-item"><div class="box"></div> Ver comunicados dos ATs</div>
       <div class="check-item"><div class="box"></div> Publicar avisos no mural</div>
-      <div class="check-item"><div class="box"></div> Receber notificações de relatórios</div>
       <div class="check-item"><div class="box"></div> Confirmar leitura de protocolos</div>
       <div class="check-item"><div class="box"></div> Usar no celular</div>
       <div class="check-item"><div class="box"></div> Encontrar o que preciso rápido</div>
@@ -234,8 +328,6 @@
       <div class="linha"></div>
       <div class="linha"></div>
       <div class="linha"></div>
-      <div class="linha"></div>
-      <div class="linha"></div>
     </div>
   </div>
 
@@ -243,7 +335,6 @@
   <div class="sug-section grow">
     <div class="campo-label" style="margin-bottom:4px;">Alguma função que gostaria que funcionasse diferente? Como?</div>
     <div class="linhas-bloco" style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
-      <div class="linha"></div>
       <div class="linha"></div>
       <div class="linha"></div>
       <div class="linha"></div>
@@ -257,7 +348,6 @@
       <div class="linha"></div>
       <div class="linha"></div>
       <div class="linha"></div>
-      <div class="linha"></div>
     </div>
   </div>
 
@@ -265,7 +355,6 @@
   <div class="sug-section grow">
     <div class="campo-label" style="margin-bottom:4px;">Existe alguma função que não existe ainda e que ajudaria no seu trabalho?</div>
     <div class="linhas-bloco" style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
-      <div class="linha"></div>
       <div class="linha"></div>
       <div class="linha"></div>
     </div>
@@ -276,7 +365,7 @@
   </div>
 
   <div class="footer">
-    <span>Sistema de Gestão Clínica Abraço · clinica-especial.vercel.app · Julho de 2026</span>
+    <span>Sistema de Gestão Clínica Abraço · clinica-especial.vercel.app · Julho de 2026 · Página 3/3</span>
     <span>Desenvolvedor: Antonio de Sousa Silva</span>
   </div>
 </div>

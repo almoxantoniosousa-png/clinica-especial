@@ -147,7 +147,7 @@ function AbaDashboard() {
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 border-l-blue-400">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Crianças</p>
           <p className="text-3xl font-black text-blue-600">{dados.totalCriancas}</p>
-          <p className="text-xs text-slate-400 mt-1">em atendimento</p>
+          <p className="text-xs text-slate-400 mt-1">ativas na clínica</p>
         </div>
         <div className={`bg-white border border-slate-200 rounded-2xl p-4 shadow-sm border-l-4 ${dados.comunicadosPendentes > 0 ? "border-l-amber-400" : "border-l-emerald-400"}`}>
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Pendentes</p>
