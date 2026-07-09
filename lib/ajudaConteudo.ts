@@ -385,11 +385,17 @@ const AUX_ADM: AjudaConteudo = {
   ],
 };
 
-export function getAjudaConteudo(userRole: string): AjudaConteudo {
+export function getAjudaConteudo(userRole: string, contataFamilia: boolean = true): AjudaConteudo {
   const role = userRole ? userRole.trim().toLowerCase() : "";
   if (role === "adm" || role === "admin") return ADM;
   if (role === "gestao") return GESTAO;
-  if (role === "supervisora") return SUPERVISORA;
+  if (role === "supervisora") {
+    if (contataFamilia) return SUPERVISORA;
+    return {
+      ...SUPERVISORA,
+      itens: SUPERVISORA.itens.filter(item => item.titulo !== "Comunicados"),
+    };
+  }
   if (role === "especialista") return ESPECIALISTA;
   if (role === "familia") return FAMILIA;
   if (role === "financeiro") return FINANCEIRO;

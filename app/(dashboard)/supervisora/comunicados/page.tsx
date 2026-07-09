@@ -31,10 +31,43 @@ type SecaoItem = {
 export default function SupervisoraPage() {
   const [aba, setAba] = useState<Aba>("comunicados");
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
+  const [carregandoAcesso, setCarregandoAcesso] = useState(true);
+  const [acessoLiberado, setAcessoLiberado] = useState(true);
+
+  useEffect(() => {
+    async function verificarAcesso() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) { setCarregandoAcesso(false); return; }
+      const { data: usuario } = await supabase
+        .from("usuarios")
+        .select("contata_familia")
+        .eq("email", user.email)
+        .maybeSingle();
+      setAcessoLiberado(usuario?.contata_familia !== false);
+      setCarregandoAcesso(false);
+    }
+    verificarAcesso();
+  }, []);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
     setTimeout(() => setFeedback(null), 3500);
+  }
+
+  if (carregandoAcesso) {
+    return <div className="text-center py-20 text-slate-400 text-sm">Carregando...</div>;
+  }
+
+  if (!acessoLiberado) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-sm text-center bg-white border border-slate-200 rounded-2xl p-8 space-y-3">
+          <span className="text-4xl">🔒</span>
+          <h1 className="font-bold text-slate-800">Acesso restrito</h1>
+          <p className="text-sm text-slate-500">Seu perfil não tem comunicação direta com as famílias. Use Materiais Adaptados ou o Chat com as especialistas.</p>
+        </div>
+      </div>
+    );
   }
 
   const abas = [

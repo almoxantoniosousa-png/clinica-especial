@@ -10,15 +10,17 @@ export default async function AjudaPage() {
   if (!user) redirect("/login");
 
   let roleFinal: string | null = null;
+  let contataFamiliaFinal = true;
 
   const { data: usuario } = await supabase
     .from("usuarios")
-    .select("role")
+    .select("role, contata_familia")
     .eq("email", user.email)
     .maybeSingle();
 
   if (usuario) {
     roleFinal = usuario.role.toLowerCase();
+    contataFamiliaFinal = usuario.contata_familia !== false;
   } else {
     const { data: porId } = await supabase
       .from("atendentes")
@@ -41,7 +43,7 @@ export default async function AjudaPage() {
 
   if (!roleFinal) redirect("/login");
 
-  const { roleLabel, intro, itens, contato } = getAjudaConteudo(roleFinal);
+  const { roleLabel, intro, itens, contato } = getAjudaConteudo(roleFinal, contataFamiliaFinal);
 
   return (
     <div className="space-y-6 pb-10">

@@ -10,9 +10,10 @@ import { NotificacoesBell } from "@/components/notificacoes-bell";
 interface RoleSidebarProps {
   userRole: string;
   userCargo?: string | null;
+  userContataFamilia?: boolean;
 }
 
-export function RoleSidebar({ userRole, userCargo }: RoleSidebarProps) {
+export function RoleSidebar({ userRole, userCargo, userContataFamilia = true }: RoleSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [confirmandoSaida, setConfirmandoSaida] = useState(false);
@@ -136,7 +137,7 @@ export function RoleSidebar({ userRole, userCargo }: RoleSidebarProps) {
   ];
 
   const menuSupervisora = [
-    { href: "/supervisora/comunicados", label: "Comunicados",       icon: "📋" },
+    ...(userContataFamilia ? [{ href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }] : []),
     { href: "/requisicoes",             label: "Requisições",       icon: "🛒" },
     { href: "/brinquedos",              label: "Brinquedos",        icon: "🧸" },
     { href: "/materiais-adaptados",     label: "Materiais Adaptados", icon: "📚" },

@@ -54,7 +54,7 @@ export async function loginWithPassword(
 
     if (role === "adm" || role === "admin") redirect("/adm/dashboard");
     if (role === "gestao") redirect("/gestao/dashboard");
-    if (role === "supervisora") redirect("/supervisora/comunicados");
+    if (role === "supervisora") redirect(usuario.contata_familia === false ? "/materiais-adaptados" : "/supervisora/comunicados");
     if (role === "especialista") redirect("/especialista/escala");
     if (role === "familia") redirect("/familia");
     if (role === "financeiro") redirect("/adm/financeiro");
