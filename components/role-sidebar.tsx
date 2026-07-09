@@ -302,13 +302,13 @@ export function RoleSidebar({ userRole, userCargo }: RoleSidebarProps) {
         <aside className="w-56 bg-white border-r border-slate-200 min-h-screen flex flex-col justify-between flex-shrink-0">
           <div>
             <div className="px-4 py-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between mb-2">
                 <Logo size="md" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-800 text-sm leading-tight">Clínica Abraço</p>
-                  <p className="text-xs text-slate-500">{roleLabel}</p>
-                </div>
                 <NotificacoesBell userRole={role} />
+              </div>
+              <div>
+                <p className="font-bold text-slate-800 text-sm leading-tight">Clínica Abraço</p>
+                <p className="text-xs text-slate-500 leading-snug">{roleLabel}</p>
               </div>
             </div>
             {renderMenu()}
@@ -356,13 +356,11 @@ export function RoleSidebar({ userRole, userCargo }: RoleSidebarProps) {
         <>
           <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMenuAberto(false)} />
           <div className="fixed top-0 left-0 h-full w-72 z-50 bg-white shadow-xl flex flex-col">
-            <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
+            <div className="flex items-start justify-between px-4 py-4 border-b border-slate-100">
+              <div>
                 <Logo size="md" />
-                <div>
-                  <p className="font-bold text-slate-800 text-sm">Clínica Abraço</p>
-                  <p className="text-xs text-slate-500">{roleLabel}</p>
-                </div>
+                <p className="font-bold text-slate-800 text-sm mt-2">Clínica Abraço</p>
+                <p className="text-xs text-slate-500 leading-snug">{roleLabel}</p>
               </div>
               <button onClick={() => setMenuAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
                 <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

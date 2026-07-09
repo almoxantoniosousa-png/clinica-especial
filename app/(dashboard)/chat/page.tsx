@@ -60,7 +60,7 @@ type Mensagem = {
   apagada?: boolean;
 };
 
-type Perfil = { id: string; nome: string; role: string; foto_url?: string | null };
+type Perfil = { id: string; nome: string; role: string; foto_url?: string | null; contata_familia?: boolean };
 
 type Conversa = {
   id: string;
@@ -235,7 +235,7 @@ export default function ChatPage() {
         .from("atendentes").select("id, nome, role, logo_url").eq("email", user.email).maybeSingle();
       // usuarios (adm, gestao, supervisora via usuarios)
       const { data: u } = await supabase
-        .from("usuarios").select("id, nome, role, foto_url").eq("email", user.email).maybeSingle();
+        .from("usuarios").select("id, nome, role, foto_url, contata_familia").eq("email", user.email).maybeSingle();
       if (u) setEu({ ...u, foto_url: u.foto_url ?? a?.logo_url } as Perfil);
       else if (a) setEu({ ...a, foto_url: a.logo_url } as Perfil);
     })();
@@ -712,19 +712,23 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!modal || !eu) return;
-    const roles = PODE_CONTATAR[eu.role] ?? [];
+    const roles = eu.role === "supervisora" && eu.contata_familia === false
+      ? (PODE_CONTATAR[eu.role] ?? []).filter(r => r !== "familia")
+      : (PODE_CONTATAR[eu.role] ?? []);
     if (!roles.length) return;
     (async () => {
       const [{ data: dp }, { data: da }, { data: du }] = await Promise.all([
         supabase.from("perfis").select("id, nome, role, email").in("role", roles).neq("id", eu.id),
         supabase.from("atendentes").select("id, nome, role, email, logo_url").in("role", roles).neq("id", eu.id),
-        supabase.from("usuarios").select("id, nome, role, email, foto_url").in("role", roles).neq("id", eu.id),
+        supabase.from("usuarios").select("id, nome, role, email, foto_url, contata_familia").in("role", roles).neq("id", eu.id),
       ]);
       // Prioridade: usuarios > atendentes > perfis (legado); deduplicar por email
       const vistos = new Set<string>();
       const todos: Perfil[] = [];
       // usuarios têm prioridade (dados mais atualizados)
       for (const u of (du || []) as any[]) {
+        // Família não pode iniciar conversa com uma supervisora que não atende famílias (ex: Sala API)
+        if (eu.role === "familia" && u.role === "supervisora" && u.contata_familia === false) continue;
         if (u.email) vistos.add(u.email);
         todos.push({ id: u.id, nome: u.nome, role: u.role, foto_url: u.foto_url });
       }
@@ -743,6 +747,12 @@ export default function ChatPage() {
   }, [modal, eu]);
 
   // ── Derivados ─────────────────────────────────────────────────────────────
+
+  const rolesPermitidos = eu
+    ? (PODE_CONTATAR[eu.role] ?? []).filter(
+        r => !(eu.role === "supervisora" && eu.contata_familia === false && r === "familia")
+      )
+    : [];
 
   const conversasFiltradas = conversas.filter(c => {
     if (!eu) return false;
@@ -1308,7 +1318,7 @@ export default function ChatPage() {
                 <h2 className="text-sm font-semibold text-slate-800">Nova conversa</h2>
                 {eu && (
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Você pode contatar: {(PODE_CONTATAR[eu.role] ?? []).map(r => ROLE_LABEL[r] ?? r).join(", ")}
+                    Você pode contatar: {rolesPermitidos.map(r => ROLE_LABEL[r] ?? r).join(", ")}
                   </p>
                 )}
               </div>
