@@ -14,16 +14,18 @@ export default async function DashboardLayout({
   if (!user) redirect("/login");
 
   let roleFinal = null;
+  let cargoFinal: string | null = null;
 
   // 1. Busca na tabela usuarios (familia, gestao, adm, financeiro...)
   const { data: usuario } = await supabase
     .from("usuarios")
-    .select("role")
+    .select("role, cargo")
     .eq("email", user.email)
     .maybeSingle();
 
   if (usuario) {
     roleFinal = usuario.role.toLowerCase();
+    cargoFinal = usuario.cargo || null;
   } else {
     // 2. Busca na tabela atendentes (ATs e especialistas)
     const { data: porId } = await supabase
@@ -52,7 +54,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="flex flex-col md:flex-row min-h-screen">
-        <RoleSidebar key={user.id} userRole={roleFinal} />
+        <RoleSidebar key={user.id} userRole={roleFinal} userCargo={cargoFinal} />
         <main className="flex-1 min-w-0 min-h-screen overflow-y-auto overflow-x-hidden bg-zinc-100 relative">
           {/* Marca d'água — logo da clínica */}
           <div className="fixed inset-0 pointer-events-none select-none flex items-center justify-center" style={{ zIndex: 0 }}>

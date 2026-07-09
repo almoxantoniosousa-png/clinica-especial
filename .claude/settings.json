@@ -46,6 +46,9 @@
       "Bash(rm -f tmp-test-links.mjs tmp-links.png)",
       "mcp__supabase__apply_migration",
       "Bash(curl -s -I \"https://clinica-especial.vercel.app\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Antonio x Solange\\Desktop"
     ]
   }
 }

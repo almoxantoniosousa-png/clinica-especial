@@ -9,9 +9,10 @@ import { NotificacoesBell } from "@/components/notificacoes-bell";
 
 interface RoleSidebarProps {
   userRole: string;
+  userCargo?: string | null;
 }
 
-export function RoleSidebar({ userRole }: RoleSidebarProps) {
+export function RoleSidebar({ userRole, userCargo }: RoleSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [confirmandoSaida, setConfirmandoSaida] = useState(false);
@@ -183,7 +184,8 @@ export function RoleSidebar({ userRole }: RoleSidebarProps) {
     : isFinanceiro ? menuFinanceiro
     : menuAtendente;
 
-  const roleLabel = isAdmin ? "Administrador"
+  const roleLabel = userCargo ? userCargo
+    : isAdmin ? "Administrador"
     : isSupervisora ? "Supervisora"
     : isGestao ? "Gestão"
     : isEspecialista ? "Especialista"
