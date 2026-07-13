@@ -282,25 +282,46 @@ function AbaDashboard() {
 // supervisora revisa e envia direto para família
 // =============================================
 function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
+  const hoje = new Date().toISOString().slice(0, 10);
   const [formularios, setFormularios] = useState<FormularioEscolar[]>([]);
+  const [totalPendentes, setTotalPendentes] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState<"pendentes" | "enviados" | "todos">("pendentes");
+  const [dataFiltro, setDataFiltro] = useState(hoje);
   const [detalhe, setDetalhe] = useState<FormularioEscolar | null>(null);
   const [obs, setObs] = useState("");
   const [enviando, setEnviando] = useState(false);
 
   async function carregar() {
     setLoading(true);
-    const { data, error } = await supabase
+
+    // Pendentes nunca são filtrados por data — um comunicado esquecido de
+    // dias anteriores precisa continuar aparecendo até ser enviado.
+    const { count } = await supabase
+      .from("formularios_escolares")
+      .select("id", { count: "exact", head: true })
+      .eq("enviado_familia", false);
+    setTotalPendentes(count || 0);
+
+    let query = supabase
       .from("formularios_escolares")
       .select("*, criancas(nome, foto_url)")
       .order("created_at", { ascending: false });
+
+    if (filtro === "pendentes") {
+      query = query.eq("enviado_familia", false);
+    } else {
+      query = query.eq("data", dataFiltro);
+      if (filtro === "enviados") query = query.eq("enviado_familia", true);
+    }
+
+    const { data, error } = await query;
     if (error) mostrarFeedback("erro", "Erro ao carregar: " + error.message);
     setFormularios(data || []);
     setLoading(false);
   }
 
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => { carregar(); }, [filtro, dataFiltro]);
 
   async function enviarParaFamilia(id: string) {
     setEnviando(true);
@@ -325,13 +346,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
     else { mostrarFeedback("sucesso", "Comunicado enviado para a família!"); setDetalhe(null); setObs(""); carregar(); }
   }
 
-  const filtrados = formularios.filter(f => {
-    if (filtro === "pendentes") return !f.enviado_familia;
-    if (filtro === "enviados")  return f.enviado_familia;
-    return true;
-  });
-
-  const totalPendentes = formularios.filter(f => !f.enviado_familia).length;
+  const filtrados = formularios;
 
   function iniciais(nome: string) {
     return nome?.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase() || "?";
@@ -439,17 +454,32 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
         </div>
       )}
 
-      <div className="flex gap-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm w-fit">
-        {[
-          { key: "pendentes", label: "Pendentes", icon: "⏳" },
-          { key: "enviados",  label: "Enviados",  icon: "✅" },
-          { key: "todos",     label: "Todos",     icon: "📋" },
-        ].map(f => (
-          <button key={f.key} onClick={() => setFiltro(f.key as any)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${filtro === f.key ? "bg-blue-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
-            {f.icon} {f.label}
-          </button>
-        ))}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex gap-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm w-fit">
+          {[
+            { key: "pendentes", label: "Pendentes", icon: "⏳" },
+            { key: "enviados",  label: "Enviados",  icon: "✅" },
+            { key: "todos",     label: "Todos",     icon: "📋" },
+          ].map(f => (
+            <button key={f.key} onClick={() => setFiltro(f.key as any)}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${filtro === f.key ? "bg-blue-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
+              {f.icon} {f.label}
+            </button>
+          ))}
+        </div>
+
+        {filtro !== "pendentes" && (
+          <div className="flex items-center gap-2">
+            <input type="date" value={dataFiltro} onChange={e => setDataFiltro(e.target.value)}
+              className="h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"/>
+            {dataFiltro !== hoje && (
+              <button onClick={() => setDataFiltro(hoje)}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline transition">
+                Hoje
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {loading ? (
