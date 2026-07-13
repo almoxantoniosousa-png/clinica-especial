@@ -36,6 +36,27 @@ export default function MeusComunicadosPage() {
     inicializar();
   }, []);
 
+  useEffect(() => {
+    if (!atId) return;
+    const canal = supabase
+      .channel(`meus-comunicados-${atId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "formularios_escolares", filter: `at_id=eq.${atId}` },
+        (payload: { new: any }) => {
+          setComunicados(prev => prev.map(c => c.id === payload.new.id ? { ...c, ...payload.new } : c));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "formularios_escolares", filter: `at_id=eq.${atId}` },
+        () => carregar(atId)
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(canal); };
+  }, [atId]);
+
   function iniciais(nome: string) {
     return nome?.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase() || "?";
   }
