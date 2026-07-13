@@ -312,7 +312,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
               </div>
               <div>
                 <p className="font-bold text-slate-800 text-sm leading-tight">Clínica Abraço</p>
-                <p className="text-xs text-slate-500 leading-snug uppercase">{identLabel}</p>
+                <p title={identLabel} className="text-[10px] font-medium text-slate-400 leading-snug uppercase tracking-wider truncate">{identLabel}</p>
               </div>
             </div>
             {renderMenu()}
@@ -364,7 +364,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
               <div>
                 <Logo size="md" />
                 <p className="font-bold text-slate-800 text-sm mt-2">Clínica Abraço</p>
-                <p className="text-xs text-slate-500 leading-snug uppercase">{identLabel}</p>
+                <p title={identLabel} className="text-[10px] font-medium text-slate-400 leading-snug uppercase tracking-wider truncate max-w-[13rem]">{identLabel}</p>
               </div>
               <button onClick={() => setMenuAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
                 <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
