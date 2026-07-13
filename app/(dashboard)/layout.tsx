@@ -15,37 +15,43 @@ export default async function DashboardLayout({
 
   let roleFinal = null;
   let cargoFinal: string | null = null;
+  let nomeFinal: string | null = null;
   let contataFamiliaFinal = true;
 
   // 1. Busca na tabela usuarios (familia, gestao, adm, financeiro...)
   const { data: usuario } = await supabase
     .from("usuarios")
-    .select("role, cargo, contata_familia")
+    .select("role, cargo, nome, contata_familia")
     .eq("email", user.email)
     .maybeSingle();
 
   if (usuario) {
     roleFinal = usuario.role.toLowerCase();
     cargoFinal = usuario.cargo || null;
+    nomeFinal = usuario.nome || null;
     contataFamiliaFinal = usuario.contata_familia !== false;
   } else {
     // 2. Busca na tabela atendentes (ATs e especialistas)
     const { data: porId } = await supabase
       .from("atendentes")
-      .select("role")
+      .select("role, nome")
       .eq("id", user.id)
       .maybeSingle();
 
     if (porId) {
       roleFinal = porId.role.toLowerCase();
+      nomeFinal = porId.nome || null;
     } else {
       const { data: porEmail } = await supabase
         .from("atendentes")
-        .select("role")
+        .select("role, nome")
         .eq("email", user.email)
         .maybeSingle();
 
-      if (porEmail) roleFinal = porEmail.role.toLowerCase();
+      if (porEmail) {
+        roleFinal = porEmail.role.toLowerCase();
+        nomeFinal = porEmail.nome || null;
+      }
     }
   }
 
@@ -56,7 +62,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="flex flex-col md:flex-row min-h-screen">
-        <RoleSidebar key={user.id} userRole={roleFinal} userCargo={cargoFinal} userContataFamilia={contataFamiliaFinal} />
+        <RoleSidebar key={user.id} userRole={roleFinal} userCargo={cargoFinal} userNome={nomeFinal} userContataFamilia={contataFamiliaFinal} />
         <main className="flex-1 min-w-0 min-h-screen overflow-y-auto overflow-x-hidden bg-zinc-100 relative">
           {/* Marca d'água — logo da clínica */}
           <div className="fixed inset-0 pointer-events-none select-none flex items-center justify-center" style={{ zIndex: 0 }}>

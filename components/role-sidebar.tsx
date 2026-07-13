@@ -10,10 +10,11 @@ import { NotificacoesBell } from "@/components/notificacoes-bell";
 interface RoleSidebarProps {
   userRole: string;
   userCargo?: string | null;
+  userNome?: string | null;
   userContataFamilia?: boolean;
 }
 
-export function RoleSidebar({ userRole, userCargo, userContataFamilia = true }: RoleSidebarProps) {
+export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia = true }: RoleSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [confirmandoSaida, setConfirmandoSaida] = useState(false);
@@ -195,6 +196,8 @@ export function RoleSidebar({ userRole, userCargo, userContataFamilia = true }: 
     : isFinanceiro ? "Financeiro"
     : "Atendente";
 
+  const identLabel = userNome ? `${userNome} - ${roleLabel}` : roleLabel;
+
   const Logo = ({ size }: { size: "sm" | "md" }) => {
     const dim = size === "sm" ? "w-9 h-9" : "w-10 h-10";
     return (
@@ -309,7 +312,7 @@ export function RoleSidebar({ userRole, userCargo, userContataFamilia = true }: 
               </div>
               <div>
                 <p className="font-bold text-slate-800 text-sm leading-tight">Clínica Abraço</p>
-                <p className="text-xs text-slate-500 leading-snug">{roleLabel}</p>
+                <p className="text-xs text-slate-500 leading-snug uppercase">{identLabel}</p>
               </div>
             </div>
             {renderMenu()}
@@ -361,7 +364,7 @@ export function RoleSidebar({ userRole, userCargo, userContataFamilia = true }: 
               <div>
                 <Logo size="md" />
                 <p className="font-bold text-slate-800 text-sm mt-2">Clínica Abraço</p>
-                <p className="text-xs text-slate-500 leading-snug">{roleLabel}</p>
+                <p className="text-xs text-slate-500 leading-snug uppercase">{identLabel}</p>
               </div>
               <button onClick={() => setMenuAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
                 <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
