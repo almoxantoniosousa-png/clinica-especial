@@ -106,6 +106,26 @@ export async function createAtendimento(input: any) {
     return { success: false, error: "Usuário não autenticado." };
   }
 
+  // O id de login (auth) nem sempre é o mesmo id da linha em `atendentes`.
+  // Resolve pelo id, depois por usuario_id, depois por e-mail.
+  let atendenteId: string | null = null;
+  const { data: porId } = await supabase.from("atendentes").select("id").eq("id", user.id).maybeSingle();
+  if (porId) {
+    atendenteId = porId.id;
+  } else {
+    const { data: porUsuarioId } = await supabase.from("atendentes").select("id").eq("usuario_id", user.id).maybeSingle();
+    if (porUsuarioId) {
+      atendenteId = porUsuarioId.id;
+    } else if (user.email) {
+      const { data: porEmail } = await supabase.from("atendentes").select("id").eq("email", user.email).maybeSingle();
+      if (porEmail) atendenteId = porEmail.id;
+    }
+  }
+
+  if (!atendenteId) {
+    return { success: false, error: "Seu perfil de atendente não foi encontrado no cadastro. Contate o administrador." };
+  }
+
   const local = input.local?.toLowerCase().includes("escola") ? "escola" : "casa";
   const valorHora = 30.00;
   const horas = Number(input.horas ?? 0);
@@ -114,7 +134,7 @@ export async function createAtendimento(input: any) {
   const { data, error } = await supabase
     .from("atendimentos")
     .insert([{
-      atendente_id: user.id,
+      atendente_id: atendenteId,
       crianca_id: input.crianca_id,
       data: input.data,
       horas,
@@ -135,7 +155,7 @@ export async function createAtendimento(input: any) {
     .from("financeiro")
     .insert([{
       atendimento_id: data.id,
-      atendente_id: user.id,
+      atendente_id: atendenteId,
       data: input.data,
       local,
       horas,

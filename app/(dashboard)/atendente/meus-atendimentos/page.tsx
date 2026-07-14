@@ -18,6 +18,23 @@ export default function MeusAtendimentosPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
+      // O id de login (auth) nem sempre e o mesmo id da linha em `atendentes`.
+      let atendenteId: string | null = null
+      const { data: porId } = await supabase.from('atendentes').select('id').eq('id', user.id).maybeSingle()
+      if (porId) {
+        atendenteId = porId.id
+      } else {
+        const { data: porUsuarioId } = await supabase.from('atendentes').select('id').eq('usuario_id', user.id).maybeSingle()
+        if (porUsuarioId) {
+          atendenteId = porUsuarioId.id
+        } else if (user.email) {
+          const { data: porEmail } = await supabase.from('atendentes').select('id').eq('email', user.email).maybeSingle()
+          if (porEmail) atendenteId = porEmail.id
+        }
+      }
+
+      if (!atendenteId) { setLoading(false); return }
+
       const mes = String(mesSelecionado).padStart(2, '0')
       const primeiroDia = `${anoSelecionado}-${mes}-01`
       const ultimoDia = `${anoSelecionado}-${mes}-31`
@@ -25,7 +42,7 @@ export default function MeusAtendimentosPage() {
       const { data, error } = await supabase
         .from('atendimentos')
         .select('id, data, local, horas, valor_hora, valor_total, status, criancas(nome)')
-        .eq('atendente_id', user.id)
+        .eq('atendente_id', atendenteId)
         .gte('data', primeiroDia)
         .lte('data', ultimoDia)
         .order('data', { ascending: false })

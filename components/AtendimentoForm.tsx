@@ -35,26 +35,36 @@ export default function AtendimentoForm() {
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        // Busca nome do atendente automaticamente pelo email
-        const { data: perfil } = await supabase
-          .from('atendentes')
-          .select('nome')
-          .eq('email', user.email)
-          .maybeSingle()
+        // O id de login (auth) nem sempre é o mesmo id da linha em `atendentes`.
+        let perfil: { id: string; nome: string } | null = null
+        const { data: porId } = await supabase.from('atendentes').select('id, nome').eq('id', user.id).maybeSingle()
+        if (porId) {
+          perfil = porId
+        } else {
+          const { data: porUsuarioId } = await supabase.from('atendentes').select('id, nome').eq('usuario_id', user.id).maybeSingle()
+          if (porUsuarioId) {
+            perfil = porUsuarioId
+          } else if (user.email) {
+            const { data: porEmail } = await supabase.from('atendentes').select('id, nome').eq('email', user.email).maybeSingle()
+            if (porEmail) perfil = porEmail
+          }
+        }
         if (perfil?.nome) setNomeAtendente(perfil.nome)
 
         // Acumulado pendente
-        const { data: historico } = await supabase
-          .from('atendimentos')
-          .select('horas, valor_total')
-          .eq('atendente_id', user.id)
-          .eq('status', 'pendente')
+        if (perfil?.id) {
+          const { data: historico } = await supabase
+            .from('atendimentos')
+            .select('horas, valor_total')
+            .eq('atendente_id', perfil.id)
+            .eq('status', 'pendente')
 
-        if (historico) {
-          const somaHoras = historico.reduce((acc, curr) => acc + Number(curr.horas || 0), 0)
-          const somaValor = historico.reduce((acc, curr) => acc + Number(curr.valor_total || 0), 0)
-          setTotalHorasAcumuladas(somaHoras)
-          setTotalValorAcumulado(somaValor)
+          if (historico) {
+            const somaHoras = historico.reduce((acc, curr) => acc + Number(curr.horas || 0), 0)
+            const somaValor = historico.reduce((acc, curr) => acc + Number(curr.valor_total || 0), 0)
+            setTotalHorasAcumuladas(somaHoras)
+            setTotalValorAcumulado(somaValor)
+          }
         }
       }
     }
