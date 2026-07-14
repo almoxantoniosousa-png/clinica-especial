@@ -36,7 +36,8 @@ export default function AdmCriancasPage() {
   const [form, setForm] = useState({
     nome: "", cpf: "", data_nascimento: "", sexo: "",
     responsavel: "", telefone_responsavel: "", email_responsavel: "",
-    escola_id: "", plano_saude: "", numero_processo: "",
+    nome_mae: "", nome_pai: "",
+    escola_id: "", serie: "", plano_saude: "", numero_processo: "",
     diagnostico: "", cid: "", alergias: "", medicamentos: "", observacoes: "",
   });
 
@@ -92,7 +93,10 @@ export default function AdmCriancasPage() {
       responsavel: form.responsavel || null,
       telefone_responsavel: form.telefone_responsavel || null,
       email_responsavel: form.email_responsavel || null,
+      nome_mae: form.nome_mae || null,
+      nome_pai: form.nome_pai || null,
       escola_id: form.escola_id || null,
+      serie: form.serie || null,
       plano_saude: form.plano_saude || null,
       numero_processo: form.numero_processo || null,
       diagnostico: form.diagnostico || null,
@@ -123,7 +127,7 @@ export default function AdmCriancasPage() {
       descricao: `Cadastrou a criança: ${form.nome.trim()}`,
     });
 
-    setForm({ nome: "", cpf: "", data_nascimento: "", sexo: "", responsavel: "", telefone_responsavel: "", email_responsavel: "", escola_id: "", plano_saude: "", numero_processo: "", diagnostico: "", cid: "", alergias: "", medicamentos: "", observacoes: "" });
+    setForm({ nome: "", cpf: "", data_nascimento: "", sexo: "", responsavel: "", telefone_responsavel: "", email_responsavel: "", nome_mae: "", nome_pai: "", escola_id: "", serie: "", plano_saude: "", numero_processo: "", diagnostico: "", cid: "", alergias: "", medicamentos: "", observacoes: "" });
     setFotoFile(null); setFotoPreview(null);
     setUploadingFoto(false);
     carregarDados();
@@ -140,7 +144,10 @@ export default function AdmCriancasPage() {
       responsavel: crianca.responsavel || "",
       telefone_responsavel: crianca.telefone_responsavel || "",
       email_responsavel: crianca.email_responsavel || "",
+      nome_mae: crianca.nome_mae || "",
+      nome_pai: crianca.nome_pai || "",
       escola_id: crianca.escola_id || "",
+      serie: crianca.serie || "",
       plano_saude: crianca.plano_saude || "",
       numero_processo: crianca.numero_processo || "",
       diagnostico: crianca.diagnostico || "",
@@ -391,6 +398,10 @@ export default function AdmCriancasPage() {
                     {escolas.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
                   </select>
                 </div>
+                <div>
+                  <label className={labelClass}>Série escolar</label>
+                  <input type="text" placeholder="Ex: 3º ano do Fundamental" value={form.serie} onChange={(e) => setForm({ ...form, serie: e.target.value })} className={inputClass}/>
+                </div>
               </div>
             </div>
           </Secao>
@@ -408,6 +419,14 @@ export default function AdmCriancasPage() {
               <div>
                 <label className={labelClass}>E-mail</label>
                 <input type="email" placeholder="email@exemplo.com" value={form.email_responsavel} onChange={(e) => setForm({ ...form, email_responsavel: e.target.value })} className={inputClass}/>
+              </div>
+              <div>
+                <label className={labelClass}>Filiação — Nome da mãe</label>
+                <input type="text" placeholder="Nome completo da mãe" value={form.nome_mae} onChange={(e) => setForm({ ...form, nome_mae: e.target.value })} className={inputClass}/>
+              </div>
+              <div>
+                <label className={labelClass}>Filiação — Nome do pai</label>
+                <input type="text" placeholder="Nome completo do pai" value={form.nome_pai} onChange={(e) => setForm({ ...form, nome_pai: e.target.value })} className={inputClass}/>
               </div>
             </div>
           </Secao>
@@ -591,6 +610,10 @@ export default function AdmCriancasPage() {
                       {escolas.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
                     </select>
                   </div>
+                  <div>
+                    <label className={labelClass}>Série escolar</label>
+                    <input type="text" placeholder="Ex: 3º ano do Fundamental" value={formEdit.serie || ""} onChange={(e) => setFormEdit({ ...formEdit, serie: e.target.value })} className={inputClass}/>
+                  </div>
                 </div>
               </Secao>
 
@@ -607,6 +630,14 @@ export default function AdmCriancasPage() {
                   <div>
                     <label className={labelClass}>E-mail</label>
                     <input type="email" value={formEdit.email_responsavel || ""} onChange={(e) => setFormEdit({ ...formEdit, email_responsavel: e.target.value })} className={inputClass}/>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Filiação — Nome da mãe</label>
+                    <input type="text" value={formEdit.nome_mae || ""} onChange={(e) => setFormEdit({ ...formEdit, nome_mae: e.target.value })} className={inputClass}/>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Filiação — Nome do pai</label>
+                    <input type="text" value={formEdit.nome_pai || ""} onChange={(e) => setFormEdit({ ...formEdit, nome_pai: e.target.value })} className={inputClass}/>
                   </div>
                 </div>
               </Secao>
