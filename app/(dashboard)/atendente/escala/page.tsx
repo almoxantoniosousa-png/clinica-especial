@@ -22,6 +22,7 @@ type EscalaItem = {
   crianca: string;
   servico: string;
   profissional_nome: string | null;
+  local: string | null;
 };
 
 const CORES = [
@@ -84,7 +85,7 @@ export default function AtendenteEscalaPage() {
       const [escalaRes, servicosRes] = await Promise.all([
         supabase
           .from("escala")
-          .select("id, dia, horario, crianca, servico, profissional_nome")
+          .select("id, dia, horario, crianca, servico, profissional_nome, local")
           .eq("profissional_id", atendente.id)
           .order("horario", { ascending: true }),
         supabase.from("tipos_atendimento").select("nome").eq("ativo", true).order("nome"),
@@ -190,6 +191,7 @@ export default function AtendenteEscalaPage() {
                           <span className="font-bold">{slot.crianca}</span>
                           <span className="opacity-60">·</span>
                           <span>{slot.servico}</span>
+                          {slot.local && <span className="opacity-60">· 📍 {slot.local}</span>}
                         </div>
                         {slot.profissional_nome && (
                           <span className="text-xs opacity-70 mt-0.5">

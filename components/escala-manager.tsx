@@ -15,6 +15,8 @@ const HORARIOS = [
   "17:00 – 18:00",
 ];
 
+const LOCAIS = ["Escola", "Casa", "Clínica"];
+
 type Slot = {
   id: string;
   dia: string;
@@ -23,6 +25,7 @@ type Slot = {
   servico: string;
   profissional_nome: string | null;
   profissional_id: string | null;
+  local: string | null;
 };
 
 type Atendente = {
@@ -37,6 +40,7 @@ type FormData = {
   servico: string;
   profissional_id: string;
   profissional_nome: string;
+  local: string;
 };
 
 const FORM_VAZIO: FormData = {
@@ -46,6 +50,7 @@ const FORM_VAZIO: FormData = {
   servico: "",
   profissional_id: "",
   profissional_nome: "",
+  local: LOCAIS[0],
 };
 
 const CORES = [
@@ -118,7 +123,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
     const slotsRes = await supabase
       .from("escala")
-      .select("id, dia, horario, crianca, servico, profissional_nome, profissional_id")
+      .select("id, dia, horario, crianca, servico, profissional_nome, profissional_id, local")
       .order("horario");
 
     const slotsFiltrados = (slotsRes.data ?? []).filter(
@@ -148,6 +153,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       servico: slot.servico,
       profissional_id: slot.profissional_id ?? "",
       profissional_nome: slot.profissional_nome ?? "",
+      local: slot.local ?? LOCAIS[0],
     });
     setErroForm("");
     setModalAberto(true);
@@ -179,6 +185,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       servico: form.servico,
       profissional_id: form.profissional_id || null,
       profissional_nome: form.profissional_nome || null,
+      local: form.local || null,
     };
 
     const { error } = editandoId
@@ -348,6 +355,11 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                               👤 {slot.profissional_nome}
                             </span>
                           )}
+                          {slot.local && (
+                            <span className="text-xs opacity-70">
+                              📍 {slot.local}
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -470,6 +482,18 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 >
                   <option value="">Selecione...</option>
                   {servicos.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              {/* local */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Local do atendimento</label>
+                <select
+                  value={form.local}
+                  onChange={(e) => setForm((f) => ({ ...f, local: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {LOCAIS.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
 

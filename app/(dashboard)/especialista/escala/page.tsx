@@ -13,6 +13,7 @@ type EscalaItem = {
   crianca: string;
   servico: string;
   profissional_nome: string | null;
+  local: string | null;
 };
 
 type Marcacao = {
@@ -155,7 +156,7 @@ export default function EspecialistaEscalaPage() {
       const [escalaRes, servicosRes] = await Promise.all([
         supabase
           .from("escala")
-          .select("id, dia, horario, crianca, servico, profissional_nome")
+          .select("id, dia, horario, crianca, servico, profissional_nome, local")
           .eq("profissional_id", profissional.id)
           .order("horario", { ascending: true }),
         supabase.from("tipos_atendimento").select("nome").eq("ativo", true).order("nome"),
@@ -260,6 +261,7 @@ export default function EspecialistaEscalaPage() {
                         <span className="font-bold">{item.crianca}</span>
                         <span className="opacity-60">·</span>
                         <span>{item.servico}</span>
+                        {item.local && <span className="opacity-60">· 📍 {item.local}</span>}
                         {marcacao && (
                           <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
                             marcacao.status === "P" ? "bg-emerald-100 text-emerald-700 border-emerald-300"
