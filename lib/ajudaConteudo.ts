@@ -94,6 +94,16 @@ const ADM: AjudaConteudo = {
       reflexo: "O pagamento marcado aqui também fica registrado na Auditoria, e o holerite gerado pode ser entregue ao colaborador."
     },
     {
+      icone: "🩺", titulo: "Atendimentos Especialistas", mockup: "tabela",
+      texto: "Mostra, por mês, quantos atendimentos cada especialista teve: P (presença), F (falta avisada em cima da hora — recebe) e FJ (falta avisada com antecedência — não recebe). Clique no nome pra ver o detalhe de cada atendimento.",
+      reflexo: "Vem do que cada especialista marca em \"Minha Escala\" — use como referência pra lançar a Folha de Pagamento."
+    },
+    {
+      icone: "📋", titulo: "Atendimentos ATs", mockup: "tabela",
+      texto: "Mostra, por mês e agrupado por AT, todo atendimento registrado em \"Novo Registro\": criança, local (casa/escola), horas, valor e o relato completo do dia. Atualiza sozinha assim que o AT enviar um novo registro (aparece destacado por alguns segundos).",
+      reflexo: "Antes só o próprio AT via esse detalhe em \"Meus Atendimentos\" — aqui o ADM e o Financeiro acompanham tudo sem precisar perguntar."
+    },
+    {
       icone: "🧸", titulo: "Brinquedos", mockup: "abas",
       texto: "Visão geral do sistema de empréstimo de brinquedos — as mesmas 5 abas da Aux. Adm.\n\n• Solicitações — pedidos da equipe aguardando retirada.\n• Em Posse — brinquedos que estão com as colaboradoras.\n• Histórico — empréstimos encerrados (devolvidos).\n• Catálogo — lista de brinquedos com fotos. Você pode adicionar, editar e registrar retiradas/devoluções.\n• Ranking — gráficos de brinquedos mais usados, colaboradoras e crianças.\n\nTodas as ações (solicitação, retirada, devolução, cadastro no catálogo) ficam registradas na Auditoria.",
       reflexo: "O catálogo cresce automaticamente quando alguém solicita um brinquedo novo — cada retirada e devolução fica rastreada na Auditoria."
@@ -358,6 +368,11 @@ const FINANCEIRO: AjudaConteudo = {
       icone: "🩺", titulo: "Atendimentos Especialistas", mockup: "tabela",
       texto: "Mostra, por mês, quantos atendimentos cada especialista teve: P (presença), F (falta avisada em cima da hora — profissional recebe) e FJ (falta avisada com antecedência — não recebe).\n\nEscolha o mês no seletor do topo. Clique no nome de uma especialista para ver o detalhe de cada atendimento (criança, data, status e o motivo da falta, quando houver). Use essa tela como referência na hora de lançar a Folha de Pagamento.",
       reflexo: "Esses dados vêm do que cada especialista marca em \"Minha Escala\" — não precisa perguntar pra ela quantos atendimentos fez no mês."
+    },
+    {
+      icone: "📋", titulo: "Atendimentos ATs", mockup: "tabela",
+      texto: "Mostra, por mês e agrupado por AT, todo atendimento registrado em \"Novo Registro\": criança, local (casa/escola), horas, valor calculado e o relato completo do dia.\n\nAtualiza sozinha assim que o AT enviar um novo registro — aparece destacado em verde por alguns segundos, sem precisar recarregar a página. Use como referência na hora de lançar a Folha de Pagamento.",
+      reflexo: "Antes só o próprio AT via esse detalhe em \"Meus Atendimentos\" — aqui o Financeiro acompanha tudo em tempo real."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
