@@ -72,6 +72,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/atendentes",    label: "Acompanhantes", icon: "👤" },
     { href: "/adm/especialistas", label: "Especialistas",  icon: "🩺" },
     { href: "/adm/internas",      label: "Internas",       icon: "🏠" },
+    { href: "/adm/escala-administrativa", label: "Escala Administrativa", icon: "🗓️" },
   ];
 
   const subMenuColaboradoresGestao = [
