@@ -4,39 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Trash2 } from "lucide-react";
 
-const MODELOS_MURAL = [
-  { icone: "🗓️", label: "Reunião de equipe",
-    titulo: "Reunião de equipe",
-    conteudo: "Convocamos a equipe para uma reunião no dia [DATA], às [HORÁRIO], sobre [PAUTA]. Contamos com a presença de todos." },
-  { icone: "🔄", label: "Troca de acompanhante",
-    titulo: "Troca de acompanhante terapêutico",
-    conteudo: "Informamos que o(a) acompanhante terapêutico(a) responsável por [NOME DA CRIANÇA] muda a partir de [DATA]: quem assume é [NOME DO NOVO AT]. Pedimos à equipe envolvida que se organize para a transição." },
-  { icone: "📜", label: "Novo protocolo",
-    titulo: "Novo protocolo publicado",
-    conteudo: "Foi publicado um novo protocolo ([NOME DO PROTOCOLO]) na aba Protocolos. Por favor, leiam e confirmem a leitura até [DATA]." },
-  { icone: "📚", label: "Material aguardando revisão",
-    titulo: "Materiais aguardando revisão",
-    conteudo: "Existem materiais adaptados aguardando revisão em Materiais Adaptados. Pedimos que revisem assim que possível." },
-  { icone: "📅", label: "Alteração de escala",
-    titulo: "Alteração na escala",
-    conteudo: "Houve uma alteração na escala de atendimentos a partir de [DATA]. Confiram a tela Escala para ver os horários atualizados." },
-  { icone: "📝", label: "Prazo de relatório/prontuário",
-    titulo: "Prazo para envio de relatórios",
-    conteudo: "Lembramos que o prazo para envio dos relatórios/prontuários do período é até o dia [DATA]. Por favor, mantenham os registros em dia." },
-  { icone: "🎓", label: "Treinamento/capacitação",
-    titulo: "Treinamento agendado",
-    conteudo: "Teremos um treinamento sobre [TEMA] no dia [DATA], às [HORÁRIO], em [LOCAL/link]. Participação [obrigatória/recomendada]." },
-  { icone: "🎉", label: "Evento da equipe",
-    titulo: "Evento da equipe",
-    conteudo: "Vamos ter [NOME DO EVENTO] no dia [DATA], às [HORÁRIO]. Contamos com a presença de todos!" },
-  { icone: "🏖️", label: "Recesso da clínica",
-    titulo: "Recesso da clínica",
-    conteudo: "A clínica estará em recesso no período de [DATA INÍCIO] a [DATA FIM]. Retorno normal em [DATA DE VOLTA]." },
-  { icone: "🧸", label: "Pendências de brinquedos/requisições",
-    titulo: "Pendências para verificar",
-    conteudo: "Existem solicitações de brinquedos ou requisições pendentes de retirada/resposta. Por favor, verifiquem as telas Brinquedos e Requisições." },
-];
-
 export default function MuralPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [comunicados, setComunicados] = useState<any[]>([]);
@@ -198,20 +165,6 @@ export default function MuralPage() {
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
           <h2 className="font-semibold text-slate-800">Novo Comunicado</h2>
           <form onSubmit={salvarComunicado} className="space-y-4">
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Modelo pronto (opcional)</label>
-              <div className="flex flex-wrap gap-1.5">
-                {MODELOS_MURAL.map(m => (
-                  <button key={m.label} type="button"
-                    onClick={() => { setTitulo(m.titulo); setConteudo(m.conteudo); }}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-slate-200 text-xs font-medium text-slate-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition">
-                    <span>{m.icone}</span>{m.label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-[10px] text-slate-400">Escolher um modelo preenche título e mensagem — os trechos entre [colchetes] precisam ser substituídos antes de publicar.</p>
-            </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Título</label>

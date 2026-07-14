@@ -904,6 +904,48 @@ function AbaEvolucao({ mostrarFeedback }: AbaProps) {
 // =============================================
 // ABA AVISOS
 // =============================================
+const MODELOS_AVISO = [
+  { icone: "🗓️", label: "Convocação para reunião",
+    titulo: "Convocação para reunião",
+    conteudo: "Precisamos agendar uma reunião para conversar sobre o acompanhamento de [NOME DA CRIANÇA]. Data: [DATA], horário: [HORÁRIO], local: [presencial/online]. Contamos com a presença de vocês." },
+  { icone: "🔄", label: "Troca de AT (equipe)",
+    titulo: "Troca de acompanhante terapêutico",
+    conteudo: "Informamos que o(a) acompanhante terapêutico(a) responsável por [NOME DA CRIANÇA] muda a partir de [DATA]: quem assume é [NOME DO NOVO AT]. Pedimos à equipe envolvida que se organize para a transição." },
+  { icone: "👨‍👩‍👧", label: "Troca de AT (família)",
+    titulo: "Troca de acompanhante terapêutico",
+    conteudo: "Informamos que, a partir de [DATA], haverá uma mudança no(a) acompanhante terapêutico(a) de [NOME DA CRIANÇA]. Sai: [NOME DE QUEM SAI]. Entra: [NOME DE QUEM ENTRA]. Qualquer dúvida, estamos à disposição." },
+  { icone: "📆", label: "Reposição de atendimento",
+    titulo: "Reposição de atendimento",
+    conteudo: "A sessão que não pôde ser realizada foi remarcada para [DATA], às [HORÁRIO]. Contamos com a presença de [NOME DA CRIANÇA]." },
+  { icone: "⏰", label: "Atraso/ausência do profissional",
+    titulo: "Atraso/ausência do profissional",
+    conteudo: "Informamos que o(a) profissional responsável pelo atendimento de hoje [está atrasado(a) / não poderá comparecer] devido a [MOTIVO]. [Orientação: aguardar / atendimento será remarcado]." },
+  { icone: "🕒", label: "Mudança de horário fixo",
+    titulo: "Mudança de horário fixo do atendimento",
+    conteudo: "A partir de [DATA], o horário fixo do atendimento de [NOME DA CRIANÇA] passa a ser [NOVO HORÁRIO], [DIA DA SEMANA]." },
+  { icone: "📝", label: "Avaliação/reavaliação agendada",
+    titulo: "Avaliação agendada",
+    conteudo: "Foi agendada uma [avaliação/reavaliação] de [NOME DA CRIANÇA] para o dia [DATA], às [HORÁRIO]. Por favor, trazer: [O QUE LEVAR]." },
+  { icone: "📄", label: "Documento/cadastro pendente",
+    titulo: "Documento pendente",
+    conteudo: "Identificamos que está pendente o envio de [DOCUMENTO]. Pedimos que providenciem o quanto antes para regularizar o cadastro de [NOME DA CRIANÇA]." },
+  { icone: "🏖️", label: "Recesso da clínica",
+    titulo: "Recesso da clínica",
+    conteudo: "Informamos que a clínica estará em recesso no período de [DATA INÍCIO] a [DATA FIM], sem atendimentos. Retornaremos normalmente em [DATA DE VOLTA]." },
+  { icone: "🎉", label: "Evento na clínica",
+    titulo: "Evento na clínica",
+    conteudo: "Convidamos vocês para [NOME DO EVENTO], que acontecerá no dia [DATA], às [HORÁRIO]. A participação de [NOME DA CRIANÇA] é muito bem-vinda!" },
+  { icone: "🎒", label: "Item para levar",
+    titulo: "Solicitação de item",
+    conteudo: "Para o próximo atendimento, pedimos que [NOME DA CRIANÇA] traga: [ITEM NECESSÁRIO]." },
+  { icone: "📜", label: "Novo protocolo",
+    titulo: "Novo protocolo publicado",
+    conteudo: "Foi publicado um novo protocolo ([NOME DO PROTOCOLO]) na aba Protocolos. Por favor, leiam e confirmem a leitura até [DATA]." },
+  { icone: "📚", label: "Material aguardando revisão",
+    titulo: "Materiais aguardando revisão",
+    conteudo: "Existem materiais adaptados aguardando revisão em Materiais Adaptados. Pedimos que revisem assim que possível." },
+];
+
 function AbaAvisos({ mostrarFeedback }: AbaProps) {
   const [avisos, setAvisos] = useState<any[]>([]);
   const [criancas, setCriancas] = useState<any[]>([]);
@@ -1000,6 +1042,19 @@ function AbaAvisos({ mostrarFeedback }: AbaProps) {
               <button onClick={() => setModalAberto(false)} className="text-white/70 hover:text-white">✕</button>
             </div>
             <div className="p-6 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Modelo pronto (opcional)</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {MODELOS_AVISO.map(m => (
+                    <button key={m.label} type="button"
+                      onClick={() => { setTitulo(m.titulo); setConteudo(m.conteudo); }}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-slate-200 text-xs font-medium text-slate-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition">
+                      <span>{m.icone}</span>{m.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Escolher um modelo preenche título e mensagem — os trechos entre [colchetes] precisam ser substituídos antes de publicar.</p>
+              </div>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Criança *</label>
                 <select value={criancaId} onChange={e => setCriancaId(e.target.value)} className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
