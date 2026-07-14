@@ -183,8 +183,8 @@ const SUPERVISORA: AjudaConteudo = {
   itens: [
     {
       icone: "📋", titulo: "Comunicados", mockup: "abas",
-      texto: "Seu painel principal, com 5 abas:\n\n• Dashboard — visão geral do dia: crianças ativas na clínica, comunicados pendentes de revisão, recebidos hoje, já enviados às famílias, agenda do dia e os últimos comunicados.\n\n• Comunicados Diários — lista os formulários enviados pela equipe, com filtros Pendentes/Enviados/Todos. Abra um registro, escreva uma observação se quiser, e clique em \"📨 Enviar para Família\" para liberá-lo no Portal da Família.\n\n• Momentos — clique em \"📸 Publicar momento\" para postar fotos do dia a dia das crianças (escolha a criança, a foto e uma descrição opcional).\n\n• Evolução — clique em \"📊 Novo registro\" para publicar uma observação de evolução/progresso de uma criança.\n\n• Avisos — clique em \"📢 Novo aviso\" para publicar um recado para a família de uma criança específica.\n\nDica: o alerta amarelo no Dashboard mostra quantos comunicados ainda precisam ser revisados — vale conferir todo dia.",
-      reflexo: "O que você publica aqui aparece para a família no Portal da Família: Comunicados Diários enviados → aba Diário; Momentos → aba Momentos; Evolução → aba Evolução; Avisos → aba Avisos."
+      texto: "Seu painel principal, com 5 abas:\n\n• Dashboard — visão geral do dia: crianças ativas na clínica, comunicados pendentes de revisão, recebidos hoje, já enviados às famílias, agenda do dia e os últimos comunicados.\n\n• Comunicados Diários — lista os formulários enviados pela equipe, com filtros Pendentes/Enviados/Todos. \"Pendentes\" mostra tudo, sem limite de data; \"Enviados\" e \"Todos\" trazem por padrão o dia de hoje, com um seletor de data pra consultar dias anteriores. Abra um registro, escreva uma observação se quiser, e clique em \"📨 Enviar para Família\" para liberá-lo no Portal da Família.\n\n• Momentos — clique em \"📸 Publicar momento\" para postar fotos do dia a dia das crianças (escolha a criança, a foto e uma descrição opcional).\n\n• Evolução — aqui você revisa os Relatórios de Evolução que as especialistas enviam (abas Pendentes/Enviados), não escreve do zero. Abra um relatório pendente, veja o que a especialista escreveu (evolução geral, objetivos alcançados, dificuldades, recomendações), ajuste o título/texto que vai pra família se quiser, e clique em \"📨 Enviar para Família\".\n\n• Avisos — clique em \"📢 Novo aviso\" para publicar um recado para a família de uma criança específica.\n\nDica: o alerta amarelo no Dashboard mostra quantos comunicados ainda precisam ser revisados — vale conferir todo dia.",
+      reflexo: "O que você envia aqui aparece para a família no Portal da Família: Comunicados Diários enviados → aba Diário; Momentos → aba Momentos; relatórios de evolução enviados → aba Evolução; Avisos → aba Avisos."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
@@ -233,8 +233,8 @@ const ESPECIALISTA: AjudaConteudo = {
     },
     {
       icone: "📝", titulo: "Relatório", mockup: "tabela",
-      texto: "Lista/histórico de tudo que você já enviou (prontuários e relatórios), com filtros por criança e por tipo. Clique em um item para abrir e ver os detalhes.\n\nUse \"+ Prontuário\" para ir ao registro diário de sessão, ou \"+ Relatório\" para preencher um Relatório de Evolução completo (período, evolução geral, objetivos trabalhados/alcançados, dificuldades e recomendações) — use este quando a supervisão/gestão solicitar.",
-      reflexo: "O Relatório de Evolução enviado aqui também aparece na tela Relatórios da Supervisora e da Gestão."
+      texto: "Lista/histórico de tudo que você já enviou (prontuários e relatórios), com filtros por criança e por tipo. Clique em um item para abrir e ver os detalhes.\n\nUse \"+ Prontuário\" para ir ao registro diário de sessão (fica interno, não vai para a família), ou \"+ Relatório\" para preencher um Relatório de Evolução completo (período, evolução geral, objetivos trabalhados/alcançados, dificuldades e recomendações) — use este quando quiser registrar a evolução da criança para a família ficar sabendo.",
+      reflexo: "O Relatório de Evolução enviado aqui aparece na tela Relatórios da Gestão e na aba Evolução da Supervisora, que revisa o conteúdo e decide quando enviar para a família no Portal."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
@@ -295,7 +295,7 @@ const ATENDENTE: AjudaConteudo = {
     },
     {
       icone: "📬", titulo: "Meus Comunicados", mockup: "tabela",
-      texto: "Histórico dos comunicados diários que você enviou.\n\nNo topo aparecem cartões com o total de comunicados, quantos estão \"Em revisão\" e quantos já foram \"Enviados para família\". Cada comunicado mostra a criança, a data e o status. Se a supervisora deixar uma observação, ela aparece destacada em azul. Tela apenas de consulta."
+      texto: "Histórico dos comunicados diários que você enviou.\n\nNo topo aparecem cartões com o total de comunicados, quantos estão \"Em revisão\" e quantos já foram \"Enviados para família\". Cada comunicado mostra a criança, a data e o status. Se a supervisora deixar uma observação, ela aparece destacada em azul. Assim que a supervisora enviar para a família, o status muda para \"✓ Enviado\" sozinho na tela, sem precisar atualizar a página. Tela apenas de consulta."
     },
     {
       icone: "📅", titulo: "Minha Escala", mockup: "escala",
