@@ -586,6 +586,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   type Confirmacao = { id: string; novoStatus: string; nomeLabel?: string; valor: number } | null;
   const [confirmando, setConfirmando] = useState<Confirmacao>(null);
   const [processando, setProcessando] = useState(false);
+  const [dataConfirmacao, setDataConfirmacao] = useState(() => new Date().toISOString().slice(0, 10));
 
   const carregar = async () => {
     setLoading(true);
@@ -707,8 +708,8 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     if (!confirmando) return;
     setProcessando(true);
     const update: Record<string, unknown> = { status: confirmando.novoStatus };
-    if (confirmando.novoStatus === "faturado") update.faturado_em = new Date().toISOString().slice(0, 10);
-    if (confirmando.novoStatus === "recebido") update.recebido_em = new Date().toISOString().slice(0, 10);
+    if (confirmando.novoStatus === "faturado") update.faturado_em = dataConfirmacao;
+    if (confirmando.novoStatus === "recebido") update.recebido_em = dataConfirmacao;
     await supabase.from("contas_receber").update(update).eq("id", confirmando.id);
     mostrarFeedback("sucesso", "Status atualizado!");
     const { data: { user } } = await supabase.auth.getUser();
@@ -825,13 +826,13 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                     <>
                       {c.status === "pendente" && (
                         <button
-                          onClick={() => setConfirmando({ id: c.id, novoStatus: "faturado", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) })}
+                          onClick={() => { setDataConfirmacao(new Date().toISOString().slice(0, 10)); setConfirmando({ id: c.id, novoStatus: "faturado", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) }); }}
                           className="h-8 px-3 text-xs font-semibold bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
                           Marcar Faturado
                         </button>
                       )}
                       <button
-                        onClick={() => setConfirmando({ id: c.id, novoStatus: "recebido", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) })}
+                        onClick={() => { setDataConfirmacao(new Date().toISOString().slice(0, 10)); setConfirmando({ id: c.id, novoStatus: "recebido", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) }); }}
                         className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
                         Marcar Recebido
                       </button>
@@ -861,6 +862,13 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                 </p>
                 <p className="text-xs text-slate-400 mt-1">Esta ação não poderá ser desfeita.</p>
               </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-500 uppercase">
+                Data {confirmando.novoStatus === "recebido" ? "do recebimento" : "do faturamento"}
+              </label>
+              <input type="date" value={dataConfirmacao} onChange={e => setDataConfirmacao(e.target.value)}
+                className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setConfirmando(null)} disabled={processando}
