@@ -79,6 +79,11 @@ const ADM: AjudaConteudo = {
       reflexo: "Depois de cadastrada, a colaboradora pode fazer login no sistema com o cargo definido (Auxiliar Administrativo ou Limpeza) e passa a aparecer na lista de Colaboradores da Gestão."
     },
     {
+      icone: "🗓️", titulo: "Escala Administrativa", mockup: "tabela",
+      texto: "Horário de trabalho de cada Auxiliar Administrativa e Agente de Limpeza. Clique em \"Nova escala\", escolha a colaboradora, marque os dias da semana e defina o horário de início e fim (padrão sugerido: Segunda a Sexta, 08h às 18h). Use o lápis para editar ou a lixeira para remover.",
+      reflexo: "Diferente da Escala clínica (especialistas e ATs), essa tela é só sobre horário de trabalho — não tem criança nem serviço envolvido."
+    },
+    {
       icone: "💰", titulo: "Faturamento (Financeiro)", mockup: "financeiro",
       texto: "Controle financeiro de Contas a Pagar e Contas a Receber da clínica.\n\nLance uma nova conta preenchendo descrição, categoria, valor e vencimento. Marque uma conta como \"Pago\" ou \"Recebido\" quando o pagamento acontecer. Todas essas ações ficam registradas automaticamente na Auditoria.",
       reflexo: "Ao marcar uma conta como Pago/Recebido, o valor entra nos gráficos de receita/despesa do Dashboard."
