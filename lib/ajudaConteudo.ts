@@ -26,7 +26,7 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "👶", titulo: "Crianças", mockup: "lista-cards",
-      texto: "Lista de todas as crianças atendidas pela clínica, com cadastro completo: dados pessoais, responsável, escola, plano de saúde, diagnóstico/CID, alergias e medicações.\n\nClique no lápis para editar os dados de uma criança, na lixeira para excluir (pede confirmação) e no botão \"Ficha\" para gerar a ficha completa da criança pronta para impressão/PDF.",
+      texto: "Lista de todas as crianças atendidas pela clínica, com cadastro completo: dados pessoais, filiação (nome da mãe e do pai), responsável, escola, série escolar, plano de saúde, diagnóstico/CID, alergias e medicações.\n\nClique no lápis para editar os dados de uma criança, na lixeira para excluir (pede confirmação) e no botão \"Ficha\" para gerar a ficha completa da criança pronta para impressão/PDF.",
       reflexo: "A criança cadastrada aqui passa a aparecer para a Gestão (lista de Crianças) e para os Atendentes e Especialistas, que podem selecioná-la ao registrar atendimentos, comunicados e prontuários."
     },
     {
