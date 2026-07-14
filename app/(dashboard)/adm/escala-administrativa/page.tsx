@@ -68,8 +68,8 @@ export default function EscalaAdministrativaPage() {
           nome: r.colaboradoras_internas.nome,
           cargo: r.colaboradoras_internas.cargo,
           dias: [r.dia],
-          horario_inicio: r.horario_inicio.slice(0, 5),
-          horario_fim: r.horario_fim.slice(0, 5),
+          horario_inicio: r.horario_inicio,
+          horario_fim: r.horario_fim,
         });
       }
     });
@@ -77,6 +77,8 @@ export default function EscalaAdministrativaPage() {
     const lista = Array.from(mapa.values()).map((item) => ({
       ...item,
       dias: item.dias.sort((a, b) => ORDEM_DIAS.indexOf(a) - ORDEM_DIAS.indexOf(b)),
+      horario_inicio: item.horario_inicio.slice(0, 5),
+      horario_fim: item.horario_fim.slice(0, 5),
     }));
     lista.sort((a, b) => a.nome.localeCompare(b.nome));
     setItens(lista);
@@ -265,6 +267,11 @@ export default function EscalaAdministrativaPage() {
                     <option key={c.id} value={c.id}>{c.nome}{c.cargo ? ` — ${c.cargo}` : ""}</option>
                   ))}
                 </select>
+                {!editandoColaboradoraId && colaboradorasSemEscala.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1.5">
+                    Todas as colaboradoras já têm uma escala cadastrada. Feche esta janela e use o lápis (✏️) no card dela pra editar.
+                  </p>
+                )}
               </div>
 
               <div>
