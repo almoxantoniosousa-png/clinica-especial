@@ -5,7 +5,7 @@ import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClie
 import { Check } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 
-type Aba = "contas_pagar" | "contas_receber" | "fluxo";
+type Aba = "contas_pagar" | "contas_receber" | "fluxo" | "emprestimos";
 type SupabaseClient = ReturnType<typeof createSupabaseBrowserClient>;
 
 type ContaPagar = {
@@ -27,6 +27,12 @@ type ContaReceber = {
 type CriancaSimples = { id: string; nome: string; plano_saude?: string | null };
 type AbaProps = { supabase: SupabaseClient; mesAno: string; mostrarFeedback: (tipo: "sucesso" | "erro", msg: string) => void };
 type AbaFluxoProps = { supabase: SupabaseClient; mesAno: string };
+type AbaSemMesProps = { supabase: SupabaseClient; mostrarFeedback: (tipo: "sucesso" | "erro", msg: string) => void };
+type Emprestimo = {
+  id: string; colaborador_nome: string; valor_total: number; data_emprestimo: string;
+  numero_parcelas: number; valor_parcela: number; parcelas_pagas: number;
+  datas_parcelas_pagas: string[]; status: string; observacao?: string | null;
+};
 
 export default function FinanceiroPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -47,6 +53,7 @@ export default function FinanceiroPage() {
     { id: "contas_pagar",   label: "Contas a Pagar",  icon: "📤" },
     { id: "contas_receber", label: "Contas a Receber", icon: "📥" },
     { id: "fluxo",          label: "Fluxo de Caixa",  icon: "📊" },
+    { id: "emprestimos",    label: "Empréstimos",     icon: "🤝" },
   ];
 
   return (
@@ -87,6 +94,7 @@ export default function FinanceiroPage() {
       {aba === "contas_pagar"   && <AbaContasPagar   supabase={supabase} mesAno={mesAno} mostrarFeedback={mostrarFeedback}/>}
       {aba === "contas_receber" && <AbaContasReceber supabase={supabase} mesAno={mesAno} mostrarFeedback={mostrarFeedback}/>}
       {aba === "fluxo"          && <AbaFluxo         supabase={supabase} mesAno={mesAno}/>}
+      {aba === "emprestimos"    && <AbaEmprestimos   supabase={supabase} mostrarFeedback={mostrarFeedback}/>}
     </div>
   );
 }
@@ -1275,6 +1283,292 @@ function AbaFluxo({ supabase, mesAno }: AbaFluxoProps) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// =============================================
+// ABA EMPRÉSTIMOS
+// =============================================
+function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
+  const [emprestimos, setEmprestimos] = useState<Emprestimo[]>([]);
+  const [colaboradores, setColaboradores] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filtro, setFiltro] = useState<"ativos" | "quitados" | "todos">("ativos");
+
+  const [modalAberto, setModalAberto] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [colaboradorNome, setColaboradorNome] = useState("");
+  const [valorTotal, setValorTotal] = useState("");
+  const [dataEmprestimo, setDataEmprestimo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [numeroParcelas, setNumeroParcelas] = useState("1");
+  const [observacao, setObservacao] = useState("");
+
+  const [registrandoId, setRegistrandoId] = useState<string | null>(null);
+  const [expandido, setExpandido] = useState<string | null>(null);
+
+  async function carregar() {
+    setLoading(true);
+    const [{ data: emp }, { data: ats }, { data: internas }] = await Promise.all([
+      supabase.from("emprestimos_colaboradores").select("*").order("created_at", { ascending: false }),
+      supabase.from("atendentes").select("nome").order("nome"),
+      supabase.from("colaboradoras_internas").select("nome").eq("ativo", true).order("nome"),
+    ]);
+    setEmprestimos(emp || []);
+    const nomes = [
+      ...((ats || []).map((a: { nome: string }) => a.nome)),
+      ...((internas || []).map((c: { nome: string }) => c.nome)),
+    ].sort((a, b) => a.localeCompare(b));
+    setColaboradores(Array.from(new Set(nomes)));
+    setLoading(false);
+  }
+
+  useEffect(() => { carregar(); }, []);
+
+  function resetForm() {
+    setColaboradorNome(""); setValorTotal(""); setDataEmprestimo(new Date().toISOString().slice(0, 10));
+    setNumeroParcelas("1"); setObservacao("");
+  }
+
+  const valorParcelaPreview = (Number(valorTotal) || 0) / (Number(numeroParcelas) || 1);
+
+  async function salvar() {
+    if (!colaboradorNome) { mostrarFeedback("erro", "Selecione o colaborador."); return; }
+    const total = Number(valorTotal);
+    const parcelas = Number(numeroParcelas);
+    if (!total || total <= 0) { mostrarFeedback("erro", "Informe o valor do empréstimo."); return; }
+    if (!parcelas || parcelas <= 0) { mostrarFeedback("erro", "Informe o número de parcelas."); return; }
+
+    setSalvando(true);
+    const valorParcela = Math.round((total / parcelas) * 100) / 100;
+    const { data: novo, error } = await supabase.from("emprestimos_colaboradores").insert([{
+      colaborador_nome: colaboradorNome,
+      valor_total: total,
+      data_emprestimo: dataEmprestimo,
+      numero_parcelas: parcelas,
+      valor_parcela: valorParcela,
+      parcelas_pagas: 0,
+      datas_parcelas_pagas: [],
+      status: "ativo",
+      observacao: observacao || null,
+    }]).select().single();
+    setSalvando(false);
+
+    if (error) mostrarFeedback("erro", "Erro: " + error.message);
+    else {
+      mostrarFeedback("sucesso", "Empréstimo registrado!");
+      const { data: { user } } = await supabase.auth.getUser();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Criou",
+        tabela: "emprestimos_colaboradores",
+        registro_id: novo?.id,
+        descricao: `Registrou empréstimo de R$ ${total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} para ${colaboradorNome} em ${parcelas}x`,
+      });
+      setModalAberto(false);
+      resetForm();
+      carregar();
+    }
+  }
+
+  async function registrarParcela(emp: Emprestimo) {
+    setRegistrandoId(emp.id);
+    const novasDatas = [...(emp.datas_parcelas_pagas || []), new Date().toISOString().slice(0, 10)];
+    const novasPagas = emp.parcelas_pagas + 1;
+    const novoStatus = novasPagas >= emp.numero_parcelas ? "quitado" : "ativo";
+    const { error } = await supabase.from("emprestimos_colaboradores").update({
+      parcelas_pagas: novasPagas,
+      datas_parcelas_pagas: novasDatas,
+      status: novoStatus,
+    }).eq("id", emp.id);
+    setRegistrandoId(null);
+    if (error) mostrarFeedback("erro", "Erro: " + error.message);
+    else {
+      mostrarFeedback("sucesso", novoStatus === "quitado" ? "Última parcela registrada — empréstimo quitado!" : "Parcela registrada!");
+      const { data: { user } } = await supabase.auth.getUser();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Registrou parcela",
+        tabela: "emprestimos_colaboradores",
+        registro_id: emp.id,
+        descricao: `Registrou parcela ${novasPagas}/${emp.numero_parcelas} do empréstimo de ${emp.colaborador_nome}`,
+      });
+      carregar();
+    }
+  }
+
+  const filtrados = emprestimos.filter(e => {
+    if (filtro === "ativos") return e.status === "ativo";
+    if (filtro === "quitados") return e.status === "quitado";
+    return true;
+  });
+
+  const totais = useMemo(() => ({
+    emprestado: emprestimos.reduce((acc, e) => acc + Number(e.valor_total || 0), 0),
+    emAberto: emprestimos.filter(e => e.status === "ativo")
+      .reduce((acc, e) => acc + (Number(e.valor_total || 0) - Number(e.valor_parcela || 0) * e.parcelas_pagas), 0),
+    quitado: emprestimos.filter(e => e.status === "quitado").reduce((acc, e) => acc + Number(e.valor_total || 0), 0),
+  }), [emprestimos]);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-slate-700">Empréstimos</h2>
+        <button onClick={() => { resetForm(); setModalAberto(true); }}
+          className="h-9 px-4 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition">
+          + Novo Empréstimo
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Total Emprestado</p>
+          <p className="text-2xl font-bold text-slate-800">R$ {totais.emprestado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-slate-400 mt-1">{emprestimos.length} empréstimo{emprestimos.length === 1 ? "" : "s"}</p>
+        </div>
+        <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
+          <p className="text-xs font-semibold text-amber-600 uppercase mb-1">Em Aberto</p>
+          <p className="text-2xl font-bold text-amber-500">R$ {totais.emAberto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-amber-400 mt-1">{emprestimos.filter(e => e.status === "ativo").length} ativo{emprestimos.filter(e => e.status === "ativo").length === 1 ? "" : "s"}</p>
+        </div>
+        <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
+          <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Quitado</p>
+          <p className="text-2xl font-bold text-emerald-600">R$ {totais.quitado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-emerald-400 mt-1">{emprestimos.filter(e => e.status === "quitado").length} quitado{emprestimos.filter(e => e.status === "quitado").length === 1 ? "" : "s"}</p>
+        </div>
+      </div>
+
+      <div className="flex gap-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm w-fit">
+        {[
+          { key: "ativos", label: "Ativos", icon: "⏳" },
+          { key: "quitados", label: "Quitados", icon: "✅" },
+          { key: "todos", label: "Todos", icon: "📋" },
+        ].map(f => (
+          <button key={f.key} onClick={() => setFiltro(f.key as any)}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${filtro === f.key ? "bg-blue-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
+            {f.icon} {f.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12"><p className="text-sm text-slate-400">Carregando...</p></div>
+      ) : filtrados.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 bg-white rounded-2xl border border-slate-200 gap-2">
+          <span className="text-4xl">🤝</span>
+          <p className="text-sm text-slate-400">Nenhum empréstimo {filtro === "ativos" ? "ativo" : filtro === "quitados" ? "quitado" : "registrado"}.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtrados.map(e => {
+            const restante = Number(e.valor_total) - Number(e.valor_parcela) * e.parcelas_pagas;
+            const aberto = expandido === e.id;
+            return (
+              <div key={e.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setExpandido(aberto ? null : e.id)}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-slate-800 text-sm">{e.colaborador_nome}</p>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${e.status === "quitado" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                        {e.status === "quitado" ? "Quitado" : "Ativo"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Emprestado em {new Date(e.data_emprestimo + "T12:00:00").toLocaleDateString("pt-BR")} · {e.numero_parcelas}x de R$ {Number(e.valor_parcela).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">
+                      Parcela {Math.min(e.parcelas_pagas + 1, e.numero_parcelas)}/{e.numero_parcelas} · faltam {e.numero_parcelas - e.parcelas_pagas}
+                    </p>
+                    {e.observacao && <p className="text-xs text-slate-400 mt-1">{e.observacao}</p>}
+                    {aberto && e.datas_parcelas_pagas?.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-slate-100 space-y-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Parcelas pagas</p>
+                        {e.datas_parcelas_pagas.map((d, i) => (
+                          <p key={i} className="text-xs text-slate-500">
+                            {i + 1}ª parcela — {new Date(d + "T12:00:00").toLocaleDateString("pt-BR")}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-xs text-slate-400">Valor total</p>
+                    <p className="font-bold text-slate-800">R$ {Number(e.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                    <p className="text-xs text-amber-600 mt-1">Falta R$ {Math.max(restante, 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+                {e.status === "ativo" && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => registrarParcela(e)}
+                      disabled={registrandoId === e.id}
+                      className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200 disabled:opacity-50">
+                      {registrandoId === e.id ? "Registrando..." : `Registrar parcela ${e.parcelas_pagas + 1}/${e.numero_parcelas}`}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {modalAberto && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+          onClick={ev => { if (ev.target === ev.currentTarget) { setModalAberto(false); resetForm(); } }}>
+          <div className="w-full sm:max-w-md bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="font-bold text-slate-800 text-lg">Novo Empréstimo</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase">Colaborador *</label>
+                <select value={colaboradorNome} onChange={e => setColaboradorNome(e.target.value)}
+                  className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Selecione...</option>
+                  {colaboradores.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Valor total (R$) *</label>
+                  <input type="number" min="0" step="0.01" value={valorTotal} onChange={e => setValorTotal(e.target.value)} placeholder="0,00"
+                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Nº de parcelas *</label>
+                  <input type="number" min="1" value={numeroParcelas} onChange={e => setNumeroParcelas(e.target.value)}
+                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase">Data do empréstimo</label>
+                <input type="date" value={dataEmprestimo} onChange={e => setDataEmprestimo(e.target.value)}
+                  className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+              </div>
+              {valorParcelaPreview > 0 && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex justify-between text-sm">
+                  <span className="text-slate-500">Valor de cada parcela</span>
+                  <span className="font-bold text-blue-900">R$ {valorParcelaPreview.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase">Observação</label>
+                <input type="text" value={observacao} onChange={e => setObservacao(e.target.value)} placeholder="Opcional"
+                  className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => { setModalAberto(false); resetForm(); }}
+                className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                Cancelar
+              </button>
+              <button onClick={salvar} disabled={salvando}
+                className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
+                {salvando ? "Salvando..." : "Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
