@@ -704,123 +704,195 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
 }
 
 // =============================================
-// ABA EVOLUÇÃO
+// ABA EVOLUÇÃO — supervisora revisa os relatórios enviados
+// pelas especialistas e encaminha para a família
 // =============================================
+function parseConteudoRelatorio(raw: string): Record<string, string> {
+  try { return JSON.parse(raw) || {}; } catch { return {}; }
+}
+
 function AbaEvolucao({ mostrarFeedback }: AbaProps) {
-  const [evolucoes, setEvolucoes] = useState<any[]>([]);
-  const [criancas, setCriancas] = useState<any[]>([]);
+  const [relatorios, setRelatorios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [salvando, setSalvando] = useState(false);
-  const [modalAberto, setModalAberto] = useState(false);
-  const [criancaId, setCriancaId] = useState("");
-  const [titulo, setTitulo] = useState("");
-  const [conteudo, setConteudo] = useState("");
-  const [deletandoId, setDeletandoId] = useState<string | null>(null);
-  const [excluindo, setExcluindo] = useState(false);
+  const [filtro, setFiltro] = useState<"pendentes" | "enviados">("pendentes");
+  const [detalhe, setDetalhe] = useState<any | null>(null);
+  const [tituloFamilia, setTituloFamilia] = useState("");
+  const [textoFamilia, setTextoFamilia] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
   const carregar = async () => {
     setLoading(true);
-    const [{ data: evol }, { data: cri }] = await Promise.all([
-      supabase.from("portal_evolucao").select("*, criancas(nome, foto_url)").order("created_at", { ascending: false }),
-      supabase.from("criancas").select("id, nome").order("nome"),
-    ]);
-    setEvolucoes(evol || []);
-    setCriancas(cri || []);
+    const { data, error } = await supabase
+      .from("prontuarios")
+      .select("*, criancas(nome, foto_url)")
+      .eq("tipo", "relatorio")
+      .order("created_at", { ascending: false });
+    if (error) mostrarFeedback("erro", "Erro ao carregar: " + error.message);
+    setRelatorios(data || []);
     setLoading(false);
   };
 
   useEffect(() => { carregar(); }, []);
 
-  async function salvar() {
-    if (!criancaId || !titulo || !conteudo) { mostrarFeedback("erro", "Preencha todos os campos."); return; }
-    setSalvando(true);
-    const { data: nova, error } = await supabase.from("portal_evolucao").insert({ crianca_id: criancaId, titulo, conteudo }).select().single();
-    if (!error) {
-      const { data: { user } } = await supabase.auth.getUser();
-      await registrarLog(supabase, { usuario_email: user?.email || "desconhecido", acao: "Publicou", tabela: "portal_evolucao", registro_id: nova?.id, descricao: `Publicou evolução para: ${criancas.find(c => c.id === criancaId)?.nome} — ${titulo}` });
-    }
-    setSalvando(false);
-    if (error) mostrarFeedback("erro", error.message);
-    else { mostrarFeedback("sucesso", "Evolução publicada!"); setModalAberto(false); setCriancaId(""); setTitulo(""); setConteudo(""); carregar(); }
+  const filtrados = relatorios.filter(r => filtro === "pendentes" ? !r.visivel_familia : r.visivel_familia);
+  const totalPendentes = relatorios.filter(r => !r.visivel_familia).length;
+
+  function abrirDetalhe(r: any) {
+    const c = parseConteudoRelatorio(r.conteudo);
+    setDetalhe(r);
+    setTituloFamilia(`Evolução — ${c.periodo || new Date(r.created_at).toLocaleDateString("pt-BR")}`);
+    setTextoFamilia(c.evolucao_geral || "");
   }
 
-  async function deletar() {
-    if (!deletandoId) return;
-    setExcluindo(true);
-    await supabase.from("portal_evolucao").delete().eq("id", deletandoId);
-    setDeletandoId(null); setExcluindo(false);
-    mostrarFeedback("sucesso", "Registro removido."); carregar();
+  async function enviarParaFamilia() {
+    if (!detalhe || !tituloFamilia || !textoFamilia) { mostrarFeedback("erro", "Preencha título e texto."); return; }
+    setEnviando(true);
+    const { data: nova, error } = await supabase.from("portal_evolucao").insert({
+      crianca_id: detalhe.crianca_id,
+      titulo: tituloFamilia,
+      conteudo: textoFamilia,
+      autor_id: detalhe.autor_id,
+    }).select().single();
+
+    if (!error) {
+      await supabase.from("prontuarios").update({ visivel_familia: true }).eq("id", detalhe.id);
+      const { data: { user } } = await supabase.auth.getUser();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Enviou para família",
+        tabela: "portal_evolucao",
+        registro_id: nova?.id,
+        descricao: `Enviou evolução de ${detalhe.criancas?.nome || "criança"} para a família`,
+      });
+    }
+
+    setEnviando(false);
+    if (error) mostrarFeedback("erro", "Erro: " + error.message);
+    else { mostrarFeedback("sucesso", "Evolução enviada para a família!"); setDetalhe(null); carregar(); }
   }
+
+  const camposRelatorio = detalhe ? parseConteudoRelatorio(detalhe.conteudo) : {};
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">{evolucoes.length} registro{evolucoes.length !== 1 ? "s" : ""} de evolução</p>
-        <button onClick={() => setModalAberto(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition">📊 Novo registro</button>
+      {totalPendentes > 0 && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <span className="text-amber-500 text-lg">⏳</span>
+          <p className="text-sm font-semibold text-amber-800">
+            <span className="font-black">{totalPendentes}</span> relatório{totalPendentes > 1 ? "s" : ""} de evolução aguardando envio para a família
+          </p>
+        </div>
+      )}
+
+      <div className="flex gap-2 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm w-fit">
+        {[
+          { key: "pendentes", label: "Pendentes", icon: "⏳" },
+          { key: "enviados",  label: "Enviados",  icon: "✅" },
+        ].map(f => (
+          <button key={f.key} onClick={() => setFiltro(f.key as any)}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${filtro === f.key ? "bg-blue-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
+            {f.icon} {f.label}
+          </button>
+        ))}
       </div>
-      {loading ? <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
-      : evolucoes.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200"><span className="text-5xl">📊</span><p className="text-sm text-slate-400 mt-2">Nenhum registro ainda.</p></div>
+
+      {loading ? (
+        <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
+      ) : filtrados.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
+          <span className="text-5xl">{filtro === "pendentes" ? "🎉" : "📊"}</span>
+          <p className="text-sm text-slate-400 mt-2">{filtro === "pendentes" ? "Nenhum relatório pendente." : "Nenhuma evolução enviada ainda."}</p>
+        </div>
       ) : (
         <div className="space-y-3">
-          {evolucoes.map(e => (
-            <div key={e.id} className="bg-white rounded-2xl border border-slate-200 p-4 border-l-4 border-l-blue-400 flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
-                  {e.criancas?.foto_url ? <img src={e.criancas.foto_url} alt="" className="w-full h-full object-cover"/> : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{e.criancas?.nome?.charAt(0)}</div>}
+          {filtrados.map(r => (
+            <div key={r.id} onClick={() => abrirDetalhe(r)}
+              className={`bg-white rounded-2xl border shadow-sm p-4 cursor-pointer hover:shadow-md transition border-l-4
+                ${r.visivel_familia ? "border-l-emerald-400" : "border-l-amber-400"} border-slate-200`}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
+                    {r.criancas?.foto_url ? <img src={r.criancas.foto_url} alt="" className="w-full h-full object-cover"/> : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{r.criancas?.nome?.charAt(0)}</div>}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-800 text-sm">{r.criancas?.nome}</p>
+                    <p className="text-xs text-slate-400">{r.autor_nome} · {new Date(r.created_at).toLocaleDateString("pt-BR")}</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-slate-800 text-sm">{e.titulo}</p>
-                  <p className="text-xs text-slate-400">{e.criancas?.nome} · {new Date(e.created_at).toLocaleDateString("pt-BR")}</p>
-                  <p className="text-sm text-slate-600 leading-relaxed mt-1 line-clamp-2">{e.conteudo}</p>
-                </div>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border flex-shrink-0
+                  ${r.visivel_familia ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}>
+                  {r.visivel_familia ? "✓ Enviado" : "⏳ Pendente"}
+                </span>
               </div>
-              <button onClick={() => setDeletandoId(e.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition flex-shrink-0">🗑️</button>
             </div>
           ))}
         </div>
       )}
-      {deletandoId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
-            <div className="flex flex-col items-center text-center gap-3">
-              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-3xl">🗑️</div>
-              <div><h3 className="font-bold text-slate-800">Remover registro?</h3><p className="text-xs text-slate-400 mt-1">Esta ação não pode ser desfeita.</p></div>
+
+      {detalhe && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={e => { if (e.target === e.currentTarget) setDetalhe(null); }}>
+          <div className="w-full max-w-lg max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-4 flex items-center justify-between flex-shrink-0">
+              <h2 className="font-bold text-white">📊 Relatório de {detalhe.criancas?.nome}</h2>
+              <button onClick={() => setDetalhe(null)} className="text-white/70 hover:text-white">✕</button>
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => setDeletandoId(null)} disabled={excluindo} className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50">Cancelar</button>
-              <button onClick={deletar} disabled={excluindo} className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition disabled:opacity-50">{excluindo ? "Removendo..." : "Sim, remover"}</button>
+
+            <div className="overflow-y-auto flex-1 p-5 space-y-4 bg-slate-50">
+              <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">O que a especialista enviou</p>
+                {camposRelatorio.evolucao_geral && (
+                  <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Evolução geral</p><p className="text-sm text-slate-700 leading-relaxed">{camposRelatorio.evolucao_geral}</p></div>
+                )}
+                {camposRelatorio.objetivos_alcancados && (
+                  <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Objetivos alcançados</p><p className="text-sm text-slate-700 leading-relaxed">{camposRelatorio.objetivos_alcancados}</p></div>
+                )}
+                {camposRelatorio.dificuldades && (
+                  <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Dificuldades</p><p className="text-sm text-slate-700 leading-relaxed">{camposRelatorio.dificuldades}</p></div>
+                )}
+                {camposRelatorio.recomendacoes && (
+                  <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Recomendações</p><p className="text-sm text-slate-700 leading-relaxed">{camposRelatorio.recomendacoes}</p></div>
+                )}
+              </div>
+
+              {!detalhe.visivel_familia && (
+                <div className="bg-white rounded-xl border border-blue-200 overflow-hidden">
+                  <div className="bg-blue-50 px-4 py-2 border-b border-blue-100">
+                    <p className="text-xs font-bold text-blue-600 uppercase tracking-wide">✍️ O que vai para a família</p>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Título</label>
+                      <input type="text" value={tituloFamilia} onChange={e => setTituloFamilia(e.target.value)}
+                        className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Texto</label>
+                      <textarea value={textoFamilia} onChange={e => setTextoFamilia(e.target.value)} rows={5}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"/>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        </div>
-      )}
-      {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={e => { if (e.target === e.currentTarget) setModalAberto(false); }}>
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-4 flex items-center justify-between">
-              <h2 className="font-bold text-white">📊 Registrar Evolução</h2>
-              <button onClick={() => setModalAberto(false)} className="text-white/70 hover:text-white">✕</button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Criança *</label>
-                <select value={criancaId} onChange={e => setCriancaId(e.target.value)} className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                  <option value="">Selecione...</option>
-                  {criancas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Título *</label>
-                <input type="text" value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Ex: Evolução na comunicação — Maio 2026" className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Conteúdo *</label>
-                <textarea value={conteudo} onChange={e => setConteudo(e.target.value)} placeholder="Descreva a evolução observada no período..." rows={5} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"/>
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => setModalAberto(false)} className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">Cancelar</button>
-                <button onClick={salvar} disabled={salvando || !criancaId || !titulo || !conteudo} className="flex-1 h-11 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">{salvando ? "Publicando..." : "Publicar"}</button>
-              </div>
+
+            <div className="px-5 py-4 border-t border-slate-100 bg-white flex-shrink-0">
+              {!detalhe.visivel_familia ? (
+                <div className="flex gap-3">
+                  <button onClick={() => setDetalhe(null)}
+                    className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                    Fechar
+                  </button>
+                  <button onClick={enviarParaFamilia} disabled={enviando}
+                    className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition disabled:opacity-50">
+                    {enviando ? "Enviando..." : "📨 Enviar para Família"}
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setDetalhe(null)}
+                  className="w-full h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                  Fechar
+                </button>
+              )}
             </div>
           </div>
         </div>

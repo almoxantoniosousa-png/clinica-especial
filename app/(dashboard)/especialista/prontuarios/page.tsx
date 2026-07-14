@@ -110,7 +110,7 @@ export default function RelatorioPage() {
           titulo: `Novo relatório: ${nomeCrianca}`,
           mensagem: `${autor?.nome || "Especialista"} enviou relatório de evolução — ${periodo}`,
           tipo: "relatorio",
-          link: null,
+          link: "/supervisora/comunicados",
           autor_nome: autor?.nome || null,
         },
       ]);
