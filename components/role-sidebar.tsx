@@ -85,6 +85,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/financeiro",      label: "Faturamento",       icon: "💰" },
     { href: "/adm/folha-pagamento", label: "Folha de Pagamento", icon: "💵" },
     { href: "/adm/atendimentos-especialistas", label: "Atendimentos Especialistas", icon: "🩺" },
+    { href: "/adm/atendimentos-ats", label: "Atendimentos ATs", icon: "📋" },
   ];
 
   const menuAdmin = [
@@ -167,6 +168,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/financeiro",      label: "Faturamento",       icon: "💰" },
     { href: "/adm/folha-pagamento", label: "Folha de Pagamento", icon: "💵" },
     { href: "/adm/atendimentos-especialistas", label: "Atendimentos Especialistas", icon: "🩺" },
+    { href: "/adm/atendimentos-ats", label: "Atendimentos ATs", icon: "📋" },
     { href: "/protocolos",          label: "Protocolos",        icon: "📜" },
     { href: "/chat",                label: "Chat",              icon: "💬" },
     { href: "/ajuda",                label: "Ajuda",            icon: "❓" },
