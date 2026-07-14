@@ -573,6 +573,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const [criancaId, setCriancaId] = useState("");
   const [mesAnoFatura, setMesAnoFatura] = useState(mesAno);
   const [especialidades, setEspecialidades] = useState<ItemEsp[]>([{ especialidade: "", qtd: "", valor_sessao: "" }]);
@@ -600,7 +601,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
 
   const criancaSelecionada = criancas.find(c => c.id === criancaId);
   useEffect(() => {
-    if (criancaSelecionada) setPlano(criancaSelecionada.plano_saude || "");
+    if (criancaSelecionada && !editandoId) setPlano(criancaSelecionada.plano_saude || "");
   }, [criancaId]);
 
   const totalBruto = especialidades.reduce(
@@ -620,10 +621,34 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   }
 
   function resetForm() {
+    setEditandoId(null);
     setCriancaId("");
     setMesAnoFatura(mesAno);
     setEspecialidades([{ especialidade: "", qtd: "", valor_sessao: "" }]);
     setPlano(""); setNumeroNotaFiscal(""); setDataEnvio(""); setDescontoISS(""); setObservacao("");
+  }
+
+  function abrirNovo() {
+    resetForm();
+    setModalAberto(true);
+  }
+
+  function abrirEdicao(c: ContaReceber) {
+    setEditandoId(c.id);
+    setCriancaId(c.crianca_id);
+    setMesAnoFatura(c.mes_referencia);
+    const esps: ItemEsp[] = (c.especialidades || []).map((e: any) => ({
+      especialidade: e.especialidade,
+      qtd: String(e.qtd ?? ""),
+      valor_sessao: String(e.valor_sessao ?? ""),
+    }));
+    setEspecialidades(esps.length > 0 ? esps : [{ especialidade: "", qtd: "", valor_sessao: "" }]);
+    setPlano(c.plano_saude || "");
+    setNumeroNotaFiscal(c.numero_nota_fiscal || "");
+    setDataEnvio(c.data_envio || "");
+    setDescontoISS(c.desconto_iss ? String(c.desconto_iss) : "");
+    setObservacao(c.observacao || "");
+    setModalAberto(true);
   }
 
   async function salvar() {
@@ -640,7 +665,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     }));
     const bruto = espComSubtotal.reduce((acc, e) => acc + e.subtotal, 0);
     const iss = Math.min(Number(descontoISS) || 0, bruto);
-    const { data: nova, error } = await supabase.from("contas_receber").insert([{
+    const payload = {
       crianca_id: criancaId,
       mes_referencia: mesAnoFatura,
       especialidades: espComSubtotal,
@@ -653,20 +678,24 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       numero_nota_fiscal: numeroNotaFiscal,
       data_envio: dataEnvio || null,
       observacao,
-      status: "pendente",
-    }]).select().single();
+    };
+
+    const { data: salva, error } = editandoId
+      ? await supabase.from("contas_receber").update(payload).eq("id", editandoId).select().single()
+      : await supabase.from("contas_receber").insert([{ ...payload, status: "pendente" }]).select().single();
+
     setSalvando(false);
     if (error) mostrarFeedback("erro", "Erro: " + error.message);
     else {
-      mostrarFeedback("sucesso", "Fatura registrada!");
+      mostrarFeedback("sucesso", editandoId ? "Fatura atualizada!" : "Fatura registrada!");
       const nomeCrianca = criancas.find(c => c.id === criancaId)?.nome;
       const { data: { user } } = await supabase.auth.getUser();
       await registrarLog(supabase, {
         usuario_email: user?.email || "desconhecido",
-        acao: "Criou",
+        acao: editandoId ? "Editou" : "Criou",
         tabela: "contas_receber",
-        registro_id: nova?.id,
-        descricao: `Lançou fatura de ${nomeCrianca} — Ref. ${mesAnoFatura} — R$ ${(bruto - iss).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+        registro_id: salva?.id,
+        descricao: `${editandoId ? "Editou" : "Lançou"} fatura de ${nomeCrianca} — Ref. ${mesAnoFatura} — R$ ${(bruto - iss).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
       });
       setModalAberto(false);
       resetForm();
@@ -711,7 +740,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-slate-700">Contas a Receber</h2>
-        <button onClick={() => setModalAberto(true)}
+        <button onClick={abrirNovo}
           className="h-9 px-4 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition">
           + Nova Fatura
         </button>
@@ -786,22 +815,29 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                     <p className="font-bold text-slate-800">R$ {Number(valorFinal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
-                {c.status !== "recebido" && (
-                  <div className="flex gap-2">
-                    {c.status === "pendente" && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => abrirEdicao(c)}
+                    className="h-8 px-3 text-xs font-semibold bg-slate-50 text-slate-600 rounded-lg hover:bg-slate-100 transition border border-slate-200">
+                    Editar
+                  </button>
+                  {c.status !== "recebido" && (
+                    <>
+                      {c.status === "pendente" && (
+                        <button
+                          onClick={() => setConfirmando({ id: c.id, novoStatus: "faturado", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) })}
+                          className="h-8 px-3 text-xs font-semibold bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
+                          Marcar Faturado
+                        </button>
+                      )}
                       <button
-                        onClick={() => setConfirmando({ id: c.id, novoStatus: "faturado", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) })}
-                        className="h-8 px-3 text-xs font-semibold bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
-                        Marcar Faturado
+                        onClick={() => setConfirmando({ id: c.id, novoStatus: "recebido", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) })}
+                        className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
+                        Marcar Recebido
                       </button>
-                    )}
-                    <button
-                      onClick={() => setConfirmando({ id: c.id, novoStatus: "recebido", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) })}
-                      className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
-                      Marcar Recebido
-                    </button>
-                  </div>
-                )}
+                    </>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -844,7 +880,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
           onClick={e => { if (e.target === e.currentTarget) { setModalAberto(false); resetForm(); } }}>
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-bold text-slate-800 text-lg">Nova Fatura</h3>
+            <h3 className="font-bold text-slate-800 text-lg">{editandoId ? "Editar Fatura" : "Nova Fatura"}</h3>
             <div className="space-y-4">
 
               {/* Criança + Mês */}
@@ -1001,7 +1037,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
               </button>
               <button onClick={salvar} disabled={salvando}
                 className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
-                {salvando ? "Salvando..." : "Salvar"}
+                {salvando ? "Salvando..." : editandoId ? "Salvar alterações" : "Salvar"}
               </button>
             </div>
           </div>
