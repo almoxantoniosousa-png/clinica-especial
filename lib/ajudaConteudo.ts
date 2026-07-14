@@ -141,6 +141,11 @@ const GESTAO: AjudaConteudo = {
       texto: "Reúne todos os prontuários e relatórios enviados pela equipe sobre os atendimentos das crianças.\n\nUse a busca (criança ou profissional) e o botão \"Filtros\" para refinar por profissional ou período (\"De\"/\"Até\"). Clique em um relatório para abrir e ver o conteúdo completo (Avaliação, Resultados, Intervenção, Avanços e Conclusão)."
     },
     {
+      icone: "🩺", titulo: "Atendimentos Especialistas", mockup: "tabela",
+      texto: "Mostra, por mês, quantos atendimentos cada especialista teve: P (presença), F (falta avisada em cima da hora — profissional recebe) e FJ (falta avisada com antecedência — não recebe).\n\nEscolha o mês no seletor do topo. Clique no nome de uma especialista para ver o detalhe de cada atendimento (criança, data, status e o motivo da falta, quando houver).",
+      reflexo: "Esses dados vêm do que cada especialista marca em \"Minha Escala\" — servem de referência pra saber quanto pagar no mês, junto com o Financeiro."
+    },
+    {
       icone: "💬", titulo: "Chat", mockup: "chat",
       texto: "Conversas internas estilo aplicativo de mensagens. Clique no lápis para iniciar uma nova conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo para abrir uma sala de reunião por vídeo em uma nova aba — um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado automaticamente para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado.",
       reflexo: "Use a videochamada para avisar a equipe sobre reuniões — o cartão \"Entrar na reunião\" aparece automaticamente na conversa de quem você chamar, e quem tiver as notificações ativadas recebe um aviso na hora."
@@ -224,7 +229,8 @@ const ESPECIALISTA: AjudaConteudo = {
   itens: [
     {
       icone: "📅", titulo: "Minha Escala", mockup: "escala",
-      texto: "Seus horários de atendimento da semana (Segunda a Domingo). Navegue entre os dias usando as setas ou clicando no nome do dia. Para cada dia, veja horário, criança e tipo de serviço (cada um com uma cor). No final aparece o total de atendimentos da semana. Tela apenas de consulta."
+      texto: "Seus horários de atendimento da semana (Segunda a Domingo). Navegue entre os dias usando as setas ou clicando no nome do dia. Para cada dia, veja horário, criança e tipo de serviço (cada um com uma cor).\n\nEscolha a data no seletor do topo e marque a presença de cada atendimento: P (presença), F (falta avisada em cima da hora — você recebe mesmo assim) ou FJ (falta avisada com antecedência — não conta pra pagamento). Em F/FJ, escreva o motivo no campo que abre. No final aparece o total de atendimentos da semana.",
+      reflexo: "O que você marca aqui (P/F/FJ) aparece na tela \"Atendimentos Especialistas\" da Gestão e do Financeiro, usada como referência pra saber quanto pagar no mês."
     },
     {
       icone: "📋", titulo: "Prontuário", mockup: "form-simples",
@@ -341,6 +347,11 @@ const FINANCEIRO: AjudaConteudo = {
       icone: "💵", titulo: "Folha de Pagamento", mockup: "financeiro",
       texto: "Controle do pagamento da equipe por período. Acompanhe valores, marque como pago, edite quando necessário e use o ícone da impressora para gerar o holerite de cada colaborador.",
       reflexo: "O pagamento marcado aqui também fica registrado na Auditoria, e o holerite gerado pode ser entregue ao colaborador."
+    },
+    {
+      icone: "🩺", titulo: "Atendimentos Especialistas", mockup: "tabela",
+      texto: "Mostra, por mês, quantos atendimentos cada especialista teve: P (presença), F (falta avisada em cima da hora — profissional recebe) e FJ (falta avisada com antecedência — não recebe).\n\nEscolha o mês no seletor do topo. Clique no nome de uma especialista para ver o detalhe de cada atendimento (criança, data, status e o motivo da falta, quando houver). Use essa tela como referência na hora de lançar a Folha de Pagamento.",
+      reflexo: "Esses dados vêm do que cada especialista marca em \"Minha Escala\" — não precisa perguntar pra ela quantos atendimentos fez no mês."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
