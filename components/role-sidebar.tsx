@@ -115,7 +115,6 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/gestao/relatorios",   label: "Relatórios",   icon: "📈" },
     { href: "/adm/atendimentos-especialistas", label: "Atendimentos Especialistas", icon: "🩺" },
     { href: "/chat",                label: "Chat",         icon: "💬" },
-    { href: "/gestao/escala",       label: "Escala",       icon: "📅" },
     { href: "/gestao/comunicados",  label: "Família",      icon: "💬" },
     { href: "/ajuda",               label: "Ajuda",        icon: "❓" },
   ];
@@ -141,6 +140,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
   const menuSupervisora = [
     ...(userContataFamilia ? [{ href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }] : []),
+    { href: "/supervisora/escala",      label: "Escala",            icon: "📅" },
     { href: "/requisicoes",             label: "Requisições",       icon: "🛒" },
     { href: "/brinquedos",              label: "Brinquedos",        icon: "🧸" },
     { href: "/materiais-adaptados",     label: "Materiais Adaptados", icon: "📚" },
