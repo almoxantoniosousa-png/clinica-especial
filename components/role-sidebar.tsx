@@ -83,6 +83,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const subMenuFinanceiro = [
     { href: "/adm/financeiro",      label: "Faturamento",       icon: "💰" },
     { href: "/adm/folha-pagamento", label: "Folha de Pagamento", icon: "💵" },
+    { href: "/adm/atendimentos-especialistas", label: "Atendimentos Especialistas", icon: "🩺" },
   ];
 
   const menuAdmin = [
@@ -112,6 +113,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/requisicoes",         label: "Requisições",  icon: "🛒" },
     { href: "/brinquedos",          label: "Brinquedos",   icon: "🧸" },
     { href: "/gestao/relatorios",   label: "Relatórios",   icon: "📈" },
+    { href: "/adm/atendimentos-especialistas", label: "Atendimentos Especialistas", icon: "🩺" },
     { href: "/chat",                label: "Chat",         icon: "💬" },
     { href: "/gestao/escala",       label: "Escala",       icon: "📅" },
     { href: "/gestao/comunicados",  label: "Família",      icon: "💬" },
@@ -163,6 +165,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const menuFinanceiro = [
     { href: "/adm/financeiro",      label: "Faturamento",       icon: "💰" },
     { href: "/adm/folha-pagamento", label: "Folha de Pagamento", icon: "💵" },
+    { href: "/adm/atendimentos-especialistas", label: "Atendimentos Especialistas", icon: "🩺" },
     { href: "/protocolos",          label: "Protocolos",        icon: "📜" },
     { href: "/chat",                label: "Chat",              icon: "💬" },
     { href: "/ajuda",                label: "Ajuda",            icon: "❓" },
