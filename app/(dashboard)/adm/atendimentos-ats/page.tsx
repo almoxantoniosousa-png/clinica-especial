@@ -112,6 +112,11 @@ export default function AtendimentosAtsPage() {
     return regs.reduce((acc, r) => acc + Number(r.horas || 0), 0);
   }
 
+  const totalHorasGeral = somaHoras(registros);
+  const totalValorGeral = somaValor(registros);
+  const totalAPagar = somaValor(registros.filter((r) => r.status !== "pago"));
+  const totalPago = somaValor(registros.filter((r) => r.status === "pago"));
+
   return (
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -122,6 +127,31 @@ export default function AtendimentosAtsPage() {
         <input type="month" value={mesAno} onChange={(e) => setMesAno(e.target.value)}
           className="h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white w-full sm:w-auto"/>
       </div>
+
+      {!loading && registros.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4">
+            <p className="text-xs text-slate-400">Total de horas</p>
+            <p className="text-xl font-black text-slate-800 mt-0.5">{totalHorasGeral.toFixed(2)}h</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">todas as ATs</p>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-4">
+            <p className="text-xs text-slate-400">Valor total</p>
+            <p className="text-xl font-black text-slate-800 mt-0.5">R$ {totalValorGeral.toFixed(2)}</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">todas as ATs</p>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <p className="text-xs text-amber-600">A pagar</p>
+            <p className="text-xl font-black text-amber-700 mt-0.5">R$ {totalAPagar.toFixed(2)}</p>
+            <p className="text-[10px] text-amber-500 mt-0.5">pendente + aprovado</p>
+          </div>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+            <p className="text-xs text-emerald-600">Já pago</p>
+            <p className="text-xl font-black text-emerald-700 mt-0.5">R$ {totalPago.toFixed(2)}</p>
+            <p className="text-[10px] text-emerald-500 mt-0.5">status pago</p>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
