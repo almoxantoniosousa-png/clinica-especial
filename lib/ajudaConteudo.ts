@@ -56,7 +56,7 @@ const ADM: AjudaConteudo = {
     {
       icone: "📅", titulo: "Escala", mockup: "escala",
       texto: "Escala semanal de atendimentos, organizada por dia e horário.\n\nUse os filtros de criança e tipo de serviço para visualizar atendimentos específicos. Clique em \"+ Novo atendimento\" para cadastrar um horário (dia, horário, criança, serviço e profissional). Use o lápis/lixeira para editar ou excluir. A legenda no final mostra a cor de cada tipo de serviço.",
-      reflexo: "O atendimento cadastrado aqui aparece na 'Minha Escala' do Especialista ou Atendente responsável, e também na Escala consultada pela Gestão."
+      reflexo: "O atendimento cadastrado aqui aparece na 'Minha Escala' do Especialista ou Atendente responsável. A Supervisora também tem sua própria tela de Escala, específica para especialistas e acompanhantes."
     },
     {
       icone: "🔍", titulo: "Auditoria", mockup: "tabela",
@@ -151,10 +151,6 @@ const GESTAO: AjudaConteudo = {
       reflexo: "Use a videochamada para avisar a equipe sobre reuniões — o cartão \"Entrar na reunião\" aparece automaticamente na conversa de quem você chamar, e quem tiver as notificações ativadas recebe um aviso na hora."
     },
     {
-      icone: "📅", titulo: "Escala", mockup: "escala",
-      texto: "Quadro da escala semanal de atendimentos por dia e horário (apenas consulta). Use as setas para navegar entre os dias e os filtros de criança/serviço para visualizar atendimentos específicos. A legenda de cores no final indica o tipo de cada serviço."
-    },
-    {
       icone: "💬", titulo: "Comunicados (Família)", mockup: "abas",
       texto: "Tela para se comunicar diretamente com as famílias pelo Portal da Família, com duas abas:\n\n• Avisos — clique em \"📢 Novo aviso\" para publicar um recado para uma criança específica (criança, título e mensagem opcional).\n\n• Evolução — clique em \"📊 Novo registro\" para publicar um relato de evolução da criança (criança, título e conteúdo).\n\nTudo o que for publicado aqui aparece para a família no Portal da Família. Itens podem ser excluídos (com confirmação).",
       reflexo: "Avisos publicados aqui aparecem na aba Avisos do Portal da Família, e os registros de evolução aparecem na aba Evolução — a família vê tudo isso assim que você publica."
@@ -190,6 +186,11 @@ const SUPERVISORA: AjudaConteudo = {
       icone: "📋", titulo: "Comunicados", mockup: "abas",
       texto: "Seu painel principal, com 5 abas:\n\n• Dashboard — visão geral do dia: crianças ativas na clínica, comunicados pendentes de revisão, recebidos hoje, já enviados às famílias, agenda do dia e os últimos comunicados.\n\n• Comunicados Diários — lista os formulários enviados pela equipe, com filtros Pendentes/Enviados/Todos. \"Pendentes\" mostra tudo, sem limite de data; \"Enviados\" e \"Todos\" trazem por padrão o dia de hoje, com um seletor de data pra consultar dias anteriores. Abra um registro, escreva uma observação se quiser, e clique em \"📨 Enviar para Família\" para liberá-lo no Portal da Família.\n\n• Momentos — clique em \"📸 Publicar momento\" para postar fotos do dia a dia das crianças (escolha a criança, a foto e uma descrição opcional).\n\n• Evolução — aqui você revisa os Relatórios de Evolução que as especialistas enviam (abas Pendentes/Enviados), não escreve do zero. Abra um relatório pendente, veja o que a especialista escreveu (evolução geral, objetivos alcançados, dificuldades, recomendações), ajuste o título/texto que vai pra família se quiser, e clique em \"📨 Enviar para Família\".\n\n• Avisos — clique em \"📢 Novo aviso\" para publicar um recado para a família de uma criança específica. Use um dos modelos prontos (reunião, troca de AT — versão equipe e versão família, reposição, atraso, mudança de horário, avaliação, documento pendente, recesso, evento, item pra levar, novo protocolo, material p/ revisão) pra preencher o texto rapidinho — os trechos entre [colchetes] precisam ser substituídos antes de publicar.\n\nDica: o alerta amarelo no Dashboard mostra quantos comunicados ainda precisam ser revisados — vale conferir todo dia.",
       reflexo: "O que você envia aqui aparece para a família no Portal da Família: Comunicados Diários enviados → aba Diário; Momentos → aba Momentos; relatórios de evolução enviados → aba Evolução; Avisos → aba Avisos."
+    },
+    {
+      icone: "📅", titulo: "Escala", mockup: "escala",
+      texto: "Cadastro semanal de atendimentos de especialistas e acompanhantes terapêuticos (ATs) — é você quem monta essa escala.\n\nUse os filtros de criança e tipo de serviço para localizar um horário. Clique em \"+ Novo atendimento\" para cadastrar (dia, horário, criança, serviço e profissional). Use o lápis/lixeira para editar ou excluir.",
+      reflexo: "O atendimento cadastrado aqui aparece na \"Minha Escala\" do especialista ou AT responsável."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
