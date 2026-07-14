@@ -100,7 +100,7 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "📋", titulo: "Atendimentos ATs", mockup: "tabela",
-      texto: "Mostra, por mês e agrupado por AT, todo atendimento registrado em \"Novo Registro\": criança, local (casa/escola), horas, valor e o relato completo do dia. Atualiza sozinha assim que o AT enviar um novo registro (aparece destacado por alguns segundos).",
+      texto: "Mostra, por mês e agrupado por AT, todo atendimento registrado em \"Novo Registro\": criança, local (casa/escola), horas, valor e o relato completo do dia. Atualiza sozinha assim que o AT enviar um novo registro (aparece destacado por alguns segundos).\n\nNo topo, 4 cards somam o total geral (todas as ATs juntas): Total de horas, Valor total, A pagar (pendente + aprovado) e Já pago. Cada AT também mostra o próprio subtotal de horas e valor.",
       reflexo: "Antes só o próprio AT via esse detalhe em \"Meus Atendimentos\" — aqui o ADM e o Financeiro acompanham tudo sem precisar perguntar."
     },
     {
