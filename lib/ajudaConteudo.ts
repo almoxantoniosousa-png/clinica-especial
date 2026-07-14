@@ -85,7 +85,7 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "💰", titulo: "Faturamento (Financeiro)", mockup: "financeiro",
-      texto: "Controle financeiro de Contas a Pagar e Contas a Receber da clínica.\n\nLance uma nova conta preenchendo descrição, categoria, valor e vencimento. Marque uma conta como \"Pago\" ou \"Recebido\" quando o pagamento acontecer. Todas essas ações ficam registradas automaticamente na Auditoria.\n\nErrou algo em uma fatura de Contas a Receber já lançada? Clique em \"Editar\" no card dela (funciona mesmo em faturas já recebidas) — não precisa excluir e lançar de novo.",
+      texto: "Controle financeiro de Contas a Pagar e Contas a Receber da clínica.\n\nLance uma nova conta preenchendo descrição, categoria, valor e vencimento. Marque uma conta como \"Pago\" ou \"Recebido\" quando o pagamento acontecer — uma janela abre pra você escolher a data real do pagamento (vem preenchida com o dia de hoje, mas pode trocar). Todas essas ações ficam registradas automaticamente na Auditoria.\n\nErrou algo em uma fatura de Contas a Receber já lançada? Clique em \"Editar\" no card dela (funciona mesmo em faturas já recebidas) — não precisa excluir e lançar de novo.",
       reflexo: "Ao marcar uma conta como Pago/Recebido, o valor entra nos gráficos de receita/despesa do Dashboard."
     },
     {
@@ -356,7 +356,7 @@ const FINANCEIRO: AjudaConteudo = {
   itens: [
     {
       icone: "💰", titulo: "Faturamento", mockup: "financeiro",
-      texto: "Controle de Contas a Pagar e Contas a Receber da clínica. Lance uma nova conta (descrição, categoria, valor, vencimento) e marque como \"Pago\"/\"Recebido\" quando o pagamento acontecer. Tudo fica registrado na Auditoria.\n\nErrou algo em uma fatura de Contas a Receber? Clique em \"Editar\" no card dela — funciona mesmo já recebida, sem precisar excluir e lançar de novo.",
+      texto: "Controle de Contas a Pagar e Contas a Receber da clínica. Lance uma nova conta (descrição, categoria, valor, vencimento) e marque como \"Pago\"/\"Recebido\" quando o pagamento acontecer — uma janela abre pra escolher a data real do pagamento (vem com hoje preenchido, mas pode trocar). Tudo fica registrado na Auditoria.\n\nErrou algo em uma fatura de Contas a Receber? Clique em \"Editar\" no card dela — funciona mesmo já recebida, sem precisar excluir e lançar de novo.",
       reflexo: "Ao marcar uma conta como Pago/Recebido, o valor entra nos gráficos de receita/despesa do Dashboard do ADM/Gestão."
     },
     {
