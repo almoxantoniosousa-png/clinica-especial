@@ -113,6 +113,11 @@ const ADM: AjudaConteudo = {
       texto: "Central de pedidos de produtos da equipe (Supervisora, Gestão e Especialistas).\n\nOrganizado em 6 abas: Pendentes (com contador laranja), Em análise, Comprados, Entregues, Recusados e Todos.\n\nResumo no topo mostra quantos pedidos estão pendentes e em análise. Clique em \"Atualizar\" para mudar o status e adicionar uma observação visível ao solicitante.\n\nDica: monitore a aba Pendentes diariamente — cada mudança de status fica registrada na Auditoria.",
       reflexo: "Quando você altera o status ou adiciona uma observação, o solicitante vê a resposta direto na tela de Requisições dele. A ação fica registrada na Auditoria."
     },
+    {
+      icone: "📦", titulo: "Patrimônio", mockup: "abas",
+      texto: "Inventário de bens da clínica (tombamento) e controle de manutenção de equipamentos, em duas abas.\n\n• Bens — clique em \"+ Cadastrar bem\" para tombar um item novo (nome, categoria, local, valor, fornecedor, foto e nota fiscal). Cada bem recebe um número de tombamento automático (T-0001, T-0002...). Abra um bem pra ver o histórico de manutenções, o custo acumulado gasto nele, e gerar a etiqueta com QR Code pra imprimir e colar no equipamento. Só o ADM pode dar baixa em um bem (perda, quebra irreparável, doação).\n\n• Manutenções — lista de chamados de defeito abertos por qualquer colaborador (escaneando o QR da etiqueta ou pela tela \"Reportar Defeito\"). Abra um chamado pra preencher local do conserto, técnico/fornecedor, custo, nota fiscal, garantia e o status (Aberto → Em Análise → Em Conserto → Concluído). Um aviso amarelo no topo lembra quando um bem está há mais de 6 meses sem conferência de inventário.",
+      reflexo: "Ao informar um custo de conserto, o sistema lança automaticamente uma Conta a Pagar no Faturamento — não precisa lançar duas vezes. Quando alguém reporta um defeito, você recebe uma notificação (🔔) na hora."
+    },
   ],
 };
 
@@ -185,6 +190,11 @@ const GESTAO: AjudaConteudo = {
       reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido. Cada etapa fica registrada na Auditoria."
     },
     {
+      icone: "🔧", titulo: "Reportar Defeito", mockup: "tabela",
+      texto: "Encontrou um equipamento com defeito? Aponte a câmera do celular para o QR Code da etiqueta de tombamento, ou entre aqui e busque o item na lista.\n\nDescreva o problema (e anexe uma foto, se quiser) e clique em \"Enviar para a administração\".",
+      reflexo: "O ADM recebe uma notificação na hora e acompanha o conserto na tela Patrimônio — você não precisa avisar por outro canal."
+    },
+    {
       icone: "🛒", titulo: "Requisições de Compra", mockup: "tabela",
       texto: "Solicite produtos ao ADM — materiais, equipamentos, itens de escritório, ou qualquer coisa que a clínica precise comprar.\n\nClique em \"Nova requisição\" para preencher: produto, quantidade, descrição (para que serve), link do produto (opcional, ex: Amazon ou Shopee) e urgência (Normal ou Urgente).\n\nAcompanhe o histórico e receba a resposta do ADM com o status atualizado: Pendente → Em análise → Comprado → Entregue.",
       reflexo: "O ADM vê sua requisição, atualiza o status e pode deixar uma observação para você — que aparece direto nesta tela. A ação fica registrada na Auditoria."
@@ -231,6 +241,11 @@ const SUPERVISORA: AjudaConteudo = {
       reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido. Cada etapa fica registrada na Auditoria."
     },
     {
+      icone: "🔧", titulo: "Reportar Defeito", mockup: "tabela",
+      texto: "Encontrou um equipamento com defeito? Aponte a câmera do celular para o QR Code da etiqueta de tombamento, ou entre aqui e busque o item na lista.\n\nDescreva o problema (e anexe uma foto, se quiser) e clique em \"Enviar para a administração\".",
+      reflexo: "O ADM recebe uma notificação na hora e acompanha o conserto na tela Patrimônio."
+    },
+    {
       icone: "🛒", titulo: "Requisições de Compra", mockup: "tabela",
       texto: "Solicite produtos ao ADM — materiais ou equipamentos que a clínica precise comprar.\n\nClique em \"Nova requisição\" para preencher: produto, quantidade, descrição (para que serve), link do produto (opcional) e urgência (Normal ou Urgente).\n\nAcompanhe o histórico e receba a resposta do ADM com o status atualizado: Pendente → Em análise → Comprado → Entregue.",
       reflexo: "O ADM vê sua requisição, atualiza o status e pode deixar uma observação para você — que aparece direto nesta tela."
@@ -271,6 +286,11 @@ const ESPECIALISTA: AjudaConteudo = {
       icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
       texto: "Solicite brinquedos para usar com as crianças nos atendimentos.\n\nClique em \"Nova solicitação\" para abrir o formulário: escolha a criança, o brinquedo (com autocomplete do catálogo) e a urgência. Se o brinquedo não existir no catálogo, ele é adicionado automaticamente.\n\nAcompanhe o histórico das suas solicitações e o status de cada uma: Pendente → Em posse → Devolvido.",
       reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido."
+    },
+    {
+      icone: "🔧", titulo: "Reportar Defeito", mockup: "tabela",
+      texto: "Encontrou um equipamento com defeito? Aponte a câmera do celular para o QR Code da etiqueta de tombamento, ou entre aqui e busque o item na lista.\n\nDescreva o problema (e anexe uma foto, se quiser) e clique em \"Enviar para a administração\".",
+      reflexo: "O ADM recebe uma notificação na hora e acompanha o conserto na tela Patrimônio."
     },
     {
       icone: "🛒", titulo: "Requisições de Compra", mockup: "tabela",
@@ -375,6 +395,11 @@ const FINANCEIRO: AjudaConteudo = {
       reflexo: "Antes só o próprio AT via esse detalhe em \"Meus Atendimentos\" — aqui o Financeiro acompanha tudo em tempo real."
     },
     {
+      icone: "📦", titulo: "Patrimônio", mockup: "abas",
+      texto: "Inventário de bens da clínica e histórico de manutenção de equipamentos, com o custo de cada conserto.\n\n• Bens — consulte o que está tombado, com valor de aquisição e custo acumulado em manutenção de cada item.\n\n• Manutenções — acompanhe os chamados abertos pela equipe e o custo de cada conserto.",
+      reflexo: "Ao informar um custo de conserto, o sistema lança automaticamente uma Conta a Pagar aqui no Faturamento."
+    },
+    {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
       texto: "Diretrizes de conduta da sua função. Abra um protocolo, leia o conteúdo e clique em \"Confirmar leitura\".",
       reflexo: "Ao confirmar a leitura, o ADM passa a ver seu nome na lista de confirmações desse protocolo."
@@ -400,6 +425,11 @@ const AUX_ADM: AjudaConteudo = {
       icone: "🧸", titulo: "Brinquedos", mockup: "abas",
       texto: "Central de gestão de empréstimos de brinquedos da clínica, organizada em 5 abas:\n\n• Solicitações — pedidos recebidos da equipe (Atendentes, Especialistas, Supervisora e Gestão). Clique em \"Registrar Retirada\" quando a colaboradora vier buscar o brinquedo.\n\n• Em Posse — brinquedos que estão com as colaboradoras. Clique em \"Registrar Devolução\" quando o item for devolvido.\n\n• Histórico — todos os empréstimos encerrados (devolvidos).\n\n• Catálogo — lista de brinquedos cadastrados, com foto opcional. Clique em \"Adicionar ao catálogo\" para incluir novos itens. A lista é retrátil: mostra 8 por padrão e expande com \"Ver todos\".\n\n• Ranking — gráficos de brinquedos mais solicitados, colaboradoras que mais solicitam e crianças que mais usam.\n\nTodas as ações ficam registradas na Auditoria.",
       reflexo: "O catálogo cresce automaticamente quando alguém solicita um brinquedo que ainda não existe — você só precisa confirmar a retirada e a devolução. Cada etapa fica rastreada."
+    },
+    {
+      icone: "📦", titulo: "Patrimônio", mockup: "abas",
+      texto: "Inventário de bens da clínica (tombamento) e controle de manutenção de equipamentos, em duas abas.\n\n• Bens — clique em \"+ Cadastrar bem\" para tombar um item novo (nome, categoria, local, valor, fornecedor, foto e nota fiscal). Cada bem recebe um número de tombamento automático. Abra um bem pra ver o histórico de manutenções, o custo acumulado gasto nele, e gerar a etiqueta com QR Code pra imprimir e colar no equipamento.\n\n• Manutenções — chamados de defeito abertos por qualquer colaborador. Abra um chamado pra preencher local do conserto, técnico/fornecedor, custo, nota fiscal, garantia e status.\n\nDar baixa em um bem (perda, quebra irreparável, doação) é uma ação exclusiva do ADM.",
+      reflexo: "Ao informar um custo de conserto, o sistema lança automaticamente uma Conta a Pagar no Faturamento."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
