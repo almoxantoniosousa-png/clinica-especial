@@ -28,10 +28,11 @@ type CriancaSimples = { id: string; nome: string; plano_saude?: string | null };
 type AbaProps = { supabase: SupabaseClient; mesAno: string; mostrarFeedback: (tipo: "sucesso" | "erro", msg: string) => void };
 type AbaFluxoProps = { supabase: SupabaseClient; mesAno: string };
 type AbaSemMesProps = { supabase: SupabaseClient; mostrarFeedback: (tipo: "sucesso" | "erro", msg: string) => void };
+type Pagamento = { data: string; valor: number };
 type Emprestimo = {
   id: string; colaborador_nome: string; valor_total: number; data_emprestimo: string;
-  numero_parcelas: number; valor_parcela: number; parcelas_pagas: number;
-  datas_parcelas_pagas: string[]; status: string; observacao?: string | null;
+  numero_parcelas: number; valor_parcela: number;
+  pagamentos: Pagamento[]; status: string; observacao?: string | null;
 };
 
 export default function FinanceiroPage() {
@@ -1304,6 +1305,8 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
   const [numeroParcelas, setNumeroParcelas] = useState("1");
   const [observacao, setObservacao] = useState("");
 
+  const [pagandoId, setPagandoId] = useState<string | null>(null);
+  const [valorPagamento, setValorPagamento] = useState("");
   const [registrandoId, setRegistrandoId] = useState<string | null>(null);
   const [expandido, setExpandido] = useState<string | null>(null);
 
@@ -1347,8 +1350,7 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
       data_emprestimo: dataEmprestimo,
       numero_parcelas: parcelas,
       valor_parcela: valorParcela,
-      parcelas_pagas: 0,
-      datas_parcelas_pagas: [],
+      pagamentos: [],
       status: "ativo",
       observacao: observacao || null,
     }]).select().single();
@@ -1371,28 +1373,48 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
     }
   }
 
-  async function registrarParcela(emp: Emprestimo) {
+  function totalPago(emp: Emprestimo) {
+    return (emp.pagamentos || []).reduce((acc, p) => acc + Number(p.valor || 0), 0);
+  }
+  function restante(emp: Emprestimo) {
+    return Number(emp.valor_total) - totalPago(emp);
+  }
+  function parcelasEquivalentes(emp: Emprestimo) {
+    return Math.min(Math.round((totalPago(emp) / Number(emp.valor_parcela)) * 100) / 100, emp.numero_parcelas);
+  }
+
+  function abrirPagamento(emp: Emprestimo) {
+    const sugestao = Math.min(Number(emp.valor_parcela), restante(emp));
+    setValorPagamento(sugestao > 0 ? sugestao.toFixed(2) : "");
+    setPagandoId(emp.id);
+  }
+
+  async function registrarPagamento(emp: Emprestimo) {
+    const valor = Number(valorPagamento);
+    if (!valor || valor <= 0) { mostrarFeedback("erro", "Informe o valor pago."); return; }
+
     setRegistrandoId(emp.id);
-    const novasDatas = [...(emp.datas_parcelas_pagas || []), new Date().toISOString().slice(0, 10)];
-    const novasPagas = emp.parcelas_pagas + 1;
-    const novoStatus = novasPagas >= emp.numero_parcelas ? "quitado" : "ativo";
+    const novosPagamentos = [...(emp.pagamentos || []), { data: new Date().toISOString().slice(0, 10), valor }];
+    const novoTotalPago = novosPagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
+    const novoStatus = novoTotalPago >= Number(emp.valor_total) - 0.01 ? "quitado" : "ativo";
     const { error } = await supabase.from("emprestimos_colaboradores").update({
-      parcelas_pagas: novasPagas,
-      datas_parcelas_pagas: novasDatas,
+      pagamentos: novosPagamentos,
       status: novoStatus,
     }).eq("id", emp.id);
     setRegistrandoId(null);
     if (error) mostrarFeedback("erro", "Erro: " + error.message);
     else {
-      mostrarFeedback("sucesso", novoStatus === "quitado" ? "Última parcela registrada — empréstimo quitado!" : "Parcela registrada!");
+      mostrarFeedback("sucesso", novoStatus === "quitado" ? "Empréstimo quitado!" : "Pagamento registrado!");
       const { data: { user } } = await supabase.auth.getUser();
       await registrarLog(supabase, {
         usuario_email: user?.email || "desconhecido",
-        acao: "Registrou parcela",
+        acao: "Registrou pagamento",
         tabela: "emprestimos_colaboradores",
         registro_id: emp.id,
-        descricao: `Registrou parcela ${novasPagas}/${emp.numero_parcelas} do empréstimo de ${emp.colaborador_nome}`,
+        descricao: `Registrou pagamento de R$ ${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} do empréstimo de ${emp.colaborador_nome}`,
       });
+      setPagandoId(null);
+      setValorPagamento("");
       carregar();
     }
   }
@@ -1405,8 +1427,7 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
 
   const totais = useMemo(() => ({
     emprestado: emprestimos.reduce((acc, e) => acc + Number(e.valor_total || 0), 0),
-    emAberto: emprestimos.filter(e => e.status === "ativo")
-      .reduce((acc, e) => acc + (Number(e.valor_total || 0) - Number(e.valor_parcela || 0) * e.parcelas_pagas), 0),
+    emAberto: emprestimos.filter(e => e.status === "ativo").reduce((acc, e) => acc + restante(e), 0),
     quitado: emprestimos.filter(e => e.status === "quitado").reduce((acc, e) => acc + Number(e.valor_total || 0), 0),
   }), [emprestimos]);
 
@@ -1461,8 +1482,9 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
       ) : (
         <div className="space-y-3">
           {filtrados.map(e => {
-            const restante = Number(e.valor_total) - Number(e.valor_parcela) * e.parcelas_pagas;
+            const falta = restante(e);
             const aberto = expandido === e.id;
+            const pagamentos = e.pagamentos || [];
             return (
               <div key={e.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
                 <div className="flex items-start justify-between gap-3">
@@ -1474,18 +1496,19 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Emprestado em {new Date(e.data_emprestimo + "T12:00:00").toLocaleDateString("pt-BR")} · {e.numero_parcelas}x de R$ {Number(e.valor_parcela).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      Emprestado em {new Date(e.data_emprestimo + "T12:00:00").toLocaleDateString("pt-BR")} · parcela de referência: R$ {Number(e.valor_parcela).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ({e.numero_parcelas}x)
                     </p>
                     <p className="text-xs text-slate-500 mt-1 font-medium">
-                      Parcela {Math.min(e.parcelas_pagas + 1, e.numero_parcelas)}/{e.numero_parcelas} · faltam {e.numero_parcelas - e.parcelas_pagas}
+                      ≈ {parcelasEquivalentes(e)}/{e.numero_parcelas} parcelas pagas (por valor)
                     </p>
                     {e.observacao && <p className="text-xs text-slate-400 mt-1">{e.observacao}</p>}
-                    {aberto && e.datas_parcelas_pagas?.length > 0 && (
+                    {aberto && pagamentos.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-slate-100 space-y-1">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Parcelas pagas</p>
-                        {e.datas_parcelas_pagas.map((d, i) => (
-                          <p key={i} className="text-xs text-slate-500">
-                            {i + 1}ª parcela — {new Date(d + "T12:00:00").toLocaleDateString("pt-BR")}
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Pagamentos registrados</p>
+                        {pagamentos.map((p, i) => (
+                          <p key={i} className="text-xs text-slate-500 flex justify-between max-w-xs">
+                            <span>{new Date(p.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                            <span className="font-semibold">R$ {Number(p.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                           </p>
                         ))}
                       </div>
@@ -1494,18 +1517,35 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
                   <div className="text-right flex-shrink-0">
                     <p className="text-xs text-slate-400">Valor total</p>
                     <p className="font-bold text-slate-800">R$ {Number(e.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                    <p className="text-xs text-amber-600 mt-1">Falta R$ {Math.max(restante, 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                    <p className="text-xs text-amber-600 mt-1">Falta R$ {Math.max(falta, 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
                 {e.status === "ativo" && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => registrarParcela(e)}
-                      disabled={registrandoId === e.id}
-                      className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200 disabled:opacity-50">
-                      {registrandoId === e.id ? "Registrando..." : `Registrar parcela ${e.parcelas_pagas + 1}/${e.numero_parcelas}`}
-                    </button>
-                  </div>
+                  pagandoId === e.id ? (
+                    <div className="flex gap-2 items-center">
+                      <input type="number" min="0" step="0.01" value={valorPagamento}
+                        onChange={ev => setValorPagamento(ev.target.value)} placeholder="0,00" autoFocus
+                        className="h-8 w-32 px-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+                      <button
+                        onClick={() => registrarPagamento(e)}
+                        disabled={registrandoId === e.id}
+                        className="h-8 px-3 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50">
+                        {registrandoId === e.id ? "Salvando..." : "Confirmar"}
+                      </button>
+                      <button onClick={() => { setPagandoId(null); setValorPagamento(""); }}
+                        className="h-8 px-3 text-xs font-semibold text-slate-500 hover:bg-slate-50 rounded-lg transition">
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => abrirPagamento(e)}
+                        className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
+                        Registrar pagamento
+                      </button>
+                    </div>
+                  )
                 )}
               </div>
             );
