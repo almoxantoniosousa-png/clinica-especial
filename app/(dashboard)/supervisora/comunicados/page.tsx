@@ -603,6 +603,8 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
   const [descricao, setDescricao] = useState("");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const carregar = async () => {
@@ -617,6 +619,14 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
   };
 
   useEffect(() => { carregar(); }, []);
+
+  async function deletar() {
+    if (!deletandoId) return;
+    setExcluindo(true);
+    await supabase.from("portal_momentos").delete().eq("id", deletandoId);
+    setDeletandoId(null); setExcluindo(false);
+    mostrarFeedback("sucesso", "Momento removido."); carregar();
+  }
 
   async function salvar() {
     if (!paraTodos && !criancaId) { mostrarFeedback("erro", "Selecione a criança ou marque 'Todas as famílias'."); return; }
@@ -651,7 +661,9 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {momentos.map(m => (
-            <div key={m.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div key={m.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden relative">
+              <button onClick={() => setDeletandoId(m.id)}
+                className="absolute top-2 right-2 p-1.5 bg-white/90 text-slate-500 hover:text-red-600 hover:bg-white rounded-lg shadow-sm transition">🗑️</button>
               <img src={m.imagem_url} alt="Momento" className="w-full h-48 object-cover"/>
               <div className="p-3">
                 <div className="flex items-center gap-2 mb-1">
@@ -712,6 +724,20 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
                 <button onClick={() => setModalAberto(false)} className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">Cancelar</button>
                 <button onClick={salvar} disabled={salvando || (!paraTodos && !criancaId) || !fotoFile} className="flex-1 h-11 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">{salvando ? "Publicando..." : "Publicar"}</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {deletandoId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-3xl">🗑️</div>
+              <div><h3 className="font-bold text-slate-800">Remover momento?</h3><p className="text-xs text-slate-400 mt-1">A foto deixa de aparecer para a(s) família(s). Esta ação não pode ser desfeita.</p></div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setDeletandoId(null)} disabled={excluindo} className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50">Cancelar</button>
+              <button onClick={deletar} disabled={excluindo} className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition disabled:opacity-50">{excluindo ? "Removendo..." : "Sim, remover"}</button>
             </div>
           </div>
         </div>
