@@ -55,8 +55,8 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "📅", titulo: "Escala", mockup: "escala",
-      texto: "Escala semanal de atendimentos, organizada por dia e horário.\n\nUse os filtros de criança e tipo de serviço para visualizar atendimentos específicos. Clique em \"+ Novo atendimento\" para cadastrar um horário (dia, horário, criança, serviço e profissional). Use o lápis/lixeira para editar ou excluir. A legenda no final mostra a cor de cada tipo de serviço.",
-      reflexo: "O atendimento cadastrado aqui aparece na 'Minha Escala' do Especialista ou Atendente responsável. A Supervisora também tem sua própria tela de Escala, específica para especialistas e acompanhantes."
+      texto: "Escala semanal de atendimentos de especialistas e ATs, organizada por dia e horário — só para consulta.\n\nUse os filtros de criança e tipo de serviço para visualizar atendimentos específicos. A legenda no final mostra a cor de cada tipo de serviço. Quem cadastra e edita os horários é a Supervisora, na tela dela.",
+      reflexo: "Quem monta a Escala das ATs e Especialistas é a Supervisora. Você acompanha aqui, e continua cuidando da Escala Administrativa (Aux. Adm e Limpeza) normalmente."
     },
     {
       icone: "🔍", titulo: "Auditoria", mockup: "tabela",

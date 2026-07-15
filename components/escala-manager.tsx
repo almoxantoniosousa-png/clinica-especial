@@ -89,6 +89,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [diaAtivo, setDiaAtivo] = useState(0);
   const [filtroCrianca, setFiltroCrianca] = useState("");
   const [filtroServico, setFiltroServico] = useState("");
+  const [podeEditar, setPodeEditar] = useState(false);
 
   // modal
   const [modalAberto, setModalAberto] = useState(false);
@@ -109,8 +110,19 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
   useEffect(() => {
     carregarTudo();
+    verificarPermissao();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function verificarPermissao() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) return;
+    const { data: u } = await supabase.from("usuarios").select("role").eq("email", user.email).maybeSingle();
+    const role = (u?.role || "").toString().trim().toLowerCase();
+    if (role) { setPodeEditar(role === "supervisora"); return; }
+    const { data: a } = await supabase.from("atendentes").select("role").eq("email", user.email).maybeSingle();
+    setPodeEditar((a?.role || "").toString().trim().toLowerCase() === "supervisora");
+  }
 
   async function carregarTudo() {
     setLoading(true);
@@ -232,13 +244,15 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
           </h1>
           <p className="text-sm text-slate-400 mt-1">{subtitulo}</p>
         </div>
-        <button
-          onClick={abrirNovo}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Novo atendimento
-        </button>
+        {podeEditar && (
+          <button
+            onClick={abrirNovo}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Novo atendimento
+          </button>
+        )}
       </div>
 
       {/* NAVEGAÇÃO DE DIAS */}
@@ -333,22 +347,24 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                             <span className="font-bold">{slot.crianca}</span>
                             <span className="opacity-60">·</span>
                             <span>{slot.servico}</span>
-                            <div className="flex items-center gap-1 ml-auto pl-2">
-                              <button
-                                onClick={() => abrirEditar(slot)}
-                                className="p-0.5 rounded hover:bg-black/10 transition-colors"
-                                title="Editar"
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </button>
-                              <button
-                                onClick={() => { setDeletandoId(slot.id); setDeletandoLabel(`${slot.crianca} · ${slot.servico}`); }}
-                                className="p-0.5 rounded hover:bg-red-200 text-red-600 transition-colors"
-                                title="Excluir"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </div>
+                            {podeEditar && (
+                              <div className="flex items-center gap-1 ml-auto pl-2">
+                                <button
+                                  onClick={() => abrirEditar(slot)}
+                                  className="p-0.5 rounded hover:bg-black/10 transition-colors"
+                                  title="Editar"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </button>
+                                <button
+                                  onClick={() => { setDeletandoId(slot.id); setDeletandoLabel(`${slot.crianca} · ${slot.servico}`); }}
+                                  className="p-0.5 rounded hover:bg-red-200 text-red-600 transition-colors"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                           {slot.profissional_nome && (
                             <span className="text-xs opacity-70 mt-0.5">
