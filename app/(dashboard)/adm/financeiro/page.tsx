@@ -28,12 +28,13 @@ type CriancaSimples = { id: string; nome: string; plano_saude?: string | null };
 type AbaProps = { supabase: SupabaseClient; mesAno: string; mostrarFeedback: (tipo: "sucesso" | "erro", msg: string) => void };
 type AbaFluxoProps = { supabase: SupabaseClient; mesAno: string };
 type AbaSemMesProps = { supabase: SupabaseClient; mostrarFeedback: (tipo: "sucesso" | "erro", msg: string) => void };
-type Pagamento = { data: string; valor: number };
+type Pagamento = { data: string; valor: number; numero_parcela?: number; comprovante_url?: string | null };
 type Emprestimo = {
-  id: string; colaborador_nome: string; valor_total: number; data_emprestimo: string;
+  id: string; colaborador_nome: string; colaborador_cpf?: string | null; valor_total: number; data_emprestimo: string;
   numero_parcelas: number; valor_parcela: number;
   pagamentos: Pagamento[]; status: string; observacao?: string | null;
 };
+type ColaboradorOpcao = { nome: string; cpf: string | null };
 
 export default function FinanceiroPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -1293,13 +1294,14 @@ function AbaFluxo({ supabase, mesAno }: AbaFluxoProps) {
 // =============================================
 function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
   const [emprestimos, setEmprestimos] = useState<Emprestimo[]>([]);
-  const [colaboradores, setColaboradores] = useState<string[]>([]);
+  const [colaboradores, setColaboradores] = useState<ColaboradorOpcao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState<"ativos" | "quitados" | "todos">("ativos");
 
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [colaboradorNome, setColaboradorNome] = useState("");
+  const [colaboradorCpf, setColaboradorCpf] = useState("");
   const [valorTotal, setValorTotal] = useState("");
   const [dataEmprestimo, setDataEmprestimo] = useState(() => new Date().toISOString().slice(0, 10));
   const [numeroParcelas, setNumeroParcelas] = useState("1");
@@ -1308,6 +1310,8 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
   const [pagandoId, setPagandoId] = useState<string | null>(null);
   const [valorPagamento, setValorPagamento] = useState("");
   const [dataPagamento, setDataPagamento] = useState("");
+  const [numeroParcelaPagamento, setNumeroParcelaPagamento] = useState("1");
+  const [comprovanteFile, setComprovanteFile] = useState<File | null>(null);
   const [registrandoId, setRegistrandoId] = useState<string | null>(null);
   const [expandido, setExpandido] = useState<string | null>(null);
   const [historicoCompleto, setHistoricoCompleto] = useState<Set<string>>(new Set());
@@ -1316,23 +1320,29 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
     setLoading(true);
     const [{ data: emp }, { data: ats }, { data: internas }] = await Promise.all([
       supabase.from("emprestimos_colaboradores").select("*").order("created_at", { ascending: false }),
-      supabase.from("atendentes").select("nome").order("nome"),
-      supabase.from("colaboradoras_internas").select("nome").eq("ativo", true).order("nome"),
+      supabase.from("atendentes").select("nome, cpf").order("nome"),
+      supabase.from("colaboradoras_internas").select("nome, cpf").eq("ativo", true).order("nome"),
     ]);
     setEmprestimos(emp || []);
     const nomes = [
-      ...((ats || []).map((a: { nome: string }) => a.nome)),
-      ...((internas || []).map((c: { nome: string }) => c.nome)),
-    ].sort((a, b) => a.localeCompare(b));
-    setColaboradores(Array.from(new Set(nomes)));
+      ...((ats || []).map((a: { nome: string; cpf: string | null }) => ({ nome: a.nome, cpf: a.cpf }))),
+      ...((internas || []).map((c: { nome: string; cpf: string | null }) => ({ nome: c.nome, cpf: c.cpf }))),
+    ].sort((a, b) => a.nome.localeCompare(b.nome));
+    const vistos = new Set<string>();
+    setColaboradores(nomes.filter(c => (vistos.has(c.nome) ? false : (vistos.add(c.nome), true))));
     setLoading(false);
   }
 
   useEffect(() => { carregar(); }, []);
 
   function resetForm() {
-    setColaboradorNome(""); setValorTotal(""); setDataEmprestimo(new Date().toISOString().slice(0, 10));
+    setColaboradorNome(""); setColaboradorCpf(""); setValorTotal(""); setDataEmprestimo(new Date().toISOString().slice(0, 10));
     setNumeroParcelas("1"); setObservacao("");
+  }
+
+  function selecionarColaborador(nome: string) {
+    setColaboradorNome(nome);
+    setColaboradorCpf(colaboradores.find(c => c.nome === nome)?.cpf || "");
   }
 
   const valorParcelaPreview = (Number(valorTotal) || 0) / (Number(numeroParcelas) || 1);
@@ -1348,6 +1358,7 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
     const valorParcela = Math.round((total / parcelas) * 100) / 100;
     const { data: novo, error } = await supabase.from("emprestimos_colaboradores").insert([{
       colaborador_nome: colaboradorNome,
+      colaborador_cpf: colaboradorCpf || null,
       valor_total: total,
       data_emprestimo: dataEmprestimo,
       numero_parcelas: parcelas,
@@ -1396,7 +1407,18 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
     const sugestao = Math.min(Number(emp.valor_parcela), restante(emp));
     setValorPagamento(sugestao > 0 ? sugestao.toFixed(2) : "");
     setDataPagamento(proximaDataSugerida(emp));
+    setNumeroParcelaPagamento(String((emp.pagamentos?.length || 0) + 1));
+    setComprovanteFile(null);
     setPagandoId(emp.id);
+  }
+
+  async function uploadComprovante(file: File, emprestimoId: string): Promise<string | null> {
+    const ext = file.name.split(".").pop();
+    const path = `${emprestimoId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("emprestimos-arquivos").upload(path, file);
+    if (error) return null;
+    const { data } = supabase.storage.from("emprestimos-arquivos").getPublicUrl(path);
+    return data.publicUrl;
   }
 
   async function registrarPagamento(emp: Emprestimo) {
@@ -1405,7 +1427,17 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
     if (!dataPagamento) { mostrarFeedback("erro", "Informe a data do pagamento."); return; }
 
     setRegistrandoId(emp.id);
-    const novosPagamentos = [...(emp.pagamentos || []), { data: dataPagamento, valor }];
+    let comprovante_url: string | null = null;
+    if (comprovanteFile) {
+      comprovante_url = await uploadComprovante(comprovanteFile, emp.id);
+      if (!comprovante_url) { mostrarFeedback("erro", "Erro ao enviar o comprovante — pagamento não registrado."); setRegistrandoId(null); return; }
+    }
+    const novosPagamentos = [...(emp.pagamentos || []), {
+      data: dataPagamento,
+      valor,
+      numero_parcela: Number(numeroParcelaPagamento) || (emp.pagamentos?.length || 0) + 1,
+      comprovante_url,
+    }];
     const novoTotalPago = novosPagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
     const novoStatus = novoTotalPago >= Number(emp.valor_total) - 0.01 ? "quitado" : "ativo";
     const { error } = await supabase.from("emprestimos_colaboradores").update({
@@ -1426,8 +1458,48 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
       });
       setPagandoId(null);
       setValorPagamento("");
+      setComprovanteFile(null);
       carregar();
     }
+  }
+
+  function gerarRecibo(emp: Emprestimo, pagamento: Pagamento) {
+    const w = window.open("", "_blank");
+    if (!w) return;
+    const esc = (v: string | null | undefined) => (v ?? "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const dataPix = new Date(pagamento.data + "T12:00:00");
+    const dataExtenso = dataPix.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+    const mesReferencia = dataPix.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    const hoje = new Date().toLocaleDateString("pt-BR");
+    const numeroParcela = pagamento.numero_parcela ?? "?";
+    w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+      <meta charset="UTF-8"/>
+      <title>Recibo — ${esc(emp.colaborador_nome)}</title>
+      <style>
+        * { box-sizing: border-box; }
+        body { font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #1e293b; padding: 60px 70px; max-width: 720px; margin: auto; line-height: 1.7; }
+        .titulo { text-align: center; font-style: italic; font-size: 16px; font-weight: bold; margin-bottom: 40px; }
+        p { text-align: center; margin-bottom: 18px; }
+        .assinatura { margin-top: 60px; text-align: center; }
+        .assinatura p { margin-bottom: 4px; }
+        @media print { body { padding: 40px; } }
+      </style>
+    </head><body>
+      <p class="titulo">RECIBO DE PAGAMENTO</p>
+      <p>Recebi de ${esc(emp.colaborador_nome)}, CPF nº ${esc(emp.colaborador_cpf) || "___________________"}, a quantia de
+      R$ ${Number(pagamento.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} referente à ${numeroParcela}ª parcela do
+      empréstimo no valor total de R$ ${Number(emp.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}, conforme acordo firmado com a Clínica Abraço.</p>
+      <p>O pagamento foi realizado na data de ${dataExtenso}, correspondendo ao mês de ${mesReferencia}.</p>
+      <p>Forma de pagamento: através de link concedido pela Clínica</p>
+      <div class="assinatura">
+        <p>Clínica Abraço</p>
+        <p>CNPJ: 34.864.312/0001-65</p>
+        <p>Responsável: Solange Oliveira Reis</p>
+        <p>Data: ${hoje}</p>
+      </div>
+      <script>window.onload = () => { window.print(); }<\/script>
+    </body></html>`);
+    w.document.close();
   }
 
   const filtrados = emprestimos.filter(e => {
@@ -1518,13 +1590,28 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
                       const invertidos = [...pagamentos].reverse();
                       const visiveis = verTudo ? invertidos : invertidos.slice(0, 5);
                       return (
-                        <div className="mt-2 pt-2 border-t border-slate-100 space-y-1 max-w-xs">
+                        <div className="mt-2 pt-2 border-t border-slate-100 space-y-1.5 max-w-md">
                           <p className="text-[10px] font-bold text-slate-400 uppercase">Pagamentos registrados ({pagamentos.length})</p>
                           {visiveis.map((p, i) => (
-                            <p key={i} className="text-xs text-slate-500 flex justify-between">
-                              <span>{new Date(p.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
-                              <span className="font-semibold">R$ {Number(p.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-                            </p>
+                            <div key={i} className="flex items-center justify-between gap-2 text-xs text-slate-500">
+                              <span className="shrink-0">
+                                {new Date(p.data + "T12:00:00").toLocaleDateString("pt-BR")}
+                                {p.numero_parcela ? ` · ${p.numero_parcela}ª` : ""}
+                              </span>
+                              <span className="font-semibold shrink-0">R$ {Number(p.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                              <div className="flex items-center gap-2 shrink-0" onClick={ev => ev.stopPropagation()}>
+                                {p.comprovante_url && (
+                                  <a href={p.comprovante_url} target="_blank" rel="noopener noreferrer"
+                                    className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition">
+                                    Comprovante
+                                  </a>
+                                )}
+                                <button onClick={() => gerarRecibo(e, p)}
+                                  className="text-[11px] font-semibold text-slate-500 hover:text-slate-700 transition">
+                                  Gerar recibo
+                                </button>
+                              </div>
+                            </div>
                           ))}
                           {pagamentos.length > 5 && (
                             <button
@@ -1565,13 +1652,25 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
                           onChange={ev => setDataPagamento(ev.target.value)}
                           className="h-8 px-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
                       </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase block mb-0.5">Parcela nº</label>
+                        <input type="number" min="1" value={numeroParcelaPagamento}
+                          onChange={ev => setNumeroParcelaPagamento(ev.target.value)}
+                          className="h-8 w-16 px-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase block mb-0.5">Comprovante (opcional)</label>
+                        <input type="file" accept="image/*,.pdf"
+                          onChange={ev => setComprovanteFile(ev.target.files?.[0] || null)}
+                          className="text-xs text-slate-500 file:mr-2 file:h-8 file:px-2 file:rounded-lg file:border-0 file:bg-slate-100 file:text-xs file:font-semibold file:text-slate-600 hover:file:bg-slate-200"/>
+                      </div>
                       <button
                         onClick={() => registrarPagamento(e)}
                         disabled={registrandoId === e.id}
                         className="h-8 px-3 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 self-end">
                         {registrandoId === e.id ? "Salvando..." : "Confirmar"}
                       </button>
-                      <button onClick={() => { setPagandoId(null); setValorPagamento(""); }}
+                      <button onClick={() => { setPagandoId(null); setValorPagamento(""); setComprovanteFile(null); }}
                         className="h-8 px-3 text-xs font-semibold text-slate-500 hover:bg-slate-50 rounded-lg transition self-end">
                         Cancelar
                       </button>
@@ -1600,11 +1699,16 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-slate-500 uppercase">Colaborador *</label>
-                <select value={colaboradorNome} onChange={e => setColaboradorNome(e.target.value)}
+                <select value={colaboradorNome} onChange={e => selecionarColaborador(e.target.value)}
                   className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Selecione...</option>
-                  {colaboradores.map(c => <option key={c} value={c}>{c}</option>)}
+                  {colaboradores.map(c => <option key={c.nome} value={c.nome}>{c.nome}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase">CPF</label>
+                <input type="text" value={colaboradorCpf} onChange={e => setColaboradorCpf(e.target.value)} placeholder="000.000.000-00"
+                  className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
