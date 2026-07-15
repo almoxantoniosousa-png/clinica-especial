@@ -1307,8 +1307,10 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
 
   const [pagandoId, setPagandoId] = useState<string | null>(null);
   const [valorPagamento, setValorPagamento] = useState("");
+  const [dataPagamento, setDataPagamento] = useState("");
   const [registrandoId, setRegistrandoId] = useState<string | null>(null);
   const [expandido, setExpandido] = useState<string | null>(null);
+  const [historicoCompleto, setHistoricoCompleto] = useState<Set<string>>(new Set());
 
   async function carregar() {
     setLoading(true);
@@ -1383,18 +1385,27 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
     return Math.min(Math.round((totalPago(emp) / Number(emp.valor_parcela)) * 100) / 100, emp.numero_parcelas);
   }
 
+  function proximaDataSugerida(emp: Emprestimo) {
+    const [ano, mes, dia] = emp.data_emprestimo.split("-").map(Number);
+    const d = new Date(ano, mes - 1, dia);
+    d.setMonth(d.getMonth() + (emp.pagamentos?.length || 0) + 1);
+    return d.toISOString().slice(0, 10);
+  }
+
   function abrirPagamento(emp: Emprestimo) {
     const sugestao = Math.min(Number(emp.valor_parcela), restante(emp));
     setValorPagamento(sugestao > 0 ? sugestao.toFixed(2) : "");
+    setDataPagamento(proximaDataSugerida(emp));
     setPagandoId(emp.id);
   }
 
   async function registrarPagamento(emp: Emprestimo) {
     const valor = Number(valorPagamento);
     if (!valor || valor <= 0) { mostrarFeedback("erro", "Informe o valor pago."); return; }
+    if (!dataPagamento) { mostrarFeedback("erro", "Informe a data do pagamento."); return; }
 
     setRegistrandoId(emp.id);
-    const novosPagamentos = [...(emp.pagamentos || []), { data: new Date().toISOString().slice(0, 10), valor }];
+    const novosPagamentos = [...(emp.pagamentos || []), { data: dataPagamento, valor }];
     const novoTotalPago = novosPagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
     const novoStatus = novoTotalPago >= Number(emp.valor_total) - 0.01 ? "quitado" : "ativo";
     const { error } = await supabase.from("emprestimos_colaboradores").update({
@@ -1502,17 +1513,36 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
                       ≈ {parcelasEquivalentes(e)}/{e.numero_parcelas} parcelas pagas (por valor)
                     </p>
                     {e.observacao && <p className="text-xs text-slate-400 mt-1">{e.observacao}</p>}
-                    {aberto && pagamentos.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-slate-100 space-y-1">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Pagamentos registrados</p>
-                        {pagamentos.map((p, i) => (
-                          <p key={i} className="text-xs text-slate-500 flex justify-between max-w-xs">
-                            <span>{new Date(p.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
-                            <span className="font-semibold">R$ {Number(p.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-                          </p>
-                        ))}
-                      </div>
-                    )}
+                    {aberto && pagamentos.length > 0 && (() => {
+                      const verTudo = historicoCompleto.has(e.id);
+                      const invertidos = [...pagamentos].reverse();
+                      const visiveis = verTudo ? invertidos : invertidos.slice(0, 5);
+                      return (
+                        <div className="mt-2 pt-2 border-t border-slate-100 space-y-1 max-w-xs">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Pagamentos registrados ({pagamentos.length})</p>
+                          {visiveis.map((p, i) => (
+                            <p key={i} className="text-xs text-slate-500 flex justify-between">
+                              <span>{new Date(p.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                              <span className="font-semibold">R$ {Number(p.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                            </p>
+                          ))}
+                          {pagamentos.length > 5 && (
+                            <button
+                              onClick={ev => {
+                                ev.stopPropagation();
+                                setHistoricoCompleto(prev => {
+                                  const novo = new Set(prev);
+                                  verTudo ? novo.delete(e.id) : novo.add(e.id);
+                                  return novo;
+                                });
+                              }}
+                              className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition pt-1">
+                              {verTudo ? "Mostrar menos" : `Ver todos (${pagamentos.length})`}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-xs text-slate-400">Valor total</p>
@@ -1522,18 +1552,27 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
                 </div>
                 {e.status === "ativo" && (
                   pagandoId === e.id ? (
-                    <div className="flex gap-2 items-center">
-                      <input type="number" min="0" step="0.01" value={valorPagamento}
-                        onChange={ev => setValorPagamento(ev.target.value)} placeholder="0,00" autoFocus
-                        className="h-8 w-32 px-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+                    <div className="flex gap-2 items-center flex-wrap">
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase block mb-0.5">Valor</label>
+                        <input type="number" min="0" step="0.01" value={valorPagamento}
+                          onChange={ev => setValorPagamento(ev.target.value)} placeholder="0,00" autoFocus
+                          className="h-8 w-28 px-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase block mb-0.5">Data (mês de referência)</label>
+                        <input type="date" value={dataPagamento}
+                          onChange={ev => setDataPagamento(ev.target.value)}
+                          className="h-8 px-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+                      </div>
                       <button
                         onClick={() => registrarPagamento(e)}
                         disabled={registrandoId === e.id}
-                        className="h-8 px-3 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50">
+                        className="h-8 px-3 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 self-end">
                         {registrandoId === e.id ? "Salvando..." : "Confirmar"}
                       </button>
                       <button onClick={() => { setPagandoId(null); setValorPagamento(""); }}
-                        className="h-8 px-3 text-xs font-semibold text-slate-500 hover:bg-slate-50 rounded-lg transition">
+                        className="h-8 px-3 text-xs font-semibold text-slate-500 hover:bg-slate-50 rounded-lg transition self-end">
                         Cancelar
                       </button>
                     </div>
