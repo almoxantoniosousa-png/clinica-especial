@@ -418,7 +418,7 @@ const AUX_ADM: AjudaConteudo = {
   itens: [
     {
       icone: "🗓️", titulo: "Agenda Simone", mockup: "agenda-semana",
-      texto: "Organize a agenda semanal da diretora.\n\nNo topo há cartões coloridos por tipo de compromisso (Treinamento, Atend. Clínica, Atend. Casa, Atend. Escola, Espiritual, Reunião, Feriado/Livre) — clique em um para abrir o formulário de novo compromisso (data, horário e \"com quem/o quê\").\n\nAbaixo, veja a semana inteira com os compromissos já cadastrados; use o lápis/lixeira para editar ou excluir. Compromissos marcados como \"não realizados\" aparecem em vermelho com um recado pedindo remarcação.\n\nUse \"Copiar pauta\" para gerar um texto com toda a agenda da semana, pronto para colar no WhatsApp.",
+      texto: "Organize a agenda semanal da diretora.\n\nNo topo há cartões coloridos por tipo de compromisso (Treinamento, Atend. Clínica, Atend. Casa, Atend. Escola, Espiritual, Reunião, Supervisão, Feriado/Livre) — clique em um para abrir o formulário de novo compromisso (data, horário e \"com quem/o quê\").\n\nAbaixo, veja a semana inteira com os compromissos já cadastrados; use o lápis/lixeira para editar ou excluir. Compromissos marcados como \"não realizados\" aparecem em vermelho com um recado pedindo remarcação.\n\nUse \"Copiar pauta\" para gerar um texto com toda a agenda da semana, pronto para colar no WhatsApp.",
       reflexo: "Os compromissos cadastrados aqui aparecem em \"Minha Agenda\" da Simone (Gestão); quando ela marcar um compromisso como \"Não realizei\", você recebe o recado automaticamente pelo Chat para organizar a remarcação."
     },
     {

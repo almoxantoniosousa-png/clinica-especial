@@ -11,6 +11,7 @@ const CARDS: Record<string, { label: string; emoji: string; bg: string }> = {
   atend_escola:  { label: "Atend. Escola",  emoji: "🏫", bg: "bg-orange-500"  },
   espiritual:    { label: "Espiritual",     emoji: "✝️", bg: "bg-amber-500"   },
   reuniao:       { label: "Reunião",        emoji: "👥", bg: "bg-sky-500"     },
+  supervisao:    { label: "Supervisão",     emoji: "🔎", bg: "bg-indigo-500"  },
   feriado:       { label: "Feriado / Livre",emoji: "🎉", bg: "bg-rose-400"    },
 };
 

@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Trash2, X, Check, Copy, ClipboardCheck } fro
 
 // ── Cards de tipo de evento ──────────────────────────────────────────────────
 
-type Tipo = "treino" | "atend_clinica" | "atend_casa" | "atend_escola" | "espiritual" | "reuniao" | "feriado";
+type Tipo = "treino" | "atend_clinica" | "atend_casa" | "atend_escola" | "espiritual" | "reuniao" | "supervisao" | "feriado";
 
 const CARDS: {
   tipo: Tipo; label: string; emoji: string;
@@ -18,6 +18,7 @@ const CARDS: {
   { tipo: "atend_escola",  label: "Atend. Escola",  emoji: "🏫", bg: "bg-orange-500",  ring: "ring-orange-400",  placeholder: "Nome da criança / escola"       },
   { tipo: "espiritual",    label: "Espiritual",     emoji: "✝️", bg: "bg-amber-500",   ring: "ring-amber-400",   placeholder: "Ex: Reunião Sto Antônio, culto" },
   { tipo: "reuniao",       label: "Reunião",        emoji: "👥", bg: "bg-sky-500",     ring: "ring-sky-400",     placeholder: "Com quem / sobre o quê"         },
+  { tipo: "supervisao",    label: "Supervisão",     emoji: "🔎", bg: "bg-indigo-500",  ring: "ring-indigo-400",  placeholder: "Equipe / local supervisionado"  },
   { tipo: "feriado",       label: "Feriado / Livre",emoji: "🎉", bg: "bg-rose-400",    ring: "ring-rose-300",    placeholder: "Nome do feriado (opcional)"     },
 ];
 
@@ -54,6 +55,7 @@ export default function AgendaSimonePage() {
   const [eventos, setEventos]       = useState<Evento[]>([]);
   const [loading, setLoading]       = useState(true);
   const [copiado, setCopiado]       = useState(false);
+  const [historicoTitulos, setHistoricoTitulos] = useState<{ tipo: string; titulo: string }[]>([]);
 
   // Modal
   const [tipoSelecionado, setTipoSelecionado] = useState<Tipo | null>(null);
@@ -78,6 +80,21 @@ export default function AgendaSimonePage() {
   }, [diasSemana]);
 
   useEffect(() => { carregar(); }, [semanaBase]);
+
+  // Carrega uma vez só, pra sugerir (autocompletar) nomes já digitados antes — não precisa repetir "com quem" toda vez
+  useEffect(() => {
+    supabase.from("pauta_diretora").select("tipo, titulo").then(({ data }) => setHistoricoTitulos((data || []) as { tipo: string; titulo: string }[]));
+  }, []);
+
+  const sugestoesPorTipo = useMemo(() => {
+    const mapa: Record<string, string[]> = {};
+    historicoTitulos.forEach(({ tipo, titulo }) => {
+      if (!titulo) return;
+      if (!mapa[tipo]) mapa[tipo] = [];
+      if (!mapa[tipo].includes(titulo)) mapa[tipo].push(titulo);
+    });
+    return mapa;
+  }, [historicoTitulos]);
 
   async function carregar() {
     setLoading(true);
@@ -322,9 +339,12 @@ export default function AgendaSimonePage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Com quem / O quê</label>
                 <input type="text" value={comQuem} onChange={e => setComQuem(e.target.value)}
-                  placeholder={card.placeholder}
+                  placeholder={card.placeholder} list="sugestoes-com-quem"
                   className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                   autoFocus/>
+                <datalist id="sugestoes-com-quem">
+                  {(sugestoesPorTipo[tipoSelecionado!] || []).map(t => <option key={t} value={t}/>)}
+                </datalist>
               </div>
 
               {erro && <p className="text-xs text-red-500 font-medium">{erro}</p>}
