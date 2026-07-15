@@ -1467,6 +1467,7 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
     const w = window.open("", "_blank");
     if (!w) return;
     const esc = (v: string | null | undefined) => (v ?? "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const logoUrl = `${window.location.origin}/logo.png`;
     const dataPix = new Date(pagamento.data + "T12:00:00");
     const dataExtenso = dataPix.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
     const mesReferencia = dataPix.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
@@ -1478,26 +1479,34 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
       <style>
         * { box-sizing: border-box; }
         body { font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #1e293b; padding: 60px 70px; max-width: 720px; margin: auto; line-height: 1.7; }
+        .logo { display: block; width: 90px; height: 90px; object-fit: contain; margin: 0 auto 24px; }
         .titulo { text-align: center; font-style: italic; font-size: 16px; font-weight: bold; margin-bottom: 40px; }
         p { text-align: center; margin-bottom: 18px; }
+        [contenteditable="true"] { outline: none; }
+        [contenteditable="true"]:hover { background: #fffbe6; }
         .assinatura { margin-top: 60px; text-align: center; }
         .assinatura p { margin-bottom: 4px; }
-        @media print { body { padding: 40px; } }
+        .barra { max-width: 720px; margin: 0 auto 24px; text-align: center; }
+        .barra button { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; padding: 10px 20px; border-radius: 8px; border: none; background: #1e3a5f; color: white; cursor: pointer; }
+        .dica { font-family: Arial, sans-serif; font-size: 11px; color: #64748b; text-align: center; margin-bottom: 20px; }
+        @media print { .barra, .dica { display: none; } body { padding: 40px; } }
       </style>
     </head><body>
-      <p class="titulo">RECIBO DE PAGAMENTO</p>
-      <p>Recebi de ${esc(emp.colaborador_nome)}, CPF nº ${esc(emp.colaborador_cpf) || "___________________"}, a quantia de
+      <div class="barra"><button onclick="window.print()">🖨️ Imprimir / Salvar como PDF</button></div>
+      <p class="dica">Clique em qualquer texto abaixo pra editar antes de imprimir.</p>
+      <img class="logo" src="${logoUrl}" alt="Clínica Abraço"/>
+      <p class="titulo" contenteditable="true">RECIBO DE PAGAMENTO</p>
+      <p contenteditable="true">Recebi de ${esc(emp.colaborador_nome)}, CPF nº ${esc(emp.colaborador_cpf) || "___________________"}, a quantia de
       R$ ${Number(pagamento.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} referente à ${numeroParcela}ª parcela do
       empréstimo no valor total de R$ ${Number(emp.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}, conforme acordo firmado com a Clínica Abraço.</p>
-      <p>O pagamento foi realizado na data de ${dataExtenso}, correspondendo ao mês de ${mesReferencia}.</p>
-      <p>Forma de pagamento: através de link concedido pela Clínica</p>
+      <p contenteditable="true">O pagamento foi realizado na data de ${dataExtenso}, correspondendo ao mês de ${mesReferencia}.</p>
+      <p contenteditable="true">Forma de pagamento: através de link concedido pela Clínica</p>
       <div class="assinatura">
-        <p>Clínica Abraço</p>
-        <p>CNPJ: 34.864.312/0001-65</p>
-        <p>Responsável: Solange Oliveira Reis</p>
-        <p>Data: ${hoje}</p>
+        <p contenteditable="true">Clínica Abraço</p>
+        <p contenteditable="true">CNPJ: 34.864.312/0001-65</p>
+        <p contenteditable="true">Responsável: Solange Oliveira Reis</p>
+        <p contenteditable="true">Data: ${hoje}</p>
       </div>
-      <script>window.onload = () => { window.print(); }<\/script>
     </body></html>`);
     w.document.close();
   }
