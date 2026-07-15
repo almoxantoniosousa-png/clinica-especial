@@ -1036,12 +1036,12 @@ function AbaAvisos({ mostrarFeedback }: AbaProps) {
       )}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={e => { if (e.target === e.currentTarget) setModalAberto(false); }}>
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-4 flex items-center justify-between">
               <h2 className="font-bold text-white">📢 Novo Aviso</h2>
               <button onClick={() => setModalAberto(false)} className="text-white/70 hover:text-white">✕</button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="overflow-y-auto flex-1 p-6 space-y-4">
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Modelo pronto (opcional)</label>
                 <div className="flex flex-wrap gap-1.5">
@@ -1070,10 +1070,10 @@ function AbaAvisos({ mostrarFeedback }: AbaProps) {
                 <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Mensagem (opcional)</label>
                 <textarea value={conteudo} onChange={e => setConteudo(e.target.value)} placeholder="Detalhes do aviso..." rows={4} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"/>
               </div>
-              <div className="flex gap-3">
-                <button onClick={() => setModalAberto(false)} className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">Cancelar</button>
-                <button onClick={salvar} disabled={salvando || !criancaId || !titulo} className="flex-1 h-11 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">{salvando ? "Publicando..." : "Publicar"}</button>
-              </div>
+            </div>
+            <div className="flex gap-3 px-6 py-4 border-t border-slate-100 bg-white">
+              <button onClick={() => setModalAberto(false)} className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">Cancelar</button>
+              <button onClick={salvar} disabled={salvando || !criancaId || !titulo} className="flex-1 h-11 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">{salvando ? "Publicando..." : "Publicar"}</button>
             </div>
           </div>
         </div>
