@@ -160,10 +160,10 @@ export default function FamiliaDashboardPage() {
 
       {/* CONTEÚDO */}
       <div className="max-w-lg mx-auto px-4 py-6">
-        {aba === "diario"      && <AbaDiario    criancaId={crianca.id} />}
-        {aba === "comunicados" && <AbaAvisos    criancaId={crianca.id} />}
-        {aba === "momentos"    && <AbaMomentos  criancaId={crianca.id} />}
-        {aba === "evolucao"    && <AbaEvolucao  criancaId={crianca.id} />}
+        {aba === "diario"      && <AbaDiario    criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
+        {aba === "comunicados" && <AbaAvisos    criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
+        {aba === "momentos"    && <AbaMomentos  criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
+        {aba === "evolucao"    && <AbaEvolucao  criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
       </div>
     </div>
   );
@@ -172,28 +172,42 @@ export default function FamiliaDashboardPage() {
 // =============================================
 // ABA DIÁRIO — comunicados diários enviados pela supervisora
 // =============================================
-function AbaDiario({ criancaId }: { criancaId: string }) {
+function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsavelId: string }) {
   const supabase2 = useMemo(() => createSupabaseBrowserClient(), []);
   const [diarios, setDiarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [detalhe, setDetalhe] = useState<any | null>(null);
+  const [ocultando, setOcultando] = useState(false);
   const mesAtual = new Date().toISOString().slice(0, 7); // "2026-06"
   const [mesesAbertos, setMesesAbertos] = useState<Set<string>>(new Set([mesAtual]));
 
-  useEffect(() => {
-    const carregar = async () => {
-      setLoading(true);
-      const { data } = await supabase2
+  const carregar = async () => {
+    setLoading(true);
+    const [{ data }, idsOcultos] = await Promise.all([
+      supabase2
         .from("formularios_escolares")
         .select("*")
         .eq("crianca_id", criancaId)
         .eq("enviado_familia", true)
-        .order("data", { ascending: false });
-      setDiarios(data || []);
-      setLoading(false);
-    };
-    carregar();
-  }, [criancaId]);
+        .order("data", { ascending: false }),
+      carregarOcultos(supabase2, responsavelId, "diario"),
+    ]);
+    setDiarios((data || []).filter((d: any) => !idsOcultos.has(d.id)));
+    setLoading(false);
+  };
+
+  useEffect(() => { carregar(); }, [criancaId, responsavelId]);
+
+  async function ocultar(diarioId: string) {
+    if (!responsavelId) return;
+    setOcultando(true);
+    const { error } = await ocultarRegistro(supabase2, responsavelId, "diario", diarioId);
+    setOcultando(false);
+    if (!error) {
+      setDiarios(prev => prev.filter(d => d.id !== diarioId));
+      setDetalhe(null);
+    }
+  }
 
   // Agrupa registros por mês "2026-06" → array de diarios
   const porMes = useMemo(() => {
@@ -376,10 +390,14 @@ function AbaDiario({ criancaId }: { criancaId: string }) {
             <div className="overflow-y-auto flex-1 p-5">
               {renderConteudo(detalhe)}
             </div>
-            <div className="px-5 py-4 border-t border-slate-100 flex-shrink-0">
+            <div className="px-5 py-4 border-t border-slate-100 flex-shrink-0 space-y-2">
               <button onClick={() => setDetalhe(null)}
                 className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
                 Fechar
+              </button>
+              <button onClick={() => ocultar(detalhe.id)} disabled={ocultando}
+                className="w-full text-center text-xs text-slate-300 hover:text-red-400 transition disabled:opacity-50">
+                {ocultando ? "Removendo..." : "Remover da minha visualização"}
               </button>
             </div>
           </div>
@@ -407,38 +425,64 @@ function useMesesAbertos() {
   return { abertos, toggle };
 }
 
+// Ocultar (excluir só da própria visualização) — usado nas 4 abas do portal
+type Supa = ReturnType<typeof createSupabaseBrowserClient>;
+
+async function carregarOcultos(supabase2: Supa, responsavelId: string, tipo: string): Promise<Set<string>> {
+  if (!responsavelId) return new Set();
+  const { data } = await supabase2.from("portal_ocultos").select("registro_id").eq("responsavel_id", responsavelId).eq("tipo", tipo);
+  return new Set((data || []).map((o: any) => o.registro_id));
+}
+
+function ocultarRegistro(supabase2: Supa, responsavelId: string, tipo: string, registroId: string) {
+  return supabase2.from("portal_ocultos").insert({ responsavel_id: responsavelId, tipo, registro_id: registroId });
+}
+
 // =============================================
 // ABA AVISOS
 // =============================================
-function AbaAvisos({ criancaId }: { criancaId: string }) {
+function AbaAvisos({ criancaId, responsavelId }: { criancaId: string; responsavelId: string }) {
   const supabase2 = useMemo(() => createSupabaseBrowserClient(), []);
   const [avisos, setAvisos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [detalhe, setDetalhe] = useState<any | null>(null);
+  const [ocultando, setOcultando] = useState(false);
   const { abertos, toggle } = useMesesAbertos();
 
-  useEffect(() => {
-    const carregar = async () => {
-      setLoading(true);
-      const [{ data: comunicados }, { data: muralPosts }] = await Promise.all([
-        supabase2.from("portal_comunicados")
-          .select("*").eq("crianca_id", criancaId).order("created_at", { ascending: false }),
-        supabase2.from("mural")
-          .select("id, titulo, conteudo, foto_url, created_at")
-          .in("destinatario", ["familia", "todos"])
-          .order("created_at", { ascending: false })
-          .limit(20),
-      ]);
-      const muralFormatados = (muralPosts || []).map((m: any) => ({
-        ...m,
-        descricao: m.conteudo,
-        _tipo: "mural",
-      }));
-      setAvisos([...muralFormatados, ...(comunicados || [])]);
-      setLoading(false);
-    };
-    carregar();
-  }, [criancaId]);
+  const carregar = async () => {
+    setLoading(true);
+    const [{ data: comunicados }, { data: muralPosts }, ocultosComunicado, ocultosMural] = await Promise.all([
+      supabase2.from("portal_comunicados")
+        .select("*").eq("crianca_id", criancaId).order("created_at", { ascending: false }),
+      supabase2.from("mural")
+        .select("id, titulo, conteudo, foto_url, created_at")
+        .in("destinatario", ["familia", "todos"])
+        .order("created_at", { ascending: false })
+        .limit(20),
+      carregarOcultos(supabase2, responsavelId, "aviso_comunicado"),
+      carregarOcultos(supabase2, responsavelId, "aviso_mural"),
+    ]);
+    const muralFormatados = (muralPosts || [])
+      .filter((m: any) => !ocultosMural.has(m.id))
+      .map((m: any) => ({ ...m, descricao: m.conteudo, _tipo: "mural" }));
+    const comunicadosFiltrados = (comunicados || []).filter((c: any) => !ocultosComunicado.has(c.id));
+    setAvisos([...muralFormatados, ...comunicadosFiltrados]);
+    setLoading(false);
+  };
+
+  useEffect(() => { carregar(); }, [criancaId, responsavelId]);
+
+  async function ocultar(aviso: any) {
+    if (!responsavelId) return;
+    setOcultando(true);
+    const tipo = aviso._tipo === "mural" ? "aviso_mural" : "aviso_comunicado";
+    const { error } = await ocultarRegistro(supabase2, responsavelId, tipo, aviso.id);
+    setOcultando(false);
+    if (!error) {
+      setAvisos(prev => prev.filter(a => a.id !== aviso.id));
+      setDetalhe(null);
+    }
+  }
 
   const porMes = useMemo(() => {
     const mapa = new Map<string, any[]>();
@@ -510,11 +554,15 @@ function AbaAvisos({ criancaId }: { criancaId: string }) {
               </div>
               <button onClick={() => setDetalhe(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 text-white transition">✕</button>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-3">
               {detalhe.conteudo && <p className="text-sm text-slate-700 leading-relaxed">{detalhe.conteudo}</p>}
               <button onClick={() => setDetalhe(null)}
                 className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
                 Fechar
+              </button>
+              <button onClick={() => ocultar(detalhe)} disabled={ocultando}
+                className="w-full text-center text-xs text-slate-300 hover:text-red-400 transition disabled:opacity-50">
+                {ocultando ? "Removendo..." : "Remover da minha visualização"}
               </button>
             </div>
           </div>
@@ -527,23 +575,37 @@ function AbaAvisos({ criancaId }: { criancaId: string }) {
 // =============================================
 // ABA MOMENTOS
 // =============================================
-function AbaMomentos({ criancaId }: { criancaId: string }) {
+function AbaMomentos({ criancaId, responsavelId }: { criancaId: string; responsavelId: string }) {
   const supabase2 = useMemo(() => createSupabaseBrowserClient(), []);
   const [momentos, setMomentos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [foto, setFoto] = useState<string | null>(null);
+  const [momentoAberto, setMomentoAberto] = useState<any | null>(null);
+  const [ocultando, setOcultando] = useState(false);
   const { abertos, toggle } = useMesesAbertos();
 
-  useEffect(() => {
-    const carregar = async () => {
-      setLoading(true);
-      const { data } = await supabase2.from("portal_momentos")
-        .select("*").eq("crianca_id", criancaId).order("created_at", { ascending: false });
-      setMomentos(data || []);
-      setLoading(false);
-    };
-    carregar();
-  }, [criancaId]);
+  const carregar = async () => {
+    setLoading(true);
+    const [{ data }, idsOcultos] = await Promise.all([
+      supabase2.from("portal_momentos")
+        .select("*").or(`crianca_id.eq.${criancaId},crianca_id.is.null`).order("created_at", { ascending: false }),
+      carregarOcultos(supabase2, responsavelId, "momento"),
+    ]);
+    setMomentos((data || []).filter((m: any) => !idsOcultos.has(m.id)));
+    setLoading(false);
+  };
+
+  useEffect(() => { carregar(); }, [criancaId, responsavelId]);
+
+  async function ocultar(momentoId: string) {
+    if (!responsavelId) return;
+    setOcultando(true);
+    const { error } = await ocultarRegistro(supabase2, responsavelId, "momento", momentoId);
+    setOcultando(false);
+    if (!error) {
+      setMomentos(prev => prev.filter(m => m.id !== momentoId));
+      setMomentoAberto(null);
+    }
+  }
 
   const porMes = useMemo(() => {
     const mapa = new Map<string, any[]>();
@@ -586,10 +648,11 @@ function AbaMomentos({ criancaId }: { criancaId: string }) {
             <div className="border-t border-slate-100 p-3">
               <div className="grid grid-cols-2 gap-2">
                 {items.map(m => (
-                  <div key={m.id} onClick={() => setFoto(m.imagem_url)}
+                  <div key={m.id} onClick={() => setMomentoAberto(m)}
                     className="rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition border border-slate-100">
                     <img src={m.imagem_url} alt="Momento" className="w-full h-36 object-cover"/>
                     <div className="p-2 bg-white">
+                      {m.crianca_id === null && <p className="text-[10px] font-semibold text-amber-600 mb-0.5">📢 Todas as famílias</p>}
                       {m.descricao && <p className="text-xs text-slate-600 truncate">{m.descricao}</p>}
                       <p className="text-[10px] text-slate-300 mt-0.5">
                         {new Date(m.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
@@ -603,10 +666,34 @@ function AbaMomentos({ criancaId }: { criancaId: string }) {
         </div>
       ))}
 
-      {foto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4"
-          onClick={() => setFoto(null)}>
-          <img src={foto} alt="Momento" className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl object-contain"/>
+      {momentoAberto && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+          onClick={e => { if (e.target === e.currentTarget) setMomentoAberto(null); }}>
+          <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-pink-600 px-5 py-4 flex items-center justify-between">
+              <div>
+                <p className="font-bold text-white text-sm">
+                  {new Date(momentoAberto.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                </p>
+                {momentoAberto.crianca_id === null && <p className="text-pink-100 text-xs mt-0.5">📢 Todas as famílias</p>}
+              </div>
+              <button onClick={() => setMomentoAberto(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 text-white transition">✕</button>
+            </div>
+            <div className="overflow-y-auto flex-1 bg-slate-100">
+              <img src={momentoAberto.imagem_url} alt="Momento" className="w-full max-h-[55vh] object-contain bg-black"/>
+              {momentoAberto.descricao && <p className="text-sm text-slate-700 p-4">{momentoAberto.descricao}</p>}
+            </div>
+            <div className="px-5 py-4 border-t border-slate-100 bg-white space-y-2">
+              <button onClick={() => setMomentoAberto(null)}
+                className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
+                Fechar
+              </button>
+              <button onClick={() => ocultar(momentoAberto.id)} disabled={ocultando}
+                className="w-full text-center text-xs text-slate-300 hover:text-red-400 transition disabled:opacity-50">
+                {ocultando ? "Removendo..." : "Remover da minha visualização"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -616,23 +703,37 @@ function AbaMomentos({ criancaId }: { criancaId: string }) {
 // =============================================
 // ABA EVOLUÇÃO
 // =============================================
-function AbaEvolucao({ criancaId }: { criancaId: string }) {
+function AbaEvolucao({ criancaId, responsavelId }: { criancaId: string; responsavelId: string }) {
   const supabase2 = useMemo(() => createSupabaseBrowserClient(), []);
   const [evolucoes, setEvolucoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [detalhe, setDetalhe] = useState<any | null>(null);
+  const [ocultando, setOcultando] = useState(false);
   const { abertos, toggle } = useMesesAbertos();
 
-  useEffect(() => {
-    const carregar = async () => {
-      setLoading(true);
-      const { data } = await supabase2.from("portal_evolucao")
-        .select("*").eq("crianca_id", criancaId).order("created_at", { ascending: false });
-      setEvolucoes(data || []);
-      setLoading(false);
-    };
-    carregar();
-  }, [criancaId]);
+  const carregar = async () => {
+    setLoading(true);
+    const [{ data }, idsOcultos] = await Promise.all([
+      supabase2.from("portal_evolucao")
+        .select("*").eq("crianca_id", criancaId).order("created_at", { ascending: false }),
+      carregarOcultos(supabase2, responsavelId, "evolucao"),
+    ]);
+    setEvolucoes((data || []).filter((e: any) => !idsOcultos.has(e.id)));
+    setLoading(false);
+  };
+
+  useEffect(() => { carregar(); }, [criancaId, responsavelId]);
+
+  async function ocultar(evolucaoId: string) {
+    if (!responsavelId) return;
+    setOcultando(true);
+    const { error } = await ocultarRegistro(supabase2, responsavelId, "evolucao", evolucaoId);
+    setOcultando(false);
+    if (!error) {
+      setEvolucoes(prev => prev.filter(e => e.id !== evolucaoId));
+      setDetalhe(null);
+    }
+  }
 
   const porMes = useMemo(() => {
     const mapa = new Map<string, any[]>();
@@ -707,10 +808,14 @@ function AbaEvolucao({ criancaId }: { criancaId: string }) {
             <div className="overflow-y-auto flex-1 p-5">
               <p className="text-sm text-slate-700 leading-relaxed">{detalhe.conteudo}</p>
             </div>
-            <div className="px-5 py-4 border-t border-slate-100 flex-shrink-0">
+            <div className="px-5 py-4 border-t border-slate-100 flex-shrink-0 space-y-2">
               <button onClick={() => setDetalhe(null)}
                 className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
                 Fechar
+              </button>
+              <button onClick={() => ocultar(detalhe.id)} disabled={ocultando}
+                className="w-full text-center text-xs text-slate-300 hover:text-red-400 transition disabled:opacity-50">
+                {ocultando ? "Removendo..." : "Remover da minha visualização"}
               </button>
             </div>
           </div>

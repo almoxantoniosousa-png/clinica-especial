@@ -599,6 +599,7 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
   const [salvando, setSalvando] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
   const [criancaId, setCriancaId] = useState("");
+  const [paraTodos, setParaTodos] = useState(false);
   const [descricao, setDescricao] = useState("");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
@@ -618,21 +619,22 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
   useEffect(() => { carregar(); }, []);
 
   async function salvar() {
-    if (!criancaId || !fotoFile) { mostrarFeedback("erro", "Selecione a criança e uma foto."); return; }
+    if (!paraTodos && !criancaId) { mostrarFeedback("erro", "Selecione a criança ou marque 'Todas as famílias'."); return; }
+    if (!fotoFile) { mostrarFeedback("erro", "Selecione uma foto."); return; }
     setSalvando(true);
     const ext = fotoFile.name.split(".").pop();
-    const path = `momentos/${criancaId}_${Date.now()}.${ext}`;
+    const path = `momentos/${paraTodos ? "todos" : criancaId}_${Date.now()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from("fotos-criancas").upload(path, fotoFile);
     if (uploadError) { mostrarFeedback("erro", "Erro no upload: " + uploadError.message); setSalvando(false); return; }
     const { data: urlData } = supabase.storage.from("fotos-criancas").getPublicUrl(path);
-    const { data: novo, error } = await supabase.from("portal_momentos").insert({ crianca_id: criancaId, descricao, imagem_url: urlData.publicUrl }).select().single();
+    const { data: novo, error } = await supabase.from("portal_momentos").insert({ crianca_id: paraTodos ? null : criancaId, descricao, imagem_url: urlData.publicUrl }).select().single();
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser();
-      await registrarLog(supabase, { usuario_email: user?.email || "desconhecido", acao: "Publicou", tabela: "portal_momentos", registro_id: novo?.id, descricao: `Publicou momento para: ${criancas.find(c => c.id === criancaId)?.nome}` });
+      await registrarLog(supabase, { usuario_email: user?.email || "desconhecido", acao: "Publicou", tabela: "portal_momentos", registro_id: novo?.id, descricao: `Publicou momento para: ${paraTodos ? "Todas as famílias" : criancas.find(c => c.id === criancaId)?.nome}` });
     }
     setSalvando(false);
     if (error) mostrarFeedback("erro", error.message);
-    else { mostrarFeedback("sucesso", "Momento publicado!"); setModalAberto(false); setCriancaId(""); setDescricao(""); setFotoFile(null); setFotoPreview(null); carregar(); }
+    else { mostrarFeedback("sucesso", "Momento publicado!"); setModalAberto(false); setCriancaId(""); setParaTodos(false); setDescricao(""); setFotoFile(null); setFotoPreview(null); carregar(); }
   }
 
   return (
@@ -653,10 +655,19 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
               <img src={m.imagem_url} alt="Momento" className="w-full h-48 object-cover"/>
               <div className="p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="w-6 h-6 rounded-full overflow-hidden border border-slate-200">
-                    {m.criancas?.foto_url ? <img src={m.criancas.foto_url} alt="" className="w-full h-full object-cover"/> : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{m.criancas?.nome?.charAt(0)}</div>}
-                  </div>
-                  <p className="text-xs font-semibold text-slate-700">{m.criancas?.nome}</p>
+                  {m.crianca_id === null ? (
+                    <>
+                      <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-xs">📢</div>
+                      <p className="text-xs font-semibold text-amber-700">Todas as famílias</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-6 h-6 rounded-full overflow-hidden border border-slate-200">
+                        {m.criancas?.foto_url ? <img src={m.criancas.foto_url} alt="" className="w-full h-full object-cover"/> : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{m.criancas?.nome?.charAt(0)}</div>}
+                      </div>
+                      <p className="text-xs font-semibold text-slate-700">{m.criancas?.nome}</p>
+                    </>
+                  )}
                 </div>
                 {m.descricao && <p className="text-xs text-slate-500">{m.descricao}</p>}
                 <p className="text-xs text-slate-300 mt-1">{new Date(m.created_at).toLocaleDateString("pt-BR")}</p>
@@ -673,13 +684,19 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
               <button onClick={() => setModalAberto(false)} className="text-white/70 hover:text-white">✕</button>
             </div>
             <div className="p-6 space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Criança *</label>
-                <select value={criancaId} onChange={e => setCriancaId(e.target.value)} className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                  <option value="">Selecione...</option>
-                  {criancas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                </select>
-              </div>
+              <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-amber-200 bg-amber-50 cursor-pointer">
+                <input type="checkbox" checked={paraTodos} onChange={e => { setParaTodos(e.target.checked); if (e.target.checked) setCriancaId(""); }} className="w-4 h-4 accent-amber-600"/>
+                <span className="text-sm font-semibold text-amber-800">📢 Publicar para todas as famílias</span>
+              </label>
+              {!paraTodos && (
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Criança *</label>
+                  <select value={criancaId} onChange={e => setCriancaId(e.target.value)} className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="">Selecione...</option>
+                    {criancas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Foto *</label>
                 <div onClick={() => inputRef.current?.click()} className="w-full h-40 rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-400 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 hover:bg-blue-50 transition">
@@ -693,7 +710,7 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setModalAberto(false)} className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">Cancelar</button>
-                <button onClick={salvar} disabled={salvando || !criancaId || !fotoFile} className="flex-1 h-11 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">{salvando ? "Publicando..." : "Publicar"}</button>
+                <button onClick={salvar} disabled={salvando || (!paraTodos && !criancaId) || !fotoFile} className="flex-1 h-11 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">{salvando ? "Publicando..." : "Publicar"}</button>
               </div>
             </div>
           </div>
