@@ -96,6 +96,12 @@ export default function AtendimentosAtsPage() {
     return new Date(ano, mes - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   }, [mesAno]);
 
+  function mudarMes(delta: number) {
+    const [ano, mes] = mesAno.split("-").map(Number);
+    const d = new Date(ano, mes - 1 + delta, 1);
+    setMesAno(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+
   const porAtendente = useMemo(() => {
     const mapa = new Map<string, Registro[]>();
     registros.forEach((r) => {
@@ -122,10 +128,13 @@ export default function AtendimentosAtsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Atendimentos dos ATs</h1>
-          <p className="text-xs text-slate-400 mt-0.5 capitalize">{mesFormatado} · atualiza automaticamente</p>
+          <p className="text-xs text-slate-400 mt-0.5">Atualiza automaticamente</p>
         </div>
-        <input type="month" value={mesAno} onChange={(e) => setMesAno(e.target.value)}
-          className="h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white w-full sm:w-auto"/>
+        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-1.5 h-10 w-full sm:w-auto">
+          <button onClick={() => mudarMes(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition">‹</button>
+          <span className="flex-1 sm:flex-initial sm:min-w-[140px] text-center text-sm font-semibold text-slate-700 capitalize px-2">{mesFormatado}</span>
+          <button onClick={() => mudarMes(1)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition">›</button>
+        </div>
       </div>
 
       {!loading && registros.length > 0 && (

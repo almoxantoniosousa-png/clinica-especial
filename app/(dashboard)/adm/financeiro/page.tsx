@@ -8,6 +8,12 @@ import { registrarLog } from "@/lib/auditoria";
 type Aba = "contas_pagar" | "contas_receber" | "fluxo" | "emprestimos";
 type SupabaseClient = ReturnType<typeof createSupabaseBrowserClient>;
 
+const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+function anosDisponiveis() {
+  const atual = new Date().getFullYear();
+  return [atual - 1, atual, atual + 1, atual + 2];
+}
+
 type ContaPagar = {
   id: string; descricao: string; categoria: string;
   valor: number; vencimento: string; status: string;
@@ -51,6 +57,12 @@ export default function FinanceiroPage() {
     month: "long", year: "numeric",
   });
 
+  function mudarMes(delta: number) {
+    const [ano, mes] = mesAno.split("-").map(Number);
+    const d = new Date(ano, mes - 1 + delta, 1);
+    setMesAno(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+
   const abas = [
     { id: "contas_pagar",   label: "Contas a Pagar",  icon: "📤" },
     { id: "contas_receber", label: "Contas a Receber", icon: "📥" },
@@ -65,10 +77,12 @@ export default function FinanceiroPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl font-bold text-slate-900">Financeiro</h1>
-          <p className="text-xs text-slate-400 mt-0.5 capitalize">{mesFormatado}</p>
         </div>
-        <input type="month" value={mesAno} onChange={e => setMesAno(e.target.value)}
-          className="h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white w-full sm:w-auto"/>
+        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-1.5 h-10 w-full sm:w-auto">
+          <button onClick={() => mudarMes(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition">‹</button>
+          <span className="flex-1 sm:flex-initial sm:min-w-[140px] text-center text-sm font-semibold text-slate-700 capitalize px-2">{mesFormatado}</span>
+          <button onClick={() => mudarMes(1)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition">›</button>
+        </div>
       </div>
 
       {/* FEEDBACK */}
@@ -913,8 +927,18 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-500 uppercase">Mês de Referência</label>
-                  <input type="month" value={mesAnoFatura} onChange={e => setMesAnoFatura(e.target.value)}
-                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <div className="mt-1 flex gap-2">
+                    <select value={Number(mesAnoFatura.split("-")[1])}
+                      onChange={e => setMesAnoFatura(`${mesAnoFatura.split("-")[0]}-${e.target.value.padStart(2, "0")}`)}
+                      className="flex-[2] h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      {MESES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                    </select>
+                    <select value={mesAnoFatura.split("-")[0]}
+                      onChange={e => setMesAnoFatura(`${e.target.value}-${mesAnoFatura.split("-")[1]}`)}
+                      className="flex-1 h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      {anosDisponiveis().map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
 
