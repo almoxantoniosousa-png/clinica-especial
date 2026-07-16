@@ -31,6 +31,7 @@ export default function FolhaPagamentoPage() {
 
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
   const [folhas, setFolhas] = useState<Folha[]>([]);
+  const [presencas, setPresencas] = useState<Record<string, { P: number; F: number; FJ: number }>>({});
   const [loading, setLoading] = useState(true);
 
   const [modalAberto, setModalAberto] = useState(false);
@@ -66,12 +67,22 @@ export default function FolhaPagamentoPage() {
 
   async function carregarDados() {
     setLoading(true);
-    const [{ data: profs }, { data: folhasData }] = await Promise.all([
+    const inicio = `${ano}-${String(mes).padStart(2, "0")}-01`;
+    const fim = new Date(ano, mes, 0).toISOString().slice(0, 10);
+    const [{ data: profs }, { data: folhasData }, { data: presencasData }] = await Promise.all([
       supabase.from("atendentes").select("id, nome, especialidade, role").order("nome"),
       supabase.from("folha_pagamento").select("*").eq("mes", mes).eq("ano", ano),
+      supabase.from("atendimentos_especialista").select("especialista_id, status").gte("data", inicio).lte("data", fim),
     ]);
     setProfissionais(profs || []);
     setFolhas(folhasData || []);
+    const resumo: Record<string, { P: number; F: number; FJ: number }> = {};
+    (presencasData || []).forEach((p: { especialista_id: string; status: "P" | "F" | "FJ" }) => {
+      if (!p.especialista_id) return;
+      if (!resumo[p.especialista_id]) resumo[p.especialista_id] = { P: 0, F: 0, FJ: 0 };
+      resumo[p.especialista_id][p.status] += 1;
+    });
+    setPresencas(resumo);
     setLoading(false);
   }
 
@@ -278,6 +289,16 @@ export default function FolhaPagamentoPage() {
             <div>
               <p className="font-semibold text-slate-800 text-sm">{prof?.nome || "—"}</p>
               <p className="text-xs text-slate-400">{prof?.especialidade || prof?.role}</p>
+              {prof?.role === "especialista" && (
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  <span className="text-emerald-600 font-semibold">{presencas[prof.id]?.P ?? 0} presenças</span>
+                  {" · "}
+                  <span className="text-red-500">{presencas[prof.id]?.F ?? 0} faltas</span>
+                  {" · "}
+                  <span className="text-slate-400">{presencas[prof.id]?.FJ ?? 0} justificadas</span>
+                  {" no mês"}
+                </p>
+              )}
             </div>
           </div>
 
@@ -430,9 +451,18 @@ export default function FolhaPagamentoPage() {
       {profsSemFolha.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
           <span className="text-amber-500 text-lg">⚠️</span>
-          <div>
+          <div className="space-y-1">
             <p className="text-sm font-semibold text-amber-800">Profissionais sem lançamento em {MESES[mes-1]}:</p>
-            <p className="text-sm text-amber-700 mt-1">{profsSemFolha.map(p => p.nome).join(", ")}</p>
+            {profsSemFolha.map(p => (
+              <p key={p.id} className="text-sm text-amber-700">
+                {p.nome}
+                {p.role === "especialista" && (
+                  <span className="text-amber-600 font-medium">
+                    {" — "}{presencas[p.id]?.P ?? 0} presenças · {presencas[p.id]?.F ?? 0} faltas · {presencas[p.id]?.FJ ?? 0} justificadas
+                  </span>
+                )}
+              </p>
+            ))}
           </div>
         </div>
       )}

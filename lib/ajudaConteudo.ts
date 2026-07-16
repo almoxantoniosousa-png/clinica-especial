@@ -90,7 +90,7 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "💵", titulo: "Folha de Pagamento (Financeiro)", mockup: "financeiro",
-      texto: "Controle do pagamento da equipe por período (mês/quinzena).\n\nAcompanhe os valores de cada colaborador, marque como pago, edite valores quando necessário, e use o ícone da impressora para gerar o holerite individual em PDF.",
+      texto: "Controle do pagamento da equipe por período (mês/quinzena).\n\nAcompanhe os valores de cada colaborador, marque como pago, edite valores quando necessário, e use o ícone da impressora para gerar o holerite individual em PDF.\n\nPara as especialistas, cada card já mostra quantas presenças, faltas e faltas justificadas ela teve no mês (vindo do que ela marcou em \"Minha Escala\") — ajuda a decidir o valor antes de lançar, sem precisar checar em outra tela.",
       reflexo: "O pagamento marcado aqui também fica registrado na Auditoria, e o holerite gerado pode ser entregue ao colaborador."
     },
     {
