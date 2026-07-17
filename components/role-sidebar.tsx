@@ -90,6 +90,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
   const menuAdmin = [
     { href: "/adm/dashboard",    label: "Dashboard",  icon: "📊" },
+    { href: "/adm/agenda-pessoal", label: "Minha Agenda", icon: "🗓️" },
     { href: "/adm/criancas",     label: "Crianças",   icon: "👶" },
     { href: "/adm/escolas",      label: "Escolas",    icon: "🏫" },
     { href: "/adm/responsaveis", label: "Família",    icon: "👨‍👩‍👧" },

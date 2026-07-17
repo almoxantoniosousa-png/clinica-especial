@@ -25,6 +25,11 @@ const ADM: AjudaConteudo = {
       texto: "Tela inicial com os indicadores do dia: atendimentos de hoje, valores aguardando pagamento, custo acumulado no mês e atendimentos já pagos.\n\nMostra também os aniversariantes do mês (com destaque para quem faz aniversário hoje ou nos próximos 7 dias) e gráficos de custo por dia, atendimentos por semana, receita vs. despesa, planos de saúde das crianças e ranking dos profissionais mais ativos.\n\nOs dados são atualizados automaticamente sempre que a página é aberta."
     },
     {
+      icone: "🗓️", titulo: "Minha Agenda", mockup: "agenda-semana",
+      texto: "Sua agenda pessoal e privada — ninguém mais no sistema consegue ver ou mexer nela, nem outro ADM. Mistura compromissos profissionais e particulares no mesmo lugar (reunião, cabeleireiro, aniversário de família, o que for).\n\nClique num dia da semana pra ver os compromissos dele, organizados por Manhã/Tarde/Noite. Use \"+ Novo compromisso\" pra cadastrar: data, horário (opcional), título, categoria (Clínica, Família, Pessoal ou Importante — cada uma com uma cor) e uma observação. Marque um lembrete (10 min, 30 min, 1h ou 1 dia antes) e o sistema te avisa na hora certa, em qualquer tela que você estiver — aparece um aviso 🔔 no canto da tela.",
+      reflexo: "É só sua — não aparece pra Gestão, Supervisora nem ninguém mais. Diferente da Escala Administrativa, que é sobre horário de trabalho da equipe, essa aqui é sobre a sua vida."
+    },
+    {
       icone: "👶", titulo: "Crianças", mockup: "lista-cards",
       texto: "Lista de todas as crianças atendidas pela clínica, com cadastro completo: dados pessoais, filiação (nome da mãe e do pai), responsável, escola, série escolar, plano de saúde, diagnóstico/CID, alergias e medicações.\n\nClique no lápis para editar os dados de uma criança, na lixeira para excluir (pede confirmação) e no botão \"Ficha\" para gerar a ficha completa da criança pronta para impressão/PDF.",
       reflexo: "A criança cadastrada aqui passa a aparecer para a Gestão (lista de Crianças) e para os Atendentes e Especialistas, que podem selecioná-la ao registrar atendimentos, comunicados e prontuários."

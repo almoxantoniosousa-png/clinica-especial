@@ -1,5 +1,6 @@
 import { RoleSidebar } from "@/components/role-sidebar";
 import { FloatingContact } from "@/components/floating-contact";
+import { LembretesAgendaPessoal } from "@/components/lembretes-agenda-pessoal";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 
@@ -77,6 +78,7 @@ export default async function DashboardLayout({
         </main>
       </div>
       <FloatingContact />
+      {(roleFinal === "adm" || roleFinal === "admin") && <LembretesAgendaPessoal email={user.email || ""} />}
     </div>
   );
 }
