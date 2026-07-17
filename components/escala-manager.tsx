@@ -102,6 +102,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
   const [deletandoLabel, setDeletandoLabel] = useState("");
   const [excluindo, setExcluindo] = useState(false);
+  const [erroExclusao, setErroExclusao] = useState("");
 
   const dia = DIAS[diaAtivo];
 
@@ -218,11 +219,16 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   async function excluir() {
     if (!deletandoId) return;
     setExcluindo(true);
-    await supabase.from("escala").delete().eq("id", deletandoId);
+    setErroExclusao("");
+    const { error } = await supabase.from("escala").delete().eq("id", deletandoId);
+    setExcluindo(false);
+    if (error) {
+      setErroExclusao("Não foi possível remover. Tente novamente.");
+      return;
+    }
     setSlots((prev) => prev.filter((s) => s.id !== deletandoId));
     setDeletandoId(null);
     setDeletandoLabel("");
-    setExcluindo(false);
   }
 
   const slotsDoDia = slots.filter((s) => {
@@ -413,9 +419,12 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 <p className="text-xs text-slate-400 mt-1">Esta ação não pode ser desfeita.</p>
               </div>
             </div>
+            {erroExclusao && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-center">{erroExclusao}</p>
+            )}
             <div className="flex gap-3">
               <button
-                onClick={() => { setDeletandoId(null); setDeletandoLabel(""); }}
+                onClick={() => { setDeletandoId(null); setDeletandoLabel(""); setErroExclusao(""); }}
                 disabled={excluindo}
                 className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
               >

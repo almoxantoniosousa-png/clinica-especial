@@ -4,13 +4,18 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer"; // Certifique
 
 const PUBLIC_PATHS = ["/login"];
 
+// Prefixos de telas da equipe — uma conta de família nunca deveria
+// conseguir abrir (evita telas quebradas por RLS e fecha a navegação
+// direta por URL para áreas administrativas/clínicas).
+const PREFIXOS_STAFF = ["/adm", "/especialista", "/supervisora", "/gestao", "/atendente", "/auxiliar"];
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   // 1. Libera caminhos públicos e arquivos estáticos
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
-  const isStaticFile = pathname.includes('_next') || 
-                       pathname.includes('favicon') || 
+  const isStaticFile = pathname.includes('_next') ||
+                       pathname.includes('favicon') ||
                        pathname.includes('api/');
 
   if (isPublicPath || isStaticFile) {
@@ -27,6 +32,18 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  // 4. Conta de família tentando abrir uma tela da equipe (por link direto,
+  // favorito antigo etc.) — manda de volta pro próprio portal.
+  if (user.email && PREFIXOS_STAFF.some((p) => pathname.startsWith(p))) {
+    const { data: usuario } = await supabase.from("usuarios").select("role").eq("email", user.email).maybeSingle();
+    const role = (usuario?.role || "").toString().trim().toLowerCase();
+    if (role === "familia") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/familia";
+      return NextResponse.redirect(url);
+    }
   }
 
   return NextResponse.next();
