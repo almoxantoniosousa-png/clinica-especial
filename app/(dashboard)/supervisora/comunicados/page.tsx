@@ -998,6 +998,7 @@ function AbaAvisos({ mostrarFeedback }: AbaProps) {
   const [criancaId, setCriancaId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [conteudo, setConteudo] = useState("");
+  const [modeloSelecionado, setModeloSelecionado] = useState<string | null>(null);
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
   const [excluindo, setExcluindo] = useState(false);
 
@@ -1024,7 +1025,7 @@ function AbaAvisos({ mostrarFeedback }: AbaProps) {
     }
     setSalvando(false);
     if (error) mostrarFeedback("erro", error.message);
-    else { mostrarFeedback("sucesso", "Aviso publicado!"); setModalAberto(false); setCriancaId(""); setTitulo(""); setConteudo(""); carregar(); }
+    else { mostrarFeedback("sucesso", "Aviso publicado!"); setModalAberto(false); setCriancaId(""); setTitulo(""); setConteudo(""); setModeloSelecionado(null); carregar(); }
   }
 
   async function deletar() {
@@ -1039,7 +1040,7 @@ function AbaAvisos({ mostrarFeedback }: AbaProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500">{avisos.length} aviso{avisos.length !== 1 ? "s" : ""}</p>
-        <button onClick={() => setModalAberto(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition">📢 Novo aviso</button>
+        <button onClick={() => { setModeloSelecionado(null); setModalAberto(true); }} className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition">📢 Novo aviso</button>
       </div>
       {loading ? <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
       : avisos.length === 0 ? (
@@ -1090,12 +1091,20 @@ function AbaAvisos({ mostrarFeedback }: AbaProps) {
                 <div className="flex flex-wrap gap-1.5">
                   {MODELOS_AVISO.map(m => (
                     <button key={m.label} type="button"
-                      onClick={() => { setTitulo(m.titulo); setConteudo(m.conteudo); }}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-slate-200 text-xs font-medium text-slate-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition">
+                      onClick={() => { setModeloSelecionado(m.label); setTitulo(m.titulo); setConteudo(m.conteudo); }}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full border text-xs font-medium transition ${
+                        modeloSelecionado === m.label
+                          ? "bg-blue-900 border-blue-900 text-white"
+                          : "border-slate-200 text-slate-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700"
+                      }`}>
                       <span>{m.icone}</span>{m.label}
+                      {modeloSelecionado === m.label && <span className="ml-0.5">✓</span>}
                     </button>
                   ))}
                 </div>
+                {modeloSelecionado && (
+                  <p className="text-[11px] text-blue-700 font-semibold mt-1.5">✓ Modelo "{modeloSelecionado}" aplicado — título e mensagem preenchidos abaixo.</p>
+                )}
                 <p className="text-[10px] text-slate-400 mt-1">Escolher um modelo preenche título e mensagem — os trechos entre [colchetes] precisam ser substituídos antes de publicar.</p>
               </div>
               <div>
