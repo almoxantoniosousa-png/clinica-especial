@@ -27,11 +27,11 @@ const LOCAIS_ATENDIMENTO: { tipo: Tipo; label: string }[] = [
 const CARDS: CardDef[] = [
   // Agenda da Clínica
   { tipo: "atend_clinica",    label: "Atendimento",      emoji: "🏥", bg: "bg-blue-500",    ring: "ring-blue-400",    placeholder: "Nome da criança / paciente",     grupo: "clinica" },
-  { tipo: "treino",           label: "Treinamento",      emoji: "🏋️", bg: "bg-emerald-500", ring: "ring-emerald-400", placeholder: "Nome do instrutor ou local",     grupo: "clinica" },
   { tipo: "supervisao",       label: "Supervisão",       emoji: "🔎", bg: "bg-indigo-500",  ring: "ring-indigo-400",  placeholder: "Equipe / local supervisionado",  grupo: "clinica" },
   // "Reunião" não é mais um card — vira só um texto/título dentro de qualquer outra categoria.
   { tipo: "reuniao",          label: "Reunião",          emoji: "👥", bg: "bg-sky-500",     ring: "ring-sky-400",     placeholder: "Com quem / sobre o quê",         grupo: "clinica", oculto: true },
   // Agenda Pessoal
+  { tipo: "treino",           label: "Treinamento",      emoji: "🏋️", bg: "bg-emerald-500", ring: "ring-emerald-400", placeholder: "Nome do instrutor ou local",     grupo: "pessoal" },
   { tipo: "espiritual",       label: "Espiritual",       emoji: "✝️", bg: "bg-amber-500",   ring: "ring-amber-400",   placeholder: "Ex: Reunião Sto Antônio, culto", grupo: "pessoal" },
   { tipo: "atividade_fisica", label: "Atividade Física", emoji: "🏃‍♀️", bg: "bg-teal-500",   ring: "ring-teal-400",    placeholder: "Ex: Academia, pilates, corrida", grupo: "pessoal" },
   { tipo: "medico",           label: "Médico",           emoji: "🩺", bg: "bg-red-400",     ring: "ring-red-300",     placeholder: "Especialidade / clínica",        grupo: "pessoal" },
