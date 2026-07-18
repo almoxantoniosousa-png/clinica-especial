@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, ChevronRight, Trash2, X, Check, Copy, ClipboardCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Trash2, X, Check, Copy, ClipboardCheck } from "lucide-react";
 
 // ── Cards de tipo de evento ──────────────────────────────────────────────────
 
@@ -87,6 +87,7 @@ function fmt(dia: string) {
 
 export default function AgendaSimonePage() {
   const [semanaBase, setSemanaBase] = useState<Date>(() => getSegunda(new Date()));
+  const [grupoAberto, setGrupoAberto] = useState<"clinica" | "pessoal" | null>(null);
   const [eventos, setEventos]       = useState<Evento[]>([]);
   const [loading, setLoading]       = useState(true);
   const [copiado, setCopiado]       = useState(false);
@@ -224,32 +225,34 @@ export default function AgendaSimonePage() {
         </button>
       </div>
 
-      {/* Cards de grupo — cada um reúne seus tipos dentro, em formato enxuto (chips) */}
+      {/* Cards de grupo — clique abre e mostra os tipos dentro */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-3 space-y-2">
-          <p className="text-xs font-bold text-blue-900">🏥 Agenda da Clínica</p>
-          <div className="flex flex-wrap gap-1.5">
-            {CARDS_CLINICA.map(c => (
-              <button key={c.tipo} onClick={() => abrirNovo(c.tipo)}
-                className={`${c.bg} text-white rounded-full pl-2 pr-3 py-1.5 flex items-center gap-1.5 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
-                <span className="text-sm">{c.emoji}</span>
-                <span className="text-xs font-bold leading-tight">{c.label}</span>
+        {([
+          { id: "clinica" as const, label: "Agenda da Clínica", emoji: "🏥", border: "border-blue-100", bg: "bg-blue-50/50", text: "text-blue-900", cards: CARDS_CLINICA },
+          { id: "pessoal" as const, label: "Agenda Pessoal",     emoji: "🤍", border: "border-rose-100", bg: "bg-rose-50/50", text: "text-rose-900", cards: CARDS_PESSOAL },
+        ]).map(grupo => {
+          const aberto = grupoAberto === grupo.id;
+          return (
+            <div key={grupo.id} className={`rounded-2xl border ${grupo.border} ${grupo.bg} p-3 space-y-3 ${aberto ? "sm:col-span-2" : ""}`}>
+              <button onClick={() => setGrupoAberto(aberto ? null : grupo.id)}
+                className="w-full flex items-center justify-between">
+                <span className={`text-sm font-bold ${grupo.text}`}>{grupo.emoji} {grupo.label}</span>
+                <ChevronDown className={`h-4 w-4 ${grupo.text} transition-transform ${aberto ? "rotate-180" : ""}`}/>
               </button>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-3 space-y-2">
-          <p className="text-xs font-bold text-rose-900">🤍 Agenda Pessoal</p>
-          <div className="flex flex-wrap gap-1.5">
-            {CARDS_PESSOAL.map(c => (
-              <button key={c.tipo} onClick={() => abrirNovo(c.tipo)}
-                className={`${c.bg} text-white rounded-full pl-2 pr-3 py-1.5 flex items-center gap-1.5 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
-                <span className="text-sm">{c.emoji}</span>
-                <span className="text-xs font-bold leading-tight">{c.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+              {aberto && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {grupo.cards.map(c => (
+                    <button key={c.tipo} onClick={() => abrirNovo(c.tipo)}
+                      className={`${c.bg} text-white rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
+                      <span className="text-2xl">{c.emoji}</span>
+                      <span className="text-sm font-bold leading-tight">{c.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Navegação de semana */}
