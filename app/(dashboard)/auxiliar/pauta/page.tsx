@@ -224,28 +224,28 @@ export default function AgendaSimonePage() {
         </button>
       </div>
 
-      {/* Cards de tipo — agrupados */}
-      <div className="space-y-4">
-        <div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">🏥 Agenda da Clínica</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Cards de grupo — cada um reúne seus tipos dentro, em formato enxuto (chips) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-3 space-y-2">
+          <p className="text-xs font-bold text-blue-900">🏥 Agenda da Clínica</p>
+          <div className="flex flex-wrap gap-1.5">
             {CARDS_CLINICA.map(c => (
               <button key={c.tipo} onClick={() => abrirNovo(c.tipo)}
-                className={`${c.bg} text-white rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
-                <span className="text-2xl">{c.emoji}</span>
-                <span className="text-sm font-bold leading-tight">{c.label}</span>
+                className={`${c.bg} text-white rounded-full pl-2 pr-3 py-1.5 flex items-center gap-1.5 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
+                <span className="text-sm">{c.emoji}</span>
+                <span className="text-xs font-bold leading-tight">{c.label}</span>
               </button>
             ))}
           </div>
         </div>
-        <div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">🤍 Agenda Pessoal</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-3 space-y-2">
+          <p className="text-xs font-bold text-rose-900">🤍 Agenda Pessoal</p>
+          <div className="flex flex-wrap gap-1.5">
             {CARDS_PESSOAL.map(c => (
               <button key={c.tipo} onClick={() => abrirNovo(c.tipo)}
-                className={`${c.bg} text-white rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
-                <span className="text-2xl">{c.emoji}</span>
-                <span className="text-sm font-bold leading-tight">{c.label}</span>
+                className={`${c.bg} text-white rounded-full pl-2 pr-3 py-1.5 flex items-center gap-1.5 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
+                <span className="text-sm">{c.emoji}</span>
+                <span className="text-xs font-bold leading-tight">{c.label}</span>
               </button>
             ))}
           </div>
