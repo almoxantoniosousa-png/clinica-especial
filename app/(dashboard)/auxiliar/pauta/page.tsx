@@ -6,24 +6,59 @@ import { ChevronLeft, ChevronRight, Trash2, X, Check, Copy, ClipboardCheck } fro
 
 // ── Cards de tipo de evento ──────────────────────────────────────────────────
 
-type Tipo = "treino" | "atend_clinica" | "atend_casa" | "atend_escola" | "espiritual" | "reuniao" | "supervisao" | "feriado";
+type Tipo =
+  | "treino" | "atend_clinica" | "atend_casa" | "atend_escola" | "reuniao" | "supervisao"
+  | "espiritual" | "atividade_fisica" | "medico" | "salao" | "pet" | "feriado";
 
-const CARDS: {
+type CardDef = {
   tipo: Tipo; label: string; emoji: string;
-  bg: string; ring: string; placeholder: string;
-}[] = [
-  { tipo: "treino",        label: "Treinamento",    emoji: "🏋️", bg: "bg-emerald-500", ring: "ring-emerald-400", placeholder: "Nome do instrutor ou local"     },
-  { tipo: "atend_clinica", label: "Atend. Clínica", emoji: "🏥", bg: "bg-blue-500",    ring: "ring-blue-400",    placeholder: "Nome da criança / paciente"     },
-  { tipo: "atend_casa",    label: "Atend. Casa",    emoji: "🏠", bg: "bg-violet-500",  ring: "ring-violet-400",  placeholder: "Nome da criança / endereço"     },
-  { tipo: "atend_escola",  label: "Atend. Escola",  emoji: "🏫", bg: "bg-orange-500",  ring: "ring-orange-400",  placeholder: "Nome da criança / escola"       },
-  { tipo: "espiritual",    label: "Espiritual",     emoji: "✝️", bg: "bg-amber-500",   ring: "ring-amber-400",   placeholder: "Ex: Reunião Sto Antônio, culto" },
-  { tipo: "reuniao",       label: "Reunião",        emoji: "👥", bg: "bg-sky-500",     ring: "ring-sky-400",     placeholder: "Com quem / sobre o quê"         },
-  { tipo: "supervisao",    label: "Supervisão",     emoji: "🔎", bg: "bg-indigo-500",  ring: "ring-indigo-400",  placeholder: "Equipe / local supervisionado"  },
-  { tipo: "feriado",       label: "Feriado / Livre",emoji: "🎉", bg: "bg-rose-400",    ring: "ring-rose-300",    placeholder: "Nome do feriado (opcional)"     },
+  bg: string; ring: string; placeholder: string; grupo: "clinica" | "pessoal";
+  oculto?: boolean; // não aparece como card na grade, só existe pra eventos já salvos com esse tipo
+};
+
+// "Atendimento" é um card só (era 3: Clínica/Casa/Escola) — o local vira um
+// seletor dentro do modal, pra não ocupar 3 espaços na grade.
+const LOCAIS_ATENDIMENTO: { tipo: Tipo; label: string }[] = [
+  { tipo: "atend_clinica", label: "Clínica" },
+  { tipo: "atend_casa",    label: "Casa" },
+  { tipo: "atend_escola",  label: "Escola" },
 ];
 
+const CARDS: CardDef[] = [
+  // Agenda da Clínica
+  { tipo: "atend_clinica",    label: "Atendimento",      emoji: "🏥", bg: "bg-blue-500",    ring: "ring-blue-400",    placeholder: "Nome da criança / paciente",     grupo: "clinica" },
+  { tipo: "treino",           label: "Treinamento",      emoji: "🏋️", bg: "bg-emerald-500", ring: "ring-emerald-400", placeholder: "Nome do instrutor ou local",     grupo: "clinica" },
+  { tipo: "supervisao",       label: "Supervisão",       emoji: "🔎", bg: "bg-indigo-500",  ring: "ring-indigo-400",  placeholder: "Equipe / local supervisionado",  grupo: "clinica" },
+  // "Reunião" não é mais um card — vira só um texto/título dentro de qualquer outra categoria.
+  { tipo: "reuniao",          label: "Reunião",          emoji: "👥", bg: "bg-sky-500",     ring: "ring-sky-400",     placeholder: "Com quem / sobre o quê",         grupo: "clinica", oculto: true },
+  // Agenda Pessoal
+  { tipo: "espiritual",       label: "Espiritual",       emoji: "✝️", bg: "bg-amber-500",   ring: "ring-amber-400",   placeholder: "Ex: Reunião Sto Antônio, culto", grupo: "pessoal" },
+  { tipo: "atividade_fisica", label: "Atividade Física", emoji: "🏃‍♀️", bg: "bg-teal-500",   ring: "ring-teal-400",    placeholder: "Ex: Academia, pilates, corrida", grupo: "pessoal" },
+  { tipo: "medico",           label: "Médico",           emoji: "🩺", bg: "bg-red-400",     ring: "ring-red-300",     placeholder: "Especialidade / clínica",        grupo: "pessoal" },
+  { tipo: "salao",            label: "Salão",            emoji: "💇‍♀️", bg: "bg-pink-500",   ring: "ring-pink-400",    placeholder: "Nome do salão / serviço",        grupo: "pessoal" },
+  { tipo: "pet",              label: "Pet",              emoji: "🐾", bg: "bg-orange-400",  ring: "ring-orange-300",  placeholder: "Nome do pet / o que é",          grupo: "pessoal" },
+  { tipo: "feriado",          label: "Feriado / Livre",  emoji: "🎉", bg: "bg-rose-400",    ring: "ring-rose-300",    placeholder: "Nome do feriado (opcional)",     grupo: "pessoal" },
+];
+
+const CARDS_CLINICA = CARDS.filter(c => c.grupo === "clinica" && !c.oculto);
+const CARDS_PESSOAL = CARDS.filter(c => c.grupo === "pessoal" && !c.oculto);
+
+function ehAtendimento(tipo: string) {
+  return tipo === "atend_clinica" || tipo === "atend_casa" || tipo === "atend_escola";
+}
+
+function localAtendimento(tipo: string) {
+  return LOCAIS_ATENDIMENTO.find(l => l.tipo === tipo)?.label ?? null;
+}
+
+// Eventos antigos salvos como atend_casa/atend_escola continuam existindo —
+// mostram com a cara do card "Atendimento" (unificado), só o local muda.
 function cardInfo(tipo: string) {
-  return CARDS.find(c => c.tipo === tipo) ?? { label: tipo, emoji: "📋", bg: "bg-slate-400", ring: "ring-slate-300", placeholder: "" };
+  if (ehAtendimento(tipo)) {
+    const base = CARDS.find(c => c.tipo === "atend_clinica")!;
+    return base;
+  }
+  return CARDS.find(c => c.tipo === tipo) ?? { label: tipo, emoji: "📋", bg: "bg-slate-400", ring: "ring-slate-300", placeholder: "", grupo: "clinica" as const };
 }
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
@@ -189,15 +224,32 @@ export default function AgendaSimonePage() {
         </button>
       </div>
 
-      {/* Cards de tipo */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {CARDS.map(c => (
-          <button key={c.tipo} onClick={() => abrirNovo(c.tipo)}
-            className={`${c.bg} text-white rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
-            <span className="text-2xl">{c.emoji}</span>
-            <span className="text-sm font-bold leading-tight">{c.label}</span>
-          </button>
-        ))}
+      {/* Cards de tipo — agrupados */}
+      <div className="space-y-4">
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">🏥 Agenda da Clínica</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {CARDS_CLINICA.map(c => (
+              <button key={c.tipo} onClick={() => abrirNovo(c.tipo)}
+                className={`${c.bg} text-white rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
+                <span className="text-2xl">{c.emoji}</span>
+                <span className="text-sm font-bold leading-tight">{c.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">🤍 Agenda Pessoal</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {CARDS_PESSOAL.map(c => (
+              <button key={c.tipo} onClick={() => abrirNovo(c.tipo)}
+                className={`${c.bg} text-white rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
+                <span className="text-2xl">{c.emoji}</span>
+                <span className="text-sm font-bold leading-tight">{c.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Navegação de semana */}
@@ -254,9 +306,14 @@ export default function AgendaSimonePage() {
                             {c.emoji}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-semibold truncate ${realizado ? "line-through text-slate-400" : "text-slate-800"}`}>
-                              {ev.titulo}
-                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <p className={`text-sm font-semibold truncate ${realizado ? "line-through text-slate-400" : "text-slate-800"}`}>
+                                {ev.titulo}
+                              </p>
+                              {localAtendimento(ev.tipo) && (
+                                <span className="text-[10px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-full flex-shrink-0">{localAtendimento(ev.tipo)}</span>
+                              )}
+                            </div>
                             {(ev.hora || ev.hora_fim) && (
                               <p className="text-xs text-slate-400">
                                 {ev.hora}{ev.hora_fim ? ` às ${ev.hora_fim}` : ""}
@@ -315,6 +372,23 @@ export default function AgendaSimonePage() {
             </div>
 
             <div className="p-5 space-y-4">
+
+              {/* Local (só para Atendimento) */}
+              {ehAtendimento(tipoSelecionado!) && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Local do atendimento</label>
+                  <div className="flex gap-2">
+                    {LOCAIS_ATENDIMENTO.map(l => (
+                      <button key={l.tipo} type="button" onClick={() => setTipoSelecionado(l.tipo)}
+                        className={`flex-1 h-10 rounded-xl text-sm font-semibold border transition ${
+                          tipoSelecionado === l.tipo ? `${card.bg} text-white border-transparent` : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                        }`}>
+                        {l.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Data */}
               <div className="space-y-1.5">

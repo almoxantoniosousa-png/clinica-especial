@@ -5,15 +5,21 @@ import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, ChevronRight, Check, X, MessageSquare } from "lucide-react";
 
 const CARDS: Record<string, { label: string; emoji: string; bg: string }> = {
-  treino:        { label: "Treinamento",    emoji: "🏋️", bg: "bg-emerald-500" },
-  atend_clinica: { label: "Atend. Clínica", emoji: "🏥", bg: "bg-blue-500"    },
-  atend_casa:    { label: "Atend. Casa",    emoji: "🏠", bg: "bg-violet-500"  },
-  atend_escola:  { label: "Atend. Escola",  emoji: "🏫", bg: "bg-orange-500"  },
-  espiritual:    { label: "Espiritual",     emoji: "✝️", bg: "bg-amber-500"   },
-  reuniao:       { label: "Reunião",        emoji: "👥", bg: "bg-sky-500"     },
-  supervisao:    { label: "Supervisão",     emoji: "🔎", bg: "bg-indigo-500"  },
-  feriado:       { label: "Feriado / Livre",emoji: "🎉", bg: "bg-rose-400"    },
+  treino:           { label: "Treinamento",      emoji: "🏋️", bg: "bg-emerald-500" },
+  atend_clinica:    { label: "Atendimento",      emoji: "🏥", bg: "bg-blue-500"    },
+  atend_casa:       { label: "Atendimento",      emoji: "🏥", bg: "bg-blue-500"    },
+  atend_escola:     { label: "Atendimento",      emoji: "🏥", bg: "bg-blue-500"    },
+  espiritual:       { label: "Espiritual",       emoji: "✝️", bg: "bg-amber-500"   },
+  atividade_fisica: { label: "Atividade Física", emoji: "🏃‍♀️", bg: "bg-teal-500"   },
+  medico:           { label: "Médico",           emoji: "🩺", bg: "bg-red-400"     },
+  salao:            { label: "Salão",            emoji: "💇‍♀️", bg: "bg-pink-500"   },
+  pet:               { label: "Pet",              emoji: "🐾", bg: "bg-orange-400"  },
+  reuniao:          { label: "Reunião",          emoji: "👥", bg: "bg-sky-500"     },
+  supervisao:       { label: "Supervisão",       emoji: "🔎", bg: "bg-indigo-500"  },
+  feriado:          { label: "Feriado / Livre",  emoji: "🎉", bg: "bg-rose-400"    },
 };
+
+const LOCAL_ATENDIMENTO: Record<string, string> = { atend_casa: "Casa", atend_escola: "Escola", atend_clinica: "Clínica" };
 
 function info(tipo: string) {
   return CARDS[tipo] ?? { label: tipo, emoji: "📋", bg: "bg-slate-400" };
@@ -198,9 +204,14 @@ export default function MinhaAgendaPage() {
                             {c.emoji}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-semibold truncate ${realizado ? "line-through text-slate-400" : "text-slate-800"}`}>
-                              {ev.titulo}
-                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <p className={`text-sm font-semibold truncate ${realizado ? "line-through text-slate-400" : "text-slate-800"}`}>
+                                {ev.titulo}
+                              </p>
+                              {LOCAL_ATENDIMENTO[ev.tipo] && (
+                                <span className="text-[10px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-full flex-shrink-0">{LOCAL_ATENDIMENTO[ev.tipo]}</span>
+                              )}
+                            </div>
                             {(ev.hora || ev.hora_fim) && (
                               <p className="text-xs text-slate-400">
                                 {ev.hora}{ev.hora_fim ? ` às ${ev.hora_fim}` : ""}
