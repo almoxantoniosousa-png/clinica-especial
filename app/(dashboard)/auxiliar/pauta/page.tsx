@@ -31,7 +31,8 @@ const CARDS: CardDef[] = [
   // "Reunião" não é mais um card — vira só um texto/título dentro de qualquer outra categoria.
   { tipo: "reuniao",          label: "Reunião",          emoji: "👥", bg: "bg-sky-500",     ring: "ring-sky-400",     placeholder: "Com quem / sobre o quê",         grupo: "clinica", oculto: true },
   // Agenda Pessoal
-  { tipo: "treino",           label: "Treinamento",      emoji: "🏋️", bg: "bg-emerald-500", ring: "ring-emerald-400", placeholder: "Nome do instrutor ou local",     grupo: "pessoal" },
+  // "Treinamento" (tipo "treino") foi unificado com "Atividade Física" — não é
+  // mais um card; eventos antigos salvos com esse tipo são tratados em cardInfo().
   { tipo: "espiritual",       label: "Espiritual",       emoji: "✝️", bg: "bg-amber-500",   ring: "ring-amber-400",   placeholder: "Ex: Reunião Sto Antônio, culto", grupo: "pessoal" },
   { tipo: "atividade_fisica", label: "Atividade Física", emoji: "🏃‍♀️", bg: "bg-teal-500",   ring: "ring-teal-400",    placeholder: "Ex: Academia, pilates, corrida", grupo: "pessoal" },
   { tipo: "medico",           label: "Médico",           emoji: "🩺", bg: "bg-red-400",     ring: "ring-red-300",     placeholder: "Especialidade / clínica",        grupo: "pessoal" },
@@ -53,10 +54,14 @@ function localAtendimento(tipo: string) {
 
 // Eventos antigos salvos como atend_casa/atend_escola continuam existindo —
 // mostram com a cara do card "Atendimento" (unificado), só o local muda.
+// Eventos antigos salvos como "treino" mostram com a cara de "Atividade Física" (unificados).
 function cardInfo(tipo: string) {
   if (ehAtendimento(tipo)) {
     const base = CARDS.find(c => c.tipo === "atend_clinica")!;
     return base;
+  }
+  if (tipo === "treino") {
+    return CARDS.find(c => c.tipo === "atividade_fisica")!;
   }
   return CARDS.find(c => c.tipo === tipo) ?? { label: tipo, emoji: "📋", bg: "bg-slate-400", ring: "ring-slate-300", placeholder: "", grupo: "clinica" as const };
 }
