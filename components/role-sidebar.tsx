@@ -208,7 +208,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     : isFamilia ? "Família"
     : isAuxAdm ? "Aux. Administrativo"
     : isFinanceiro ? "Financeiro"
-    : "Atendente";
+    : "Acompanhante";
 
   const identLabel = userNome ? `${userNome} - ${roleLabel}` : roleLabel;
 
