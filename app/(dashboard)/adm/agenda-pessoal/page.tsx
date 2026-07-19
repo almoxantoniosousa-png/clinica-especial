@@ -29,6 +29,7 @@ type Compromisso = {
   categoria: string;
   observacao: string | null;
   lembrete_minutos_antes: number | null;
+  concluido: boolean;
 };
 
 function toISO(d: Date) { return d.toISOString().slice(0, 10); }
@@ -143,6 +144,16 @@ export default function AgendaPessoalPage() {
     carregar();
   }
 
+  async function alternarConcluido(c: Compromisso) {
+    const novo = !c.concluido;
+    setCompromissos(prev => prev.map(x => x.id === c.id ? { ...x, concluido: novo } : x));
+    const { error } = await supabase.from("agenda_pessoal").update({ concluido: novo }).eq("id", c.id);
+    if (error) {
+      setCompromissos(prev => prev.map(x => x.id === c.id ? { ...x, concluido: c.concluido } : x));
+      mostrarFeedback("erro", "Não foi possível atualizar.");
+    }
+  }
+
   const compromissosDoDia = compromissos.filter(c => c.data === diaAtivo);
   const porPeriodo = useMemo(() => {
     const mapa = new Map<string, Compromisso[]>();
@@ -243,18 +254,26 @@ export default function AgendaPessoalPage() {
                     };
                     const cor = cores[cat.cor];
                     return (
-                      <div key={c.id} onClick={() => abrirEditar(c)} className="grid gap-4 items-start py-3 px-1 rounded-xl cursor-pointer hover:bg-[#ece9e4]/60 transition" style={{ gridTemplateColumns: "52px 3px 1fr auto" }}>
+                      <div key={c.id} onClick={() => abrirEditar(c)} className={`grid gap-4 items-start py-3 px-1 rounded-xl cursor-pointer hover:bg-[#ece9e4]/60 transition ${c.concluido ? "opacity-60" : ""}`} style={{ gridTemplateColumns: "26px 52px 3px 1fr auto" }}>
+                        <button onClick={(e) => { e.stopPropagation(); alternarConcluido(c); }} title={c.concluido ? "Marcar como não feito" : "Marcar como feito"}
+                          className={`w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition ${c.concluido ? "bg-emerald-500 border-emerald-500 text-white" : "border-[#c9c4bb] text-transparent hover:border-emerald-400"}`}>
+                          ✓
+                        </button>
                         <span className="text-right pt-0.5 text-[12.5px] text-[#6f6b65]" style={{ fontVariantNumeric: "tabular-nums" }}>{c.hora || ""}</span>
                         <span className="self-stretch rounded" style={{ background: cor.rail }} />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[14.5px] font-semibold text-[#2c2a27]">{c.titulo}</span>
+                            <span className={`text-[14.5px] font-semibold text-[#2c2a27] ${c.concluido ? "line-through" : ""}`}>{c.titulo}</span>
                             <span className="text-[10px] tracking-wide uppercase font-semibold px-2 py-0.5 rounded-full" style={{ background: cor.tagBg, color: cor.tagText }}>{cat.label}</span>
                             {c.lembrete_minutos_antes ? <span className="text-[10px] text-[#98938b]">🔔</span> : null}
+                            {c.concluido && <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">✓ Feito</span>}
                           </div>
                           {c.observacao && <p className="text-[12.5px] text-[#6f6b65] mt-0.5">{c.observacao}</p>}
                         </div>
-                        <button onClick={(e) => { e.stopPropagation(); setDeletandoId(c.id); }} className="text-[#98938b] hover:text-red-500 transition text-sm px-1">✕</button>
+                        <div className="flex items-center gap-1">
+                          <button onClick={(e) => { e.stopPropagation(); abrirEditar(c); }} title="Remarcar" className="text-[#98938b] hover:text-[#c48a92] transition text-xs px-1.5">🔁</button>
+                          <button onClick={(e) => { e.stopPropagation(); setDeletandoId(c.id); }} className="text-[#98938b] hover:text-red-500 transition text-sm px-1">✕</button>
+                        </div>
                       </div>
                     );
                   })}
