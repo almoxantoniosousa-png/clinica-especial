@@ -219,8 +219,8 @@ const SUPERVISORA: AjudaConteudo = {
     },
     {
       icone: "📅", titulo: "Escala", mockup: "escala",
-      texto: "Cadastro semanal de atendimentos de especialistas e acompanhantes terapêuticos (ATs) — é você quem monta essa escala.\n\nUse os filtros de criança e tipo de serviço para localizar um horário. Clique em \"+ Novo atendimento\" para cadastrar (dia, horário, criança, serviço e profissional). Use o lápis/lixeira para editar ou excluir.",
-      reflexo: "O atendimento cadastrado aqui aparece na \"Minha Escala\" do especialista ou AT responsável."
+      texto: "Cadastro semanal de atendimentos de especialistas e acompanhantes terapêuticos (ATs) — é você quem monta essa escala.\n\nUse os filtros de criança e tipo de serviço para localizar um horário. Alterne entre \"Por dia\" e \"Semana inteira\" pra ver a grade completa de uma vez. Clique em \"+ Novo atendimento\" para cadastrar (dia, horário, criança, serviço, profissional e local). Use o lápis/lixeira para editar ou excluir.\n\n✓ Presença: o círculo (ou os botões P/F/FJ) marca Presença, Falta ou Falta Justificada de cada atendimento.\n\n⚠️ Motivo: ao editar um atendimento, você pode registrar o motivo de uma troca de especialista ou de uma ausência — fica visível automaticamente pra Gestão e ADM, sem precisar avisar por outro canal.\n\n🕓 Histórico: mostra as versões anteriores de tudo que foi editado ou excluído, com quem mudou e quando.\n\n🖨️ Imprimir: gera uma versão limpa da escala da semana (sem motivo/presença) pronta pra colocar no mural físico.",
+      reflexo: "O atendimento cadastrado aqui aparece na \"Minha Escala\" do especialista ou AT responsável. O motivo de uma troca/ausência é visto pela Gestão, ADM e pela própria especialista envolvida — não entra na versão impressa pro mural."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
