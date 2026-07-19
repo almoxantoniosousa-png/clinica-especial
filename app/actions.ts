@@ -58,7 +58,7 @@ export async function loginWithPassword(
     if (role === "especialista") redirect("/especialista/escala");
     if (role === "familia") redirect("/familia");
     if (role === "financeiro") redirect("/adm/financeiro");
-    if (role === "at" || role === "atendente") redirect("/atendente/meus-atendimentos");
+    if (role === "at" || role === "atendente") redirect("/atendente/dashboard");
     if (role === "aux_adm") redirect("/auxiliar/agenda");
 
     redirect("/adm/dashboard");
@@ -87,9 +87,9 @@ export async function loginWithPassword(
     if (role === "gestao") redirect("/gestao/dashboard");
     if (role === "supervisora") redirect("/supervisora/comunicados");
     if (role === "especialista") redirect("/especialista/escala");
-    if (role === "at" || role === "atendente") redirect("/atendente/meus-atendimentos");
+    if (role === "at" || role === "atendente") redirect("/atendente/dashboard");
 
-    redirect("/atendente/meus-atendimentos");
+    redirect("/atendente/dashboard");
   }
 
   return { error: "Acesso negado: Usuário não encontrado no sistema." };

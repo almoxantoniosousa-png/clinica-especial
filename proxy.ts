@@ -4,10 +4,31 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer"; // Certifique
 
 const PUBLIC_PATHS = ["/login"];
 
-// Prefixos de telas da equipe — uma conta de família nunca deveria
-// conseguir abrir (evita telas quebradas por RLS e fecha a navegação
-// direta por URL para áreas administrativas/clínicas).
-const PREFIXOS_STAFF = ["/adm", "/especialista", "/supervisora", "/gestao", "/atendente", "/auxiliar"];
+// Prefixos de telas da equipe e quais roles podem abrir cada um — fecha a
+// navegação direta por URL entre portais diferentes (ex.: atendente abrindo
+// /adm/dashboard) e não só o bloqueio de contas de família.
+const PREFIXOS_STAFF: { prefixo: string; roles: string[] }[] = [
+  { prefixo: "/adm", roles: ["adm", "admin", "financeiro"] },
+  { prefixo: "/especialista", roles: ["especialista"] },
+  { prefixo: "/supervisora", roles: ["supervisora"] },
+  { prefixo: "/gestao", roles: ["gestao"] },
+  { prefixo: "/atendente", roles: ["atendente", "at"] },
+  { prefixo: "/auxiliar", roles: ["aux_adm"] },
+];
+
+// Pra onde mandar de volta quando o role não bate com a rota acessada.
+const HOME_POR_ROLE: Record<string, string> = {
+  adm: "/adm/dashboard",
+  admin: "/adm/dashboard",
+  gestao: "/gestao/dashboard",
+  supervisora: "/supervisora/comunicados",
+  especialista: "/especialista/escala",
+  familia: "/familia",
+  financeiro: "/adm/financeiro",
+  atendente: "/atendente/dashboard",
+  at: "/atendente/dashboard",
+  aux_adm: "/auxiliar/agenda",
+};
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -34,14 +55,21 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 4. Conta de família tentando abrir uma tela da equipe (por link direto,
-  // favorito antigo etc.) — manda de volta pro próprio portal.
-  if (user.email && PREFIXOS_STAFF.some((p) => pathname.startsWith(p))) {
+  // 4. Portal errado pra esse role (conta de família abrindo tela da equipe,
+  // ou um role da equipe abrindo o portal de outro, tipo atendente em
+  // /adm/dashboard) — manda de volta pro próprio portal.
+  const alvo = PREFIXOS_STAFF.find((p) => pathname.startsWith(p.prefixo));
+  if (user.email && alvo) {
     const { data: usuario } = await supabase.from("usuarios").select("role").eq("email", user.email).maybeSingle();
-    const role = (usuario?.role || "").toString().trim().toLowerCase();
-    if (role === "familia") {
+    let role = (usuario?.role || "").toString().trim().toLowerCase();
+    if (!role) {
+      const { data: atendente } = await supabase.from("atendentes").select("role").eq("email", user.email).maybeSingle();
+      role = (atendente?.role || "").toString().trim().toLowerCase();
+    }
+
+    if (!alvo.roles.includes(role)) {
       const url = request.nextUrl.clone();
-      url.pathname = "/familia";
+      url.pathname = HOME_POR_ROLE[role] || "/login";
       return NextResponse.redirect(url);
     }
   }

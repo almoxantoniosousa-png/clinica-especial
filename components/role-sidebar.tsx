@@ -130,6 +130,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   ];
 
   const menuAtendente = [
+    { href: "/atendente/dashboard",          label: "Dashboard",         icon: "📊" },
     { href: "/atendente/novo-registro",      label: "Novo Registro",     icon: "📝" },
     { href: "/atendente/meus-atendimentos",  label: "Meus Atendimentos", icon: "📋" },
     { href: "/atendente/formulario-escolar", label: "Comunicado Diário", icon: "📄" },
