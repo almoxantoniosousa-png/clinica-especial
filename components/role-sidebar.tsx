@@ -146,7 +146,8 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
   const menuSupervisora = [
     ...(userContataFamilia ? [{ href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }] : []),
-    { href: "/supervisora/escala",      label: "Escala",            icon: "📅" },
+    { href: "/supervisora/escala-especialistas",  label: "Escala Especialistas",   icon: "📅" },
+    { href: "/supervisora/escala-acompanhantes",  label: "Escala Acompanhantes",   icon: "🗓️" },
     { href: "/requisicoes",             label: "Requisições",       icon: "🛒" },
     { href: "/brinquedos",              label: "Brinquedos",        icon: "🧸" },
     { href: "/materiais-adaptados",     label: "Materiais Adaptados", icon: "📚" },
@@ -317,7 +318,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   return (
     <>
       {!isMobile && (
-        <aside className="w-56 bg-white border-r border-slate-200 min-h-screen flex flex-col justify-between flex-shrink-0">
+        <aside className="print:hidden w-56 bg-white border-r border-slate-200 min-h-screen flex flex-col justify-between flex-shrink-0">
           <div>
             <div className="px-4 py-4 border-b border-slate-100">
               <div className="flex items-center justify-between mb-2">
@@ -345,7 +346,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
       {isMobile && (
         <>
-          <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+          <div className="print:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2.5">
               <Logo size="sm" />
               <span className="font-bold text-blue-900 text-sm">Clínica Abraço</span>

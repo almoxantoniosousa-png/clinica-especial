@@ -48,3 +48,26 @@ ALTER TABLE public.escala
 
 ALTER TABLE public.escala_historico
   ADD COLUMN IF NOT EXISTS motivo text;
+
+-- Foto completa da escala inteira (todos os atendimentos, não só o que mudou),
+-- tirada a cada alteração feita pela supervisora — usada pra buscar
+-- "como estava a escala" numa data específica, pra fins comprobatórios.
+CREATE TABLE IF NOT EXISTS public.escala_snapshots (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  criado_em timestamptz NOT NULL DEFAULT now(),
+  criado_por_email text NOT NULL,
+  criado_por_nome text,
+  dados jsonb NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS escala_snapshots_criado_em_idx ON public.escala_snapshots (criado_em);
+
+ALTER TABLE public.escala_snapshots ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY escala_snapshots_select_staff ON public.escala_snapshots
+  FOR SELECT
+  USING (meu_role() = ANY (ARRAY['adm', 'admin', 'gestao', 'supervisora', 'financeiro']));
+
+CREATE POLICY escala_snapshots_supervisora_insere ON public.escala_snapshots
+  FOR INSERT
+  WITH CHECK (meu_role() = 'supervisora');

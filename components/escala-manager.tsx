@@ -59,6 +59,13 @@ type HistoricoItem = {
 type Atendente = {
   id: string;
   nome: string;
+  role: string;
+};
+
+const LABEL_ROLE: Record<string, string> = {
+  especialista: "Especialistas",
+  atendente: "Acompanhantes Terapêuticos (AT)",
+  at: "Acompanhantes Terapêuticos (AT)",
 };
 
 type FormData = {
@@ -128,6 +135,16 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
   const [carregandoHistorico, setCarregandoHistorico] = useState(false);
+  const [historicoDe, setHistoricoDe] = useState("");
+  const [historicoAte, setHistoricoAte] = useState("");
+  const [historicoBusca, setHistoricoBusca] = useState("");
+  const [historicoAba, setHistoricoAba] = useState<"alteracoes" | "porData">("alteracoes");
+  const [consultaData, setConsultaData] = useState("");
+  const [consultandoData, setConsultandoData] = useState(false);
+  const [consultaErro, setConsultaErro] = useState("");
+  const [consultaResultado, setConsultaResultado] = useState<{
+    criado_em: string; criado_por_nome: string | null; aproximado: boolean; dados: Slot[];
+  } | null>(null);
 
   // modal
   const [modalAberto, setModalAberto] = useState(false);
@@ -146,6 +163,10 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
   const corMap: Record<string, string> = {};
   servicos.forEach((nome, i) => { corMap[nome] = CORES[i % CORES.length]; });
+
+  const roleDoProfissional: Record<string, string> = {};
+  atendentes.forEach((a) => { roleDoProfissional[a.id] = (a.role || "").toString().trim().toLowerCase(); });
+  const rolesParaImprimir = Array.from(new Set(rolesPermitidos.map((r) => r.toLowerCase())));
 
   useEffect(() => {
     carregarTudo();
@@ -172,7 +193,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   async function carregarTudo() {
     setLoading(true);
     const [atendentesRes, criancasRes, servicosRes] = await Promise.all([
-      supabase.from("atendentes").select("id, nome").in("role", rolesPermitidos).order("nome"),
+      supabase.from("atendentes").select("id, nome, role").in("role", rolesPermitidos).order("nome"),
       supabase.from("criancas").select("nome").order("nome"),
       supabase.from("tipos_atendimento").select("nome").eq("ativo", true).order("nome"),
     ]);
@@ -246,6 +267,17 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     });
   }
 
+  // Foto completa da escala inteira (não só o que mudou) — pra dar pra
+  // buscar "como estava a escala" numa data, pra fins comprobatórios.
+  async function tirarSnapshot() {
+    const { data } = await supabase.from("escala").select("*");
+    await supabase.from("escala_snapshots").insert({
+      criado_por_email: usuarioEmail,
+      criado_por_nome: usuarioNome || null,
+      dados: data || [],
+    });
+  }
+
   async function salvar() {
     if (!form.crianca || !form.servico) {
       setErroForm("Criança e serviço são obrigatórios.");
@@ -304,6 +336,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       return;
     }
 
+    await tirarSnapshot();
     fecharModal();
     carregarTudo();
   }
@@ -328,6 +361,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       tabela: "escala", registro_id: slot.id,
       descricao: `${slot.crianca} · ${slot.servico} (${slot.dia}, ${slot.horario})`,
     });
+    await tirarSnapshot();
   }
 
   async function excluir() {
@@ -349,20 +383,70 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         descricao: `${slot.crianca} · ${slot.servico} (${slot.dia}, ${slot.horario})`,
       });
     }
+    await tirarSnapshot();
     setSlots((prev) => prev.filter((s) => s.id !== deletandoId));
     setDeletandoId(null);
     setDeletandoLabel("");
   }
 
-  async function carregarHistorico() {
+  async function carregarHistorico(overrides?: { de?: string; ate?: string; busca?: string }) {
+    const de = overrides?.de ?? historicoDe;
+    const ate = overrides?.ate ?? historicoAte;
+    const busca = (overrides?.busca ?? historicoBusca).trim().toLowerCase();
+
     setCarregandoHistorico(true);
-    const { data } = await supabase
+    let query = supabase
       .from("escala_historico")
       .select("*")
       .order("editado_em", { ascending: false })
-      .limit(100);
-    setHistorico((data ?? []) as HistoricoItem[]);
+      .limit(300);
+    if (de) query = query.gte("editado_em", `${de}T00:00:00`);
+    if (ate) query = query.lte("editado_em", `${ate}T23:59:59`);
+    const { data } = await query;
+    let itens = (data ?? []) as HistoricoItem[];
+    if (busca) {
+      itens = itens.filter((h) =>
+        (h.crianca || "").toLowerCase().includes(busca) ||
+        (h.profissional_nome || "").toLowerCase().includes(busca)
+      );
+    }
+    setHistorico(itens);
     setCarregandoHistorico(false);
+  }
+
+  // Busca a foto mais próxima da escala inteira numa data — pra fins comprobatórios
+  async function buscarEscalaPorData() {
+    if (!consultaData) return;
+    setConsultandoData(true);
+    setConsultaErro("");
+    setConsultaResultado(null);
+
+    const alvo = `${consultaData}T23:59:59`;
+    const { data: antes } = await supabase
+      .from("escala_snapshots").select("*").lte("criado_em", alvo)
+      .order("criado_em", { ascending: false }).limit(1);
+
+    let item = (antes ?? [])[0];
+    let aproximado = false;
+    if (!item) {
+      const { data: depois } = await supabase
+        .from("escala_snapshots").select("*").gte("criado_em", alvo)
+        .order("criado_em", { ascending: true }).limit(1);
+      item = (depois ?? [])[0];
+      aproximado = true;
+    }
+
+    setConsultandoData(false);
+    if (!item) {
+      setConsultaErro("Nenhum registro de escala encontrado.");
+      return;
+    }
+    setConsultaResultado({
+      criado_em: item.criado_em,
+      criado_por_nome: item.criado_por_nome,
+      aproximado,
+      dados: (item.dados ?? []) as Slot[],
+    });
   }
 
   const slotsDoDia = slots.filter((s) => {
@@ -807,91 +891,214 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         </div>
       )}
 
-      {/* PAINEL DE HISTÓRICO */}
+      {/* PAINEL DE HISTÓRICO / CONSULTA COMPROBATÓRIA */}
       {historicoAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) setHistoricoAberto(false); }}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <History className="h-5 w-5 text-blue-600" />
-                Histórico de alterações
+                Histórico e consulta
               </h2>
               <button onClick={() => setHistoricoAberto(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="overflow-y-auto flex-1 p-4 space-y-2">
-              {carregandoHistorico ? (
-                <p className="text-center text-sm text-slate-400 py-8">Carregando...</p>
-              ) : historico.length === 0 ? (
-                <p className="text-center text-sm text-slate-400 py-8">Nenhuma alteração registrada ainda.</p>
-              ) : (
-                historico.map((h) => (
-                  <div key={h.id} className="rounded-xl border border-slate-200 p-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
-                        h.acao === "exclusao" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
-                      }`}>
-                        {h.acao === "exclusao" ? "Excluído" : "Editado"}
-                      </span>
-                      <span className="text-xs text-slate-400 ml-auto">
-                        {new Date(h.editado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
-                      </span>
-                    </div>
-                    <p className="font-semibold text-slate-800 mt-1.5">{h.crianca} · {h.servico}</p>
-                    <p className="text-xs text-slate-500">{h.dia}, {h.horario}</p>
-                    {h.profissional_nome && <p className="text-xs text-slate-500">👤 {h.profissional_nome}</p>}
-                    {h.presenca && <p className="text-xs text-slate-500">Presença: {h.presenca}</p>}
-                    {h.motivo && <p className="text-xs text-slate-500 mt-1 bg-slate-50 rounded px-2 py-1">⚠️ {h.motivo}</p>}
-                    <p className="text-[11px] text-slate-400 mt-1.5 border-t border-slate-100 pt-1.5">
-                      Versão anterior por <strong>{h.editado_por_nome || h.editado_por_email}</strong>
-                    </p>
-                  </div>
-                ))
-              )}
+
+            <div className="flex gap-1 bg-slate-100 p-1 rounded-xl mx-4 mt-3 w-fit">
+              {([
+                { v: "alteracoes" as const, label: "Alterações" },
+                { v: "porData" as const, label: "Escala numa data (comprobatório)" },
+              ]).map((o) => (
+                <button key={o.v} onClick={() => setHistoricoAba(o.v)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${historicoAba === o.v ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+                  {o.label}
+                </button>
+              ))}
             </div>
+
+            {historicoAba === "alteracoes" ? (
+              <>
+                <div className="px-4 pt-3 pb-1 flex flex-wrap items-end gap-2 border-b border-slate-100">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">De</label>
+                    <input type="date" value={historicoDe} onChange={(e) => setHistoricoDe(e.target.value)}
+                      className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Até</label>
+                    <input type="date" value={historicoAte} onChange={(e) => setHistoricoAte(e.target.value)}
+                      className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <div className="flex-1 min-w-[120px]">
+                    <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Criança/profissional</label>
+                    <input type="text" value={historicoBusca} onChange={(e) => setHistoricoBusca(e.target.value)}
+                      placeholder="Buscar por nome..."
+                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <button onClick={() => carregarHistorico()}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                    Buscar
+                  </button>
+                  {(historicoDe || historicoAte || historicoBusca) && (
+                    <button onClick={() => { setHistoricoDe(""); setHistoricoAte(""); setHistoricoBusca(""); carregarHistorico({ de: "", ate: "", busca: "" }); }}
+                      className="text-xs text-slate-500 hover:text-red-600 px-2 py-1.5">
+                      Limpar
+                    </button>
+                  )}
+                </div>
+                <p className="px-4 pt-2 text-[11px] text-slate-400">
+                  Mostra só os atendimentos que foram editados ou excluídos — quem nunca mexeu não aparece aqui.
+                </p>
+                <div className="overflow-y-auto flex-1 p-4 space-y-2">
+                  {carregandoHistorico ? (
+                    <p className="text-center text-sm text-slate-400 py-8">Carregando...</p>
+                  ) : historico.length === 0 ? (
+                    <p className="text-center text-sm text-slate-400 py-8">Nenhuma alteração registrada ainda.</p>
+                  ) : (
+                    historico.map((h) => (
+                      <div key={h.id} className="rounded-xl border border-slate-200 p-3 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                            h.acao === "exclusao" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                          }`}>
+                            {h.acao === "exclusao" ? "Excluído" : "Editado"}
+                          </span>
+                          <span className="text-xs text-slate-400 ml-auto">
+                            {new Date(h.editado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                          </span>
+                        </div>
+                        <p className="font-semibold text-slate-800 mt-1.5">{h.crianca} · {h.servico}</p>
+                        <p className="text-xs text-slate-500">{h.dia}, {h.horario}</p>
+                        {h.profissional_nome && <p className="text-xs text-slate-500">👤 {h.profissional_nome}</p>}
+                        {h.presenca && <p className="text-xs text-slate-500">Presença: {h.presenca}</p>}
+                        {h.motivo && <p className="text-xs text-slate-500 mt-1 bg-slate-50 rounded px-2 py-1">⚠️ {h.motivo}</p>}
+                        <p className="text-[11px] text-slate-400 mt-1.5 border-t border-slate-100 pt-1.5">
+                          Versão anterior por <strong>{h.editado_por_nome || h.editado_por_email}</strong>
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="px-4 pt-3 pb-1 flex flex-wrap items-end gap-2 border-b border-slate-100">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Ver a escala como estava em</label>
+                    <input type="date" value={consultaData} onChange={(e) => setConsultaData(e.target.value)}
+                      className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  <button onClick={buscarEscalaPorData} disabled={!consultaData || consultandoData}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                    {consultandoData ? "Buscando..." : "Buscar"}
+                  </button>
+                </div>
+                <p className="px-4 pt-2 text-[11px] text-slate-400">
+                  Guardamos uma foto completa da escala a cada alteração feita — a busca traz a foto mais próxima da data escolhida.
+                </p>
+                <div className="overflow-y-auto flex-1 p-4">
+                  {consultaErro && (
+                    <p className="text-center text-sm text-red-500 py-8">{consultaErro}</p>
+                  )}
+                  {!consultaErro && !consultaResultado && !consultandoData && (
+                    <p className="text-center text-sm text-slate-400 py-8">Escolha uma data e clique em Buscar.</p>
+                  )}
+                  {consultaResultado && (
+                    <div className="space-y-3">
+                      <div className={`rounded-lg px-3 py-2 text-xs ${consultaResultado.aproximado ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+                        {consultaResultado.aproximado
+                          ? `Não havia registro antes dessa data — mostrando o mais antigo disponível, de ${new Date(consultaResultado.criado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}.`
+                          : `Escala como estava em ${new Date(consultaResultado.criado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })} (última alteração antes da data escolhida, por ${consultaResultado.criado_por_nome || "—"}).`
+                        }
+                      </div>
+                      <div className="overflow-x-auto rounded-xl border border-slate-200">
+                        <table className="w-full border-collapse text-xs">
+                          <thead>
+                            <tr>
+                              <th className="border-b border-slate-200 px-2 py-2 bg-slate-50 text-left w-24">Horário</th>
+                              {DIAS.slice(0, 5).map((d) => (
+                                <th key={d} className="border-b border-l border-slate-200 px-2 py-2 bg-slate-50 text-left min-w-[140px]">{d}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {HORARIOS.map((horario) => (
+                              <tr key={horario}>
+                                <td className="border-b border-slate-100 px-2 py-2 font-semibold text-slate-600 align-top">{horario}</td>
+                                {DIAS.slice(0, 5).map((d) => {
+                                  const doDia = consultaResultado.dados.filter((s) => s.dia === d && s.horario === horario);
+                                  return (
+                                    <td key={d} className="border-b border-l border-slate-100 px-2 py-2 align-top">
+                                      {doDia.map((s) => (
+                                        <div key={s.id} className="mb-1 last:mb-0">
+                                          <strong>{s.crianca}</strong> · {s.servico}
+                                          {s.profissional_nome && <div className="opacity-70">👤 {s.profissional_nome}</div>}
+                                        </div>
+                                      ))}
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
     </div>
 
-    {/* VERSÃO PRA IMPRIMIR — grade semanal limpa, pro mural físico (sem motivo/presença) */}
+    {/* VERSÃO PRA IMPRIMIR — uma grade separada por função, pro mural físico (sem motivo/presença) */}
     <div className="hidden print:block">
-      <h1 className="text-xl font-bold text-slate-900 text-center mb-1">{titulo}</h1>
-      <p className="text-xs text-slate-500 text-center mb-4">
-        Escala semanal — impresso em {new Date().toLocaleDateString("pt-BR")}
-      </p>
-      <table className="w-full border-collapse text-[10px]">
-        <thead>
-          <tr>
-            <th className="border border-slate-300 px-1.5 py-1 bg-slate-100 text-left w-24">Horário</th>
-            {DIAS.slice(0, 5).map((d) => (
-              <th key={d} className="border border-slate-300 px-1.5 py-1 bg-slate-100 text-left">{d}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {HORARIOS.map((horario) => (
-            <tr key={horario}>
-              <td className="border border-slate-300 px-1.5 py-1 font-semibold align-top">{horario}</td>
-              {DIAS.slice(0, 5).map((d) => {
-                const doDia = slots.filter((s) => s.dia === d && s.horario === horario);
-                return (
-                  <td key={d} className="border border-slate-300 px-1.5 py-1 align-top">
-                    {doDia.map((s) => (
-                      <div key={s.id} className="mb-1 last:mb-0">
-                        <strong>{s.crianca}</strong> · {s.servico}
-                        {s.profissional_nome && <> — {s.profissional_nome}</>}
-                        {s.local && <> ({s.local})</>}
-                      </div>
-                    ))}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {rolesParaImprimir.map((r, i) => {
+        const slotsDoRole = slots.filter((s) => s.profissional_id && roleDoProfissional[s.profissional_id] === r);
+        return (
+          <div key={r} className={i > 0 ? "break-before-page" : ""}>
+            <h1 className="text-xl font-bold text-slate-900 text-center mb-1">{titulo}</h1>
+            <p className="text-sm font-semibold text-slate-700 text-center mb-1">{LABEL_ROLE[r] || r}</p>
+            <p className="text-xs text-slate-500 text-center mb-4">
+              Escala semanal — impresso em {new Date().toLocaleDateString("pt-BR")}
+            </p>
+            <table className="w-full border-collapse text-[10px]">
+              <thead>
+                <tr>
+                  <th className="border border-slate-300 px-1.5 py-1 bg-slate-100 text-left w-24">Horário</th>
+                  {DIAS.slice(0, 5).map((d) => (
+                    <th key={d} className="border border-slate-300 px-1.5 py-1 bg-slate-100 text-left">{d}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {HORARIOS.map((horario) => (
+                  <tr key={horario}>
+                    <td className="border border-slate-300 px-1.5 py-1 font-semibold align-top">{horario}</td>
+                    {DIAS.slice(0, 5).map((d) => {
+                      const doDia = slotsDoRole.filter((s) => s.dia === d && s.horario === horario);
+                      return (
+                        <td key={d} className="border border-slate-300 px-1.5 py-1 align-top">
+                          {doDia.map((s) => (
+                            <div key={s.id} className="mb-1 last:mb-0">
+                              <strong>{s.crianca}</strong> · {s.servico}
+                              {s.profissional_nome && <> — {s.profissional_nome}</>}
+                              {s.local && <> ({s.local})</>}
+                            </div>
+                          ))}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
     </div>
     </div>
   );
