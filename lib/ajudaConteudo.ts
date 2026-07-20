@@ -55,6 +55,11 @@ const ADM: AjudaConteudo = {
       reflexo: "O protocolo criado aqui aparece na tela Protocolos do cargo escolhido — cada pessoa precisa abrir e confirmar a leitura, e você acompanha aqui quem já confirmou."
     },
     {
+      icone: "🗒️", titulo: "Reunião", mockup: "tabela",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
+    },
+    {
       icone: "💬", titulo: "Chat", mockup: "chat",
       texto: "Conversas internas, no estilo de um aplicativo de mensagens.\n\nClique no ícone de lápis (✎) para iniciar uma nova conversa. Você pode enviar texto, arquivos, imagens e áudios, e reagir às mensagens com emojis (👍 ❤️ 😂 😮 😢 🙏). Use a busca para encontrar conversas antigas.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo para abrir uma sala de reunião por vídeo em uma nova aba — um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado automaticamente para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
@@ -186,6 +191,11 @@ const GESTAO: AjudaConteudo = {
       reflexo: "Esses dados vêm do que cada especialista marca em \"Minha Escala\" — servem de referência pra saber quanto pagar no mês, junto com o Financeiro."
     },
     {
+      icone: "🗒️", titulo: "Reunião", mockup: "tabela",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
+    },
+    {
       icone: "💬", titulo: "Chat", mockup: "chat",
       texto: "Conversas internas estilo aplicativo de mensagens. Clique no lápis para iniciar uma nova conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo para abrir uma sala de reunião por vídeo em uma nova aba — um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado automaticamente para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado.",
       reflexo: "Use a videochamada para avisar a equipe sobre reuniões — o cartão \"Entrar na reunião\" aparece automaticamente na conversa de quem você chamar, e quem tiver as notificações ativadas recebe um aviso na hora."
@@ -250,6 +260,11 @@ const SUPERVISORA: AjudaConteudo = {
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
       texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo."
+    },
+    {
+      icone: "🗒️", titulo: "Reunião", mockup: "tabela",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
@@ -323,6 +338,11 @@ const ESPECIALISTA: AjudaConteudo = {
       reflexo: "O ADM vê sua requisição, atualiza o status e pode deixar uma observação para você — que aparece direto nesta tela."
     },
     {
+      icone: "🗒️", titulo: "Reunião", mockup: "tabela",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
+    },
+    {
       icone: "💬", titulo: "Chat", mockup: "chat",
       texto: "Conversas internas. Clique no lápis para iniciar uma conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo para abrir uma sala de reunião por vídeo em uma nova aba — um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado automaticamente para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
@@ -388,6 +408,11 @@ const ATENDENTE: AjudaConteudo = {
       reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido."
     },
     {
+      icone: "🗒️", titulo: "Reunião", mockup: "tabela",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
+    },
+    {
       icone: "💬", titulo: "Chat", mockup: "chat",
       texto: "Conversas internas. Clique no lápis para iniciar uma nova conversa (atendentes podem falar com ADM e Supervisora). Envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo para abrir uma sala de reunião por vídeo em uma nova aba — um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado automaticamente para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
@@ -430,6 +455,11 @@ const FINANCEIRO: AjudaConteudo = {
       reflexo: "Ao confirmar a leitura, o ADM passa a ver seu nome na lista de confirmações desse protocolo."
     },
     {
+      icone: "🗒️", titulo: "Reunião", mockup: "tabela",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
+    },
+    {
       icone: "💬", titulo: "Chat", mockup: "chat",
       texto: "Conversas internas. Clique no lápis para iniciar uma conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo para abrir uma sala de reunião por vídeo em uma nova aba — um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado automaticamente para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
@@ -464,6 +494,11 @@ const AUX_ADM: AjudaConteudo = {
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
       texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo."
+    },
+    {
+      icone: "🗒️", titulo: "Reunião", mockup: "tabela",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",

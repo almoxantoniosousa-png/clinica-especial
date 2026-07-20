@@ -99,6 +99,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/patrimonio",   label: "Patrimônio", icon: "📦" },
     { href: "/adm/mural",        label: "Mural",      icon: "📢" },
     { href: "/adm/protocolos",   label: "Protocolos", icon: "📜" },
+    { href: "/reuniao",          label: "Reunião",    icon: "🗒️" },
     { href: "/chat",             label: "Chat",       icon: "💬" },
     { href: "/escala-especialistas",  label: "Escala Especialistas",  icon: "📅" },
     { href: "/escala-acompanhantes",  label: "Escala Acompanhantes",  icon: "🗓️" },
@@ -122,6 +123,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/patrimonio",          label: "Reportar Defeito", icon: "🔧" },
     { href: "/gestao/relatorios",   label: "Relatórios",   icon: "📈" },
     { href: "/adm/atendimentos-especialistas", label: "Atendimentos Especialistas", icon: "🩺" },
+    { href: "/reuniao",             label: "Reunião",      icon: "🗒️" },
     { href: "/chat",                label: "Chat",         icon: "💬" },
     { href: "/gestao/comunicados",  label: "Família",      icon: "💬" },
     { href: "/ajuda",               label: "Ajuda",        icon: "❓" },
@@ -143,6 +145,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/materiais-adaptados",          label: "Materiais Adaptados", icon: "📚" },
     { href: "/protocolos",                   label: "Protocolos",        icon: "📜" },
     { href: "/mural",                        label: "Mural",             icon: "📢" },
+    { href: "/reuniao",                      label: "Reunião",           icon: "🗒️" },
     { href: "/chat",                         label: "Chat",              icon: "💬" },
     { href: "/ajuda",                        label: "Ajuda",             icon: "❓" },
   ];
@@ -157,6 +160,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/patrimonio",              label: "Reportar Defeito",  icon: "🔧" },
     { href: "/protocolos",              label: "Protocolos",        icon: "📜" },
     { href: "/mural",                   label: "Mural",             icon: "📢" },
+    { href: "/reuniao",                 label: "Reunião",           icon: "🗒️" },
     { href: "/chat",                    label: "Chat",              icon: "💬" },
     { href: "/ajuda",                   label: "Ajuda",             icon: "❓" },
   ];
@@ -170,6 +174,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/patrimonio",               label: "Reportar Defeito", icon: "🔧" },
     { href: "/protocolos",               label: "Protocolos",   icon: "📜" },
     { href: "/mural",                    label: "Mural",        icon: "📢" },
+    { href: "/reuniao",                  label: "Reunião",      icon: "🗒️" },
     { href: "/chat",                     label: "Chat",         icon: "💬" },
     { href: "/ajuda",                    label: "Ajuda",        icon: "❓" },
   ];
@@ -181,6 +186,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/atendimentos-ats", label: "Atendimentos ATs", icon: "📋" },
     { href: "/adm/patrimonio",      label: "Patrimônio",        icon: "📦" },
     { href: "/protocolos",          label: "Protocolos",        icon: "📜" },
+    { href: "/reuniao",             label: "Reunião",           icon: "🗒️" },
     { href: "/chat",                label: "Chat",              icon: "💬" },
     { href: "/ajuda",                label: "Ajuda",            icon: "❓" },
   ];
@@ -191,6 +197,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/patrimonio",       label: "Patrimônio",    icon: "📦" },
     { href: "/protocolos",           label: "Protocolos",    icon: "📜" },
     { href: "/mural",                label: "Mural",         icon: "📢" },
+    { href: "/reuniao",              label: "Reunião",       icon: "🗒️" },
     { href: "/chat",                 label: "Chat",          icon: "💬" },
     { href: "/ajuda",                label: "Ajuda",         icon: "❓" },
   ];

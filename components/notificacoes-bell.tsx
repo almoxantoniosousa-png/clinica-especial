@@ -72,6 +72,7 @@ export function NotificacoesBell({ userRole }: { userRole: string }) {
     if (tipo === "mural")    return "📢";
     if (tipo === "agenda")   return "📅";
     if (tipo === "lembrete") return "🔔";
+    if (tipo === "reuniao")  return "🗒️";
     if (tipo === "alerta")   return "⚠️";
     return "🔔";
   }
