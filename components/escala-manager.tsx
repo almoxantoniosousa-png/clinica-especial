@@ -122,6 +122,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [criancas, setCriancas] = useState<string[]>([]);
   const [servicos, setServicos] = useState<string[]>([]);
   const [atendentes, setAtendentes] = useState<Atendente[]>([]);
+  const [nomesAvulsos, setNomesAvulsos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [diaAtivo, setDiaAtivo] = useState(0);
   const [visualizacao, setVisualizacao] = useState<"dia" | "semana" | "anterior">("dia");
@@ -196,10 +197,11 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
   async function carregarTudo() {
     setLoading(true);
-    const [atendentesRes, criancasRes, servicosRes] = await Promise.all([
+    const [atendentesRes, criancasRes, servicosRes, nomesAvulsosRes] = await Promise.all([
       supabase.from("atendentes").select("id, nome, role").in("role", rolesPermitidos).order("nome"),
       supabase.from("criancas").select("nome").order("nome"),
       supabase.from("tipos_atendimento").select("nome").eq("ativo", true).order("nome"),
+      supabase.from("escala_nomes_avulsos").select("nome").order("nome"),
     ]);
     const idsPermitidos = new Set((atendentesRes.data ?? []).map((a: Atendente) => a.id));
 
@@ -216,6 +218,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     setCriancas((criancasRes.data ?? []).map((c: { nome: string }) => c.nome));
     setServicos((servicosRes.data ?? []).map((s: { nome: string }) => s.nome));
     setAtendentes(atendentesRes.data ?? []);
+    setNomesAvulsos((nomesAvulsosRes.data ?? []).map((n: { nome: string }) => n.nome));
     setLoading(false);
   }
 
@@ -243,7 +246,9 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     // Se o valor salvo não está nas listas conhecidas, foi digitado na mão —
     // abre o campo já em modo texto pra edição não "sumir" com o dado.
     setServicoLivre(!!slot.servico && !servicos.includes(slot.servico));
-    setProfissionalLivre(!slot.profissional_id && !!slot.profissional_nome);
+    const profissionalConhecido = !!slot.profissional_nome &&
+      nomesAvulsos.some((n) => n.toLowerCase() === slot.profissional_nome!.toLowerCase());
+    setProfissionalLivre(!slot.profissional_id && !!slot.profissional_nome && !profissionalConhecido);
     setErroForm("");
     setModalAberto(true);
   }
@@ -344,6 +349,20 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     if (error) {
       setErroForm(error.message);
       return;
+    }
+
+    // Servico/profissional digitados na mao (fora da lista) ficam salvos
+    // como sugestao pra próxima vez, sem precisar digitar de novo.
+    if (servicoLivre && payload.servico && !servicos.some((s) => s.toLowerCase() === payload.servico.toLowerCase())) {
+      await supabase.from("tipos_atendimento").insert({ nome: payload.servico, ativo: true });
+    }
+    if (profissionalLivre && payload.profissional_nome) {
+      const jaExiste =
+        atendentes.some((a) => a.nome.toLowerCase() === payload.profissional_nome!.toLowerCase()) ||
+        nomesAvulsos.some((n) => n.toLowerCase() === payload.profissional_nome!.toLowerCase());
+      if (!jaExiste) {
+        await supabase.from("escala_nomes_avulsos").insert({ nome: payload.profissional_nome });
+      }
     }
 
     await tirarSnapshot();
@@ -971,11 +990,22 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Profissional responsável</label>
                 <select
-                  value={profissionalLivre ? "__outro__" : form.profissional_id}
+                  value={
+                    profissionalLivre
+                      ? "__outro__"
+                      : form.profissional_id
+                        ? form.profissional_id
+                        : form.profissional_nome && nomesAvulsos.some((n) => n.toLowerCase() === form.profissional_nome.toLowerCase())
+                          ? `avulso::${form.profissional_nome}`
+                          : ""
+                  }
                   onChange={(e) => {
                     if (e.target.value === "__outro__") {
                       setProfissionalLivre(true);
                       setForm((f) => ({ ...f, profissional_id: "", profissional_nome: "" }));
+                    } else if (e.target.value.startsWith("avulso::")) {
+                      setProfissionalLivre(false);
+                      setForm((f) => ({ ...f, profissional_id: "", profissional_nome: e.target.value.slice("avulso::".length) }));
                     } else {
                       setProfissionalLivre(false);
                       handleProfissional(e.target.value);
@@ -985,6 +1015,9 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 >
                   <option value="">Nenhum</option>
                   {atendentes.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
+                  {nomesAvulsos
+                    .filter((n) => !atendentes.some((a) => a.nome.toLowerCase() === n.toLowerCase()))
+                    .map((n) => <option key={n} value={`avulso::${n}`}>{n}</option>)}
                   <option value="__outro__" style={{ color: "#2563eb", fontWeight: 600 }}>✎ Digitar outro nome...</option>
                 </select>
                 {profissionalLivre && (
