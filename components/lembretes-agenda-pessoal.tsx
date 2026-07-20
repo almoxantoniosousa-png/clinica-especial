@@ -65,9 +65,18 @@ export function LembretesAgendaPessoal({ email }: { email: string }) {
       devidos.forEach((c: Compromisso) => {
         if (notificados.current.has(c.id)) return;
         notificados.current.add(c.id);
+        const msg = `${c.titulo}${c.hora ? " às " + c.hora : ""}`;
         if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-          new Notification("🔔 Minha Agenda", { body: `${c.titulo}${c.hora ? " às " + c.hora : ""}` });
+          new Notification("🔔 Minha Agenda", { body: msg });
         }
+        // Também cai no sino de notificações (com som), pra ficar tudo num lugar só.
+        supabase.from("notificacoes").insert({
+          destinatario_role: "adm",
+          titulo: "🔔 Minha Agenda",
+          mensagem: msg,
+          tipo: "lembrete",
+          link: "/adm/agenda-pessoal",
+        });
       });
     }
 

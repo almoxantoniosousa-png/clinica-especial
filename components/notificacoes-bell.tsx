@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { tocarSomNotificacao } from "@/lib/somNotificacao";
 
 interface Notificacao {
   id: string;
@@ -53,7 +54,7 @@ export function NotificacoesBell({ userRole }: { userRole: string }) {
         schema: "public",
         table: "notificacoes",
         filter: `destinatario_role=eq.${userRole}`,
-      }, () => carregar())
+      }, () => { tocarSomNotificacao(); carregar(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [userRole]);
@@ -70,6 +71,7 @@ export function NotificacoesBell({ userRole }: { userRole: string }) {
     if (tipo === "relatorio") return "📊";
     if (tipo === "mural")    return "📢";
     if (tipo === "agenda")   return "📅";
+    if (tipo === "lembrete") return "🔔";
     if (tipo === "alerta")   return "⚠️";
     return "🔔";
   }
