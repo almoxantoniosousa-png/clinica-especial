@@ -130,6 +130,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [podeEditar, setPodeEditar] = useState(false);
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
+  const [servicoLivre, setServicoLivre] = useState(false);
+  const [profissionalLivre, setProfissionalLivre] = useState(false);
 
   // histórico
   const [historicoAberto, setHistoricoAberto] = useState(false);
@@ -221,6 +223,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     setEditandoId(null);
     setForm({ ...FORM_VAZIO, dia });
     setErroForm("");
+    setServicoLivre(false);
+    setProfissionalLivre(false);
     setModalAberto(true);
   }
 
@@ -236,6 +240,10 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       local: slot.local ?? LOCAIS[0],
       motivo: slot.motivo ?? "",
     });
+    // Se o valor salvo não está nas listas conhecidas, foi digitado na mão —
+    // abre o campo já em modo texto pra edição não "sumir" com o dado.
+    setServicoLivre(!!slot.servico && !servicos.includes(slot.servico));
+    setProfissionalLivre(!slot.profissional_id && !!slot.profissional_nome);
     setErroForm("");
     setModalAberto(true);
   }
@@ -916,13 +924,32 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Serviço</label>
                 <select
-                  value={form.servico}
-                  onChange={(e) => setForm((f) => ({ ...f, servico: e.target.value }))}
+                  value={servicoLivre ? "__outro__" : form.servico}
+                  onChange={(e) => {
+                    if (e.target.value === "__outro__") {
+                      setServicoLivre(true);
+                      setForm((f) => ({ ...f, servico: "" }));
+                    } else {
+                      setServicoLivre(false);
+                      setForm((f) => ({ ...f, servico: e.target.value }));
+                    }
+                  }}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Selecione...</option>
                   {servicos.map((s) => <option key={s} value={s}>{s}</option>)}
+                  <option value="__outro__">+ Digitar outro serviço...</option>
                 </select>
+                {servicoLivre && (
+                  <input
+                    type="text"
+                    autoFocus
+                    value={form.servico}
+                    onChange={(e) => setForm((f) => ({ ...f, servico: e.target.value }))}
+                    placeholder="Digite o nome do serviço/especialidade"
+                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
               </div>
 
               {/* local */}
@@ -941,13 +968,32 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Profissional responsável</label>
                 <select
-                  value={form.profissional_id}
-                  onChange={(e) => handleProfissional(e.target.value)}
+                  value={profissionalLivre ? "__outro__" : form.profissional_id}
+                  onChange={(e) => {
+                    if (e.target.value === "__outro__") {
+                      setProfissionalLivre(true);
+                      setForm((f) => ({ ...f, profissional_id: "", profissional_nome: "" }));
+                    } else {
+                      setProfissionalLivre(false);
+                      handleProfissional(e.target.value);
+                    }
+                  }}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Nenhum</option>
                   {atendentes.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
+                  <option value="__outro__">+ Digitar outro nome...</option>
                 </select>
+                {profissionalLivre && (
+                  <input
+                    type="text"
+                    autoFocus
+                    value={form.profissional_nome}
+                    onChange={(e) => setForm((f) => ({ ...f, profissional_nome: e.target.value }))}
+                    placeholder="Digite o nome do profissional"
+                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
               </div>
 
               {/* motivo da mudança/ausência */}
