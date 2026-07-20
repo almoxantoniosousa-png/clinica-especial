@@ -146,6 +146,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   } | null>(null);
   const [snapshotsLista, setSnapshotsLista] = useState<{ id: string; criado_em: string; criado_por_nome: string | null }[]>([]);
   const [snapshotIndex, setSnapshotIndex] = useState(-1);
+  const [mesAnoBusca, setMesAnoBusca] = useState("");
+  const [mesBuscado, setMesBuscado] = useState("");
 
   // modal
   const [modalAberto, setModalAberto] = useState(false);
@@ -448,6 +450,23 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       criado_por_nome: alvo.criado_por_nome,
       dados: (data?.dados ?? []) as Slot[],
     });
+  }
+
+  // Pula direto pra foto mais próxima de um mês/ano escolhido (ex: "2026-04")
+  async function irParaMesAno(mesAno: string) {
+    if (!mesAno || snapshotsLista.length === 0) return;
+    const inicioMes = new Date(`${mesAno}-01T00:00:00`).getTime();
+    const fimMes = new Date(inicioMes);
+    fimMes.setMonth(fimMes.getMonth() + 1);
+
+    let indexAlvo = -1;
+    for (let i = snapshotsLista.length - 1; i >= 0; i--) {
+      const t = new Date(snapshotsLista[i].criado_em).getTime();
+      if (t < fimMes.getTime()) { indexAlvo = i; break; }
+    }
+    if (indexAlvo === -1) indexAlvo = 0;
+    setMesBuscado(mesAno);
+    await abrirSnapshot(indexAlvo);
   }
 
   const slotsDoDia = slots.filter((s) => {
@@ -984,25 +1003,45 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               </>
             ) : (
               <>
-                <div className="px-4 pt-3 pb-2 flex items-center justify-between border-b border-slate-100">
-                  <button onClick={() => abrirSnapshot(snapshotIndex - 1)} disabled={snapshotIndex <= 0 || consultandoData}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30">
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <div className="text-center text-xs text-slate-600">
-                    {consultandoData ? "Carregando..." : consultaResultado ? (
-                      <>
-                        <p className="font-semibold text-slate-800">
-                          {new Date(consultaResultado.criado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
-                        </p>
-                        <p className="text-[11px] text-slate-400">por {consultaResultado.criado_por_nome || "—"}</p>
-                      </>
-                    ) : "—"}
+                <div className="px-4 pt-3 pb-2 flex flex-wrap items-center gap-3 border-b border-slate-100">
+                  <div className="flex items-end gap-2">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Ir para mês/ano</label>
+                      <input type="month" value={mesAnoBusca} onChange={(e) => setMesAnoBusca(e.target.value)}
+                        className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <button onClick={() => irParaMesAno(mesAnoBusca)} disabled={!mesAnoBusca || consultandoData}
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                      Buscar
+                    </button>
                   </div>
-                  <button onClick={() => abrirSnapshot(snapshotIndex + 1)} disabled={snapshotIndex >= snapshotsLista.length - 1 || snapshotIndex < 0 || consultandoData}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30">
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
+
+                  <div className="flex items-center gap-2 flex-1 justify-end">
+                    <button onClick={() => { setMesBuscado(""); abrirSnapshot(snapshotIndex - 1); }} disabled={snapshotIndex <= 0 || consultandoData}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 flex-shrink-0">
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <div className="text-center text-xs text-slate-600 min-w-[120px]">
+                      {consultandoData ? "Carregando..." : consultaResultado ? (
+                        <>
+                          <p className="font-semibold text-slate-800">
+                            {new Date(consultaResultado.criado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                          </p>
+                          <p className="text-[11px] text-slate-400">por {consultaResultado.criado_por_nome || "—"}</p>
+                        </>
+                      ) : "—"}
+                    </div>
+                    <button onClick={() => { setMesBuscado(""); abrirSnapshot(snapshotIndex + 1); }} disabled={snapshotIndex >= snapshotsLista.length - 1 || snapshotIndex < 0 || consultandoData}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 flex-shrink-0">
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {mesBuscado && consultaResultado && !consultaResultado.criado_em.startsWith(mesBuscado) && (
+                    <p className="w-full text-[11px] text-amber-600">
+                      Sem alteração em {mesBuscado.split("-").reverse().join("/")} — mostrando o registro mais próximo.
+                    </p>
+                  )}
                 </div>
                 <div className="flex justify-between px-4 pt-1">
                   <span className="text-[11px] text-slate-400">‹ Alteração anterior</span>
