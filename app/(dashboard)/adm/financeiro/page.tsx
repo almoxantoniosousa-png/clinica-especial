@@ -47,6 +47,16 @@ export default function FinanceiroPage() {
   const [aba, setAba] = useState<Aba>("contas_pagar");
   const [mesAno, setMesAno] = useState(() => new Date().toISOString().slice(0, 7));
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
+  const [role, setRole] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return;
+      const { data: usuario } = await supabase.from("usuarios").select("role").eq("email", user.email).maybeSingle();
+      setRole((usuario?.role || "").toString().trim().toLowerCase());
+    })();
+  }, [supabase]);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -63,12 +73,17 @@ export default function FinanceiroPage() {
     setMesAno(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
   }
 
-  const abas = [
+  const todasAbas = [
     { id: "contas_pagar",   label: "Contas a Pagar",  icon: "📤" },
     { id: "contas_receber", label: "Contas a Receber", icon: "📥" },
     { id: "fluxo",          label: "Fluxo de Caixa",  icon: "📊" },
     { id: "emprestimos",    label: "Empréstimos",     icon: "🤝" },
   ];
+  // aux_adm só enxerga Faturamento (contas a pagar/receber) — fluxo de caixa e
+  // empréstimos de colaboradores ficam restritos ao ADM/Gestão/Financeiro.
+  const abas = role === "aux_adm"
+    ? todasAbas.filter(a => a.id === "contas_pagar" || a.id === "contas_receber")
+    : todasAbas;
 
   return (
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-5">

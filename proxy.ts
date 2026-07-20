@@ -8,6 +8,10 @@ const PUBLIC_PATHS = ["/login"];
 // navegação direta por URL entre portais diferentes (ex.: atendente abrindo
 // /adm/dashboard) e não só o bloqueio de contas de família.
 const PREFIXOS_STAFF: { prefixo: string; roles: string[] }[] = [
+  // Exceções específicas dentro de /adm que a aux_adm também acessa —
+  // precisam vir antes da regra geral de "/adm" pra serem checadas primeiro.
+  { prefixo: "/adm/financeiro", roles: ["adm", "admin", "financeiro", "aux_adm"] },
+  { prefixo: "/adm/patrimonio", roles: ["adm", "admin", "financeiro", "aux_adm"] },
   { prefixo: "/adm", roles: ["adm", "admin", "financeiro"] },
   { prefixo: "/especialista", roles: ["especialista"] },
   { prefixo: "/supervisora", roles: ["supervisora"] },

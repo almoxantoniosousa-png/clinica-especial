@@ -482,6 +482,11 @@ const AUX_ADM: AjudaConteudo = {
       reflexo: "O catálogo cresce automaticamente quando alguém solicita um brinquedo que ainda não existe — você só precisa confirmar a retirada e a devolução. Cada etapa fica rastreada."
     },
     {
+      icone: "💰", titulo: "Faturamento", mockup: "financeiro",
+      texto: "Controle de Contas a Pagar e Contas a Receber da clínica. Lance uma nova conta (descrição, categoria, valor, vencimento) e marque como \"Pago\"/\"Recebido\" quando o pagamento acontecer — uma janela abre pra escolher a data real do pagamento (vem com hoje preenchido, mas pode trocar). Tudo fica registrado na Auditoria.\n\nErrou algo em uma fatura de Contas a Receber? Clique em \"Editar\" no card dela — funciona mesmo já recebida, sem precisar excluir e lançar de novo.",
+      reflexo: "Fluxo de Caixa e Empréstimos (dado salarial da equipe) não aparecem aqui — ficam restritos ao ADM, Gestão e Financeiro."
+    },
+    {
       icone: "📦", titulo: "Patrimônio", mockup: "abas",
       texto: "Inventário de bens da clínica (tombamento) e controle de manutenção de equipamentos, em duas abas.\n\n• Bens — clique em \"+ Cadastrar bem\" para tombar um item novo (nome, categoria, local, valor, fornecedor, foto e nota fiscal). Cada bem recebe um número de tombamento automático. Abra um bem pra ver o histórico de manutenções, o custo acumulado gasto nele, e gerar a etiqueta com QR Code pra imprimir e colar no equipamento.\n\n• Manutenções — chamados de defeito abertos por qualquer colaborador. Abra um chamado pra preencher local do conserto, técnico/fornecedor, custo, nota fiscal, garantia e status.\n\nDar baixa em um bem (perda, quebra irreparável, doação) é uma ação exclusiva do ADM.",
       reflexo: "Ao informar um custo de conserto, o sistema lança automaticamente uma Conta a Pagar no Faturamento."
