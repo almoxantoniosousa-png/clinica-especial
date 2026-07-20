@@ -46,6 +46,7 @@ const FORM_VAZIO = {
   hora: "",
   dataProximaReuniao: "",
   pessoasSelecionadas: [] as string[],
+  avulsos: [] as { nome: string; role: string }[],
   pontosAnteriores: "",
   pontosAtencao: "",
   itensAcao: [{ ...ITEM_ACAO_VAZIO }] as ItemAcao[],
@@ -66,6 +67,7 @@ export default function ReuniaoPage() {
 
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState(FORM_VAZIO);
+  const [novoAvulso, setNovoAvulso] = useState<Record<string, string>>({});
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
 
@@ -161,6 +163,16 @@ export default function ReuniaoPage() {
     }));
   }
 
+  function adicionarAvulso(role: string) {
+    const nome = (novoAvulso[role] || "").trim();
+    if (!nome) return;
+    setForm(f => ({ ...f, avulsos: [...f.avulsos, { nome, role }] }));
+    setNovoAvulso(prev => ({ ...prev, [role]: "" }));
+  }
+  function removerAvulso(i: number) {
+    setForm(f => ({ ...f, avulsos: f.avulsos.filter((_, idx) => idx !== i) }));
+  }
+
   function atualizarItemAcao(i: number, campo: keyof ItemAcao, valor: string) {
     setForm(f => ({ ...f, itensAcao: f.itensAcao.map((item, idx) => idx === i ? { ...item, [campo]: valor } : item) }));
   }
@@ -172,7 +184,7 @@ export default function ReuniaoPage() {
   }
 
   async function salvar() {
-    if (!form.titulo.trim() || !form.data || form.pessoasSelecionadas.length === 0) {
+    if (!form.titulo.trim() || !form.data || (form.pessoasSelecionadas.length === 0 && form.avulsos.length === 0)) {
       setErro("Preencha título, data e pelo menos um participante.");
       return;
     }
@@ -180,8 +192,13 @@ export default function ReuniaoPage() {
     setErro("");
 
     const pessoasEscolhidas = pessoas.filter(p => form.pessoasSelecionadas.includes(p.email));
-    const rolesParticipantes = Array.from(new Set(pessoasEscolhidas.map(p => p.role).filter(Boolean).concat(usuarioRole ? [usuarioRole] : [])));
-    const nomesParticipantes = pessoasEscolhidas.map(p => p.nome);
+    const rolesParticipantes = Array.from(new Set(
+      pessoasEscolhidas.map(p => p.role)
+        .concat(form.avulsos.map(a => a.role))
+        .concat(usuarioRole ? [usuarioRole] : [])
+        .filter(Boolean)
+    ));
+    const nomesParticipantes = pessoasEscolhidas.map(p => p.nome).concat(form.avulsos.map(a => a.nome));
     const itensAcaoValidos = form.itensAcao.filter(i => i.causa.trim() || i.acao.trim() || i.responsavel.trim() || i.prazo.trim());
 
     const { data: inserida, error } = await supabase.from("reunioes").insert({
@@ -239,7 +256,7 @@ export default function ReuniaoPage() {
     role,
     label: ROLE_LABEL[role],
     pessoas: pessoas.filter(p => p.role === role),
-  })).filter(g => g.pessoas.length > 0);
+  }));
 
   return (
     <div className="space-y-6">
@@ -451,7 +468,7 @@ export default function ReuniaoPage() {
                   {pessoasPorRole.map(grupo => (
                     <div key={grupo.role}>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide px-1">{grupo.label}</p>
-                      <div className="flex flex-wrap gap-1.5 px-1 py-1">
+                      <div className="flex flex-wrap gap-1.5 px-1 py-1 items-center">
                         {grupo.pessoas.map(p => (
                           <button key={p.email} type="button" onClick={() => togglePessoa(p.email)}
                             className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${
@@ -460,6 +477,24 @@ export default function ReuniaoPage() {
                             {p.nome}
                           </button>
                         ))}
+                        {form.avulsos.map((a, i) => a.role === grupo.role && (
+                          <span key={`avulso-${i}`} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-600 text-white">
+                            {a.nome}
+                            <button type="button" onClick={() => removerAvulso(i)} className="hover:text-blue-200">
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                        <div className="flex items-center gap-1">
+                          <input value={novoAvulso[grupo.role] || ""} onChange={e => setNovoAvulso(prev => ({ ...prev, [grupo.role]: e.target.value }))}
+                            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); adicionarAvulso(grupo.role); } }}
+                            placeholder="+ nome (sem login próprio)"
+                            className="h-7 px-2 rounded-lg border border-dashed border-slate-300 text-xs w-48 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                          <button type="button" onClick={() => adicionarAvulso(grupo.role)}
+                            className="h-7 px-2 rounded-lg text-xs font-semibold text-blue-600 hover:bg-blue-50">
+                            Add
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
