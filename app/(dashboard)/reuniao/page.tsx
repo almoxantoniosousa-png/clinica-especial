@@ -94,8 +94,8 @@ export default function ReuniaoPage() {
 
   async function carregarPessoas() {
     const [uRes, aRes] = await Promise.all([
-      supabase.from("usuarios").select("email, nome, role").neq("role", "familia"),
-      supabase.from("atendentes").select("email, nome, role"),
+      supabase.from("usuarios").select("email, nome, role").neq("role", "familia").eq("ativo", true),
+      supabase.from("atendentes").select("email, nome, role").is("data_demissao", null),
     ]);
     const brutas = [...(uRes.data ?? []), ...(aRes.data ?? [])] as Pessoa[];
     const porEmail = new Map<string, Pessoa>();
