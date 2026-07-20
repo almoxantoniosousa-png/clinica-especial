@@ -56,7 +56,7 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
-      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário (opcional), quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
       reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
     },
     {
@@ -192,7 +192,7 @@ const GESTAO: AjudaConteudo = {
     },
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
-      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário (opcional), quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
       reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
     },
     {
@@ -263,7 +263,7 @@ const SUPERVISORA: AjudaConteudo = {
     },
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
-      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário (opcional), quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
       reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
     },
     {
@@ -339,7 +339,7 @@ const ESPECIALISTA: AjudaConteudo = {
     },
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
-      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário (opcional), quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
       reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
     },
     {
@@ -409,7 +409,7 @@ const ATENDENTE: AjudaConteudo = {
     },
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
-      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário (opcional), quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
       reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
     },
     {
@@ -456,7 +456,7 @@ const FINANCEIRO: AjudaConteudo = {
     },
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
-      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário (opcional), quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
       reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
     },
     {
@@ -497,7 +497,7 @@ const AUX_ADM: AjudaConteudo = {
     },
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
-      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
+      texto: "Arquivo de atas de reunião. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só essas duas cargos veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário (opcional), quem participou (marque os cargos envolvidos) e o conteúdo. Clique numa ata da lista pra abrir e ler o conteúdo completo, com opção de Imprimir. Só quem criou a ata pode excluí-la.",
       reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações."
     },
     {

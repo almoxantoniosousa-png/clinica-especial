@@ -9,6 +9,7 @@ type Reuniao = {
   id: string;
   titulo: string;
   data: string;
+  hora: string | null;
   conteudo: string;
   participantes: string[];
   criado_por_email: string;
@@ -36,7 +37,7 @@ function labelParticipantes(roles: string[]) {
     .join(", ");
 }
 
-const FORM_VAZIO = { titulo: "", data: new Date().toISOString().slice(0, 10), conteudo: "", participantes: [] as string[] };
+const FORM_VAZIO = { titulo: "", data: new Date().toISOString().slice(0, 10), hora: "", conteudo: "", participantes: [] as string[] };
 
 export default function ReuniaoPage() {
   const [usuarioEmail, setUsuarioEmail] = useState("");
@@ -114,6 +115,7 @@ export default function ReuniaoPage() {
     const { error } = await supabase.from("reunioes").insert({
       titulo: form.titulo.trim(),
       data: form.data,
+      hora: form.hora || null,
       conteudo: form.conteudo.trim(),
       participantes: Array.from(rolesSelecionados),
       criado_por_email: usuarioEmail,
@@ -202,7 +204,7 @@ export default function ReuniaoPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate">{r.titulo}</p>
                     <p className="text-xs text-slate-400">
-                      {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")} · {labelParticipantes(r.participantes)}
+                      {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}{r.hora ? ` às ${r.hora}` : ""} · {labelParticipantes(r.participantes)}
                     </p>
                   </div>
                 </button>
@@ -275,10 +277,17 @@ export default function ReuniaoPage() {
                   placeholder="Ex: Reunião de planejamento mensal"
                   className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Data da reunião</label>
-                <input type="date" value={form.data} onChange={e => setForm(f => ({ ...f, data: e.target.value }))}
-                  className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Data da reunião</label>
+                  <input type="date" value={form.data} onChange={e => setForm(f => ({ ...f, data: e.target.value }))}
+                    className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Horário (opcional)</label>
+                  <input type="time" value={form.hora} onChange={e => setForm(f => ({ ...f, hora: e.target.value }))}
+                    className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Quem participou</label>
@@ -321,7 +330,7 @@ export default function ReuniaoPage() {
     {aberta && (
       <div className="hidden print:block">
         <h1 className="text-xl font-bold text-slate-900">{aberta.titulo}</h1>
-        <p className="text-sm text-slate-500 mb-1">{new Date(aberta.data + "T12:00:00").toLocaleDateString("pt-BR")}</p>
+        <p className="text-sm text-slate-500 mb-1">{new Date(aberta.data + "T12:00:00").toLocaleDateString("pt-BR")}{aberta.hora ? ` às ${aberta.hora}` : ""}</p>
         <p className="text-xs text-slate-400 mb-4">Participantes: {labelParticipantes(aberta.participantes)}</p>
         <p className="text-sm whitespace-pre-wrap">{aberta.conteudo}</p>
         <p className="text-xs text-slate-400 mt-6">Registrado por {aberta.criado_por_nome || aberta.criado_por_email}</p>
