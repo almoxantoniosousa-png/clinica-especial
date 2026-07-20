@@ -6,7 +6,14 @@ import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, Hi
 import { registrarLog } from "@/lib/auditoria";
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
-const HORARIOS = [
+
+// Horário do atendimento agora é texto livre (não trava mais num horário
+// fixo) — essa lista vira só sugestão rápida (datalist), pra manhã e tarde.
+const HORARIOS_SUGERIDOS = [
+  "08:00 – 09:00",
+  "09:00 – 10:00",
+  "10:00 – 11:00",
+  "11:00 – 12:00",
   "13:00 – 13:30",
   "13:30 – 14:30",
   "14:30 – 15:30",
@@ -15,6 +22,21 @@ const HORARIOS = [
   "16:00 – 17:00",
   "17:00 – 18:00",
 ];
+
+// Extrai o primeiro "HH:MM" de um texto livre de horário, pra poder ordenar
+// cronologicamente mesmo com valores digitados à mão. Sem match, vai pro fim.
+function minutosDeHorario(horario: string): number {
+  const m = horario.match(/(\d{1,2}):(\d{2})/);
+  if (!m) return 99999;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+function ordenarHorarios(lista: string[]): string[] {
+  return Array.from(new Set(lista)).sort((a, b) => {
+    const diff = minutosDeHorario(a) - minutosDeHorario(b);
+    return diff !== 0 ? diff : a.localeCompare(b);
+  });
+}
 
 const LOCAIS = ["Escola", "Casa", "Clínica"];
 
@@ -81,7 +103,7 @@ type FormData = {
 
 const FORM_VAZIO: FormData = {
   dia: DIAS[0],
-  horario: HORARIOS[0],
+  horario: "",
   crianca: "",
   servico: "",
   profissional_id: "",
@@ -122,7 +144,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [criancas, setCriancas] = useState<string[]>([]);
   const [servicos, setServicos] = useState<string[]>([]);
   const [atendentes, setAtendentes] = useState<Atendente[]>([]);
-  const [nomesAvulsos, setNomesAvulsos] = useState<string[]>([]);
+  const [avulsos, setAvulsos] = useState<{ nome: string; categoria: string | null }[]>([]);
+  const nomesAvulsos = avulsos.map((a) => a.nome);
   const [loading, setLoading] = useState(true);
   const [diaAtivo, setDiaAtivo] = useState(0);
   const [visualizacao, setVisualizacao] = useState<"dia" | "semana" | "anterior">("dia");
@@ -133,6 +156,12 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [usuarioNome, setUsuarioNome] = useState("");
   const [servicoLivre, setServicoLivre] = useState(false);
   const [profissionalLivre, setProfissionalLivre] = useState(false);
+  const [categoriaNovoAvulso, setCategoriaNovoAvulso] = useState<"especialista" | "atendente" | "">("");
+
+  // hora do lanche — um valor por dia, não por atendimento
+  const [lancheDia, setLancheDia] = useState<Record<string, string>>({});
+  const [editandoLancheDia, setEditandoLancheDia] = useState<string | null>(null);
+  const [lancheInput, setLancheInput] = useState("");
 
   // histórico
   const [historicoAberto, setHistoricoAberto] = useState(false);
@@ -169,9 +198,18 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const corMap: Record<string, string> = {};
   servicos.forEach((nome, i) => { corMap[nome] = CORES[i % CORES.length]; });
 
+  // "at" e "atendente" são o mesmo cargo (grafias diferentes já usadas no
+  // banco) — normaliza pra não virarem duas seções duplicadas na impressão.
+  const normalizarRole = (r: string) => (r === "at" ? "atendente" : r);
+
   const roleDoProfissional: Record<string, string> = {};
-  atendentes.forEach((a) => { roleDoProfissional[a.id] = (a.role || "").toString().trim().toLowerCase(); });
-  const rolesParaImprimir = Array.from(new Set(rolesPermitidos.map((r) => r.toLowerCase())));
+  atendentes.forEach((a) => { roleDoProfissional[a.id] = normalizarRole((a.role || "").toString().trim().toLowerCase()); });
+  const rolesParaImprimir = Array.from(new Set(rolesPermitidos.map((r) => normalizarRole(r.toLowerCase()))));
+
+  // categoria de quem foi digitado na mão (sem cadastro), pra impressão
+  // conseguir separar por função igual já faz com quem tem cadastro
+  const categoriaDoAvulso: Record<string, string> = {};
+  avulsos.forEach((a) => { if (a.categoria) categoriaDoAvulso[a.nome.toLowerCase()] = a.categoria; });
 
   useEffect(() => {
     carregarTudo();
@@ -197,11 +235,12 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
   async function carregarTudo() {
     setLoading(true);
-    const [atendentesRes, criancasRes, servicosRes, nomesAvulsosRes] = await Promise.all([
+    const [atendentesRes, criancasRes, servicosRes, avulsosRes, lancheRes] = await Promise.all([
       supabase.from("atendentes").select("id, nome, role").in("role", rolesPermitidos).order("nome"),
       supabase.from("criancas").select("nome").order("nome"),
       supabase.from("tipos_atendimento").select("nome").eq("ativo", true).order("nome"),
-      supabase.from("escala_nomes_avulsos").select("nome").order("nome"),
+      supabase.from("escala_nomes_avulsos").select("nome, categoria").order("nome"),
+      supabase.from("escala_lanche").select("dia, horario"),
     ]);
     const idsPermitidos = new Set((atendentesRes.data ?? []).map((a: Atendente) => a.id));
 
@@ -218,7 +257,10 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     setCriancas((criancasRes.data ?? []).map((c: { nome: string }) => c.nome));
     setServicos((servicosRes.data ?? []).map((s: { nome: string }) => s.nome));
     setAtendentes(atendentesRes.data ?? []);
-    setNomesAvulsos((nomesAvulsosRes.data ?? []).map((n: { nome: string }) => n.nome));
+    setAvulsos((avulsosRes.data ?? []).map((n: { nome: string; categoria: string | null }) => n));
+    const lancheMap: Record<string, string> = {};
+    (lancheRes.data ?? []).forEach((l: { dia: string; horario: string | null }) => { if (l.horario) lancheMap[l.dia] = l.horario; });
+    setLancheDia(lancheMap);
     setLoading(false);
   }
 
@@ -228,6 +270,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     setErroForm("");
     setServicoLivre(false);
     setProfissionalLivre(false);
+    setCategoriaNovoAvulso("");
     setModalAberto(true);
   }
 
@@ -249,8 +292,21 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     const profissionalConhecido = !!slot.profissional_nome &&
       nomesAvulsos.some((n) => n.toLowerCase() === slot.profissional_nome!.toLowerCase());
     setProfissionalLivre(!slot.profissional_id && !!slot.profissional_nome && !profissionalConhecido);
+    setCategoriaNovoAvulso("");
     setErroForm("");
     setModalAberto(true);
+  }
+
+  async function salvarLancheDia(diaAlvo: string) {
+    await supabase.from("escala_lanche").upsert({
+      dia: diaAlvo,
+      horario: lancheInput.trim() || null,
+      atualizado_por_email: usuarioEmail,
+      atualizado_por_nome: usuarioNome || null,
+      atualizado_em: new Date().toISOString(),
+    });
+    setLancheDia((prev) => ({ ...prev, [diaAlvo]: lancheInput.trim() }));
+    setEditandoLancheDia(null);
   }
 
   function fecharModal() {
@@ -293,9 +349,19 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     });
   }
 
+  const profissionalNovoAvulso =
+    profissionalLivre &&
+    !!form.profissional_nome.trim() &&
+    !atendentes.some((a) => a.nome.toLowerCase() === form.profissional_nome.trim().toLowerCase()) &&
+    !nomesAvulsos.some((n) => n.toLowerCase() === form.profissional_nome.trim().toLowerCase());
+
   async function salvar() {
     if (!form.crianca || !form.servico) {
       setErroForm("Criança e serviço são obrigatórios.");
+      return;
+    }
+    if (profissionalNovoAvulso && !categoriaNovoAvulso) {
+      setErroForm("Escolha se esse nome novo é Especialista ou AT.");
       return;
     }
     setSalvando(true);
@@ -356,13 +422,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     if (servicoLivre && payload.servico && !servicos.some((s) => s.toLowerCase() === payload.servico.toLowerCase())) {
       await supabase.from("tipos_atendimento").insert({ nome: payload.servico, ativo: true });
     }
-    if (profissionalLivre && payload.profissional_nome) {
-      const jaExiste =
-        atendentes.some((a) => a.nome.toLowerCase() === payload.profissional_nome!.toLowerCase()) ||
-        nomesAvulsos.some((n) => n.toLowerCase() === payload.profissional_nome!.toLowerCase());
-      if (!jaExiste) {
-        await supabase.from("escala_nomes_avulsos").insert({ nome: payload.profissional_nome });
-      }
+    if (profissionalNovoAvulso && payload.profissional_nome) {
+      await supabase.from("escala_nomes_avulsos").insert({ nome: payload.profissional_nome, categoria: categoriaNovoAvulso });
     }
 
     await tirarSnapshot();
@@ -499,6 +560,12 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     if (filtroServico && s.servico !== filtroServico) return false;
     return true;
   });
+
+  // Horário agora é texto livre — os "slots de horário" de cada visualização
+  // vêm do que já foi digitado, ordenados cronologicamente quando dá pra ler.
+  const horariosDoDia = ordenarHorarios(slots.filter((s) => s.dia === dia).map((s) => s.horario));
+  const horariosSemana = ordenarHorarios(slots.filter((s) => DIAS.slice(0, 5).includes(s.dia)).map((s) => s.horario));
+  const horariosAnterior = ordenarHorarios((consultaResultado?.dados ?? []).map((s) => s.horario));
 
   return (
     <div className="space-y-6">
@@ -677,7 +744,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                   </tr>
                 </thead>
                 <tbody>
-                  {HORARIOS.map((horario) => (
+                  {horariosAnterior.map((horario) => (
                     <tr key={horario}>
                       <td className="border-b border-slate-100 px-2 py-2 font-semibold text-slate-600 align-top">{horario}</td>
                       {DIAS.slice(0, 5).map((d) => {
@@ -710,9 +777,32 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                   <th key={d} className="border-b border-l border-slate-200 px-2 py-2 bg-slate-50 text-left min-w-[160px]">{d}</th>
                 ))}
               </tr>
+              <tr>
+                <td className="border-b border-slate-200 px-2 py-1.5 text-[11px] font-semibold text-slate-400 align-top">🍎 Lanche</td>
+                {DIAS.slice(0, 5).map((d) => (
+                  <td key={d} className="border-b border-l border-slate-200 px-2 py-1.5 align-top">
+                    {editandoLancheDia === d ? (
+                      <div className="flex items-center gap-1">
+                        <input autoFocus type="text" value={lancheInput} onChange={(e) => setLancheInput(e.target.value)}
+                          placeholder="Ex: 15:00 – 15:30"
+                          className="w-full rounded border border-slate-200 px-1.5 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                        <button onClick={() => salvarLancheDia(d)} className="text-emerald-600 text-[11px] font-bold px-1">✓</button>
+                        <button onClick={() => setEditandoLancheDia(null)} className="text-slate-400 text-[11px] px-1">✕</button>
+                      </div>
+                    ) : (
+                      <button
+                        disabled={!podeEditar}
+                        onClick={() => { setEditandoLancheDia(d); setLancheInput(lancheDia[d] || ""); }}
+                        className={`text-[11px] ${lancheDia[d] ? "text-slate-600" : "text-slate-300"} ${podeEditar ? "hover:text-blue-600 cursor-pointer" : "cursor-default"}`}>
+                        {lancheDia[d] || (podeEditar ? "+ definir" : "—")}
+                      </button>
+                    )}
+                  </td>
+                ))}
+              </tr>
             </thead>
             <tbody>
-              {HORARIOS.map((horario) => (
+              {horariosSemana.map((horario) => (
                 <tr key={horario}>
                   <td className="border-b border-slate-100 px-2 py-2 font-semibold text-slate-600 align-top">{horario}</td>
                   {DIAS.slice(0, 5).map((d) => {
@@ -744,7 +834,27 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         </div>
       ) : (
         <div className="space-y-3">
-          {HORARIOS.map((horario) => {
+          <div className="rounded-xl border border-slate-200 px-4 py-2.5 flex items-center gap-2">
+            <span className="text-sm">🍎</span>
+            <span className="text-xs font-semibold text-slate-500">Hora do lanche:</span>
+            {editandoLancheDia === dia ? (
+              <div className="flex items-center gap-1.5">
+                <input autoFocus type="text" value={lancheInput} onChange={(e) => setLancheInput(e.target.value)}
+                  placeholder="Ex: 15:00 – 15:30"
+                  className="rounded-lg border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <button onClick={() => salvarLancheDia(dia)} className="text-emerald-600 text-xs font-bold px-1">✓ salvar</button>
+                <button onClick={() => setEditandoLancheDia(null)} className="text-slate-400 text-xs px-1">cancelar</button>
+              </div>
+            ) : (
+              <button
+                disabled={!podeEditar}
+                onClick={() => { setEditandoLancheDia(dia); setLancheInput(lancheDia[dia] || ""); }}
+                className={`text-xs font-semibold ${lancheDia[dia] ? "text-slate-700" : "text-slate-300"} ${podeEditar ? "hover:text-blue-600 cursor-pointer" : "cursor-default"}`}>
+                {lancheDia[dia] || (podeEditar ? "+ definir horário" : "não definido")}
+              </button>
+            )}
+          </div>
+          {horariosDoDia.map((horario) => {
             const slotsHorario = slotsDoDia.filter((s) => s.horario === horario);
             if (slotsHorario.length === 0 && (filtroCrianca || filtroServico)) return null;
             return (
@@ -914,16 +1024,20 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 </select>
               </div>
 
-              {/* horário */}
+              {/* horário — texto livre, cobre manhã e tarde */}
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Horário</label>
-                <select
+                <input
+                  type="text"
+                  list="horarios-sugeridos"
                   value={form.horario}
                   onChange={(e) => setForm((f) => ({ ...f, horario: e.target.value }))}
+                  placeholder="Ex: 09:00 – 10:00"
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {HORARIOS.map((h) => <option key={h} value={h}>{h}</option>)}
-                </select>
+                />
+                <datalist id="horarios-sugeridos">
+                  {HORARIOS_SUGERIDOS.map((h) => <option key={h} value={h} />)}
+                </datalist>
               </div>
 
               {/* criança */}
@@ -1031,6 +1145,29 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                       className="w-full rounded-lg border-2 border-blue-300 bg-blue-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <p className="text-[11px] text-blue-600 font-medium mt-1">✎ Digitando um nome fora da lista</p>
+                    {profissionalNovoAvulso && (
+                      <div className="mt-2">
+                        <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                          Categoria (só perguntamos na primeira vez desse nome)
+                        </label>
+                        <div className="flex gap-2">
+                          {([
+                            { valor: "especialista", label: "Especialista" },
+                            { valor: "atendente", label: "AT" },
+                          ] as const).map((c) => (
+                            <button key={c.valor} type="button"
+                              onClick={() => setCategoriaNovoAvulso(c.valor)}
+                              className={`flex-1 h-9 rounded-lg text-xs font-semibold border transition ${
+                                categoriaNovoAvulso === c.valor
+                                  ? "bg-blue-600 text-white border-blue-600"
+                                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                              }`}>
+                              {c.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1161,7 +1298,12 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     {/* VERSÃO PRA IMPRIMIR — uma grade separada por função, pro mural físico (sem motivo/presença) */}
     <div className="hidden print:block">
       {rolesParaImprimir.map((r, i) => {
-        const slotsDoRole = slots.filter((s) => s.profissional_id && roleDoProfissional[s.profissional_id] === r);
+        const slotsDoRole = slots.filter((s) => {
+          if (s.profissional_id) return roleDoProfissional[s.profissional_id] === r;
+          if (s.profissional_nome) return categoriaDoAvulso[s.profissional_nome.toLowerCase()] === r;
+          return false;
+        });
+        const horariosDoRole = ordenarHorarios(slotsDoRole.map((s) => s.horario));
         return (
           <div key={r} className={i > 0 ? "break-before-page" : ""}>
             <h1 className="text-xl font-bold text-slate-900 text-center mb-1">{titulo}</h1>
@@ -1169,6 +1311,16 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             <p className="text-xs text-slate-500 text-center mb-4">
               Escala semanal — impresso em {new Date().toLocaleDateString("pt-BR")}
             </p>
+            <table className="w-full border-collapse text-[10px] mb-2">
+              <tbody>
+                <tr>
+                  <td className="border border-slate-300 px-1.5 py-1 font-semibold w-24">🍎 Lanche</td>
+                  {DIAS.slice(0, 5).map((d) => (
+                    <td key={d} className="border border-slate-300 px-1.5 py-1">{lancheDia[d] || "—"}</td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
             <table className="w-full border-collapse text-[10px]">
               <thead>
                 <tr>
@@ -1179,7 +1331,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 </tr>
               </thead>
               <tbody>
-                {HORARIOS.map((horario) => (
+                {horariosDoRole.map((horario) => (
                   <tr key={horario}>
                     <td className="border border-slate-300 px-1.5 py-1 font-semibold align-top">{horario}</td>
                     {DIAS.slice(0, 5).map((d) => {

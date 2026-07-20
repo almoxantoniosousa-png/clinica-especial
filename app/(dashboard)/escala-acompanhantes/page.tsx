@@ -1,13 +1,8 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { EscalaManager } from "@/components/escala-manager";
-
-export default function EscalaAcompanhantesPage() {
-  return (
-    <EscalaManager
-      rolesPermitidos={["atendente"]}
-      titulo="Escala — Acompanhantes Terapêuticas"
-      subtitulo="Cadastro semanal de atendimentos dos ATs"
-    />
-  );
+// Escala Especialistas e Escala Acompanhantes foram unificadas numa única
+// tela "Escala" (especialista + AT juntos, separados automaticamente na
+// hora de imprimir/relatório). Rota mantida só pra não quebrar favoritos.
+export default function EscalaAcompanhantesRedirectPage() {
+  redirect("/escala");
 }

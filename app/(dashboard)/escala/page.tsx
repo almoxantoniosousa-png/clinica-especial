@@ -1,8 +1,13 @@
-import { redirect } from "next/navigation";
+"use client";
 
-// Página antiga (escala combinada, sem presença/motivo/histórico) —
-// mantida só pra não quebrar favoritos salvos. Substituída pelas duas
-// telas novas.
-export default function EscalaRedirectPage() {
-  redirect("/escala-especialistas");
+import { EscalaManager } from "@/components/escala-manager";
+
+export default function EscalaPage() {
+  return (
+    <EscalaManager
+      rolesPermitidos={["especialista", "atendente", "at"]}
+      titulo="Escala"
+      subtitulo="Cadastro semanal de atendimentos — Especialistas e Acompanhantes Terapêuticos"
+    />
+  );
 }

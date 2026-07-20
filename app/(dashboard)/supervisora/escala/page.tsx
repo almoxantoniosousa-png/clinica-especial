@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 
-// Rota antiga (escala combinada) — mantida só pra não quebrar favoritos
-// salvos. A escala agora é dividida em duas telas.
+// Rota antiga — mantida só pra não quebrar favoritos salvos.
 export default function SupervisoraEscalaRedirectPage() {
-  redirect("/escala-especialistas");
+  redirect("/escala");
 }
