@@ -3,50 +3,66 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { registrarLog } from "@/lib/auditoria";
-import { Calendar, Plus, X, Printer, Trash2, Users } from "lucide-react";
+import { Calendar, Plus, X, Printer, Trash2, Users, Paperclip, Upload } from "lucide-react";
+
+type ItemAcao = { causa: string; acao: string; responsavel: string; prazo: string };
 
 type Reuniao = {
   id: string;
   titulo: string;
   data: string;
   hora: string | null;
-  conteudo: string;
+  data_proxima_reuniao: string | null;
   participantes: string[];
+  participantes_nomes: string[];
+  pontos_anteriores: string | null;
+  pontos_atencao: string | null;
+  itens_acao: ItemAcao[];
   criado_por_email: string;
   criado_por_nome: string | null;
   created_at: string;
 };
 
-type OpcaoParticipante = { label: string; roles: string[] };
+type Pessoa = { email: string; nome: string; role: string };
+type Anexo = { path: string; nome: string; url: string };
 
-const OPCOES_PARTICIPANTES: OpcaoParticipante[] = [
-  { label: "ADM / Administração",        roles: ["adm", "admin"] },
-  { label: "Gestão",                      roles: ["gestao"] },
-  { label: "Supervisora",                 roles: ["supervisora"] },
-  { label: "Especialistas",               roles: ["especialista"] },
-  { label: "Acompanhantes (AT)",          roles: ["atendente", "at"] },
-  { label: "Auxiliar Administrativo",     roles: ["aux_adm"] },
-  { label: "Financeiro",                  roles: ["financeiro"] },
-];
+const ROLE_LABEL: Record<string, string> = {
+  adm: "ADM / Administração",
+  admin: "ADM / Administração",
+  gestao: "Gestão",
+  supervisora: "Supervisora",
+  especialista: "Especialistas",
+  atendente: "Acompanhantes (AT)",
+  at: "Acompanhantes (AT)",
+  aux_adm: "Auxiliar Administrativo",
+  financeiro: "Financeiro",
+};
+const ORDEM_ROLES = ["adm", "gestao", "supervisora", "especialista", "atendente", "aux_adm", "financeiro"];
 
-function labelParticipantes(roles: string[]) {
-  const rolesSet = new Set(roles);
-  return OPCOES_PARTICIPANTES
-    .filter(o => o.roles.some(r => rolesSet.has(r)))
-    .map(o => o.label)
-    .join(", ");
-}
-
-const FORM_VAZIO = { titulo: "", data: new Date().toISOString().slice(0, 10), hora: "", conteudo: "", participantes: [] as string[] };
+const ITEM_ACAO_VAZIO: ItemAcao = { causa: "", acao: "", responsavel: "", prazo: "" };
+const FORM_VAZIO = {
+  titulo: "",
+  data: new Date().toISOString().slice(0, 10),
+  hora: "",
+  dataProximaReuniao: "",
+  pessoasSelecionadas: [] as string[],
+  pontosAnteriores: "",
+  pontosAtencao: "",
+  itensAcao: [{ ...ITEM_ACAO_VAZIO }] as ItemAcao[],
+};
 
 export default function ReuniaoPage() {
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
   const [usuarioRole, setUsuarioRole] = useState("");
 
+  const [pessoas, setPessoas] = useState<Pessoa[]>([]);
   const [reunioes, setReunioes] = useState<Reuniao[]>([]);
   const [loading, setLoading] = useState(true);
   const [aberta, setAberta] = useState<Reuniao | null>(null);
+  const [anexos, setAnexos] = useState<Anexo[]>([]);
+  const [carregandoAnexos, setCarregandoAnexos] = useState(false);
+  const [enviandoAnexo, setEnviandoAnexo] = useState(false);
 
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState(FORM_VAZIO);
@@ -73,7 +89,23 @@ export default function ReuniaoPage() {
     }
     identificar();
     carregar();
+    carregarPessoas();
   }, []);
+
+  async function carregarPessoas() {
+    const [uRes, aRes] = await Promise.all([
+      supabase.from("usuarios").select("email, nome, role").neq("role", "familia"),
+      supabase.from("atendentes").select("email, nome, role"),
+    ]);
+    const brutas = [...(uRes.data ?? []), ...(aRes.data ?? [])] as Pessoa[];
+    const porEmail = new Map<string, Pessoa>();
+    brutas.forEach(p => {
+      const role = (p.role || "").toString().trim().toLowerCase();
+      if (!role || !p.email || porEmail.has(p.email)) return;
+      porEmail.set(p.email, { email: p.email, nome: p.nome || p.email, role });
+    });
+    setPessoas(Array.from(porEmail.values()).sort((a, b) => a.nome.localeCompare(b.nome)));
+  }
 
   async function carregar() {
     setLoading(true);
@@ -82,63 +114,102 @@ export default function ReuniaoPage() {
     setLoading(false);
   }
 
+  async function carregarAnexos(reuniaoId: string) {
+    setCarregandoAnexos(true);
+    const { data } = await supabase.storage.from("reuniao-anexos").list(reuniaoId);
+    const arquivos = (data ?? []).filter(f => f.name);
+    const comUrl = await Promise.all(arquivos.map(async f => {
+      const path = `${reuniaoId}/${f.name}`;
+      const { data: assinado } = await supabase.storage.from("reuniao-anexos").createSignedUrl(path, 3600);
+      return { path, nome: f.name, url: assinado?.signedUrl || "" };
+    }));
+    setAnexos(comUrl);
+    setCarregandoAnexos(false);
+  }
+
+  function abrirAta(r: Reuniao) {
+    if (aberta?.id === r.id) { setAberta(null); setAnexos([]); return; }
+    setAberta(r);
+    carregarAnexos(r.id);
+  }
+
+  async function enviarAnexo(reuniaoId: string, file: File) {
+    setEnviandoAnexo(true);
+    const path = `${reuniaoId}/${Date.now()}_${file.name}`;
+    const { error } = await supabase.storage.from("reuniao-anexos").upload(path, file);
+    setEnviandoAnexo(false);
+    if (!error) carregarAnexos(reuniaoId);
+  }
+
+  async function excluirAnexo(path: string, reuniaoId: string) {
+    await supabase.storage.from("reuniao-anexos").remove([path]);
+    carregarAnexos(reuniaoId);
+  }
+
   function abrirNovo() {
     setForm(FORM_VAZIO);
     setErro("");
     setModalAberto(true);
   }
 
-  function alternarParticipante(label: string) {
+  function togglePessoa(email: string) {
     setForm(f => ({
       ...f,
-      participantes: f.participantes.includes(label)
-        ? f.participantes.filter(p => p !== label)
-        : [...f.participantes, label],
+      pessoasSelecionadas: f.pessoasSelecionadas.includes(email)
+        ? f.pessoasSelecionadas.filter(e => e !== email)
+        : [...f.pessoasSelecionadas, email],
     }));
   }
 
+  function atualizarItemAcao(i: number, campo: keyof ItemAcao, valor: string) {
+    setForm(f => ({ ...f, itensAcao: f.itensAcao.map((item, idx) => idx === i ? { ...item, [campo]: valor } : item) }));
+  }
+  function adicionarItemAcao() {
+    setForm(f => ({ ...f, itensAcao: [...f.itensAcao, { ...ITEM_ACAO_VAZIO }] }));
+  }
+  function removerItemAcao(i: number) {
+    setForm(f => ({ ...f, itensAcao: f.itensAcao.filter((_, idx) => idx !== i) }));
+  }
+
   async function salvar() {
-    if (!form.titulo.trim() || !form.data || !form.conteudo.trim() || form.participantes.length === 0) {
-      setErro("Preencha título, data, conteúdo e pelo menos um participante.");
+    if (!form.titulo.trim() || !form.data || form.pessoasSelecionadas.length === 0) {
+      setErro("Preencha título, data e pelo menos um participante.");
       return;
     }
     setSalvando(true);
     setErro("");
 
-    const rolesSelecionados = new Set<string>();
-    form.participantes.forEach(label => {
-      const opcao = OPCOES_PARTICIPANTES.find(o => o.label === label);
-      opcao?.roles.forEach(r => rolesSelecionados.add(r));
-    });
-    if (usuarioRole) rolesSelecionados.add(usuarioRole);
+    const pessoasEscolhidas = pessoas.filter(p => form.pessoasSelecionadas.includes(p.email));
+    const rolesParticipantes = Array.from(new Set(pessoasEscolhidas.map(p => p.role).filter(Boolean).concat(usuarioRole ? [usuarioRole] : [])));
+    const nomesParticipantes = pessoasEscolhidas.map(p => p.nome);
+    const itensAcaoValidos = form.itensAcao.filter(i => i.causa.trim() || i.acao.trim() || i.responsavel.trim() || i.prazo.trim());
 
-    const { error } = await supabase.from("reunioes").insert({
+    const { data: inserida, error } = await supabase.from("reunioes").insert({
       titulo: form.titulo.trim(),
       data: form.data,
       hora: form.hora || null,
-      conteudo: form.conteudo.trim(),
-      participantes: Array.from(rolesSelecionados),
+      data_proxima_reuniao: form.dataProximaReuniao || null,
+      participantes: rolesParticipantes,
+      participantes_nomes: nomesParticipantes,
+      pontos_anteriores: form.pontosAnteriores.trim() || null,
+      pontos_atencao: form.pontosAtencao.trim() || null,
+      itens_acao: itensAcaoValidos,
       criado_por_email: usuarioEmail,
       criado_por_nome: usuarioNome || null,
-    });
+    }).select("id").single();
 
     setSalvando(false);
     if (error) { setErro(error.message); return; }
 
     await registrarLog(supabase, {
       usuario_email: usuarioEmail, usuario_nome: usuarioNome, acao: "Registrou ata de reunião",
-      tabela: "reunioes", descricao: `${form.titulo} (${form.data})`,
+      tabela: "reunioes", registro_id: inserida?.id, descricao: `${form.titulo} (${form.data})`,
     });
 
-    // Avisa no sino quem participou (menos quem já sabe, por ter acabado de criar).
-    const rolesParaAvisar = new Set<string>();
-    form.participantes.forEach(label => {
-      const opcao = OPCOES_PARTICIPANTES.find(o => o.label === label);
-      opcao?.roles.forEach(r => { if (r !== usuarioRole) rolesParaAvisar.add(r); });
-    });
-    if (rolesParaAvisar.size > 0) {
+    const rolesParaAvisar = rolesParticipantes.filter(r => r !== usuarioRole);
+    if (rolesParaAvisar.length > 0) {
       await supabase.from("notificacoes").insert(
-        Array.from(rolesParaAvisar).map(role => ({
+        rolesParaAvisar.map(role => ({
           destinatario_role: role,
           titulo: "🗒️ Nova ata de reunião",
           mensagem: form.titulo.trim(),
@@ -160,9 +231,15 @@ export default function ReuniaoPage() {
     setExcluindo(false);
     if (error) return;
     setReunioes(prev => prev.filter(r => r.id !== deletandoId));
-    if (aberta?.id === deletandoId) setAberta(null);
+    if (aberta?.id === deletandoId) { setAberta(null); setAnexos([]); }
     setDeletandoId(null);
   }
+
+  const pessoasPorRole = ORDEM_ROLES.map(role => ({
+    role,
+    label: ROLE_LABEL[role],
+    pessoas: pessoas.filter(p => p.role === role),
+  })).filter(g => g.pessoas.length > 0);
 
   return (
     <div className="space-y-6">
@@ -198,19 +275,92 @@ export default function ReuniaoPage() {
             const abertaAqui = aberta?.id === r.id;
             return (
               <div key={r.id} className="rounded-xl border border-slate-200 overflow-hidden">
-                <button onClick={() => setAberta(abertaAqui ? null : r)}
+                <button onClick={() => abrirAta(r)}
                   className="w-full flex items-center gap-3 px-4 py-3 bg-slate-50 hover:bg-slate-100 transition text-left">
                   <Calendar className="h-4 w-4 text-blue-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate">{r.titulo}</p>
                     <p className="text-xs text-slate-400">
-                      {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}{r.hora ? ` às ${r.hora}` : ""} · {labelParticipantes(r.participantes)}
+                      {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}{r.hora ? ` às ${r.hora}` : ""} · {r.participantes_nomes.join(", ")}
                     </p>
                   </div>
                 </button>
                 {abertaAqui && (
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{r.conteudo}</p>
+                  <div className="p-4 space-y-4">
+                    {r.data_proxima_reuniao && (
+                      <p className="text-xs text-slate-500">
+                        <strong>Próxima reunião:</strong> {new Date(r.data_proxima_reuniao + "T12:00:00").toLocaleDateString("pt-BR")}
+                      </p>
+                    )}
+                    {r.pontos_anteriores && (
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Pontos discutidos anteriormente</p>
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{r.pontos_anteriores}</p>
+                      </div>
+                    )}
+                    {r.pontos_atencao && (
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Pontos de atenção até a próxima reunião</p>
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{r.pontos_atencao}</p>
+                      </div>
+                    )}
+                    {r.itens_acao.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Plano de ação</p>
+                        <div className="overflow-x-auto rounded-lg border border-slate-200">
+                          <table className="w-full border-collapse text-xs">
+                            <thead>
+                              <tr className="bg-slate-50">
+                                <th className="px-2 py-1.5 text-left border-b border-slate-200">Análise de causa</th>
+                                <th className="px-2 py-1.5 text-left border-b border-l border-slate-200">Plano de ação</th>
+                                <th className="px-2 py-1.5 text-left border-b border-l border-slate-200">Responsável</th>
+                                <th className="px-2 py-1.5 text-left border-b border-l border-slate-200">Prazo</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {r.itens_acao.map((item, i) => (
+                                <tr key={i}>
+                                  <td className="px-2 py-1.5 border-b border-slate-100 align-top">{item.causa}</td>
+                                  <td className="px-2 py-1.5 border-b border-l border-slate-100 align-top">{item.acao}</td>
+                                  <td className="px-2 py-1.5 border-b border-l border-slate-100 align-top">{item.responsavel}</td>
+                                  <td className="px-2 py-1.5 border-b border-l border-slate-100 align-top">{item.prazo}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ANEXOS */}
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Anexos</p>
+                      {carregandoAnexos ? (
+                        <p className="text-xs text-slate-400">Carregando...</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {anexos.map(a => (
+                            <div key={a.path} className="flex items-center gap-2 text-xs">
+                              <Paperclip className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                              <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">{a.nome}</a>
+                              {r.criado_por_email === usuarioEmail && (
+                                <button onClick={() => excluirAnexo(a.path, r.id)} className="text-slate-400 hover:text-red-600 ml-auto">
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {anexos.length === 0 && <p className="text-xs text-slate-400">Nenhum anexo.</p>}
+                          <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 cursor-pointer mt-1">
+                            <Upload className="h-3.5 w-3.5" />
+                            {enviandoAnexo ? "Enviando..." : "Anexar arquivo (imagem ou PDF)"}
+                            <input type="file" accept="image/*,application/pdf" className="hidden" disabled={enviandoAnexo}
+                              onChange={e => { const f = e.target.files?.[0]; if (f) enviarAnexo(r.id, f); e.target.value = ""; }} />
+                          </label>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                       <p className="text-[11px] text-slate-400">
                         Registrado por {r.criado_por_nome || r.criado_por_email}
@@ -263,7 +413,7 @@ export default function ReuniaoPage() {
       {/* MODAL NOVA ATA */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false); }}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h2 className="text-lg font-bold text-slate-800">Nova ata de reunião</h2>
               <button onClick={() => setModalAberto(false)} className="text-slate-400 hover:text-slate-600">
@@ -274,41 +424,96 @@ export default function ReuniaoPage() {
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Título</label>
                 <input value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
-                  placeholder="Ex: Reunião de planejamento mensal"
+                  placeholder="Ex: Reunião de supervisão — Daniela"
                   className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Data da reunião</label>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Data</label>
                   <input type="date" value={form.data} onChange={e => setForm(f => ({ ...f, data: e.target.value }))}
                     className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Horário (opcional)</label>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Horário</label>
                   <input type="time" value={form.hora} onChange={e => setForm(f => ({ ...f, hora: e.target.value }))}
                     className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Próxima reunião</label>
+                  <input type="date" value={form.dataProximaReuniao} onChange={e => setForm(f => ({ ...f, dataProximaReuniao: e.target.value }))}
+                    className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
               </div>
+
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Quem participou</label>
-                <div className="flex flex-wrap gap-2">
-                  {OPCOES_PARTICIPANTES.map(o => (
-                    <button key={o.label} type="button" onClick={() => alternarParticipante(o.label)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                        form.participantes.includes(o.label) ? "bg-blue-600 text-white border-blue-600" : "text-slate-600 border-slate-200 hover:bg-slate-50"
-                      }`}>
-                      {o.label}
-                    </button>
+                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Participantes da reunião</label>
+                <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-100 rounded-xl p-2">
+                  {pessoasPorRole.map(grupo => (
+                    <div key={grupo.role}>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide px-1">{grupo.label}</p>
+                      <div className="flex flex-wrap gap-1.5 px-1 py-1">
+                        {grupo.pessoas.map(p => (
+                          <button key={p.email} type="button" onClick={() => togglePessoa(p.email)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${
+                              form.pessoasSelecionadas.includes(p.email) ? "bg-blue-600 text-white border-blue-600" : "text-slate-600 border-slate-200 hover:bg-slate-50"
+                            }`}>
+                            {p.nome}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">Só quem participar vai enxergar essa ata.</p>
               </div>
+
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Conteúdo da ata</label>
-                <textarea value={form.conteudo} onChange={e => setForm(f => ({ ...f, conteudo: e.target.value }))}
-                  rows={8} placeholder="O que foi discutido, decisões tomadas, próximos passos..."
+                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Pontos discutidos anteriormente (opcional)</label>
+                <textarea value={form.pontosAnteriores} onChange={e => setForm(f => ({ ...f, pontosAnteriores: e.target.value }))}
+                  rows={3} placeholder="Retomada da reunião passada..."
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Pontos de atenção até a próxima reunião (opcional)</label>
+                <textarea value={form.pontosAtencao} onChange={e => setForm(f => ({ ...f, pontosAtencao: e.target.value }))}
+                  rows={3} placeholder="O que precisa ser acompanhado até o próximo encontro..."
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Plano de ação (opcional)</label>
+                <div className="space-y-2">
+                  {form.itensAcao.map((item, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-1.5 items-start">
+                      <input value={item.causa} onChange={e => atualizarItemAcao(i, "causa", e.target.value)}
+                        placeholder="Análise de causa" list="pessoas-lista"
+                        className="h-9 px-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input value={item.acao} onChange={e => atualizarItemAcao(i, "acao", e.target.value)}
+                        placeholder="Plano de ação"
+                        className="h-9 px-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input value={item.responsavel} onChange={e => atualizarItemAcao(i, "responsavel", e.target.value)}
+                        placeholder="Responsável" list="pessoas-lista"
+                        className="h-9 px-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input value={item.prazo} onChange={e => atualizarItemAcao(i, "prazo", e.target.value)}
+                        placeholder="Prazo (ex: 7 dias)"
+                        className="h-9 px-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <button type="button" onClick={() => removerItemAcao(i)}
+                        className="h-9 w-9 flex items-center justify-center text-slate-400 hover:text-red-600">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <datalist id="pessoas-lista">
+                    {pessoas.map(p => <option key={p.email} value={p.nome} />)}
+                  </datalist>
+                  <button type="button" onClick={adicionarItemAcao}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                    + Adicionar item
+                  </button>
+                </div>
+              </div>
+
               {erro && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{erro}</p>}
             </div>
             <div className="px-6 py-4 border-t border-slate-100 flex gap-3">
@@ -330,10 +535,57 @@ export default function ReuniaoPage() {
     {aberta && (
       <div className="hidden print:block">
         <h1 className="text-xl font-bold text-slate-900">{aberta.titulo}</h1>
-        <p className="text-sm text-slate-500 mb-1">{new Date(aberta.data + "T12:00:00").toLocaleDateString("pt-BR")}{aberta.hora ? ` às ${aberta.hora}` : ""}</p>
-        <p className="text-xs text-slate-400 mb-4">Participantes: {labelParticipantes(aberta.participantes)}</p>
-        <p className="text-sm whitespace-pre-wrap">{aberta.conteudo}</p>
-        <p className="text-xs text-slate-400 mt-6">Registrado por {aberta.criado_por_nome || aberta.criado_por_email}</p>
+        <p className="text-sm text-slate-500 mb-1">
+          {new Date(aberta.data + "T12:00:00").toLocaleDateString("pt-BR")}{aberta.hora ? ` às ${aberta.hora}` : ""}
+          {aberta.data_proxima_reuniao && <> — Próxima reunião: {new Date(aberta.data_proxima_reuniao + "T12:00:00").toLocaleDateString("pt-BR")}</>}
+        </p>
+        <p className="text-xs text-slate-400 mb-4">Participantes: {aberta.participantes_nomes.join(", ")}</p>
+        {aberta.pontos_anteriores && (
+          <div className="mb-4">
+            <p className="text-xs font-bold uppercase tracking-wide mb-1">Pontos discutidos anteriormente</p>
+            <p className="text-sm whitespace-pre-wrap">{aberta.pontos_anteriores}</p>
+          </div>
+        )}
+        {aberta.pontos_atencao && (
+          <div className="mb-4">
+            <p className="text-xs font-bold uppercase tracking-wide mb-1">Pontos de atenção até a próxima reunião</p>
+            <p className="text-sm whitespace-pre-wrap">{aberta.pontos_atencao}</p>
+          </div>
+        )}
+        {aberta.itens_acao.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-bold uppercase tracking-wide mb-1">Plano de ação</p>
+            <table className="w-full border-collapse text-xs">
+              <thead>
+                <tr>
+                  <th className="border border-slate-300 px-2 py-1 text-left">Análise de causa</th>
+                  <th className="border border-slate-300 px-2 py-1 text-left">Plano de ação</th>
+                  <th className="border border-slate-300 px-2 py-1 text-left">Responsável</th>
+                  <th className="border border-slate-300 px-2 py-1 text-left">Prazo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {aberta.itens_acao.map((item, i) => (
+                  <tr key={i}>
+                    <td className="border border-slate-300 px-2 py-1">{item.causa}</td>
+                    <td className="border border-slate-300 px-2 py-1">{item.acao}</td>
+                    <td className="border border-slate-300 px-2 py-1">{item.responsavel}</td>
+                    <td className="border border-slate-300 px-2 py-1">{item.prazo}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="text-xs text-slate-400 mt-8">Registrado por {aberta.criado_por_nome || aberta.criado_por_email}</p>
+        <div className="mt-10 pt-8 border-t border-slate-300">
+          <p className="text-xs font-bold uppercase tracking-wide mb-6">Assinaturas dos participantes</p>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-8">
+            {aberta.participantes_nomes.map(nome => (
+              <div key={nome} className="border-t border-slate-400 pt-1 text-xs text-center">{nome}</div>
+            ))}
+          </div>
+        </div>
       </div>
     )}
     </div>
