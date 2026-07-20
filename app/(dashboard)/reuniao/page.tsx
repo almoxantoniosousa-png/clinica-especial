@@ -16,6 +16,7 @@ type Reuniao = {
   data_proxima_reuniao: string | null;
   participantes: string[];
   participantes_nomes: string[];
+  participantes_emails: (string | null)[];
   pontos_anteriores: string | null;
   pontos_atencao: string | null;
   itens_acao: ItemAcao[];
@@ -71,6 +72,7 @@ export default function ReuniaoPage() {
   const [confirmacoes, setConfirmacoes] = useState<Confirmacao[]>([]);
   const [desenhandoAssinatura, setDesenhandoAssinatura] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
+  const [erroAssinatura, setErroAssinatura] = useState("");
 
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState(FORM_VAZIO);
@@ -155,12 +157,13 @@ export default function ReuniaoPage() {
 
   async function confirmarAta(reuniaoId: string, imagemBase64: string) {
     setConfirmando(true);
+    setErroAssinatura("");
     await supabase.from("assinaturas").upsert({ email: usuarioEmail, nome: usuarioNome || null, imagem_base64: imagemBase64, atualizado_em: new Date().toISOString() });
     const { error } = await supabase.from("reunioes_confirmacoes").upsert({
       reuniao_id: reuniaoId, email: usuarioEmail, nome: usuarioNome || null, imagem_base64: imagemBase64,
     }, { onConflict: "reuniao_id,email" });
     setConfirmando(false);
-    if (error) return;
+    if (error) { setErroAssinatura("Não foi possível confirmar. Tente novamente."); return; }
     setMinhaAssinatura(imagemBase64);
     setDesenhandoAssinatura(false);
     await registrarLog(supabase, {
@@ -233,11 +236,25 @@ export default function ReuniaoPage() {
         .concat(usuarioRole ? [usuarioRole] : [])
         .filter(Boolean)
     ));
-    const nomesParticipantes = Array.from(new Set(
-      pessoasEscolhidas.map(p => p.nome)
-        .concat(form.avulsos.map(a => a.nome))
-        .concat(usuarioNome && !form.pessoasSelecionadas.includes(usuarioEmail) ? [usuarioNome] : [])
-    ));
+
+    // Nome e e-mail de cada participante lado a lado (email = null pra quem não tem conta própria),
+    // pra casar a confirmação com precisão em vez de comparar só o texto do nome.
+    const detalhesParticipantes: { nome: string; email: string | null }[] = [
+      ...pessoasEscolhidas.map(p => ({ nome: p.nome, email: p.email })),
+      ...form.avulsos.map(a => ({ nome: a.nome, email: null })),
+    ];
+    if (usuarioNome && !form.pessoasSelecionadas.includes(usuarioEmail)) {
+      detalhesParticipantes.push({ nome: usuarioNome, email: usuarioEmail });
+    }
+    const vistos = new Set<string>();
+    const detalhesUnicos = detalhesParticipantes.filter(d => {
+      const chave = d.email || d.nome;
+      if (vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    });
+    const nomesParticipantes = detalhesUnicos.map(d => d.nome);
+    const emailsParticipantes = detalhesUnicos.map(d => d.email);
     const itensAcaoValidos = form.itensAcao.filter(i => i.causa.trim() || i.acao.trim() || i.responsavel.trim() || i.prazo.trim());
 
     const { data: inserida, error } = await supabase.from("reunioes").insert({
@@ -247,6 +264,7 @@ export default function ReuniaoPage() {
       data_proxima_reuniao: form.dataProximaReuniao || null,
       participantes: rolesParticipantes,
       participantes_nomes: nomesParticipantes,
+      participantes_emails: emailsParticipantes,
       pontos_anteriores: form.pontosAnteriores.trim() || null,
       pontos_atencao: form.pontosAtencao.trim() || null,
       itens_acao: itensAcaoValidos,
@@ -296,6 +314,16 @@ export default function ReuniaoPage() {
     label: ROLE_LABEL[role],
     pessoas: pessoas.filter(p => p.role === role),
   }));
+
+  // Casa cada participante com a confirmação dele — por e-mail quando a ata
+  // já guarda isso (mais confiável), com o nome como reserva pra atas antigas.
+  function participantesComConfirmacao(r: Reuniao) {
+    return r.participantes_nomes.map((nome, i) => {
+      const email = r.participantes_emails?.[i] ?? null;
+      const conf = confirmacoes.find(c => (email ? c.email === email : c.nome === nome));
+      return { nome, email, conf };
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -421,8 +449,7 @@ export default function ReuniaoPage() {
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Assinaturas</p>
                       <div className="space-y-1.5">
-                        {r.participantes_nomes.map(nome => {
-                          const conf = confirmacoes.find(c => c.nome === nome);
+                        {participantesComConfirmacao(r).map(({ nome, conf }) => {
                           return (
                             <div key={nome} className="flex items-center gap-2 text-xs">
                               {conf ? (
@@ -464,6 +491,7 @@ export default function ReuniaoPage() {
                           ) : (
                             <AssinaturaPad salvando={confirmando} onSalvar={(img) => confirmarAta(r.id, img)} />
                           )}
+                          {erroAssinatura && <p className="text-[11px] text-red-600 mt-2">{erroAssinatura}</p>}
                         </div>
                       )}
                     </div>
@@ -703,8 +731,7 @@ export default function ReuniaoPage() {
         <div className="mt-10 pt-8 border-t border-slate-300">
           <p className="text-xs font-bold uppercase tracking-wide mb-6">Assinaturas dos participantes</p>
           <div className="grid grid-cols-2 gap-x-8 gap-y-8">
-            {aberta.participantes_nomes.map(nome => {
-              const conf = confirmacoes.find(c => c.nome === nome);
+            {participantesComConfirmacao(aberta).map(({ nome, conf }) => {
               return (
                 <div key={nome} className="text-center">
                   {conf ? (
