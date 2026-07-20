@@ -938,17 +938,20 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 >
                   <option value="">Selecione...</option>
                   {servicos.map((s) => <option key={s} value={s}>{s}</option>)}
-                  <option value="__outro__">+ Digitar outro serviço...</option>
+                  <option value="__outro__" style={{ color: "#2563eb", fontWeight: 600 }}>✎ Digitar outro serviço...</option>
                 </select>
                 {servicoLivre && (
-                  <input
-                    type="text"
-                    autoFocus
-                    value={form.servico}
-                    onChange={(e) => setForm((f) => ({ ...f, servico: e.target.value }))}
-                    placeholder="Digite o nome do serviço/especialidade"
-                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={form.servico}
+                      onChange={(e) => setForm((f) => ({ ...f, servico: e.target.value }))}
+                      placeholder="Digite o nome do serviço/especialidade"
+                      className="w-full rounded-lg border-2 border-blue-300 bg-blue-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-[11px] text-blue-600 font-medium mt-1">✎ Digitando um serviço fora da lista</p>
+                  </div>
                 )}
               </div>
 
@@ -982,17 +985,20 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 >
                   <option value="">Nenhum</option>
                   {atendentes.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
-                  <option value="__outro__">+ Digitar outro nome...</option>
+                  <option value="__outro__" style={{ color: "#2563eb", fontWeight: 600 }}>✎ Digitar outro nome...</option>
                 </select>
                 {profissionalLivre && (
-                  <input
-                    type="text"
-                    autoFocus
-                    value={form.profissional_nome}
-                    onChange={(e) => setForm((f) => ({ ...f, profissional_nome: e.target.value }))}
-                    placeholder="Digite o nome do profissional"
-                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={form.profissional_nome}
+                      onChange={(e) => setForm((f) => ({ ...f, profissional_nome: e.target.value }))}
+                      placeholder="Digite o nome do profissional"
+                      className="w-full rounded-lg border-2 border-blue-300 bg-blue-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-[11px] text-blue-600 font-medium mt-1">✎ Digitando um nome fora da lista</p>
+                  </div>
                 )}
               </div>
 
