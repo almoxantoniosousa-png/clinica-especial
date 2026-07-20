@@ -145,8 +145,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   } | null>(null);
   const [snapshotsLista, setSnapshotsLista] = useState<{ id: string; criado_em: string; criado_por_nome: string | null }[]>([]);
   const [snapshotIndex, setSnapshotIndex] = useState(-1);
-  const [mesAnoBusca, setMesAnoBusca] = useState("");
-  const [mesBuscado, setMesBuscado] = useState("");
+  const [dataBusca, setDataBusca] = useState("");
+  const [dataBuscada, setDataBuscada] = useState("");
 
   // modal
   const [modalAberto, setModalAberto] = useState(false);
@@ -451,20 +451,18 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     });
   }
 
-  // Pula direto pra foto mais próxima de um mês/ano escolhido (ex: "2026-04")
-  async function irParaMesAno(mesAno: string) {
-    if (!mesAno || snapshotsLista.length === 0) return;
-    const inicioMes = new Date(`${mesAno}-01T00:00:00`).getTime();
-    const fimMes = new Date(inicioMes);
-    fimMes.setMonth(fimMes.getMonth() + 1);
+  // Pula direto pra foto mais próxima de uma data escolhida no calendário (ex: "2026-04-15")
+  async function irParaData(data: string) {
+    if (!data || snapshotsLista.length === 0) return;
+    const fimDoDia = new Date(`${data}T23:59:59`).getTime();
 
     let indexAlvo = -1;
     for (let i = snapshotsLista.length - 1; i >= 0; i--) {
       const t = new Date(snapshotsLista[i].criado_em).getTime();
-      if (t < fimMes.getTime()) { indexAlvo = i; break; }
+      if (t <= fimDoDia) { indexAlvo = i; break; }
     }
     if (indexAlvo === -1) indexAlvo = 0;
-    setMesBuscado(mesAno);
+    setDataBuscada(data);
     await abrirSnapshot(indexAlvo);
   }
 
@@ -599,18 +597,18 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
           <div className="rounded-xl border border-slate-200 p-3 flex flex-wrap items-center gap-3">
             <div className="flex items-end gap-2">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Ir para mês/ano</label>
-                <input type="month" value={mesAnoBusca} onChange={(e) => setMesAnoBusca(e.target.value)}
+                <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Ir para uma data</label>
+                <input type="date" value={dataBusca} onChange={(e) => setDataBusca(e.target.value)}
                   className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
-              <button onClick={() => irParaMesAno(mesAnoBusca)} disabled={!mesAnoBusca || consultandoData}
+              <button onClick={() => irParaData(dataBusca)} disabled={!dataBusca || consultandoData}
                 className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
                 Buscar
               </button>
             </div>
 
             <div className="flex items-center gap-2 flex-1 justify-end">
-              <button onClick={() => { setMesBuscado(""); abrirSnapshot(snapshotIndex - 1); }} disabled={snapshotIndex <= 0 || consultandoData}
+              <button onClick={() => { setDataBuscada(""); abrirSnapshot(snapshotIndex - 1); }} disabled={snapshotIndex <= 0 || consultandoData}
                 className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 flex-shrink-0">
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -624,15 +622,15 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                   </>
                 ) : "—"}
               </div>
-              <button onClick={() => { setMesBuscado(""); abrirSnapshot(snapshotIndex + 1); }} disabled={snapshotIndex >= snapshotsLista.length - 1 || snapshotIndex < 0 || consultandoData}
+              <button onClick={() => { setDataBuscada(""); abrirSnapshot(snapshotIndex + 1); }} disabled={snapshotIndex >= snapshotsLista.length - 1 || snapshotIndex < 0 || consultandoData}
                 className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 flex-shrink-0">
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
 
-            {mesBuscado && consultaResultado && !consultaResultado.criado_em.startsWith(mesBuscado) && (
+            {dataBuscada && consultaResultado && !consultaResultado.criado_em.startsWith(dataBuscada) && (
               <p className="w-full text-[11px] text-amber-600">
-                Sem alteração em {mesBuscado.split("-").reverse().join("/")} — mostrando o registro mais próximo.
+                Sem alteração em {dataBuscada.split("-").reverse().join("/")} — mostrando o registro mais próximo.
               </p>
             )}
             {consultaErro && (
