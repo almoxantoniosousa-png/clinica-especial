@@ -139,12 +139,13 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [historicoAte, setHistoricoAte] = useState("");
   const [historicoBusca, setHistoricoBusca] = useState("");
   const [historicoAba, setHistoricoAba] = useState<"alteracoes" | "porData">("alteracoes");
-  const [consultaData, setConsultaData] = useState("");
   const [consultandoData, setConsultandoData] = useState(false);
   const [consultaErro, setConsultaErro] = useState("");
   const [consultaResultado, setConsultaResultado] = useState<{
-    criado_em: string; criado_por_nome: string | null; aproximado: boolean; dados: Slot[];
+    criado_em: string; criado_por_nome: string | null; dados: Slot[];
   } | null>(null);
+  const [snapshotsLista, setSnapshotsLista] = useState<{ id: string; criado_em: string; criado_por_nome: string | null }[]>([]);
+  const [snapshotIndex, setSnapshotIndex] = useState(-1);
 
   // modal
   const [modalAberto, setModalAberto] = useState(false);
@@ -414,38 +415,38 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     setCarregandoHistorico(false);
   }
 
-  // Busca a foto mais próxima da escala inteira numa data — pra fins comprobatórios
-  async function buscarEscalaPorData() {
-    if (!consultaData) return;
+  // Lista leve de todas as fotos da escala (sem o jsonb pesado), do mais antigo pro mais novo,
+  // pra navegar com "semana anterior" / "próxima semana" — fins comprobatórios.
+  async function carregarListaSnapshots() {
     setConsultandoData(true);
     setConsultaErro("");
-    setConsultaResultado(null);
-
-    const alvo = `${consultaData}T23:59:59`;
-    const { data: antes } = await supabase
-      .from("escala_snapshots").select("*").lte("criado_em", alvo)
-      .order("criado_em", { ascending: false }).limit(1);
-
-    let item = (antes ?? [])[0];
-    let aproximado = false;
-    if (!item) {
-      const { data: depois } = await supabase
-        .from("escala_snapshots").select("*").gte("criado_em", alvo)
-        .order("criado_em", { ascending: true }).limit(1);
-      item = (depois ?? [])[0];
-      aproximado = true;
-    }
-
-    setConsultandoData(false);
-    if (!item) {
-      setConsultaErro("Nenhum registro de escala encontrado.");
+    const { data } = await supabase
+      .from("escala_snapshots")
+      .select("id, criado_em, criado_por_nome")
+      .order("criado_em", { ascending: true });
+    const lista = data ?? [];
+    setSnapshotsLista(lista);
+    if (lista.length === 0) {
+      setConsultandoData(false);
+      setConsultaErro("Nenhum registro de escala encontrado ainda.");
       return;
     }
+    await abrirSnapshot(lista.length - 1, lista);
+  }
+
+  async function abrirSnapshot(index: number, lista?: { id: string; criado_em: string; criado_por_nome: string | null }[]) {
+    const fonte = lista ?? snapshotsLista;
+    const alvo = fonte[index];
+    if (!alvo) return;
+    setConsultandoData(true);
+    setConsultaErro("");
+    const { data } = await supabase.from("escala_snapshots").select("dados").eq("id", alvo.id).maybeSingle();
+    setConsultandoData(false);
+    setSnapshotIndex(index);
     setConsultaResultado({
-      criado_em: item.criado_em,
-      criado_por_nome: item.criado_por_nome,
-      aproximado,
-      dados: (item.dados ?? []) as Slot[],
+      criado_em: alvo.criado_em,
+      criado_por_nome: alvo.criado_por_nome,
+      dados: (data?.dados ?? []) as Slot[],
     });
   }
 
@@ -469,23 +470,23 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
           </h1>
           <p className="text-sm text-slate-400 mt-1">{subtitulo}</p>
         </div>
-        {podeEditar && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { setHistoricoAberto(true); carregarHistorico(); }}
-              className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
-            >
-              <History className="h-4 w-4" />
-              Histórico
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
-              title="Imprimir a escala semanal pra colocar no mural"
-            >
-              <Printer className="h-4 w-4" />
-              Imprimir
-            </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setHistoricoAberto(true); carregarHistorico(); }}
+            className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+          >
+            <History className="h-4 w-4" />
+            Histórico
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+            title="Imprimir a escala semanal pra colocar no mural"
+          >
+            <Printer className="h-4 w-4" />
+            Imprimir
+          </button>
+          {podeEditar && (
             <button
               onClick={abrirNovo}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
@@ -493,8 +494,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               <Plus className="h-4 w-4" />
               Novo atendimento
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ALTERNAR DIA / SEMANA */}
@@ -908,9 +909,9 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             <div className="flex gap-1 bg-slate-100 p-1 rounded-xl mx-4 mt-3 w-fit">
               {([
                 { v: "alteracoes" as const, label: "Alterações" },
-                { v: "porData" as const, label: "Escala numa data (comprobatório)" },
+                { v: "porData" as const, label: "Escala anterior (comprobatório)" },
               ]).map((o) => (
-                <button key={o.v} onClick={() => setHistoricoAba(o.v)}
+                <button key={o.v} onClick={() => { setHistoricoAba(o.v); if (o.v === "porData" && snapshotsLista.length === 0) carregarListaSnapshots(); }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${historicoAba === o.v ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
                   {o.label}
                 </button>
@@ -983,35 +984,39 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               </>
             ) : (
               <>
-                <div className="px-4 pt-3 pb-1 flex flex-wrap items-end gap-2 border-b border-slate-100">
-                  <div>
-                    <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Ver a escala como estava em</label>
-                    <input type="date" value={consultaData} onChange={(e) => setConsultaData(e.target.value)}
-                      className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <div className="px-4 pt-3 pb-2 flex items-center justify-between border-b border-slate-100">
+                  <button onClick={() => abrirSnapshot(snapshotIndex - 1)} disabled={snapshotIndex <= 0 || consultandoData}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30">
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <div className="text-center text-xs text-slate-600">
+                    {consultandoData ? "Carregando..." : consultaResultado ? (
+                      <>
+                        <p className="font-semibold text-slate-800">
+                          {new Date(consultaResultado.criado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                        </p>
+                        <p className="text-[11px] text-slate-400">por {consultaResultado.criado_por_nome || "—"}</p>
+                      </>
+                    ) : "—"}
                   </div>
-                  <button onClick={buscarEscalaPorData} disabled={!consultaData || consultandoData}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
-                    {consultandoData ? "Buscando..." : "Buscar"}
+                  <button onClick={() => abrirSnapshot(snapshotIndex + 1)} disabled={snapshotIndex >= snapshotsLista.length - 1 || snapshotIndex < 0 || consultandoData}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30">
+                    <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
+                <div className="flex justify-between px-4 pt-1">
+                  <span className="text-[11px] text-slate-400">‹ Alteração anterior</span>
+                  <span className="text-[11px] text-slate-400">Alteração seguinte ›</span>
+                </div>
                 <p className="px-4 pt-2 text-[11px] text-slate-400">
-                  Guardamos uma foto completa da escala a cada alteração feita — a busca traz a foto mais próxima da data escolhida.
+                  Guardamos uma foto completa da escala a cada alteração feita — navegue entre elas pra ver como estava antes.
                 </p>
                 <div className="overflow-y-auto flex-1 p-4">
                   {consultaErro && (
                     <p className="text-center text-sm text-red-500 py-8">{consultaErro}</p>
                   )}
-                  {!consultaErro && !consultaResultado && !consultandoData && (
-                    <p className="text-center text-sm text-slate-400 py-8">Escolha uma data e clique em Buscar.</p>
-                  )}
                   {consultaResultado && (
                     <div className="space-y-3">
-                      <div className={`rounded-lg px-3 py-2 text-xs ${consultaResultado.aproximado ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
-                        {consultaResultado.aproximado
-                          ? `Não havia registro antes dessa data — mostrando o mais antigo disponível, de ${new Date(consultaResultado.criado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}.`
-                          : `Escala como estava em ${new Date(consultaResultado.criado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })} (última alteração antes da data escolhida, por ${consultaResultado.criado_por_nome || "—"}).`
-                        }
-                      </div>
                       <div className="overflow-x-auto rounded-xl border border-slate-200">
                         <table className="w-full border-collapse text-xs">
                           <thead>

@@ -100,7 +100,8 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/mural",        label: "Mural",      icon: "📢" },
     { href: "/adm/protocolos",   label: "Protocolos", icon: "📜" },
     { href: "/chat",             label: "Chat",       icon: "💬" },
-    { href: "/escala",           label: "Escala",     icon: "📅" },
+    { href: "/escala-especialistas",  label: "Escala Especialistas",  icon: "📅" },
+    { href: "/escala-acompanhantes",  label: "Escala Acompanhantes",  icon: "🗓️" },
     { href: "/adm/auditoria",    label: "Auditoria",  icon: "🔍" },
     { href: "/ajuda",            label: "Ajuda",     icon: "❓" },
   ];
@@ -111,6 +112,8 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/gestao/criancas",     label: "Crianças",     icon: "👶" },
     { href: "/gestao/escolas",      label: "Escolas",      icon: "🏫" },
     { href: "/gestao/agenda",       label: "Agenda Clínica", icon: "📅" },
+    { href: "/escala-especialistas",  label: "Escala Especialistas",  icon: "📅" },
+    { href: "/escala-acompanhantes",  label: "Escala Acompanhantes",  icon: "🗓️" },
     { href: "/adm/mural",           label: "Mural",        icon: "📢" },
     { href: "/protocolos",          label: "Protocolos",   icon: "📜" },
     { href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" },
@@ -146,8 +149,8 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
   const menuSupervisora = [
     ...(userContataFamilia ? [{ href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }] : []),
-    { href: "/supervisora/escala-especialistas",  label: "Escala Especialistas",   icon: "📅" },
-    { href: "/supervisora/escala-acompanhantes",  label: "Escala Acompanhantes",   icon: "🗓️" },
+    { href: "/escala-especialistas",  label: "Escala Especialistas",   icon: "📅" },
+    { href: "/escala-acompanhantes",  label: "Escala Acompanhantes",   icon: "🗓️" },
     { href: "/requisicoes",             label: "Requisições",       icon: "🛒" },
     { href: "/brinquedos",              label: "Brinquedos",        icon: "🧸" },
     { href: "/materiais-adaptados",     label: "Materiais Adaptados", icon: "📚" },

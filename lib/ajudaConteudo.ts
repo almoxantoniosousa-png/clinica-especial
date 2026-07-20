@@ -59,9 +59,14 @@ const ADM: AjudaConteudo = {
       texto: "Conversas internas, no estilo de um aplicativo de mensagens.\n\nClique no ícone de lápis (✎) para iniciar uma nova conversa. Você pode enviar texto, arquivos, imagens e áudios, e reagir às mensagens com emojis (👍 ❤️ 😂 😮 😢 🙏). Use a busca para encontrar conversas antigas.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo para abrir uma sala de reunião por vídeo em uma nova aba — um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado automaticamente para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
     {
-      icone: "📅", titulo: "Escala", mockup: "escala",
-      texto: "Escala semanal de atendimentos de especialistas e ATs, organizada por dia e horário — só para consulta.\n\nUse os filtros de criança e tipo de serviço para visualizar atendimentos específicos. A legenda no final mostra a cor de cada tipo de serviço. Quem cadastra e edita os horários é a Supervisora, na tela dela.",
-      reflexo: "Quem monta a Escala das ATs e Especialistas é a Supervisora. Você acompanha aqui, e continua cuidando da Escala Administrativa (Aux. Adm e Limpeza) normalmente."
+      icone: "📅", titulo: "Escala Especialistas", mockup: "escala",
+      texto: "Escala semanal dos especialistas, organizada por dia e horário — só para consulta (quem cadastra e edita é a Supervisora).\n\nUse os filtros de criança e tipo de serviço. Alterne entre \"Por dia\" e \"Semana inteira\". Cada atendimento mostra a marcação de presença (P/F/FJ) quando houver, e o motivo de uma troca/ausência aparece direto no card.\n\n🕓 Histórico e consulta: veja tudo que foi editado/excluído, ou navegue pelas fotos completas da escala (aba \"Escala anterior\") pra fins comprobatórios.\n\n🖨️ Imprimir: gera a versão pronta pro mural físico.",
+      reflexo: "Quem monta essa escala é a Supervisora. Você acompanha aqui em tempo real, inclusive o motivo de trocas/ausências."
+    },
+    {
+      icone: "🗓️", titulo: "Escala Acompanhantes", mockup: "escala",
+      texto: "Igual à Escala Especialistas, mas dos acompanhantes terapêuticos (ATs) — telas separadas pra não misturar as duas equipes.",
+      reflexo: "Quem monta essa escala é a Supervisora. Você acompanha aqui em tempo real."
     },
     {
       icone: "🔍", titulo: "Auditoria", mockup: "tabela",
@@ -153,6 +158,16 @@ const GESTAO: AjudaConteudo = {
       texto: "Agenda geral de todos os atendimentos da clínica, organizada por semana e dia.\n\nNavegue entre semanas com as setas; cada dia mostra quantos atendimentos tem marcados. Clique em um dia para ver a lista detalhada (horário, criança, profissional, serviço e observações). Use \"Ir para hoje\" para voltar à data atual."
     },
     {
+      icone: "📅", titulo: "Escala Especialistas", mockup: "escala",
+      texto: "Escala semanal dos especialistas, organizada por dia e horário — só para consulta (quem cadastra e edita é a Supervisora).\n\nUse os filtros de criança e tipo de serviço. Alterne entre \"Por dia\" e \"Semana inteira\". Cada atendimento mostra a marcação de presença (P/F/FJ) quando houver, e o motivo de uma troca/ausência aparece direto no card.\n\n🕓 Histórico e consulta: veja tudo que foi editado/excluído, ou navegue pelas fotos completas da escala (aba \"Escala anterior\") pra fins comprobatórios.\n\n🖨️ Imprimir: gera a versão pronta pro mural físico.",
+      reflexo: "Quem monta essa escala é a Supervisora. Você acompanha aqui em tempo real, inclusive o motivo de trocas/ausências."
+    },
+    {
+      icone: "🗓️", titulo: "Escala Acompanhantes", mockup: "escala",
+      texto: "Igual à Escala Especialistas, mas dos acompanhantes terapêuticos (ATs) — telas separadas pra não misturar as duas equipes.",
+      reflexo: "Quem monta essa escala é a Supervisora. Você acompanha aqui em tempo real."
+    },
+    {
       icone: "📢", titulo: "Mural", mockup: "mural",
       texto: "Mural de comunicados internos da equipe. Os avisos fixados (📌) aparecem sempre no topo. Esta tela é apenas de consulta para o seu perfil."
     },
@@ -219,7 +234,7 @@ const SUPERVISORA: AjudaConteudo = {
     },
     {
       icone: "📅", titulo: "Escala Especialistas", mockup: "escala",
-      texto: "Cadastro semanal de atendimentos dos especialistas — separado da escala dos acompanhantes terapêuticos (AT) pra não misturar as duas equipes.\n\nUse os filtros de criança e tipo de serviço para localizar um horário. Alterne entre \"Por dia\" e \"Semana inteira\" pra ver a grade completa de uma vez. Clique em \"+ Novo atendimento\" para cadastrar (dia, horário, criança, serviço, profissional e local). Use o lápis/lixeira para editar ou excluir.\n\n✓ Presença: o círculo (ou os botões P/F/FJ) marca Presença, Falta ou Falta Justificada de cada atendimento.\n\n⚠️ Motivo: ao editar um atendimento, você pode registrar o motivo de uma troca de especialista ou de uma ausência — fica visível automaticamente pra Gestão e ADM, sem precisar avisar por outro canal.\n\n🕓 Histórico e consulta: a aba \"Alterações\" mostra o que foi editado/excluído, com quem mudou e quando. A aba \"Escala numa data\" busca uma foto completa da escala inteira num dia específico — útil pra fins comprobatórios, mesmo que nada tenha sido alterado.\n\n🖨️ Imprimir: gera uma versão limpa da escala da semana (sem motivo/presença) pronta pra colocar no mural físico.",
+      texto: "Cadastro semanal de atendimentos dos especialistas — separado da escala dos acompanhantes terapêuticos (AT) pra não misturar as duas equipes. ADM e Gestão também enxergam essa escala (só consulta, quem edita é só a Supervisora).\n\nUse os filtros de criança e tipo de serviço para localizar um horário. Alterne entre \"Por dia\" e \"Semana inteira\" pra ver a grade completa de uma vez. Clique em \"+ Novo atendimento\" para cadastrar (dia, horário, criança, serviço, profissional e local). Use o lápis/lixeira para editar ou excluir.\n\n✓ Presença: o círculo (ou os botões P/F/FJ) marca Presença, Falta ou Falta Justificada de cada atendimento.\n\n⚠️ Motivo: ao editar um atendimento, você pode registrar o motivo de uma troca de especialista ou de uma ausência — fica visível automaticamente pra Gestão e ADM, sem precisar avisar por outro canal.\n\n🕓 Histórico e consulta: a aba \"Alterações\" mostra o que foi editado/excluído, com quem mudou e quando. A aba \"Escala anterior\" guarda uma foto completa da escala inteira a cada mudança — use as setas ‹ › pra navegar entre elas, útil pra fins comprobatórios mesmo quando nada foi alterado num atendimento específico.\n\n🖨️ Imprimir: gera uma versão limpa da escala da semana (sem motivo/presença), separada por função, pronta pra colocar no mural físico.",
       reflexo: "O atendimento cadastrado aqui aparece na \"Minha Escala\" do especialista responsável. O motivo de uma troca/ausência é visto pela Gestão, ADM e pela própria especialista envolvida — não entra na versão impressa pro mural."
     },
     {

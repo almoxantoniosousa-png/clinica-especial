@@ -2,7 +2,7 @@
 
 import { EscalaManager } from "@/components/escala-manager";
 
-export default function SupervisoraEscalaAcompanhantesPage() {
+export default function EscalaAcompanhantesPage() {
   return (
     <EscalaManager
       rolesPermitidos={["atendente"]}
