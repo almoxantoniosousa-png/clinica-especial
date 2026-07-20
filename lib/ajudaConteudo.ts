@@ -60,13 +60,13 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "📅", titulo: "Escala Especialistas", mockup: "escala",
-      texto: "Escala semanal dos especialistas, organizada por dia e horário — só para consulta (quem cadastra e edita é a Supervisora).\n\nUse os filtros de criança e tipo de serviço. Alterne entre \"Por dia\" e \"Semana inteira\". Cada atendimento mostra a marcação de presença (P/F/FJ) quando houver, e o motivo de uma troca/ausência aparece direto no card.\n\n🕓 Histórico e consulta: veja tudo que foi editado/excluído, ou navegue pelas fotos completas da escala (aba \"Escala anterior\") pra fins comprobatórios.\n\n🖨️ Imprimir: gera a versão pronta pro mural físico.",
-      reflexo: "Quem monta essa escala é a Supervisora. Você acompanha aqui em tempo real, inclusive o motivo de trocas/ausências."
+      texto: "Escala semanal dos especialistas — você tem o mesmo acesso da Supervisora aqui: pode cadastrar, editar e excluir atendimentos.\n\nUse os filtros de criança e tipo de serviço. Alterne entre \"Por dia\" e \"Semana inteira\". Clique em \"+ Novo atendimento\" para cadastrar (dia, horário, criança, serviço, profissional e local).\n\n✓ Presença: marque Presença, Falta ou Falta Justificada em cada atendimento.\n\n⚠️ Motivo: registre o motivo de uma troca de especialista ou ausência — fica visível pra você e pra Gestão.\n\n🕓 Histórico e consulta: veja tudo que foi editado/excluído, ou navegue pelas fotos completas da escala (aba \"Escala anterior\") pra fins comprobatórios.\n\n🖨️ Imprimir: gera a versão pronta pro mural físico, separada por função.",
+      reflexo: "Tanto você quanto a Supervisora podem editar essa escala — toda alteração registra quem mexeu, então não há confusão sobre quem fez o quê."
     },
     {
       icone: "🗓️", titulo: "Escala Acompanhantes", mockup: "escala",
-      texto: "Igual à Escala Especialistas, mas dos acompanhantes terapêuticos (ATs) — telas separadas pra não misturar as duas equipes.",
-      reflexo: "Quem monta essa escala é a Supervisora. Você acompanha aqui em tempo real."
+      texto: "Igual à Escala Especialistas, mas dos acompanhantes terapêuticos (ATs) — telas separadas pra não misturar as duas equipes. Você tem o mesmo acesso de edição da Supervisora aqui também.",
+      reflexo: "Tanto você quanto a Supervisora podem editar essa escala — toda alteração registra quem mexeu."
     },
     {
       icone: "🔍", titulo: "Auditoria", mockup: "tabela",

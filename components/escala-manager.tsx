@@ -183,7 +183,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     const role = (u?.role || "").toString().trim().toLowerCase();
     if (role) {
       setUsuarioNome(u?.nome || "");
-      setPodeEditar(role === "supervisora");
+      setPodeEditar(role === "supervisora" || role === "adm" || role === "admin");
       return;
     }
     const { data: a } = await supabase.from("atendentes").select("role, nome").eq("email", user.email).maybeSingle();
