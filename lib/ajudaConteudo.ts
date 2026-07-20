@@ -57,7 +57,7 @@ const ADM: AjudaConteudo = {
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
       texto: "Arquivo de atas de reunião, no modelo usado nas supervisões da clínica. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só elas veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário e data da próxima reunião; quem participou (escolha as pessoas reais da lista, ou digite o nome em \"+ nome (sem login próprio)\" pra quem usa um login genérico/compartilhado — o acesso à ata segue automaticamente o cargo marcado); pontos discutidos anteriormente; pontos de atenção até a próxima reunião; e um plano de ação com uma linha por assunto (análise de causa, plano de ação, responsável e prazo — \"+ Adicionar item\" pra incluir mais linhas).\n\n📎 Anexos: dentro de uma ata aberta, dá pra anexar imagens ou PDF — por exemplo, a ata já assinada em papel e escaneada. Só quem criou a ata pode excluí-la ou excluir seus anexos.",
-      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. A impressão já sai com uma linha de assinatura pra cada participante."
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. ✍️ Assinatura: dentro da ata aberta, cada participante com login próprio pode desenhar a assinatura na tela e clicar em \"Confirmar e assinar\" — na primeira vez desenha, nas próximas só confirma com a assinatura já salva. A impressão sai com a assinatura de quem já confirmou, e linha em branco pra quem ainda não confirmou ou não tem login próprio."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
@@ -193,7 +193,7 @@ const GESTAO: AjudaConteudo = {
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
       texto: "Arquivo de atas de reunião, no modelo usado nas supervisões da clínica. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só elas veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário e data da próxima reunião; quem participou (escolha as pessoas reais da lista, ou digite o nome em \"+ nome (sem login próprio)\" pra quem usa um login genérico/compartilhado — o acesso à ata segue automaticamente o cargo marcado); pontos discutidos anteriormente; pontos de atenção até a próxima reunião; e um plano de ação com uma linha por assunto (análise de causa, plano de ação, responsável e prazo — \"+ Adicionar item\" pra incluir mais linhas).\n\n📎 Anexos: dentro de uma ata aberta, dá pra anexar imagens ou PDF — por exemplo, a ata já assinada em papel e escaneada. Só quem criou a ata pode excluí-la ou excluir seus anexos.",
-      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. A impressão já sai com uma linha de assinatura pra cada participante."
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. ✍️ Assinatura: dentro da ata aberta, cada participante com login próprio pode desenhar a assinatura na tela e clicar em \"Confirmar e assinar\" — na primeira vez desenha, nas próximas só confirma com a assinatura já salva. A impressão sai com a assinatura de quem já confirmou, e linha em branco pra quem ainda não confirmou ou não tem login próprio."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
@@ -264,7 +264,7 @@ const SUPERVISORA: AjudaConteudo = {
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
       texto: "Arquivo de atas de reunião, no modelo usado nas supervisões da clínica. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só elas veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário e data da próxima reunião; quem participou (escolha as pessoas reais da lista, ou digite o nome em \"+ nome (sem login próprio)\" pra quem usa um login genérico/compartilhado — o acesso à ata segue automaticamente o cargo marcado); pontos discutidos anteriormente; pontos de atenção até a próxima reunião; e um plano de ação com uma linha por assunto (análise de causa, plano de ação, responsável e prazo — \"+ Adicionar item\" pra incluir mais linhas).\n\n📎 Anexos: dentro de uma ata aberta, dá pra anexar imagens ou PDF — por exemplo, a ata já assinada em papel e escaneada. Só quem criou a ata pode excluí-la ou excluir seus anexos.",
-      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. A impressão já sai com uma linha de assinatura pra cada participante."
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. ✍️ Assinatura: dentro da ata aberta, cada participante com login próprio pode desenhar a assinatura na tela e clicar em \"Confirmar e assinar\" — na primeira vez desenha, nas próximas só confirma com a assinatura já salva. A impressão sai com a assinatura de quem já confirmou, e linha em branco pra quem ainda não confirmou ou não tem login próprio."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
@@ -340,7 +340,7 @@ const ESPECIALISTA: AjudaConteudo = {
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
       texto: "Arquivo de atas de reunião, no modelo usado nas supervisões da clínica. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só elas veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário e data da próxima reunião; quem participou (escolha as pessoas reais da lista, ou digite o nome em \"+ nome (sem login próprio)\" pra quem usa um login genérico/compartilhado — o acesso à ata segue automaticamente o cargo marcado); pontos discutidos anteriormente; pontos de atenção até a próxima reunião; e um plano de ação com uma linha por assunto (análise de causa, plano de ação, responsável e prazo — \"+ Adicionar item\" pra incluir mais linhas).\n\n📎 Anexos: dentro de uma ata aberta, dá pra anexar imagens ou PDF — por exemplo, a ata já assinada em papel e escaneada. Só quem criou a ata pode excluí-la ou excluir seus anexos.",
-      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. A impressão já sai com uma linha de assinatura pra cada participante."
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. ✍️ Assinatura: dentro da ata aberta, cada participante com login próprio pode desenhar a assinatura na tela e clicar em \"Confirmar e assinar\" — na primeira vez desenha, nas próximas só confirma com a assinatura já salva. A impressão sai com a assinatura de quem já confirmou, e linha em branco pra quem ainda não confirmou ou não tem login próprio."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
@@ -410,7 +410,7 @@ const ATENDENTE: AjudaConteudo = {
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
       texto: "Arquivo de atas de reunião, no modelo usado nas supervisões da clínica. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só elas veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário e data da próxima reunião; quem participou (escolha as pessoas reais da lista, ou digite o nome em \"+ nome (sem login próprio)\" pra quem usa um login genérico/compartilhado — o acesso à ata segue automaticamente o cargo marcado); pontos discutidos anteriormente; pontos de atenção até a próxima reunião; e um plano de ação com uma linha por assunto (análise de causa, plano de ação, responsável e prazo — \"+ Adicionar item\" pra incluir mais linhas).\n\n📎 Anexos: dentro de uma ata aberta, dá pra anexar imagens ou PDF — por exemplo, a ata já assinada em papel e escaneada. Só quem criou a ata pode excluí-la ou excluir seus anexos.",
-      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. A impressão já sai com uma linha de assinatura pra cada participante."
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. ✍️ Assinatura: dentro da ata aberta, cada participante com login próprio pode desenhar a assinatura na tela e clicar em \"Confirmar e assinar\" — na primeira vez desenha, nas próximas só confirma com a assinatura já salva. A impressão sai com a assinatura de quem já confirmou, e linha em branco pra quem ainda não confirmou ou não tem login próprio."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
@@ -457,7 +457,7 @@ const FINANCEIRO: AjudaConteudo = {
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
       texto: "Arquivo de atas de reunião, no modelo usado nas supervisões da clínica. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só elas veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário e data da próxima reunião; quem participou (escolha as pessoas reais da lista, ou digite o nome em \"+ nome (sem login próprio)\" pra quem usa um login genérico/compartilhado — o acesso à ata segue automaticamente o cargo marcado); pontos discutidos anteriormente; pontos de atenção até a próxima reunião; e um plano de ação com uma linha por assunto (análise de causa, plano de ação, responsável e prazo — \"+ Adicionar item\" pra incluir mais linhas).\n\n📎 Anexos: dentro de uma ata aberta, dá pra anexar imagens ou PDF — por exemplo, a ata já assinada em papel e escaneada. Só quem criou a ata pode excluí-la ou excluir seus anexos.",
-      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. A impressão já sai com uma linha de assinatura pra cada participante."
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. ✍️ Assinatura: dentro da ata aberta, cada participante com login próprio pode desenhar a assinatura na tela e clicar em \"Confirmar e assinar\" — na primeira vez desenha, nas próximas só confirma com a assinatura já salva. A impressão sai com a assinatura de quem já confirmou, e linha em branco pra quem ainda não confirmou ou não tem login próprio."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
@@ -498,7 +498,7 @@ const AUX_ADM: AjudaConteudo = {
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
       texto: "Arquivo de atas de reunião, no modelo usado nas supervisões da clínica. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só elas veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário e data da próxima reunião; quem participou (escolha as pessoas reais da lista, ou digite o nome em \"+ nome (sem login próprio)\" pra quem usa um login genérico/compartilhado — o acesso à ata segue automaticamente o cargo marcado); pontos discutidos anteriormente; pontos de atenção até a próxima reunião; e um plano de ação com uma linha por assunto (análise de causa, plano de ação, responsável e prazo — \"+ Adicionar item\" pra incluir mais linhas).\n\n📎 Anexos: dentro de uma ata aberta, dá pra anexar imagens ou PDF — por exemplo, a ata já assinada em papel e escaneada. Só quem criou a ata pode excluí-la ou excluir seus anexos.",
-      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. A impressão já sai com uma linha de assinatura pra cada participante."
+      reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. ✍️ Assinatura: dentro da ata aberta, cada participante com login próprio pode desenhar a assinatura na tela e clicar em \"Confirmar e assinar\" — na primeira vez desenha, nas próximas só confirma com a assinatura já salva. A impressão sai com a assinatura de quem já confirmou, e linha em branco pra quem ainda não confirmou ou não tem login próprio."
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",

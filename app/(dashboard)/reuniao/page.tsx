@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { registrarLog } from "@/lib/auditoria";
-import { Calendar, Plus, X, Printer, Trash2, Users, Paperclip, Upload } from "lucide-react";
+import { Calendar, Plus, X, Printer, Trash2, Users, Paperclip, Upload, CheckCircle2, PenLine } from "lucide-react";
+import { AssinaturaPad } from "@/components/assinatura-pad";
 
 type ItemAcao = { causa: string; acao: string; responsavel: string; prazo: string };
 
@@ -25,6 +26,7 @@ type Reuniao = {
 
 type Pessoa = { email: string; nome: string; role: string };
 type Anexo = { path: string; nome: string; url: string };
+type Confirmacao = { email: string; nome: string | null; imagem_base64: string; confirmado_em: string };
 
 const ROLE_LABEL: Record<string, string> = {
   adm: "ADM / Administração",
@@ -65,6 +67,11 @@ export default function ReuniaoPage() {
   const [carregandoAnexos, setCarregandoAnexos] = useState(false);
   const [enviandoAnexo, setEnviandoAnexo] = useState(false);
 
+  const [minhaAssinatura, setMinhaAssinatura] = useState<string | null>(null);
+  const [confirmacoes, setConfirmacoes] = useState<Confirmacao[]>([]);
+  const [desenhandoAssinatura, setDesenhandoAssinatura] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState(FORM_VAZIO);
   const [novoAvulso, setNovoAvulso] = useState<Record<string, string>>({});
@@ -89,17 +96,21 @@ export default function ReuniaoPage() {
       setUsuarioNome(a?.nome || "");
       setUsuarioRole((a?.role || "").toString().trim().toLowerCase());
     }
+    async function carregarMinhaAssinatura() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return;
+      const { data } = await supabase.from("assinaturas").select("imagem_base64").eq("email", user.email).maybeSingle();
+      setMinhaAssinatura(data?.imagem_base64 || null);
+    }
     identificar();
     carregar();
     carregarPessoas();
+    carregarMinhaAssinatura();
   }, []);
 
   async function carregarPessoas() {
-    const [uRes, aRes] = await Promise.all([
-      supabase.from("usuarios").select("email, nome, role").neq("role", "familia").eq("ativo", true),
-      supabase.from("atendentes").select("email, nome, role").is("data_demissao", null),
-    ]);
-    const brutas = [...(uRes.data ?? []), ...(aRes.data ?? [])] as Pessoa[];
+    const { data } = await supabase.rpc("diretorio_equipe");
+    const brutas = (data ?? []) as Pessoa[];
     const porEmail = new Map<string, Pessoa>();
     brutas.forEach(p => {
       const role = (p.role || "").toString().trim().toLowerCase();
@@ -129,10 +140,34 @@ export default function ReuniaoPage() {
     setCarregandoAnexos(false);
   }
 
+  async function carregarConfirmacoes(reuniaoId: string) {
+    const { data } = await supabase.from("reunioes_confirmacoes").select("email, nome, imagem_base64, confirmado_em").eq("reuniao_id", reuniaoId);
+    setConfirmacoes((data ?? []) as Confirmacao[]);
+  }
+
   function abrirAta(r: Reuniao) {
-    if (aberta?.id === r.id) { setAberta(null); setAnexos([]); return; }
+    if (aberta?.id === r.id) { setAberta(null); setAnexos([]); setConfirmacoes([]); setDesenhandoAssinatura(false); return; }
     setAberta(r);
+    setDesenhandoAssinatura(false);
     carregarAnexos(r.id);
+    carregarConfirmacoes(r.id);
+  }
+
+  async function confirmarAta(reuniaoId: string, imagemBase64: string) {
+    setConfirmando(true);
+    await supabase.from("assinaturas").upsert({ email: usuarioEmail, nome: usuarioNome || null, imagem_base64: imagemBase64, atualizado_em: new Date().toISOString() });
+    const { error } = await supabase.from("reunioes_confirmacoes").upsert({
+      reuniao_id: reuniaoId, email: usuarioEmail, nome: usuarioNome || null, imagem_base64: imagemBase64,
+    }, { onConflict: "reuniao_id,email" });
+    setConfirmando(false);
+    if (error) return;
+    setMinhaAssinatura(imagemBase64);
+    setDesenhandoAssinatura(false);
+    await registrarLog(supabase, {
+      usuario_email: usuarioEmail, usuario_nome: usuarioNome, acao: "Assinou ata de reunião",
+      tabela: "reunioes", registro_id: reuniaoId,
+    });
+    carregarConfirmacoes(reuniaoId);
   }
 
   async function enviarAnexo(reuniaoId: string, file: File) {
@@ -198,7 +233,11 @@ export default function ReuniaoPage() {
         .concat(usuarioRole ? [usuarioRole] : [])
         .filter(Boolean)
     ));
-    const nomesParticipantes = pessoasEscolhidas.map(p => p.nome).concat(form.avulsos.map(a => a.nome));
+    const nomesParticipantes = Array.from(new Set(
+      pessoasEscolhidas.map(p => p.nome)
+        .concat(form.avulsos.map(a => a.nome))
+        .concat(usuarioNome && !form.pessoasSelecionadas.includes(usuarioEmail) ? [usuarioNome] : [])
+    ));
     const itensAcaoValidos = form.itensAcao.filter(i => i.causa.trim() || i.acao.trim() || i.responsavel.trim() || i.prazo.trim());
 
     const { data: inserida, error } = await supabase.from("reunioes").insert({
@@ -378,6 +417,57 @@ export default function ReuniaoPage() {
                       )}
                     </div>
 
+                    {/* ASSINATURAS */}
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Assinaturas</p>
+                      <div className="space-y-1.5">
+                        {r.participantes_nomes.map(nome => {
+                          const conf = confirmacoes.find(c => c.nome === nome);
+                          return (
+                            <div key={nome} className="flex items-center gap-2 text-xs">
+                              {conf ? (
+                                <>
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={conf.imagem_base64} alt={`Assinatura de ${nome}`} className="h-6 border-b border-slate-300" />
+                                  <span className="text-slate-500">{nome} — {new Date(conf.confirmado_em).toLocaleDateString("pt-BR")}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="h-3.5 w-3.5 rounded-full border border-slate-300 flex-shrink-0" />
+                                  <span className="text-slate-400">{nome} — pendente</span>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {r.participantes.includes(usuarioRole) && !confirmacoes.some(c => c.email === usuarioEmail) && (
+                        <div className="mt-2 rounded-xl border border-blue-100 bg-blue-50/50 p-3">
+                          {!desenhandoAssinatura && minhaAssinatura ? (
+                            <div className="space-y-2">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={minhaAssinatura} alt="Sua assinatura salva" className="h-10 border-b border-slate-300" />
+                              <div className="flex gap-2">
+                                <button onClick={() => confirmarAta(r.id, minhaAssinatura)} disabled={confirmando}
+                                  className="flex-1 h-9 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition disabled:opacity-50">
+                                  {confirmando ? "Confirmando..." : "Confirmar com minha assinatura"}
+                                </button>
+                                <button onClick={() => setDesenhandoAssinatura(true)}
+                                  className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-700 px-2">
+                                  <PenLine className="h-3.5 w-3.5" />
+                                  Assinar diferente
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <AssinaturaPad salvando={confirmando} onSalvar={(img) => confirmarAta(r.id, img)} />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                       <p className="text-[11px] text-slate-400">
                         Registrado por {r.criado_por_nome || r.criado_por_email}
@@ -522,13 +612,13 @@ export default function ReuniaoPage() {
                   {form.itensAcao.map((item, i) => (
                     <div key={i} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-1.5 items-start">
                       <input value={item.causa} onChange={e => atualizarItemAcao(i, "causa", e.target.value)}
-                        placeholder="Análise de causa" list="pessoas-lista"
+                        placeholder="Análise de causa"
                         className="h-9 px-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
                       <input value={item.acao} onChange={e => atualizarItemAcao(i, "acao", e.target.value)}
                         placeholder="Plano de ação"
                         className="h-9 px-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
                       <input value={item.responsavel} onChange={e => atualizarItemAcao(i, "responsavel", e.target.value)}
-                        placeholder="Responsável" list="pessoas-lista"
+                        placeholder="Responsável"
                         className="h-9 px-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
                       <input value={item.prazo} onChange={e => atualizarItemAcao(i, "prazo", e.target.value)}
                         placeholder="Prazo (ex: 7 dias)"
@@ -539,9 +629,6 @@ export default function ReuniaoPage() {
                       </button>
                     </div>
                   ))}
-                  <datalist id="pessoas-lista">
-                    {pessoas.map(p => <option key={p.email} value={p.nome} />)}
-                  </datalist>
                   <button type="button" onClick={adicionarItemAcao}
                     className="text-xs font-semibold text-blue-600 hover:text-blue-800">
                     + Adicionar item
@@ -616,9 +703,22 @@ export default function ReuniaoPage() {
         <div className="mt-10 pt-8 border-t border-slate-300">
           <p className="text-xs font-bold uppercase tracking-wide mb-6">Assinaturas dos participantes</p>
           <div className="grid grid-cols-2 gap-x-8 gap-y-8">
-            {aberta.participantes_nomes.map(nome => (
-              <div key={nome} className="border-t border-slate-400 pt-1 text-xs text-center">{nome}</div>
-            ))}
+            {aberta.participantes_nomes.map(nome => {
+              const conf = confirmacoes.find(c => c.nome === nome);
+              return (
+                <div key={nome} className="text-center">
+                  {conf ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={conf.imagem_base64} alt={`Assinatura de ${nome}`} className="h-12 mx-auto" />
+                  ) : (
+                    <div className="h-12" />
+                  )}
+                  <div className="border-t border-slate-400 pt-1 text-xs">
+                    {nome}{conf && <> — assinado em {new Date(conf.confirmado_em).toLocaleDateString("pt-BR")}</>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
