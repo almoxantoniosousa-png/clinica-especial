@@ -124,7 +124,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [atendentes, setAtendentes] = useState<Atendente[]>([]);
   const [loading, setLoading] = useState(true);
   const [diaAtivo, setDiaAtivo] = useState(0);
-  const [visualizacao, setVisualizacao] = useState<"dia" | "semana">("dia");
+  const [visualizacao, setVisualizacao] = useState<"dia" | "semana" | "anterior">("dia");
   const [filtroCrianca, setFiltroCrianca] = useState("");
   const [filtroServico, setFiltroServico] = useState("");
   const [podeEditar, setPodeEditar] = useState(false);
@@ -138,7 +138,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [historicoDe, setHistoricoDe] = useState("");
   const [historicoAte, setHistoricoAte] = useState("");
   const [historicoBusca, setHistoricoBusca] = useState("");
-  const [historicoAba, setHistoricoAba] = useState<"alteracoes" | "porData">("alteracoes");
   const [consultandoData, setConsultandoData] = useState(false);
   const [consultaErro, setConsultaErro] = useState("");
   const [consultaResultado, setConsultaResultado] = useState<{
@@ -517,10 +516,10 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         </div>
       </div>
 
-      {/* ALTERNAR DIA / SEMANA */}
+      {/* ALTERNAR DIA / SEMANA / ANTERIOR */}
       <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
-        {([{ v: "dia", label: "Por dia" }, { v: "semana", label: "Semana inteira" }] as const).map((o) => (
-          <button key={o.v} onClick={() => setVisualizacao(o.v)}
+        {([{ v: "dia", label: "Por dia" }, { v: "semana", label: "Semana inteira" }, { v: "anterior", label: "Escala anterior" }] as const).map((o) => (
+          <button key={o.v} onClick={() => { setVisualizacao(o.v); if (o.v === "anterior" && snapshotsLista.length === 0) carregarListaSnapshots(); }}
             className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${visualizacao === o.v ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
             {o.label}
           </button>
@@ -563,6 +562,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       )}
 
       {/* FILTROS */}
+      {visualizacao !== "anterior" && (
       <div className="flex gap-3 flex-wrap">
         <select
           value={filtroCrianca}
@@ -589,10 +589,92 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
           </button>
         )}
       </div>
+      )}
 
       {/* HORÁRIOS */}
       {loading ? (
         <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
+      ) : visualizacao === "anterior" ? (
+        <div className="space-y-3">
+          <div className="rounded-xl border border-slate-200 p-3 flex flex-wrap items-center gap-3">
+            <div className="flex items-end gap-2">
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Ir para mês/ano</label>
+                <input type="month" value={mesAnoBusca} onChange={(e) => setMesAnoBusca(e.target.value)}
+                  className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <button onClick={() => irParaMesAno(mesAnoBusca)} disabled={!mesAnoBusca || consultandoData}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                Buscar
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 flex-1 justify-end">
+              <button onClick={() => { setMesBuscado(""); abrirSnapshot(snapshotIndex - 1); }} disabled={snapshotIndex <= 0 || consultandoData}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 flex-shrink-0">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <div className="text-center text-xs text-slate-600 min-w-[120px]">
+                {consultandoData ? "Carregando..." : consultaResultado ? (
+                  <>
+                    <p className="font-semibold text-slate-800">
+                      {new Date(consultaResultado.criado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                    </p>
+                    <p className="text-[11px] text-slate-400">por {consultaResultado.criado_por_nome || "—"}</p>
+                  </>
+                ) : "—"}
+              </div>
+              <button onClick={() => { setMesBuscado(""); abrirSnapshot(snapshotIndex + 1); }} disabled={snapshotIndex >= snapshotsLista.length - 1 || snapshotIndex < 0 || consultandoData}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 flex-shrink-0">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            {mesBuscado && consultaResultado && !consultaResultado.criado_em.startsWith(mesBuscado) && (
+              <p className="w-full text-[11px] text-amber-600">
+                Sem alteração em {mesBuscado.split("-").reverse().join("/")} — mostrando o registro mais próximo.
+              </p>
+            )}
+            {consultaErro && (
+              <p className="w-full text-[11px] text-red-500">{consultaErro}</p>
+            )}
+          </div>
+
+          {consultaResultado && (
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full border-collapse text-xs">
+                <thead>
+                  <tr>
+                    <th className="border-b border-slate-200 px-2 py-2 bg-slate-50 text-left w-24">Horário</th>
+                    {DIAS.slice(0, 5).map((d) => (
+                      <th key={d} className="border-b border-l border-slate-200 px-2 py-2 bg-slate-50 text-left min-w-[140px]">{d}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {HORARIOS.map((horario) => (
+                    <tr key={horario}>
+                      <td className="border-b border-slate-100 px-2 py-2 font-semibold text-slate-600 align-top">{horario}</td>
+                      {DIAS.slice(0, 5).map((d) => {
+                        const doDia = consultaResultado.dados.filter((s) => s.dia === d && s.horario === horario);
+                        return (
+                          <td key={d} className="border-b border-l border-slate-100 px-2 py-2 align-top">
+                            {doDia.map((s) => (
+                              <div key={s.id} className="mb-1 last:mb-0">
+                                <strong>{s.crianca}</strong> · {s.servico}
+                                {s.profissional_nome && <div className="opacity-70">👤 {s.profissional_nome}</div>}
+                              </div>
+                            ))}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       ) : visualizacao === "semana" ? (
         <div className="overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full border-collapse text-xs">
@@ -918,27 +1000,14 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <History className="h-5 w-5 text-blue-600" />
-                Histórico e consulta
+                Histórico de alterações
               </h2>
               <button onClick={() => setHistoricoAberto(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="flex gap-1 bg-slate-100 p-1 rounded-xl mx-4 mt-3 w-fit">
-              {([
-                { v: "alteracoes" as const, label: "Alterações" },
-                { v: "porData" as const, label: "Escala anterior (comprobatório)" },
-              ]).map((o) => (
-                <button key={o.v} onClick={() => { setHistoricoAba(o.v); if (o.v === "porData" && snapshotsLista.length === 0) carregarListaSnapshots(); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${historicoAba === o.v ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-                  {o.label}
-                </button>
-              ))}
-            </div>
-
-            {historicoAba === "alteracoes" ? (
-              <>
+            <>
                 <div className="px-4 pt-3 pb-1 flex flex-wrap items-end gap-2 border-b border-slate-100">
                   <div>
                     <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">De</label>
@@ -1001,98 +1070,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                   )}
                 </div>
               </>
-            ) : (
-              <>
-                <div className="px-4 pt-3 pb-2 flex flex-wrap items-center gap-3 border-b border-slate-100">
-                  <div className="flex items-end gap-2">
-                    <div>
-                      <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Ir para mês/ano</label>
-                      <input type="month" value={mesAnoBusca} onChange={(e) => setMesAnoBusca(e.target.value)}
-                        className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                    <button onClick={() => irParaMesAno(mesAnoBusca)} disabled={!mesAnoBusca || consultandoData}
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
-                      Buscar
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-1 justify-end">
-                    <button onClick={() => { setMesBuscado(""); abrirSnapshot(snapshotIndex - 1); }} disabled={snapshotIndex <= 0 || consultandoData}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 flex-shrink-0">
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <div className="text-center text-xs text-slate-600 min-w-[120px]">
-                      {consultandoData ? "Carregando..." : consultaResultado ? (
-                        <>
-                          <p className="font-semibold text-slate-800">
-                            {new Date(consultaResultado.criado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
-                          </p>
-                          <p className="text-[11px] text-slate-400">por {consultaResultado.criado_por_nome || "—"}</p>
-                        </>
-                      ) : "—"}
-                    </div>
-                    <button onClick={() => { setMesBuscado(""); abrirSnapshot(snapshotIndex + 1); }} disabled={snapshotIndex >= snapshotsLista.length - 1 || snapshotIndex < 0 || consultandoData}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 flex-shrink-0">
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {mesBuscado && consultaResultado && !consultaResultado.criado_em.startsWith(mesBuscado) && (
-                    <p className="w-full text-[11px] text-amber-600">
-                      Sem alteração em {mesBuscado.split("-").reverse().join("/")} — mostrando o registro mais próximo.
-                    </p>
-                  )}
-                </div>
-                <div className="flex justify-between px-4 pt-1">
-                  <span className="text-[11px] text-slate-400">‹ Alteração anterior</span>
-                  <span className="text-[11px] text-slate-400">Alteração seguinte ›</span>
-                </div>
-                <p className="px-4 pt-2 text-[11px] text-slate-400">
-                  Guardamos uma foto completa da escala a cada alteração feita — navegue entre elas pra ver como estava antes.
-                </p>
-                <div className="overflow-y-auto flex-1 p-4">
-                  {consultaErro && (
-                    <p className="text-center text-sm text-red-500 py-8">{consultaErro}</p>
-                  )}
-                  {consultaResultado && (
-                    <div className="space-y-3">
-                      <div className="overflow-x-auto rounded-xl border border-slate-200">
-                        <table className="w-full border-collapse text-xs">
-                          <thead>
-                            <tr>
-                              <th className="border-b border-slate-200 px-2 py-2 bg-slate-50 text-left w-24">Horário</th>
-                              {DIAS.slice(0, 5).map((d) => (
-                                <th key={d} className="border-b border-l border-slate-200 px-2 py-2 bg-slate-50 text-left min-w-[140px]">{d}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {HORARIOS.map((horario) => (
-                              <tr key={horario}>
-                                <td className="border-b border-slate-100 px-2 py-2 font-semibold text-slate-600 align-top">{horario}</td>
-                                {DIAS.slice(0, 5).map((d) => {
-                                  const doDia = consultaResultado.dados.filter((s) => s.dia === d && s.horario === horario);
-                                  return (
-                                    <td key={d} className="border-b border-l border-slate-100 px-2 py-2 align-top">
-                                      {doDia.map((s) => (
-                                        <div key={s.id} className="mb-1 last:mb-0">
-                                          <strong>{s.crianca}</strong> · {s.servico}
-                                          {s.profissional_nome && <div className="opacity-70">👤 {s.profissional_nome}</div>}
-                                        </div>
-                                      ))}
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
           </div>
         </div>
       )}
