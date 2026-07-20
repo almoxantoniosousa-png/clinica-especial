@@ -868,7 +868,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       {/* MODAL CADASTRO / EDIÇÃO */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5 max-h-[90vh] overflow-y-auto">
 
             {/* cabeçalho */}
             <div className="flex items-center justify-between">
