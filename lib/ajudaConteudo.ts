@@ -55,6 +55,11 @@ const ADM: AjudaConteudo = {
       reflexo: "O protocolo criado aqui aparece na tela Protocolos do cargo escolhido — cada pessoa precisa abrir e confirmar a leitura, e você acompanha aqui quem já confirmou."
     },
     {
+      icone: "📓", titulo: "Ocorrência Diária", mockup: "lista-cards",
+      texto: "Registro dos acontecimentos fora da normalidade do dia a dia da clínica — substitui o caderno físico usado até agora. Clique em \"+ Nova ocorrência\" e escreva livremente o que aconteceu (a data vem preenchida com hoje, mas pode mudar). Dá pra anexar uma foto (ex: equipamento quebrado, parede danificada).\n\n✍️ Assinatura: depois de registrar, assine embaixo do seu próprio relato — usa a mesma assinatura salva de outras telas do sistema (ou desenha na hora, na primeira vez). Depois de assinada, a ocorrência não pode mais ser editada.\n\n🔍 Use a busca para encontrar ocorrências antigas por texto, autor ou data. O botão \"Imprimir\" gera uma versão em papel de tudo que está na tela (respeitando o filtro de busca).",
+      reflexo: "A Gestão recebe uma notificação a cada nova ocorrência registrada, mas só pode visualizar — não cria nem assina."
+    },
+    {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
       texto: "Arquivo de atas de reunião, no modelo usado nas supervisões da clínica. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só elas veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário e data da próxima reunião; quem participou (escolha as pessoas reais da lista, ou digite o nome em \"+ nome (sem login próprio)\" pra quem usa um login genérico/compartilhado — o acesso à ata segue automaticamente o cargo marcado); pontos discutidos anteriormente; pontos de atenção até a próxima reunião; e um plano de ação com uma linha por assunto (análise de causa, plano de ação, responsável e prazo — \"+ Adicionar item\" pra incluir mais linhas).\n\n📎 Anexos: dentro de uma ata aberta, dá pra anexar imagens ou PDF — por exemplo, a ata já assinada em papel e escaneada. Só quem criou a ata pode excluí-la ou excluir seus anexos.",
       reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. ✍️ Assinatura: dentro da ata aberta, cada participante com login próprio pode desenhar a assinatura na tela e clicar em \"Confirmar e assinar\" — na primeira vez desenha, nas próximas só confirma com a assinatura já salva. A impressão sai com a assinatura de quem já confirmou, e linha em branco pra quem ainda não confirmou ou não tem login próprio."
@@ -165,6 +170,11 @@ const GESTAO: AjudaConteudo = {
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
       texto: "Mural de comunicados internos da equipe. Os avisos fixados (📌) aparecem sempre no topo. Esta tela é apenas de consulta para o seu perfil."
+    },
+    {
+      icone: "📓", titulo: "Ocorrência Diária", mockup: "lista-cards",
+      texto: "Acompanhamento das ocorrências diárias registradas pela Administração e Aux. Administrativa — acontecimentos fora da normalidade do dia a dia da clínica (substitui o caderno físico usado até agora). Você recebe uma notificação a cada ocorrência nova.\n\nUse a busca pra encontrar registros antigos por texto, autor ou data. Esta tela é apenas de consulta — quem registra e assina é a Administração/Aux. Administrativa.",
+      reflexo: "Cada ocorrência é assinada digitalmente por quem registrou, então dá pra confirmar quem relatou o quê."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
@@ -484,6 +494,11 @@ const AUX_ADM: AjudaConteudo = {
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
       texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo."
+    },
+    {
+      icone: "📓", titulo: "Ocorrência Diária", mockup: "lista-cards",
+      texto: "Registro dos acontecimentos fora da normalidade do dia a dia da clínica — substitui o caderno físico usado até agora. Clique em \"+ Nova ocorrência\" e escreva livremente o que aconteceu (a data vem preenchida com hoje, mas pode mudar). Dá pra anexar uma foto (ex: equipamento quebrado, parede danificada).\n\n✍️ Assinatura: depois de registrar, assine embaixo do seu próprio relato — usa a mesma assinatura salva de outras telas do sistema (ou desenha na hora, na primeira vez). Depois de assinada, a ocorrência não pode mais ser editada.\n\n🔍 Use a busca para encontrar ocorrências antigas por texto, autor ou data. O botão \"Imprimir\" gera uma versão em papel de tudo que está na tela (respeitando o filtro de busca).",
+      reflexo: "A Gestão recebe uma notificação a cada nova ocorrência registrada, mas só pode visualizar — não cria nem assina."
     },
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",

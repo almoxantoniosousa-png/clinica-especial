@@ -23,6 +23,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const [isMobile, setIsMobile] = useState(true);
   const [colaboradoresAberto, setColaboradoresAberto] = useState(false);
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
+  const [geralAberto, setGeralAberto] = useState(true);
 
   const role = userRole ? userRole.trim().toLowerCase() : "";
   const isAdmin = role === "adm" || role === "admin";
@@ -99,6 +100,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/patrimonio",   label: "Patrimônio", icon: "📦" },
     { href: "/adm/mural",        label: "Mural",      icon: "📢" },
     { href: "/adm/protocolos",   label: "Protocolos", icon: "📜" },
+    { href: "/ocorrencias",      label: "Ocorrência Diária", icon: "📓" },
     { href: "/reuniao",          label: "Reunião",    icon: "🗒️" },
     { href: "/chat",             label: "Chat",       icon: "💬" },
     { href: "/escala",           label: "Escala",     icon: "📅" },
@@ -114,6 +116,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/gestao/agenda",       label: "Agenda Clínica", icon: "📅" },
     { href: "/escala",              label: "Escala",         icon: "📅" },
     { href: "/adm/mural",           label: "Mural",        icon: "📢" },
+    { href: "/ocorrencias",         label: "Ocorrência Diária", icon: "📓" },
     { href: "/protocolos",          label: "Protocolos",   icon: "📜" },
     { href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" },
     { href: "/requisicoes",         label: "Requisições",  icon: "🛒" },
@@ -195,6 +198,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/patrimonio",       label: "Patrimônio",    icon: "📦" },
     { href: "/protocolos",           label: "Protocolos",    icon: "📜" },
     { href: "/mural",                label: "Mural",         icon: "📢" },
+    { href: "/ocorrencias",          label: "Ocorrência Diária", icon: "📓" },
     { href: "/reuniao",              label: "Reunião",       icon: "🗒️" },
     { href: "/chat",                 label: "Chat",          icon: "💬" },
     { href: "/ajuda",                label: "Ajuda",         icon: "❓" },
@@ -313,9 +317,12 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
             <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-3 pb-1">Geral</p>
           </div>
 
-          {(isAdmin ? menuAdmin : menuGestao).slice(1).map((item) => (
-            <MenuItem key={item.href} item={item} />
-          ))}
+          <Accordion
+            label="Menu completo" icon="📋"
+            subItems={(isAdmin ? menuAdmin : menuGestao).slice(1)}
+            aberto={geralAberto}
+            onToggle={() => setGeralAberto(!geralAberto)}
+          />
         </>
       ) : (
         menu.map((item) => <MenuItem key={item.href} item={item} />)

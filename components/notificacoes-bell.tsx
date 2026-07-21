@@ -73,6 +73,7 @@ export function NotificacoesBell({ userRole, align = "right" }: { userRole: stri
     if (tipo === "agenda")   return "📅";
     if (tipo === "lembrete") return "🔔";
     if (tipo === "reuniao")  return "🗒️";
+    if (tipo === "ocorrencia") return "📓";
     if (tipo === "alerta")   return "⚠️";
     return "🔔";
   }
