@@ -152,6 +152,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [filtroCrianca, setFiltroCrianca] = useState("");
   const [filtroServico, setFiltroServico] = useState("");
   const [podeEditar, setPodeEditar] = useState(false);
+  const [categoriaImpressao, setCategoriaImpressao] = useState("todos");
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
   const [servicoLivre, setServicoLivre] = useState(false);
@@ -588,6 +589,19 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             <History className="h-4 w-4" />
             Histórico
           </button>
+          {rolesParaImprimir.length > 1 && (
+            <select
+              value={categoriaImpressao}
+              onChange={(e) => setCategoriaImpressao(e.target.value)}
+              className="rounded-xl border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Escolher o que sai na impressão"
+            >
+              <option value="todos">Imprimir: tudo</option>
+              {rolesParaImprimir.map((r) => (
+                <option key={r} value={r}>Imprimir: só {LABEL_ROLE[r] || r}</option>
+              ))}
+            </select>
+          )}
           <button
             onClick={() => window.print()}
             className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
@@ -1297,7 +1311,9 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
     {/* VERSÃO PRA IMPRIMIR — uma grade separada por função, pro mural físico (sem motivo/presença) */}
     <div className="hidden print:block">
-      {rolesParaImprimir.map((r, i) => {
+      {rolesParaImprimir
+        .filter((r) => categoriaImpressao === "todos" || categoriaImpressao === r)
+        .map((r, i) => {
         const slotsDoRole = slots.filter((s) => {
           if (s.profissional_id) return roleDoProfissional[s.profissional_id] === r;
           if (s.profissional_nome) return categoriaDoAvulso[s.profissional_nome.toLowerCase()] === r;
