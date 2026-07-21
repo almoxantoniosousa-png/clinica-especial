@@ -38,6 +38,21 @@ function ordenarHorarios(lista: string[]): string[] {
   });
 }
 
+// Segunda a sexta da semana atual, ex: "20 a 24/07/2026" — a escala é por
+// dia da semana (recorrente), então na impressão usamos a semana de hoje.
+function intervaloSemanaAtual(): string {
+  const hoje = new Date();
+  const diaSemana = hoje.getDay();
+  const diffSegunda = diaSemana === 0 ? -6 : 1 - diaSemana;
+  const segunda = new Date(hoje);
+  segunda.setDate(hoje.getDate() + diffSegunda);
+  const sexta = new Date(segunda);
+  sexta.setDate(segunda.getDate() + 4);
+  const dd = (d: Date) => String(d.getDate()).padStart(2, "0");
+  const mm = (d: Date) => String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd(segunda)} a ${dd(sexta)}/${mm(sexta)}/${sexta.getFullYear()}`;
+}
+
 const LOCAIS = ["Escola", "Casa", "Clínica"];
 
 type Presenca = "P" | "F" | "FJ";
@@ -1325,7 +1340,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             <h1 className="text-3xl font-bold text-slate-900 text-center mb-1">{titulo}</h1>
             <p className="text-lg font-semibold text-slate-700 text-center mb-1">{LABEL_ROLE[r] || r}</p>
             <p className="text-sm text-slate-500 text-center mb-4">
-              Escala semanal — impresso em {new Date().toLocaleDateString("pt-BR")}
+              Escala semanal — {intervaloSemanaAtual()} — impresso em {new Date().toLocaleDateString("pt-BR")}
             </p>
             <table className="w-full border-collapse text-[15px] mb-2">
               <tbody>
