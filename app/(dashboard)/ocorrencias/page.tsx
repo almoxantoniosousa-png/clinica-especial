@@ -4,18 +4,24 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
 import { AssinaturaPad } from "@/components/assinatura-pad";
-import { Search, Plus, X, Printer, Camera, PenLine } from "lucide-react";
+import { Search, Plus, Printer, Camera, PenLine, Pencil, Trash2, Check, X } from "lucide-react";
+
+type Item = {
+  id: string;
+  texto: string;
+  foto_url: string | null;
+  created_at: string;
+};
 
 type Ocorrencia = {
   id: string;
   data: string;
-  texto: string;
   autor_email: string;
   autor_nome: string | null;
-  foto_url: string | null;
   assinatura_base64: string | null;
   assinado_em: string | null;
   created_at: string;
+  itens: Item[];
 };
 
 function hoje() {
@@ -36,18 +42,21 @@ export default function OcorrenciasPage() {
 
   const [minhaAssinatura, setMinhaAssinatura] = useState<string | null>(null);
 
-  const [modalAberto, setModalAberto] = useState(false);
   const [novoTexto, setNovoTexto] = useState("");
-  const [novaData, setNovaData] = useState(hoje());
   const [novaFoto, setNovaFoto] = useState<File | null>(null);
   const [novaFotoPreview, setNovaFotoPreview] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
-  const [erro, setErro] = useState("");
+  const [salvandoItem, setSalvandoItem] = useState(false);
+  const [erroItem, setErroItem] = useState("");
   const inputFotoRef = useRef<HTMLInputElement>(null);
 
-  const [assinandoId, setAssinandoId] = useState<string | null>(null);
+  const [editandoItemId, setEditandoItemId] = useState<string | null>(null);
+  const [textoEditando, setTextoEditando] = useState("");
+
+  const [assinando, setAssinando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [erroAssinatura, setErroAssinatura] = useState("");
+
+  const [iniciandoDia, setIniciandoDia] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -73,26 +82,37 @@ export default function OcorrenciasPage() {
     setLoading(true);
     const { data } = await supabase
       .from("ocorrencias_diarias")
-      .select("*")
+      .select("*, ocorrencias_diarias_itens(*)")
       .order("data", { ascending: false })
       .order("created_at", { ascending: false });
-    setOcorrencias((data ?? []) as Ocorrencia[]);
+
+    const lista = (data ?? []).map((o: any) => ({
+      ...o,
+      itens: (o.ocorrencias_diarias_itens ?? []).sort(
+        (a: Item, b: Item) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      ),
+    })) as Ocorrencia[];
+    setOcorrencias(lista);
     setLoading(false);
   }
 
-  function abrirNovo() {
-    setNovoTexto("");
-    setNovaData(hoje());
-    setNovaFoto(null);
-    setNovaFotoPreview(null);
-    setErro("");
-    setModalAberto(true);
+  const meuDiaAberto = ocorrencias.find(
+    (o) => o.data === hoje() && o.autor_email === usuarioEmail && !o.assinado_em
+  );
+
+  async function iniciarDia() {
+    setIniciandoDia(true);
+    await supabase.from("ocorrencias_diarias").insert({
+      data: hoje(), autor_email: usuarioEmail, autor_nome: usuarioNome || null,
+    });
+    setIniciandoDia(false);
+    carregar();
   }
 
-  async function salvar() {
-    if (!novoTexto.trim()) { setErro("Escreva o que aconteceu."); return; }
-    setSalvando(true);
-    setErro("");
+  async function adicionarItem() {
+    if (!meuDiaAberto || !novoTexto.trim()) { setErroItem("Escreva o que aconteceu."); return; }
+    setSalvandoItem(true);
+    setErroItem("");
 
     let foto_url: string | null = null;
     if (novaFoto) {
@@ -102,36 +122,42 @@ export default function OcorrenciasPage() {
       if (!upErr) foto_url = supabase.storage.from("ocorrencias-fotos").getPublicUrl(path).data.publicUrl;
     }
 
-    const { data: nova, error } = await supabase.from("ocorrencias_diarias").insert({
-      data: novaData,
-      texto: novoTexto.trim(),
-      autor_email: usuarioEmail,
-      autor_nome: usuarioNome || null,
-      foto_url,
+    const { data: novo, error } = await supabase.from("ocorrencias_diarias_itens").insert({
+      ocorrencia_id: meuDiaAberto.id, texto: novoTexto.trim(), foto_url,
     }).select().single();
 
-    setSalvando(false);
-    if (error) { setErro(error.message); return; }
+    setSalvandoItem(false);
+    if (error) { setErroItem(error.message); return; }
 
     await registrarLog(supabase, {
       usuario_email: usuarioEmail, usuario_nome: usuarioNome, acao: "Registrou ocorrência diária",
-      tabela: "ocorrencias_diarias", registro_id: nova?.id, descricao: novoTexto.trim().slice(0, 120),
+      tabela: "ocorrencias_diarias_itens", registro_id: novo?.id, descricao: novoTexto.trim().slice(0, 120),
     });
 
-    await supabase.from("notificacoes").insert({
-      destinatario_role: "gestao",
-      titulo: "📓 Nova ocorrência diária",
-      mensagem: novoTexto.trim().slice(0, 140),
-      tipo: "ocorrencia",
-      link: "/ocorrencias",
-      autor_nome: usuarioNome || null,
-    });
-
-    setModalAberto(false);
+    setNovoTexto(""); setNovaFoto(null); setNovaFotoPreview(null);
     carregar();
   }
 
-  async function assinar(id: string, imagemBase64: string) {
+  function iniciarEdicaoItem(item: Item) {
+    setEditandoItemId(item.id);
+    setTextoEditando(item.texto);
+  }
+
+  async function salvarEdicaoItem(itemId: string) {
+    if (!textoEditando.trim()) return;
+    await supabase.from("ocorrencias_diarias_itens").update({ texto: textoEditando.trim() }).eq("id", itemId);
+    setEditandoItemId(null);
+    carregar();
+  }
+
+  async function excluirItem(itemId: string) {
+    if (!confirm("Excluir esta ocorrência?")) return;
+    await supabase.from("ocorrencias_diarias_itens").delete().eq("id", itemId);
+    carregar();
+  }
+
+  async function assinar(imagemBase64: string) {
+    if (!meuDiaAberto) return;
     setConfirmando(true);
     setErroAssinatura("");
     await supabase.from("assinaturas").upsert({
@@ -139,25 +165,87 @@ export default function OcorrenciasPage() {
     });
     const { error } = await supabase.from("ocorrencias_diarias").update({
       assinatura_base64: imagemBase64, assinado_em: new Date().toISOString(),
-    }).eq("id", id);
+    }).eq("id", meuDiaAberto.id);
     setConfirmando(false);
     if (error) { setErroAssinatura("Não foi possível assinar. Tente novamente."); return; }
+
+    await supabase.from("notificacoes").insert({
+      destinatario_role: "gestao",
+      titulo: "📓 Ocorrência diária fechada",
+      mensagem: `${usuarioNome || usuarioEmail} registrou ${meuDiaAberto.itens.length} ocorrência${meuDiaAberto.itens.length !== 1 ? "s" : ""} em ${formatarData(meuDiaAberto.data)}`,
+      tipo: "ocorrencia",
+      link: "/ocorrencias",
+      autor_nome: usuarioNome || null,
+    });
+
     setMinhaAssinatura(imagemBase64);
-    setAssinandoId(null);
+    setAssinando(false);
     carregar();
   }
-
-  const filtradas = ocorrencias.filter(o =>
-    o.texto.toLowerCase().includes(busca.toLowerCase()) ||
-    (o.autor_nome || "").toLowerCase().includes(busca.toLowerCase()) ||
-    o.data.includes(busca)
-  );
 
   function formatarData(d: string) {
     return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
   }
 
+  function formatarHora(dt: string) {
+    return new Date(dt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  const historico = ocorrencias.filter((o) => o !== meuDiaAberto);
+  const historicoFiltrado = historico.filter((o) =>
+    o.itens.some((i) => i.texto.toLowerCase().includes(busca.toLowerCase())) ||
+    (o.autor_nome || "").toLowerCase().includes(busca.toLowerCase()) ||
+    o.data.includes(busca)
+  );
+
   const inputClass = "w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition";
+
+  function CardItem({ item, editavel }: { item: Item; editavel: boolean }) {
+    const editando = editandoItemId === item.id;
+    return (
+      <div className="flex gap-3 py-3 border-b border-slate-100 last:border-b-0">
+        <span className="text-[11px] text-slate-400 font-mono pt-0.5 shrink-0 w-11">{formatarHora(item.created_at)}</span>
+        <div className="flex-1 min-w-0">
+          {editando ? (
+            <div className="space-y-2">
+              <textarea rows={3} value={textoEditando} onChange={(e) => setTextoEditando(e.target.value)}
+                className={`${inputClass} resize-none`} />
+              <div className="flex gap-2">
+                <button onClick={() => salvarEdicaoItem(item.id)}
+                  className="flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 transition">
+                  <Check className="h-3.5 w-3.5" /> Salvar
+                </button>
+                <button onClick={() => setEditandoItemId(null)}
+                  className="flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg hover:bg-slate-200 transition">
+                  <X className="h-3.5 w-3.5" /> Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{item.texto}</p>
+              {item.foto_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.foto_url} alt="Foto da ocorrência" className="mt-2 max-h-40 rounded-xl border border-slate-200 object-cover" />
+              )}
+            </>
+          )}
+        </div>
+        {editavel && !editando && (
+          <div className="flex items-start gap-1 shrink-0">
+            <button onClick={() => iniciarEdicaoItem(item)} title="Editar"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 transition">
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={() => excluirItem(item.id)} title="Excluir"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-red-600 bg-red-50 hover:bg-red-100 transition">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -168,21 +256,102 @@ export default function OcorrenciasPage() {
             <p className="text-xs text-slate-400 mt-0.5">
               {podeCriar ? "Registre acontecimentos fora da normalidade do dia a dia." : "Acompanhamento das ocorrências registradas pela administração."}
             </p>
+            <p className="text-xs font-semibold text-amber-600 mt-1">
+              ⚠️ As ocorrências diárias antes de 22/07/2026 estão registradas em livro físico.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => window.print()}
-              className="flex items-center gap-2 border border-slate-200 text-slate-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors">
-              <Printer className="h-4 w-4" /> Imprimir
-            </button>
-            {podeCriar && (
-              <button onClick={abrirNovo}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-                <Plus className="h-4 w-4" /> Nova ocorrência
-              </button>
-            )}
-          </div>
+          <button onClick={() => window.print()}
+            className="flex items-center gap-2 border border-slate-200 text-slate-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors self-start">
+            <Printer className="h-4 w-4" /> Imprimir
+          </button>
         </div>
 
+        {/* DIA DE HOJE — em andamento */}
+        {podeCriar && (
+          meuDiaAberto ? (
+            <div className="bg-white border-2 border-blue-200 rounded-2xl shadow-sm p-5">
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Hoje — {formatarData(meuDiaAberto.data)}</p>
+                <span className="text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 px-2 py-1 rounded-full whitespace-nowrap">
+                  Ainda não assinado
+                </span>
+              </div>
+
+              {meuDiaAberto.itens.length === 0 ? (
+                <p className="text-sm text-slate-400 py-3">Nenhuma ocorrência adicionada ainda hoje.</p>
+              ) : (
+                <div className="mt-2">
+                  {meuDiaAberto.itens.map((item) => <CardItem key={item.id} item={item} editavel />)}
+                </div>
+              )}
+
+              <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+                <textarea rows={3} placeholder="Descreva uma nova ocorrência..." value={novoTexto}
+                  onChange={(e) => setNovoTexto(e.target.value)} className={`${inputClass} resize-none`} />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => inputFotoRef.current?.click()}
+                      className="flex items-center gap-2 border border-slate-200 text-slate-600 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-slate-50 transition">
+                      <Camera className="h-4 w-4" /> {novaFotoPreview ? "Trocar foto" : "Adicionar foto"}
+                    </button>
+                    {novaFotoPreview && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={novaFotoPreview} alt="Prévia" className="h-9 w-9 rounded-lg object-cover border border-slate-200" />
+                    )}
+                    <input ref={inputFotoRef} type="file" accept="image/*" capture="environment" className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) { setNovaFoto(f); setNovaFotoPreview(URL.createObjectURL(f)); }
+                      }} />
+                  </div>
+                  <button onClick={adicionarItem} disabled={salvandoItem || !novoTexto.trim()}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50">
+                    <Plus className="h-4 w-4" /> {salvandoItem ? "Adicionando..." : "Adicionar ocorrência"}
+                  </button>
+                </div>
+                {erroItem && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{erroItem}</p>}
+              </div>
+
+              <div className="mt-5 pt-5 border-t border-slate-200">
+                {meuDiaAberto.itens.length === 0 ? (
+                  <p className="text-xs text-slate-400">Adicione ao menos uma ocorrência para poder assinar e fechar o dia.</p>
+                ) : assinando ? (
+                  <div className="max-w-sm">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Assinar e fechar o dia</p>
+                    <AssinaturaPad salvando={confirmando} onSalvar={assinar} />
+                    {erroAssinatura && <p className="text-[11px] text-red-600 mt-2">{erroAssinatura}</p>}
+                  </div>
+                ) : minhaAssinatura ? (
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={minhaAssinatura} alt="Sua assinatura salva" className="h-9 border-b border-slate-300 self-start" />
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <button onClick={() => assinar(minhaAssinatura)} disabled={confirmando}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-50 text-left">
+                        {confirmando ? "Confirmando..." : "Confirmar com minha assinatura e fechar o dia"}
+                      </button>
+                      <button onClick={() => setAssinando(true)} className="text-xs text-slate-400 hover:text-slate-600 shrink-0">
+                        Assinar de novo
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setAssinando(true)}
+                    className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800">
+                    <PenLine className="h-4 w-4" /> Assinar e fechar o dia
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <button onClick={iniciarDia} disabled={iniciandoDia}
+              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 text-slate-500 text-sm font-semibold py-5 rounded-2xl hover:bg-slate-50 hover:border-blue-300 hover:text-blue-600 transition disabled:opacity-50">
+              <Plus className="h-4 w-4" /> {iniciandoDia ? "Iniciando..." : "Começar ocorrências de hoje"}
+            </button>
+          )
+        )}
+
+        {/* HISTÓRICO */}
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <input type="text" placeholder="Buscar por texto, autor ou data (aaaa-mm-dd)..." value={busca}
@@ -192,127 +361,48 @@ export default function OcorrenciasPage() {
 
         {loading ? (
           <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
-        ) : filtradas.length === 0 ? (
+        ) : historicoFiltrado.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
             <span className="text-5xl">📓</span>
-            <p className="text-sm text-slate-400 mt-2">{busca ? "Nenhuma ocorrência encontrada." : "Nenhuma ocorrência registrada ainda."}</p>
+            <p className="text-sm text-slate-400 mt-2">{busca ? "Nenhuma ocorrência encontrada." : "Nenhum outro dia registrado ainda."}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {filtradas.map((o) => (
+            {historicoFiltrado.map((o) => (
               <div key={o.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
-                <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex items-start justify-between gap-3 mb-1">
                   <div>
                     <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">{formatarData(o.data)}</p>
                     <p className="text-xs text-slate-400 mt-0.5">Registrado por {o.autor_nome || o.autor_email}</p>
                   </div>
-                  {o.assinado_em && (
+                  {o.assinado_em ? (
                     <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-1 rounded-full whitespace-nowrap">
                       ✓ Assinado
                     </span>
-                  )}
-                </div>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{o.texto}</p>
-                {o.foto_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={o.foto_url} alt="Foto da ocorrência" className="mt-3 max-h-56 rounded-xl border border-slate-200 object-cover" />
-                )}
-
-                <div className="mt-4 pt-4 border-t border-slate-100">
-                  {o.assinatura_base64 ? (
-                    <div>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={o.assinatura_base64} alt={`Assinatura de ${o.autor_nome}`} className="h-10" />
-                      <p className="text-[10px] text-slate-400 border-t border-slate-300 pt-1 mt-0.5 w-fit min-w-[140px]">
-                        {o.autor_nome} — assinado em {new Date(o.assinado_em!).toLocaleDateString("pt-BR")}
-                      </p>
-                    </div>
-                  ) : o.autor_email === usuarioEmail ? (
-                    assinandoId === o.id ? (
-                      <div className="max-w-sm">
-                        <AssinaturaPad salvando={confirmando} onSalvar={(img) => assinar(o.id, img)} />
-                        {erroAssinatura && <p className="text-[11px] text-red-600 mt-2">{erroAssinatura}</p>}
-                      </div>
-                    ) : minhaAssinatura ? (
-                      <div className="flex items-center gap-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={minhaAssinatura} alt="Sua assinatura salva" className="h-9 border-b border-slate-300" />
-                        <button onClick={() => assinar(o.id, minhaAssinatura)} disabled={confirmando}
-                          className="text-xs font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-50">
-                          {confirmando ? "Confirmando..." : "Confirmar com minha assinatura"}
-                        </button>
-                        <button onClick={() => setAssinandoId(o.id)} className="text-xs text-slate-400 hover:text-slate-600">
-                          Assinar de novo
-                        </button>
-                      </div>
-                    ) : (
-                      <button onClick={() => setAssinandoId(o.id)}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800">
-                        <PenLine className="h-3.5 w-3.5" /> Assinar esta ocorrência
-                      </button>
-                    )
                   ) : (
-                    <p className="text-xs text-amber-600">Pendente de assinatura por {o.autor_nome || o.autor_email}</p>
+                    <span className="text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 px-2 py-1 rounded-full whitespace-nowrap">
+                      Em aberto
+                    </span>
                   )}
                 </div>
+
+                <div className="mt-2">
+                  {o.itens.map((item) => (
+                    <CardItem key={item.id} item={item} editavel={o.autor_email === usuarioEmail && !o.assinado_em} />
+                  ))}
+                </div>
+
+                {o.assinatura_base64 && (
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={o.assinatura_base64} alt={`Assinatura de ${o.autor_nome}`} className="h-10" />
+                    <p className="text-[10px] text-slate-400 border-t border-slate-300 pt-1 mt-0.5 w-fit min-w-[140px]">
+                      {o.autor_nome} — assinado em {new Date(o.assinado_em!).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
-          </div>
-        )}
-
-        {/* MODAL — Nova ocorrência */}
-        {modalAberto && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-            onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false); }}>
-            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between">
-                <h2 className="font-bold text-slate-800">Nova ocorrência</h2>
-                <button onClick={() => setModalAberto(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Data</label>
-                  <input type="date" value={novaData} onChange={(e) => setNovaData(e.target.value)} className={`mt-1 ${inputClass}`} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">O que aconteceu *</label>
-                  <textarea rows={6} placeholder="Descreva o ocorrido..." value={novoTexto}
-                    onChange={(e) => setNovoTexto(e.target.value)} className={`mt-1 ${inputClass} resize-none`} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Foto (opcional)</label>
-                  <div className="mt-1 flex items-center gap-3">
-                    <button type="button" onClick={() => inputFotoRef.current?.click()}
-                      className="flex items-center gap-2 border border-slate-200 text-slate-600 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-slate-50 transition">
-                      <Camera className="h-4 w-4" /> {novaFotoPreview ? "Trocar foto" : "Adicionar foto"}
-                    </button>
-                    {novaFotoPreview && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={novaFotoPreview} alt="Prévia" className="h-12 w-12 rounded-lg object-cover border border-slate-200" />
-                    )}
-                  </div>
-                  <input ref={inputFotoRef} type="file" accept="image/*" capture="environment" className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) { setNovaFoto(f); setNovaFotoPreview(URL.createObjectURL(f)); }
-                    }} />
-                </div>
-              </div>
-
-              {erro && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{erro}</p>}
-
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => setModalAberto(false)}
-                  className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
-                  Cancelar
-                </button>
-                <button onClick={salvar} disabled={salvando || !novoTexto.trim()}
-                  className="flex-1 h-11 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition disabled:opacity-50">
-                  {salvando ? "Salvando..." : "Registrar ocorrência"}
-                </button>
-              </div>
-            </div>
           </div>
         )}
       </div>
@@ -320,12 +410,18 @@ export default function OcorrenciasPage() {
       {/* VERSÃO PRA IMPRIMIR */}
       <div className="hidden print:block p-6">
         <h1 className="text-xl font-bold text-slate-900 mb-1">Ocorrência Diária — Clínica Abraço</h1>
-        <p className="text-xs text-slate-400 mb-6">{filtradas.length} registro{filtradas.length !== 1 ? "s" : ""}{busca ? ` (filtrado por "${busca}")` : ""}</p>
+        <p className="text-xs text-slate-400 mb-6">
+          {ocorrencias.length} dia{ocorrencias.length !== 1 ? "s" : ""} registrado{ocorrencias.length !== 1 ? "s" : ""}
+        </p>
         <div className="space-y-6">
-          {filtradas.map((o) => (
+          {ocorrencias.map((o) => (
             <div key={o.id} className="pb-4 border-b border-slate-300 break-inside-avoid">
               <p className="text-xs font-bold uppercase tracking-wide">{formatarData(o.data)} — {o.autor_nome || o.autor_email}</p>
-              <p className="text-sm mt-1 whitespace-pre-wrap">{o.texto}</p>
+              {o.itens.map((item) => (
+                <p key={item.id} className="text-sm mt-1 whitespace-pre-wrap">
+                  <span className="font-mono text-[11px] text-slate-500">{formatarHora(item.created_at)} — </span>{item.texto}
+                </p>
+              ))}
               {o.assinatura_base64 && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={o.assinatura_base64} alt="Assinatura" className="h-10 mt-2" />

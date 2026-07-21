@@ -56,8 +56,8 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "📓", titulo: "Ocorrência Diária", mockup: "lista-cards",
-      texto: "Registro dos acontecimentos fora da normalidade do dia a dia da clínica — substitui o caderno físico usado até agora. Clique em \"+ Nova ocorrência\" e escreva livremente o que aconteceu (a data vem preenchida com hoje, mas pode mudar). Dá pra anexar uma foto (ex: equipamento quebrado, parede danificada).\n\n✍️ Assinatura: depois de registrar, assine embaixo do seu próprio relato — usa a mesma assinatura salva de outras telas do sistema (ou desenha na hora, na primeira vez). Depois de assinada, a ocorrência não pode mais ser editada.\n\n🔍 Use a busca para encontrar ocorrências antigas por texto, autor ou data. O botão \"Imprimir\" gera uma versão em papel de tudo que está na tela (respeitando o filtro de busca).",
-      reflexo: "A Gestão recebe uma notificação a cada nova ocorrência registrada, mas só pode visualizar — não cria nem assina."
+      texto: "Registro dos acontecimentos fora da normalidade do dia a dia da clínica — substitui o caderno físico usado até 21/07/2026 (ocorrências anteriores a essa data continuam só no livro físico). Clique em \"Começar ocorrências de hoje\" pra abrir o registro do dia, e vá adicionando quantas ocorrências quiser ao longo do dia (cada uma com horário, texto livre e foto opcional). Dá pra editar ou excluir qualquer ocorrência do dia enquanto ele ainda não foi assinado.\n\n✍️ Assinatura: no final do dia, assine uma vez só pra fechar o registro — usa a mesma assinatura salva de outras telas do sistema (ou desenha na hora, na primeira vez). Depois de assinado, o dia fecha: nenhuma ocorrência daquele dia pode mais ser editada, excluída ou adicionada.\n\n🔍 Use a busca para encontrar dias antigos por texto, autor ou data. O botão \"Imprimir\" gera uma versão em papel de todo o histórico.",
+      reflexo: "A Gestão recebe uma notificação quando você fecha (assina) o dia, mas só pode visualizar — não cria, edita nem assina."
     },
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
@@ -173,8 +173,8 @@ const GESTAO: AjudaConteudo = {
     },
     {
       icone: "📓", titulo: "Ocorrência Diária", mockup: "lista-cards",
-      texto: "Acompanhamento das ocorrências diárias registradas pela Administração e Aux. Administrativa — acontecimentos fora da normalidade do dia a dia da clínica (substitui o caderno físico usado até agora). Você recebe uma notificação a cada ocorrência nova.\n\nUse a busca pra encontrar registros antigos por texto, autor ou data. Esta tela é apenas de consulta — quem registra e assina é a Administração/Aux. Administrativa.",
-      reflexo: "Cada ocorrência é assinada digitalmente por quem registrou, então dá pra confirmar quem relatou o quê."
+      texto: "Acompanhamento das ocorrências diárias registradas pela Administração e Aux. Administrativa — acontecimentos fora da normalidade do dia a dia da clínica (substitui o caderno físico usado até 21/07/2026; antes disso, só no livro físico). Cada dia reúne várias ocorrências registradas ao longo daquele dia, e é assinado uma única vez no final. Você recebe uma notificação quando um dia é fechado (assinado).\n\nUse a busca pra encontrar registros antigos por texto, autor ou data. Esta tela é apenas de consulta — quem registra e assina é a Administração/Aux. Administrativa.",
+      reflexo: "Cada dia é assinado digitalmente por quem registrou, então dá pra confirmar quem relatou o quê."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
@@ -497,8 +497,8 @@ const AUX_ADM: AjudaConteudo = {
     },
     {
       icone: "📓", titulo: "Ocorrência Diária", mockup: "lista-cards",
-      texto: "Registro dos acontecimentos fora da normalidade do dia a dia da clínica — substitui o caderno físico usado até agora. Clique em \"+ Nova ocorrência\" e escreva livremente o que aconteceu (a data vem preenchida com hoje, mas pode mudar). Dá pra anexar uma foto (ex: equipamento quebrado, parede danificada).\n\n✍️ Assinatura: depois de registrar, assine embaixo do seu próprio relato — usa a mesma assinatura salva de outras telas do sistema (ou desenha na hora, na primeira vez). Depois de assinada, a ocorrência não pode mais ser editada.\n\n🔍 Use a busca para encontrar ocorrências antigas por texto, autor ou data. O botão \"Imprimir\" gera uma versão em papel de tudo que está na tela (respeitando o filtro de busca).",
-      reflexo: "A Gestão recebe uma notificação a cada nova ocorrência registrada, mas só pode visualizar — não cria nem assina."
+      texto: "Registro dos acontecimentos fora da normalidade do dia a dia da clínica — substitui o caderno físico usado até 21/07/2026 (ocorrências anteriores a essa data continuam só no livro físico). Clique em \"Começar ocorrências de hoje\" pra abrir o registro do dia, e vá adicionando quantas ocorrências quiser ao longo do dia (cada uma com horário, texto livre e foto opcional). Dá pra editar ou excluir qualquer ocorrência do dia enquanto ele ainda não foi assinado.\n\n✍️ Assinatura: no final do dia, assine uma vez só pra fechar o registro — usa a mesma assinatura salva de outras telas do sistema (ou desenha na hora, na primeira vez). Depois de assinado, o dia fecha: nenhuma ocorrência daquele dia pode mais ser editada, excluída ou adicionada.\n\n🔍 Use a busca para encontrar dias antigos por texto, autor ou data. O botão \"Imprimir\" gera uma versão em papel de todo o histórico.",
+      reflexo: "A Gestão recebe uma notificação quando você fecha (assina) o dia, mas só pode visualizar — não cria, edita nem assina."
     },
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
