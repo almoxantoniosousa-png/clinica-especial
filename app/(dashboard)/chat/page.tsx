@@ -184,6 +184,10 @@ export default function ChatPage() {
   const [buscaUsuario, setBuscaUsuario] = useState("");
   const [criando, setCriando] = useState(false);
 
+  // Modal videochamada (Google Meet)
+  const [modalMeet, setModalMeet] = useState(false);
+  const [linkMeet, setLinkMeet] = useState("");
+
   // Refs
   const fimRef        = useRef<HTMLDivElement>(null);
   const containerRef  = useRef<HTMLDivElement>(null);
@@ -490,13 +494,21 @@ export default function ChatPage() {
     if (data) setMensagens(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data]);
   };
 
-  // ── Videochamada (Jitsi Meet) ─────────────────────────────────────────────
+  // ── Videochamada (Google Meet) ────────────────────────────────────────────
 
   function iniciarVideochamada() {
     if (!ativa || !eu) return;
-    const url = `https://meet.jit.si/ClinicaAbraco-${ativa.id}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    window.open("https://meet.google.com/new", "_blank", "noopener,noreferrer");
+    setLinkMeet("");
+    setModalMeet(true);
+  }
+
+  function confirmarLinkMeet() {
+    const url = linkMeet.trim();
+    if (!ativa || !eu || !url) return;
     enviar(JSON.stringify({ tipo: "reuniao", url, autor: eu.nome }));
+    setModalMeet(false);
+    setLinkMeet("");
   }
 
   // ── Upload de arquivo ─────────────────────────────────────────────────────
@@ -1298,6 +1310,49 @@ export default function ChatPage() {
             >
               Nova conversa
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════
+          MODAL — Videochamada (colar link do Google Meet)
+      ══════════════════════════════════════════════════════ */}
+      {modalMeet && (
+        <div
+          className="absolute inset-0 z-30 flex items-start justify-center bg-black/25 backdrop-blur-sm p-4 pt-10"
+          onClick={e => { if (e.target === e.currentTarget) setModalMeet(false); }}
+        >
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-800">Videochamada — Google Meet</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Abrimos o Google Meet em outra aba. Cole aqui o link gerado pra avisar a outra pessoa no chat.
+                </p>
+              </div>
+              <button
+                onClick={() => setModalMeet(false)}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors shrink-0"
+              >
+                <X className="h-4 w-4 text-slate-600" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              <input
+                autoFocus type="text" placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                value={linkMeet} onChange={e => setLinkMeet(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") confirmarLinkMeet(); }}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={confirmarLinkMeet}
+                disabled={!linkMeet.trim()}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-[#128C7E] text-white text-sm font-semibold hover:bg-[#0f7a6c] transition disabled:opacity-50"
+              >
+                <Video className="h-4 w-4" /> Enviar no chat
+              </button>
+            </div>
           </div>
         </div>
       )}
