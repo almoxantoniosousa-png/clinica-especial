@@ -36,6 +36,7 @@ export default function AdmDashboardPage() {
   const [graficoBarras, setGraficoBarras] = useState<ChartData<"bar"> | null>(null);
   const [loading, setLoading] = useState(true);
   const [aniversariantes, setAniversariantes] = useState<Aniversariante[]>([]);
+  const [nome, setNome] = useState<string | undefined>(undefined);
 
   // ── estado analytics ─────────────────────────────────────────
   const [historicoFinanceiro, setHistoricoFinanceiro] = useState<ChartData<"bar"> | null>(null);
@@ -43,6 +44,16 @@ export default function AdmDashboardPage() {
   const [topProfissionais, setTopProfissionais] = useState<ChartData<"bar"> | null>(null);
   const [kpisExtra, setKpisExtra] = useState({ totalCriancas: 0, melhorProfissional: "", mediaAtend: 0 });
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+
+  useEffect(() => {
+    async function carregarNome() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return;
+      const { data: u } = await supabase.from("usuarios").select("nome").eq("email", user.email).maybeSingle();
+      setNome(u?.nome || undefined);
+    }
+    carregarNome();
+  }, [supabase]);
 
   useEffect(() => {
     async function inicializar() {
@@ -318,7 +329,7 @@ export default function AdmDashboardPage() {
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-8 space-y-5">
 
       {/* PAINEL INFORMATIVO */}
-      <PainelInformacoes nome={undefined} />
+      <PainelInformacoes nome={nome} />
 
       {/* DIVISOR */}
       <div className="flex items-center gap-3">

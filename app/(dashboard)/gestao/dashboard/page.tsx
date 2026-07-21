@@ -24,6 +24,7 @@ ChartJS.register(
 export default function GestaoDashboardPage() {
 
   const [loading, setLoading] = useState(true);
+  const [nome, setNome] = useState<string | undefined>(undefined);
 
   // Métricas operacionais
   const [criancasAtivas, setCriancasAtivas] = useState(0);
@@ -54,6 +55,16 @@ export default function GestaoDashboardPage() {
   const hojeFormatado = new Date().toLocaleDateString("pt-BR", {
     weekday: "long", day: "numeric", month: "long", year: "numeric"
   });
+
+  useEffect(() => {
+    async function carregarNome() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return;
+      const { data: u } = await supabase.from("usuarios").select("nome").eq("email", user.email).maybeSingle();
+      setNome(u?.nome || undefined);
+    }
+    carregarNome();
+  }, []);
 
   useEffect(() => {
     async function carregar() {
@@ -338,7 +349,7 @@ export default function GestaoDashboardPage() {
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-8 space-y-5">
 
       {/* PAINEL INFORMATIVO */}
-      <PainelInformacoes />
+      <PainelInformacoes nome={nome} />
 
       {/* DIVISOR */}
       <div className="flex items-center gap-3">
