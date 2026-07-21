@@ -248,7 +248,7 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
         <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <p className="text-blue-50 text-sm font-light tracking-wide">{saudacao(nome)}</p>
-            <p className="text-blue-100/60 text-[11px] font-light tracking-wide mt-1">A Clínica Abraço te deseja um excelente dia de trabalho</p>
+            <p className="text-blue-100/60 text-[11px] font-light tracking-wide mt-1">A Clínica Abraço te deseja um excelente trabalho</p>
             <p className="text-4xl font-black text-white tracking-tight font-mono mt-2">{hora}</p>
             <p className="text-blue-100 text-xs mt-1 capitalize">{data}</p>
           </div>
