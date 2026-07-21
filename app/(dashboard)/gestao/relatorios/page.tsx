@@ -17,6 +17,40 @@ export default function GestaoRelatoriosPage() {
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
+  const [meuNome, setMeuNome] = useState("");
+  const [feedbackTexto, setFeedbackTexto] = useState<Record<string, string>>({});
+  const [enviandoFeedback, setEnviandoFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return;
+      const { data: u } = await supabase.from("usuarios").select("nome").eq("email", user.email).maybeSingle();
+      setMeuNome(u?.nome || "");
+    })();
+  }, []);
+
+  async function enviarFeedback(r: any) {
+    const texto = feedbackTexto[r.id]?.trim();
+    if (!texto) return;
+    setEnviandoFeedback(r.id);
+    const { error } = await supabase.from("prontuarios").update({
+      feedback_gestao: texto, feedback_por: meuNome || null, feedback_em: new Date().toISOString(),
+    }).eq("id", r.id);
+    setEnviandoFeedback(null);
+    if (!error) {
+      await supabase.from("notificacoes").insert({
+        destinatario_role: "supervisora",
+        titulo: "💬 Feedback no seu relatório",
+        mensagem: `${meuNome || "Gestão"} comentou seu relatório sobre ${r.criancas?.nome || "criança"}`,
+        tipo: "relatorio",
+        link: "/supervisora/relatorio",
+        autor_nome: meuNome || null,
+      });
+      setFeedbackTexto(prev => { const c = { ...prev }; delete c[r.id]; return c; });
+      carregar();
+    }
+  }
 
   async function carregar() {
     setLoading(true);
@@ -24,7 +58,7 @@ export default function GestaoRelatoriosPage() {
     const { data, error } = await supabase
       .from("prontuarios")
       .select("*, criancas(nome)")
-      .in("tipo", ["prontuario", "relatorio", "relatorio_diario"])
+      .in("tipo", ["prontuario", "relatorio", "relatorio_diario", "relatorio_supervisora"])
       .order("created_at", { ascending: false });
     if (error) { setErro("Erro ao carregar os relatórios: " + error.message); setLoading(false); return; }
     setRelatorios(data || []);
@@ -211,6 +245,13 @@ export default function GestaoRelatoriosPage() {
                         </div>
                       )}
 
+                      {conteudo.texto && (
+                        <div>
+                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Relato</p>
+                          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{conteudo.texto}</p>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {campos.map(campo => conteudo[campo.key] ? (
                           <div key={campo.key} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
@@ -220,9 +261,34 @@ export default function GestaoRelatoriosPage() {
                         ) : null)}
                       </div>
 
-                      {!campos.some(c => conteudo[c.key]) && (
+                      {!campos.some(c => conteudo[c.key]) && !conteudo.texto && (
                         <p className="text-sm text-slate-400 italic">Conteúdo não estruturado.</p>
                       )}
+
+                      {/* Feedback */}
+                      <div className="pt-3 border-t border-slate-100">
+                        {r.feedback_gestao ? (
+                          <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
+                            <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">
+                              Feedback de {r.feedback_por || "Gestão"}
+                            </p>
+                            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{r.feedback_gestao}</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Deixar feedback</p>
+                            <textarea rows={3} placeholder="Escreva um retorno sobre esse relatório..."
+                              value={feedbackTexto[r.id] || ""}
+                              onChange={(e) => setFeedbackTexto(prev => ({ ...prev, [r.id]: e.target.value }))}
+                              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                            <button onClick={() => enviarFeedback(r)}
+                              disabled={enviandoFeedback === r.id || !feedbackTexto[r.id]?.trim()}
+                              className="text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg transition disabled:opacity-50">
+                              {enviandoFeedback === r.id ? "Enviando..." : "Enviar feedback"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
