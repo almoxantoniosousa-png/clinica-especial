@@ -130,6 +130,7 @@ export default function CadastrarAtendentePage() {
     setSalvandoEdicao(true);
     const { error } = await supabase.from("atendentes").update({
       nome: editando.nome,
+      email: editando.email,
       whatsapp: editando.whatsapp,
       especialidade: editando.especialidade,
       registro_profissional: editando.registro_profissional,
@@ -447,6 +448,11 @@ export default function CadastrarAtendentePage() {
                   <input type="text" value={editando.whatsapp || ""} onChange={(e) => setEditando({ ...editando, whatsapp: e.target.value })}
                     className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">E-mail</label>
+                <input type="email" value={editando.email || ""} onChange={(e) => setEditando({ ...editando, email: e.target.value })}
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
