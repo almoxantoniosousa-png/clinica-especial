@@ -16,7 +16,7 @@ interface Notificacao {
   created_at: string;
 }
 
-export function NotificacoesBell({ userRole }: { userRole: string }) {
+export function NotificacoesBell({ userRole, align = "right" }: { userRole: string; align?: "left" | "right" }) {
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [aberto, setAberto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -105,7 +105,7 @@ export function NotificacoesBell({ userRole }: { userRole: string }) {
       </button>
 
       {aberto && (
-        <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
+        <div className={`fixed left-3 right-3 top-16 sm:absolute sm:top-11 sm:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden ${align === "left" ? "sm:left-0 sm:right-auto" : "sm:left-auto sm:right-0"}`}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
             <p className="font-semibold text-slate-800 text-sm">Notificações</p>
             {naoLidas > 0 && (

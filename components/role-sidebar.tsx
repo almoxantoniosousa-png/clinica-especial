@@ -331,7 +331,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
             <div className="px-4 py-4 border-b border-slate-100">
               <div className="flex items-center justify-between mb-2">
                 <Logo size="md" />
-                <NotificacoesBell userRole={role} />
+                <NotificacoesBell userRole={role} align="left" />
               </div>
               <div>
                 <p className="font-bold text-slate-800 text-sm leading-tight">Clínica Abraço</p>
