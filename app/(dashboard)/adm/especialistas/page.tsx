@@ -435,6 +435,13 @@ export default function EspecialistasPage() {
                   className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition" />
               </div>
             </div>
+            {feedback && (
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
+                ${feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
+                <span>{feedback.tipo === "sucesso" ? "✓" : "✕"}</span>
+                {feedback.msg}
+              </div>
+            )}
             <div className="flex gap-3 pt-1">
               <button onClick={() => setEditando(null)}
                 className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 active:scale-95 transition">
