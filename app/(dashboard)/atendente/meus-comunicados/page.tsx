@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import Link from "next/link";
 
 export default function MeusComunicadosPage() {
   const [comunicados, setComunicados] = useState<any[]>([]);
@@ -69,6 +70,7 @@ export default function MeusComunicadosPage() {
 
   const pendentes = comunicados.filter(c => !c.enviado_familia).length;
   const enviados  = comunicados.filter(c => c.enviado_familia).length;
+  const correcaoPendente = comunicados.find(c => c.correcao_solicitada);
 
   return (
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-6">
@@ -87,6 +89,26 @@ export default function MeusComunicadosPage() {
           (feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800")}>
           <span>{feedback.tipo === "sucesso" ? "✓" : "✕"}</span>
           {feedback.msg}
+        </div>
+      )}
+
+      {/* CORREÇÃO PENDENTE */}
+      {correcaoPendente && (
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">🔁</span>
+            <div>
+              <p className="text-sm font-bold text-orange-700">Correção pendente da supervisora</p>
+              <p className="text-xs text-orange-600 mt-0.5">
+                {correcaoPendente.criancas?.nome} · {correcaoPendente.correcao_texto}
+              </p>
+              <p className="text-xs text-orange-500 mt-1">Você não consegue criar um novo comunicado até corrigir este.</p>
+            </div>
+          </div>
+          <Link href="/atendente/formulario-escolar"
+            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl transition shrink-0">
+            Corrigir agora
+          </Link>
         </div>
       )}
 
@@ -149,9 +171,16 @@ export default function MeusComunicadosPage() {
                   </div>
 
                   {/* Badge status */}
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border flex-shrink-0 ${cfg.color}`}>
-                    {cfg.label}
-                  </span>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${cfg.color}`}>
+                      {cfg.label}
+                    </span>
+                    {c.correcao_solicitada && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full border bg-orange-50 text-orange-700 border-orange-200">
+                        🔁 Correção pendente
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Observação da supervisora */}

@@ -12,7 +12,7 @@ const ETAPAS = [
 ];
 
 export default function FormularioEscolarPage() {
-  
+
   const router = useRouter();
   const [etapa, setEtapa] = useState(1);
   const [salvando, setSalvando] = useState(false);
@@ -21,6 +21,9 @@ export default function FormularioEscolarPage() {
   const [atId, setAtId] = useState("");
   const [atNome, setAtNome] = useState("");
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
+  const [verificandoPendencia, setVerificandoPendencia] = useState(true);
+  const [correcaoPendente, setCorrecaoPendente] = useState<any | null>(null);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
 
   const [horaChegada, setHoraChegada] = useState("");
   const [interacao, setInteracao] = useState<string[]>([]);
@@ -47,12 +50,45 @@ export default function FormularioEscolarPage() {
         const { data: perfil } = await supabase
           .from("atendentes").select("nome").eq("email", user.email).maybeSingle();
         if (perfil?.nome) setAtNome(perfil.nome);
+
+        const { data: pendencia } = await supabase
+          .from("formularios_escolares")
+          .select("*")
+          .eq("at_id", user.id)
+          .eq("correcao_solicitada", true)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (pendencia) setCorrecaoPendente(pendencia);
       }
       const { data } = await supabase.from("criancas").select("id, nome, foto_url").order("nome");
       setCriancas(data || []);
+      setVerificandoPendencia(false);
     }
     inicializar();
   }, []);
+
+  function corrigirAgora() {
+    if (!correcaoPendente) return;
+    const p = correcaoPendente;
+    setEditandoId(p.id);
+    setCriancaId(p.crianca_id);
+    setHoraChegada(p.hora_chegada || "");
+    setInteracao(p.interacao || []);
+    setAutonomiaNivel(p.autonomia_nivel || 0);
+    setPeriodoMenstrual(p.periodo_menstrual || false);
+    setIdasBanheiro(p.idas_banheiro || 0);
+    setEvacuou(p.evacuou || false);
+    setSocializacao(p.socializacao || []);
+    setAtencao(p.atencao || []);
+    setLanche(p.lanche || "");
+    setComeuTudo(p.comeu_tudo || false);
+    setAtividadesSala(p.atividades_sala || "");
+    setTarefaCasa(p.tarefa_casa || "");
+    setMateriaisPedir(p.materiais_pedir || "");
+    setObsGerais(p.obs_gerais || "");
+    setEtapa(1);
+  }
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -79,20 +115,29 @@ export default function FormularioEscolarPage() {
   async function enviarFormulario() {
     if (!criancaId) { mostrarFeedback("erro", "Selecione a criança."); return; }
     setSalvando(true);
-    const { error } = await supabase.from("formularios_escolares").insert([{
-      at_id: atId, crianca_id: criancaId, data: hoje,
+
+    const campos = {
+      crianca_id: criancaId,
       hora_chegada: horaChegada, interacao,
       autonomia_nivel: autonomiaNivel, periodo_menstrual: periodoMenstrual,
       idas_banheiro: idasBanheiro, evacuou, socializacao, atencao,
       lanche, comeu_tudo: comeuTudo, atividades_sala: atividadesSala,
       tarefa_casa: tarefaCasa, materiais_pedir: materiaisPedir,
-      obs_gerais: obsGerais, enviado_supervisora: true, enviado_familia: false, status: 'aguardando',
-    }]);
+      obs_gerais: obsGerais,
+    };
+
+    const { error } = editandoId
+      ? await supabase.from("formularios_escolares").update({ ...campos, correcao_solicitada: false }).eq("id", editandoId)
+      : await supabase.from("formularios_escolares").insert([{
+          ...campos, at_id: atId, data: hoje,
+          enviado_supervisora: true, enviado_familia: false, status: 'aguardando',
+        }]);
+
     setSalvando(false);
     if (error) {
       mostrarFeedback("erro", "Erro ao enviar: " + error.message);
     } else {
-      mostrarFeedback("sucesso", "Comunicado enviado! Aguardando aprovação da supervisora.");
+      mostrarFeedback("sucesso", editandoId ? "Comunicado corrigido e reenviado à supervisora!" : "Comunicado enviado! Aguardando aprovação da supervisora.");
       setTimeout(() => router.push("/atendente/meus-atendimentos"), 2000);
     }
   }
@@ -114,14 +159,56 @@ export default function FormularioEscolarPage() {
     </div>
   );
 
+  if (verificandoPendencia) {
+    return <div className="text-center py-20 text-slate-400 text-sm">Carregando...</div>;
+  }
+
+  if (correcaoPendente && !editandoId) {
+    return (
+      <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10">
+        <div className="max-w-lg mx-auto bg-white border border-orange-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-orange-50 px-5 py-4 border-b border-orange-100 flex items-center gap-2">
+            <span className="text-xl">🔁</span>
+            <p className="font-bold text-orange-700 text-sm">Correção pendente</p>
+          </div>
+          <div className="p-5 space-y-3">
+            <p className="text-sm text-slate-600">
+              A supervisora pediu para refazer o comunicado de{" "}
+              <span className="font-semibold text-slate-800">
+                {criancas.find(c => c.id === correcaoPendente.crianca_id)?.nome || "criança"}
+              </span>{" "}
+              do dia {new Date(correcaoPendente.data + "T12:00:00").toLocaleDateString("pt-BR")}:
+            </p>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+              <p className="text-sm text-slate-700">{correcaoPendente.correcao_texto}</p>
+            </div>
+            <p className="text-xs text-slate-400">
+              Você precisa corrigir esse comunicado antes de conseguir criar um novo.
+            </p>
+            <button onClick={corrigirAgora}
+              className="w-full h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold transition active:scale-95">
+              Corrigir agora
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-5">
 
       <div>
-        <h1 className="text-xl font-bold text-slate-900">Comunicado Diário</h1>
+        <h1 className="text-xl font-bold text-slate-900">{editandoId ? "Corrigindo Comunicado" : "Comunicado Diário"}</h1>
         <p className="text-xs text-slate-400 mt-0.5">
           {atNome || "Atendente"} · {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
         </p>
+        {editandoId && (
+          <div className="mt-3 bg-orange-50 border border-orange-200 rounded-xl p-3">
+            <p className="text-xs font-bold text-orange-600 uppercase tracking-wide mb-1">Correção pedida pela supervisora</p>
+            <p className="text-sm text-orange-800">{correcaoPendente?.correcao_texto}</p>
+          </div>
+        )}
       </div>
 
       {feedback && (

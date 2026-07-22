@@ -12,6 +12,7 @@ type AbaProps = { mostrarFeedback: MostrarFeedbackFn };
 type FormularioEscolar = {
   id: string; created_at: string; status: string; data: string;
   enviado_familia?: boolean; obs_supervisora?: string | null;
+  correcao_solicitada?: boolean; correcao_texto?: string | null;
   hora_chegada?: string; interacao?: string[];
   autonomia_nivel?: number; idas_banheiro?: number;
   evacuou?: boolean; periodo_menstrual?: boolean;
@@ -294,6 +295,8 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
   const [detalhe, setDetalhe] = useState<FormularioEscolar | null>(null);
   const [obs, setObs] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [correcaoTexto, setCorrecaoTexto] = useState("");
+  const [solicitandoCorrecao, setSolicitandoCorrecao] = useState(false);
 
   async function carregar() {
     setLoading(true);
@@ -347,6 +350,30 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
     setEnviando(false);
     if (error) mostrarFeedback("erro", "Erro: " + error.message);
     else { mostrarFeedback("sucesso", "Comunicado enviado para a família!"); setDetalhe(null); setObs(""); carregar(); }
+  }
+
+  async function solicitarCorrecao(id: string) {
+    if (!correcaoTexto.trim()) { mostrarFeedback("erro", "Escreva o que precisa ser refeito."); return; }
+    setSolicitandoCorrecao(true);
+    const { error } = await supabase
+      .from("formularios_escolares")
+      .update({ correcao_solicitada: true, correcao_texto: correcaoTexto.trim() })
+      .eq("id", id);
+
+    if (!error) {
+      const { data: { user } } = await supabase.auth.getUser();
+      await registrarLog(supabase, {
+        usuario_email: user?.email || "desconhecido",
+        acao: "Solicitou correção",
+        tabela: "formularios_escolares",
+        registro_id: id,
+        descricao: `Pediu para refazer o comunicado de ${detalhe?.criancas?.nome || "criança"}: ${correcaoTexto.trim()}`,
+      });
+    }
+
+    setSolicitandoCorrecao(false);
+    if (error) mostrarFeedback("erro", "Erro: " + error.message);
+    else { mostrarFeedback("sucesso", "Correção solicitada à AT."); setCorrecaoTexto(""); carregar(); if (detalhe) setDetalhe({ ...detalhe, correcao_solicitada: true, correcao_texto: correcaoTexto.trim() }); }
   }
 
   const filtrados = formularios;
@@ -495,7 +522,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
       ) : (
         <div className="space-y-3">
           {filtrados.map(f => (
-            <div key={f.id} onClick={() => { setDetalhe(f); setObs(""); }}
+            <div key={f.id} onClick={() => { setDetalhe(f); setObs(""); setCorrecaoTexto(""); }}
               className={`bg-white rounded-2xl border shadow-sm p-4 cursor-pointer hover:shadow-md transition border-l-4
                 ${f.enviado_familia ? "border-l-emerald-400" : "border-l-amber-400"} border-slate-200`}>
               <div className="flex items-center justify-between gap-3">
@@ -510,10 +537,17 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
                     <p className="text-xs text-slate-400">{new Date(f.data + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}</p>
                   </div>
                 </div>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border
-                  ${f.enviado_familia ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}>
-                  {f.enviado_familia ? "✓ Enviado" : "⏳ Pendente"}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border
+                    ${f.enviado_familia ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}>
+                    {f.enviado_familia ? "✓ Enviado" : "⏳ Pendente"}
+                  </span>
+                  {f.correcao_solicitada && (
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full border bg-orange-50 text-orange-700 border-orange-100">
+                      🔁 Correção pendente
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -563,6 +597,29 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
                   <p className="text-sm text-slate-700 mt-0.5">{detalhe.obs_supervisora}</p>
                 </div>
               )}
+
+              {/* Correção pedida para a AT — independente de já ter sido enviado pra família */}
+              <div className="bg-white rounded-xl border border-orange-200 overflow-hidden">
+                <div className="bg-orange-50 px-4 py-2 border-b border-orange-100">
+                  <p className="text-xs font-bold text-orange-600 uppercase tracking-wide">🔁 Correção para a AT</p>
+                </div>
+                {detalhe.correcao_solicitada ? (
+                  <div className="p-3 space-y-1">
+                    <p className="text-xs font-semibold text-orange-600">Aguardando a AT refazer:</p>
+                    <p className="text-sm text-slate-700">{detalhe.correcao_texto}</p>
+                  </div>
+                ) : (
+                  <div className="p-3 space-y-2">
+                    <textarea rows={2} value={correcaoTexto} onChange={e => setCorrecaoTexto(e.target.value)}
+                      placeholder="O que a AT precisa refazer ou corrigir?"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"/>
+                    <button onClick={() => solicitarCorrecao(detalhe.id)} disabled={solicitandoCorrecao || !correcaoTexto.trim()}
+                      className="text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 px-3 py-2 rounded-lg transition disabled:opacity-50">
+                      {solicitandoCorrecao ? "Enviando..." : "🔁 Pedir para a AT refazer"}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Rodapé */}
