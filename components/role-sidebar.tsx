@@ -153,7 +153,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
   const menuSupervisora = [
     ...(userContataFamilia ? [{ href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }] : []),
-    { href: "/supervisora/relatorio",   label: "Relatório",         icon: "📝" },
+    { href: "/supervisora/relatorio",   label: "Registro ABC",      icon: "📝" },
     { href: "/escala",                label: "Escala",                 icon: "📅" },
     { href: "/requisicoes",             label: "Requisições",       icon: "🛒" },
     { href: "/brinquedos",              label: "Brinquedos",        icon: "🧸" },

@@ -31,6 +31,7 @@ export default function FormularioEscolarPage() {
   const [periodoMenstrual, setPeriodoMenstrual] = useState(false);
   const [idasBanheiro, setIdasBanheiro] = useState(0);
   const [evacuou, setEvacuou] = useState(false);
+  const [aguaIngestao, setAguaIngestao] = useState("");
   const [socializacao, setSocializacao] = useState<string[]>([]);
   const [atencao, setAtencao] = useState<string[]>([]);
   const [lanche, setLanche] = useState("");
@@ -39,6 +40,7 @@ export default function FormularioEscolarPage() {
   const [tarefaCasa, setTarefaCasa] = useState("");
   const [materiaisPedir, setMateriaisPedir] = useState("");
   const [obsGerais, setObsGerais] = useState("");
+  const [eventosEscolares, setEventosEscolares] = useState("");
 
   const hoje = new Date().toISOString().split("T")[0];
 
@@ -79,6 +81,7 @@ export default function FormularioEscolarPage() {
     setPeriodoMenstrual(p.periodo_menstrual || false);
     setIdasBanheiro(p.idas_banheiro || 0);
     setEvacuou(p.evacuou || false);
+    setAguaIngestao(p.agua_ingestao || "");
     setSocializacao(p.socializacao || []);
     setAtencao(p.atencao || []);
     setLanche(p.lanche || "");
@@ -87,6 +90,7 @@ export default function FormularioEscolarPage() {
     setTarefaCasa(p.tarefa_casa || "");
     setMateriaisPedir(p.materiais_pedir || "");
     setObsGerais(p.obs_gerais || "");
+    setEventosEscolares(p.eventos_escolares || "");
     setEtapa(1);
   }
 
@@ -120,10 +124,10 @@ export default function FormularioEscolarPage() {
       crianca_id: criancaId,
       hora_chegada: horaChegada, interacao,
       autonomia_nivel: autonomiaNivel, periodo_menstrual: periodoMenstrual,
-      idas_banheiro: idasBanheiro, evacuou, socializacao, atencao,
+      idas_banheiro: idasBanheiro, evacuou, agua_ingestao: aguaIngestao, socializacao, atencao,
       lanche, comeu_tudo: comeuTudo, atividades_sala: atividadesSala,
       tarefa_casa: tarefaCasa, materiais_pedir: materiaisPedir,
-      obs_gerais: obsGerais,
+      obs_gerais: obsGerais, eventos_escolares: eventosEscolares,
     };
 
     const { error } = editandoId
@@ -326,6 +330,18 @@ export default function FormularioEscolarPage() {
               </div>
             </div>
             <Toggle value={evacuou} onChange={setEvacuou} label="Evacuou" icon="✅"/>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">💧 Ingestão de Água</label>
+              <div className="grid grid-cols-2 gap-2">
+                {["Não bebeu água", "Menos de 200ml", "200ml", "400ml", "500ml"].map(op => (
+                  <button key={op} type="button" onClick={() => setAguaIngestao(op)}
+                    className={"px-4 py-3 rounded-xl text-sm font-medium border-2 transition text-left " +
+                      (aguaIngestao === op ? "border-blue-600 bg-blue-50 text-blue-800 font-semibold" : "border-slate-200 text-slate-600 hover:border-slate-300")}>
+                    {aguaIngestao === op ? "✓ " : ""}{op}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -385,6 +401,12 @@ export default function FormularioEscolarPage() {
               <textarea rows={2} value={materiaisPedir} onChange={e => setMateriaisPedir(e.target.value)}
                 placeholder="Recados importantes para os pais..."
                 className="w-full px-4 py-3 rounded-xl border-2 border-red-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-400 transition placeholder:text-slate-400 resize-none bg-red-50"/>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">🎉 Eventos Escolares</label>
+              <textarea rows={2} value={eventosEscolares} onChange={e => setEventosEscolares(e.target.value)}
+                placeholder="Aconteceu algum evento na escola? Como o aluno participou?"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Observações Gerais</label>

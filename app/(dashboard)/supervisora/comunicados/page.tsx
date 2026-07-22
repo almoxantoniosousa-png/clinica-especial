@@ -15,10 +15,10 @@ type FormularioEscolar = {
   correcao_solicitada?: boolean; correcao_texto?: string | null;
   hora_chegada?: string; interacao?: string[];
   autonomia_nivel?: number; idas_banheiro?: number;
-  evacuou?: boolean; periodo_menstrual?: boolean;
+  evacuou?: boolean; periodo_menstrual?: boolean; agua_ingestao?: string;
   socializacao?: string[]; atencao?: string[];
   lanche?: string; comeu_tudo?: boolean;
-  atividades_sala?: string; tarefa_casa?: string;
+  atividades_sala?: string; eventos_escolares?: string; tarefa_casa?: string;
   materiais_pedir?: string; obs_gerais?: string;
   criancas?: { nome: string; foto_url?: string | null };
 };
@@ -408,6 +408,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
           { label: "Idas ao banheiro", valor: `${form.idas_banheiro ?? 0} vez${(form.idas_banheiro ?? 0) !== 1 ? "es" : ""}`, tipo: "texto" },
           form.evacuou !== undefined && { label: "Evacuou", valor: form.evacuou ? "Sim" : "Não", tipo: "badge", cor: form.evacuou ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200" },
           form.periodo_menstrual && { label: "Período menstrual", valor: "Sim", tipo: "badge", cor: "bg-pink-100 text-pink-700 border-pink-200" },
+          form.agua_ingestao && { label: "💧 Água", valor: form.agua_ingestao, tipo: "texto" },
         ].filter(Boolean),
       },
       {
@@ -425,6 +426,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
         cor: "border-emerald-200 bg-emerald-50",
         itens: [
           form.atividades_sala && { label: "Conteúdo de sala", valor: form.atividades_sala, tipo: "texto" },
+          form.eventos_escolares && { label: "🎉 Eventos escolares", valor: form.eventos_escolares, tipo: "texto" },
           form.tarefa_casa && { label: "Tarefa de casa", valor: form.tarefa_casa, tipo: "texto" },
           form.materiais_pedir && { label: "⚠️ Materiais / Avisos urgentes", valor: form.materiais_pedir, tipo: "alerta" },
           form.obs_gerais && { label: "Observações gerais", valor: form.obs_gerais, tipo: "texto" },

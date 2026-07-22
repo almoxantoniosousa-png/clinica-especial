@@ -183,7 +183,7 @@ const GESTAO: AjudaConteudo = {
     },
     {
       icone: "📈", titulo: "Relatórios", mockup: "tabela",
-      texto: "Reúne todos os prontuários e relatórios enviados pela equipe sobre os atendimentos das crianças — inclui os prontuários dos Especialistas (Avaliação, Resultados, Intervenção, Avanços e Conclusão) e os relatórios que a Supervisora registra quando fica esporadicamente com uma criança (texto livre).\n\nUse a busca (criança ou profissional) e o botão \"Filtros\" para refinar por profissional ou período (\"De\"/\"Até\"). Clique em um relatório pra abrir. Se ainda não tiver resposta, aparece um campo pra você escrever um feedback — ao enviar, a Supervisora recebe uma notificação e o feedback fica salvo junto do relatório dela."
+      texto: "Reúne todos os prontuários e relatórios enviados pela equipe sobre os atendimentos das crianças — inclui os prontuários dos Especialistas (Avaliação, Resultados, Intervenção, Avanços e Conclusão) e os Registros ABC que a Supervisora faz quando acompanha uma criança pontualmente (comportamentos-alvo, entrada, períodos com antecedente/comportamento/consequência, e observações gerais).\n\nUse a busca (criança ou profissional) e o botão \"Filtros\" para refinar por profissional ou período (\"De\"/\"Até\"). Clique em um relatório pra abrir. Se ainda não tiver resposta, aparece um campo pra você escrever um feedback — ao enviar, a Supervisora recebe uma notificação e o feedback fica salvo junto do relatório dela."
     },
     {
       icone: "🩺", titulo: "Atendimentos Especialistas", mockup: "tabela",
@@ -243,8 +243,8 @@ const SUPERVISORA: AjudaConteudo = {
       reflexo: "O que você envia aqui aparece para a família no Portal da Família: Comunicados Diários enviados → aba Diário; Momentos → aba Momentos; relatórios de evolução enviados → aba Evolução; Avisos → aba Avisos."
     },
     {
-      icone: "📝", titulo: "Relatório", mockup: "lista-cards",
-      texto: "Registro pra quando você fica esporadicamente com uma criança — clique em \"Novo relatório\", escolha a criança, a data e escreva livremente o que aconteceu. A Gestão recebe uma notificação e pode ler e deixar um feedback, que aparece aqui embaixo do relatório assim que for respondido.\n\nEsta tela mostra só os relatórios que você mesma registrou.",
+      icone: "📝", titulo: "Registro ABC", mockup: "lista-cards",
+      texto: "Registro estruturado pra quando você fica acompanhando uma criança pontualmente — clique em \"Novo registro\", escolha a criança e vá preenchendo: comportamentos-alvo observados, entrada (local, horário, comportamento na chegada), e um ou mais períodos de aula, cada um com atividade oferecida, comportamentos interferentes, o que antecedeu, consequência aplicada, frequência e intervenções preventivas usadas. Tem também um campo de observações gerais em texto livre no final.\n\nNão precisa que já exista um Plano Terapêutico pra essa criança — é justamente esse tipo de registro, ao longo do tempo, que embasa a reunião onde vocês e a Gestão definem o plano depois.\n\nAo enviar, a Gestão recebe uma notificação e pode ler e deixar um feedback, que aparece aqui embaixo do registro assim que for respondido. Esta tela mostra só os registros que você mesma fez.",
       reflexo: "A Gestão (Simone) vê e pode responder pelo lado dela em Relatórios — você recebe uma notificação quando ela deixa um feedback."
     },
     {
@@ -377,8 +377,8 @@ const ATENDENTE: AjudaConteudo = {
     },
     {
       icone: "📄", titulo: "Comunicado Diário", mockup: "form-etapas",
-      texto: "Formulário em 4 passos sobre o dia da criança na escola:\n\n1. Entrada e Interação\n2. Autonomia e Higiene\n3. Recreio e Socialização\n4. Agenda e Recados\n\nSelecione a criança, informe o horário de chegada, marque as opções pedidas em cada passo e, no último, escreva o conteúdo trabalhado em sala, tarefa de casa, avisos urgentes e observações. Use \"Continuar →\" e \"← Anterior\" para navegar, e \"✓ Enviar Comunicado\" no final.\n\nDica: o comunicado vai primeiro para a supervisora revisar antes de chegar à família — preencha com cuidado, principalmente os avisos urgentes.",
-      reflexo: "O comunicado enviado aqui vai primeiro para a Supervisora revisar; depois que ela enviar para a família, ele aparece no Portal da Família, na aba Diário."
+      texto: "Formulário em 4 passos sobre o dia da criança na escola:\n\n1. Entrada e Interação\n2. Autonomia e Higiene (inclui banheiro, evacuação e 💧 ingestão de água)\n3. Recreio e Socialização\n4. Agenda e Recados (inclui conteúdo de sala, 🎉 eventos escolares, tarefa de casa, avisos urgentes e observações)\n\nSelecione a criança, informe o horário de chegada, marque as opções pedidas em cada passo e, no último, escreva o conteúdo trabalhado em sala, tarefa de casa, avisos urgentes e observações. Use \"Continuar →\" e \"← Anterior\" para navegar, e \"✓ Enviar Comunicado\" no final.\n\nDica: o comunicado vai primeiro para a supervisora revisar antes de chegar à família — preencha com cuidado, principalmente os avisos urgentes.\n\nSe a supervisora pedir uma correção em algum comunicado seu, você fica impedida de criar um novo até corrigir e reenviar esse — a tela te leva direto pra ele quando isso acontece.",
+      reflexo: "O comunicado enviado aqui vai primeiro para a Supervisora revisar; depois que ela enviar para a família, ele aparece no Portal da Família, na aba Diário. A Supervisora também pode pedir pra você refazer algum ponto — isso aparece em Meus Comunicados."
     },
     {
       icone: "📬", titulo: "Meus Comunicados", mockup: "tabela",

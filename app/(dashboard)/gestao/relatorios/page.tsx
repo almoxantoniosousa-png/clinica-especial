@@ -252,6 +252,62 @@ export default function GestaoRelatoriosPage() {
                         </div>
                       )}
 
+                      {conteudo.comportamentos_alvo && (
+                        <div className="space-y-3">
+                          {conteudo.comportamentos_alvo.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {conteudo.comportamentos_alvo.map((cp: string, i: number) => (
+                                <span key={i} className="text-[11px] font-semibold bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full">🎯 {cp}</span>
+                              ))}
+                            </div>
+                          )}
+
+                          {(conteudo.local || conteudo.hora_chegada || conteudo.comportamento_entrada) && (
+                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1">
+                              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">🏁 Entrada</p>
+                              {(conteudo.local || conteudo.hora_chegada) && (
+                                <p className="text-xs text-slate-500">
+                                  {conteudo.local}{conteudo.local && conteudo.hora_chegada ? " · " : ""}
+                                  {conteudo.hora_chegada && `chegada às ${conteudo.hora_chegada}`}
+                                </p>
+                              )}
+                              {conteudo.comportamento_entrada && (
+                                <p className="text-sm text-slate-700 leading-relaxed">{conteudo.comportamento_entrada}</p>
+                              )}
+                            </div>
+                          )}
+
+                          {(conteudo.periodos || []).map((p: any, i: number) => (
+                            <div key={i} className="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
+                              <div className="px-3 py-2 bg-slate-100 flex items-center gap-2">
+                                <span className="w-5 h-5 rounded bg-blue-900 text-white text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                                <p className="text-xs font-bold text-slate-700">{p.nome || `Período ${i + 1}`}</p>
+                                {(p.hora_inicio || p.hora_fim) && (
+                                  <span className="text-[11px] text-slate-400 ml-auto">{p.hora_inicio} – {p.hora_fim}</span>
+                                )}
+                              </div>
+                              <div className="p-3 space-y-1.5 text-sm text-slate-700">
+                                {p.atividade_oferecida && <p><span className="font-semibold text-slate-500">Atividade:</span> {p.atividade_oferecida}</p>}
+                                {p.comportamentos_interferentes?.length > 0 && <p><span className="font-semibold text-slate-500">Comportamentos:</span> {p.comportamentos_interferentes.join(", ")}</p>}
+                                {(p.antecedentes?.length > 0 || p.antecedente_outro) && (
+                                  <p><span className="font-semibold text-slate-500">Antecedente:</span> {[...(p.antecedentes || []), p.antecedente_outro].filter(Boolean).join(", ")}</p>
+                                )}
+                                {p.consequencia?.length > 0 && <p><span className="font-semibold text-slate-500">Consequência:</span> {p.consequencia.join(", ")}</p>}
+                                {p.frequencia && <p><span className="font-semibold text-slate-500">Frequência:</span> {p.frequencia}</p>}
+                                {p.intervencoes_preventivas?.length > 0 && <p><span className="font-semibold text-slate-500">Prevenção:</span> {p.intervencoes_preventivas.join(", ")}</p>}
+                              </div>
+                            </div>
+                          ))}
+
+                          {conteudo.observacoes_gerais && (
+                            <div>
+                              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">✍️ Observações gerais</p>
+                              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{conteudo.observacoes_gerais}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {campos.map(campo => conteudo[campo.key] ? (
                           <div key={campo.key} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
@@ -261,7 +317,7 @@ export default function GestaoRelatoriosPage() {
                         ) : null)}
                       </div>
 
-                      {!campos.some(c => conteudo[c.key]) && !conteudo.texto && (
+                      {!campos.some(c => conteudo[c.key]) && !conteudo.texto && !conteudo.comportamentos_alvo && (
                         <p className="text-sm text-slate-400 italic">Conteúdo não estruturado.</p>
                       )}
 
