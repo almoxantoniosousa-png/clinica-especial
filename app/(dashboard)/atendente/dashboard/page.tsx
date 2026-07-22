@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import { saudacao } from "@/components/painel-informacoes";
 
 const ATALHOS = [
   { href: "/atendente/novo-registro",      label: "Novo Registro",     icon: "📝", cor: "bg-blue-50 text-blue-700" },
@@ -20,7 +21,7 @@ export default function AtendenteDashboardPage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user?.email) return;
       const { data } = await supabase.from("atendentes").select("nome").eq("email", user.email).maybeSingle();
-      setNome(data?.nome?.split(" ")[0]);
+      setNome(data?.nome);
     });
   }, []);
 
@@ -28,8 +29,8 @@ export default function AtendenteDashboardPage() {
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-8 space-y-5">
 
       <div>
-        <h1 className="text-xl font-bold text-slate-900">{nome ? `Olá, ${nome}!` : "Olá!"}</h1>
-        <p className="text-xs text-slate-400 mt-0.5">O que você precisa fazer agora?</p>
+        <h1 className="text-xl font-bold text-slate-900">{saudacao(nome)}</h1>
+        <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
       </div>
 
       <div className="flex items-center gap-3">

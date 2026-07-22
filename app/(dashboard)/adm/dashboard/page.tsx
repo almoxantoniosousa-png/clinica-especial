@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { carregarDadosDashboard } from "@/app/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
-import { PainelInformacoes } from "@/components/painel-informacoes";
+import { PainelInformacoes, saudacao } from "@/components/painel-informacoes";
 import { Line, Pie, Bar } from "react-chartjs-2";
 import type { ChartData } from "chart.js";
 import {
@@ -254,9 +254,6 @@ export default function AdmDashboardPage() {
   }
 
   // ── opções dos gráficos ──────────────────────────────────────
-  const hoje = new Date().toLocaleDateString("pt-BR", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric"
-  });
   const mesNome = new Date().toLocaleDateString("pt-BR", { month: "long" });
 
   const chartOptions = {
@@ -328,26 +325,26 @@ export default function AdmDashboardPage() {
   return (
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-8 space-y-5">
 
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">{saudacao(nome)}</h1>
+          <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
+          Ao vivo
+        </div>
+      </div>
+
       {/* PAINEL INFORMATIVO */}
-      <PainelInformacoes nome={nome} />
+      <PainelInformacoes />
 
       {/* DIVISOR */}
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-slate-200"/>
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Painel Operacional</span>
         <div className="flex-1 h-px bg-slate-200"/>
-      </div>
-
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-xs text-slate-400 mt-0.5 capitalize">{hoje}</p>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
-          Ao vivo
-        </div>
       </div>
 
       {/* KPIs OPERACIONAIS */}

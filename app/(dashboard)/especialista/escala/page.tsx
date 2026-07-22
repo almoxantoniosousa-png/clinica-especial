@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Clock, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { saudacao } from "@/components/painel-informacoes";
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
@@ -187,13 +188,9 @@ export default function EspecialistaEscalaPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <Calendar className="h-6 w-6 text-purple-600" />
-            Minha Escala
+            {profissionalNome ? saudacao(profissionalNome) : "Minha Escala"}
           </h1>
-          {profissionalNome && (
-            <p className="text-sm text-slate-400 mt-1">
-              Especialista: <span className="font-medium text-slate-600">{profissionalNome}</span>
-            </p>
-          )}
+          <p className="text-sm text-slate-400 mt-1 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
         </div>
         <div>
           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1 block">Marcar presença do dia</label>

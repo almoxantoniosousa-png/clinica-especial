@@ -160,7 +160,7 @@ function tempoRelativo(pubDate: string) {
   } catch { return ""; }
 }
 
-export function PainelInformacoes({ nome }: { nome?: string }) {
+export function PainelInformacoes() {
   const [hora, setHora] = useState("");
   const [data, setData] = useState("");
   const [clima, setClima] = useState<WeatherData | null>(null);
@@ -247,9 +247,7 @@ export function PainelInformacoes({ nome }: { nome?: string }) {
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <p className="text-blue-50 text-base font-light tracking-wide">{saudacao(nome)}</p>
-            <p className="text-blue-100/60 text-sm font-light tracking-wide mt-1">A Clínica Abraço te deseja um excelente trabalho</p>
-            <p className="text-4xl font-black text-white tracking-tight font-mono mt-2">{hora}</p>
+            <p className="text-4xl font-black text-white tracking-tight font-mono">{hora}</p>
             <p className="text-blue-100 text-xs mt-1 capitalize">{data}</p>
           </div>
 

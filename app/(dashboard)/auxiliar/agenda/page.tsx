@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, Check } from "lucide-react";
+import { saudacao } from "@/components/painel-informacoes";
 
 const HORAS = [
   "07:00","07:30","08:00","08:30","09:00","09:30",
@@ -64,6 +65,15 @@ export default function AuxAgendaPage() {
   const [editando, setEditando] = useState<Agendamento | null>(null);
   const [confirmandoDelete, setConfirmandoDelete] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>(FORM_VAZIO);
+  const [nome, setNome] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user?.email) return;
+      const { data } = await supabase.from("usuarios").select("nome").eq("email", user.email).maybeSingle();
+      setNome(data?.nome);
+    });
+  }, []);
 
   const diasSemana = useMemo(() => Array.from({ length: 7 }, (_, i) => {
     const d = new Date(semanaBase);
@@ -185,8 +195,8 @@ export default function AuxAgendaPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Agenda</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Gerencie os agendamentos de atendimento</p>
+          <h1 className="text-xl font-bold text-slate-900">{saudacao(nome)}</h1>
+          <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
         </div>
         <button onClick={abrirNovo}
           className="flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
