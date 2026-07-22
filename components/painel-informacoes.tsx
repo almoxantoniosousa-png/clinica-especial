@@ -136,7 +136,7 @@ function regiaooBrasil(lat: number, lon: number): string {
   return "Sudeste";
 }
 
-function saudacao(nome?: string) {
+export function saudacao(nome?: string) {
   const h = new Date().getHours();
   const turno = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
   const icone = h < 12 ? "☀️" : h < 18 ? "🌤️" : "🌙";

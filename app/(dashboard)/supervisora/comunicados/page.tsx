@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { registrarLog } from "@/lib/auditoria";
+import { saudacao } from "@/components/painel-informacoes";
 
 type Aba = "dashboard" | "comunicados" | "momentos" | "evolucao" | "avisos";
 type MostrarFeedbackFn = (tipo: "sucesso" | "erro", msg: string) => void;
@@ -33,6 +34,7 @@ export default function SupervisoraPage() {
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
   const [carregandoAcesso, setCarregandoAcesso] = useState(true);
   const [acessoLiberado, setAcessoLiberado] = useState(true);
+  const [meuNome, setMeuNome] = useState("");
 
   useEffect(() => {
     async function verificarAcesso() {
@@ -40,10 +42,11 @@ export default function SupervisoraPage() {
       if (!user?.email) { setCarregandoAcesso(false); return; }
       const { data: usuario } = await supabase
         .from("usuarios")
-        .select("contata_familia")
+        .select("contata_familia, nome")
         .eq("email", user.email)
         .maybeSingle();
       setAcessoLiberado(usuario?.contata_familia !== false);
+      setMeuNome(usuario?.nome || "");
       setCarregandoAcesso(false);
     }
     verificarAcesso();
@@ -83,8 +86,8 @@ export default function SupervisoraPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Portal da Supervisora</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Clínica Abraço ABA</p>
+          <h1 className="text-xl font-bold text-slate-900">{saudacao(meuNome)}</h1>
+          <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
         </div>
         <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
