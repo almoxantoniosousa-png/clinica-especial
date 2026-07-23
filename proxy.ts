@@ -18,6 +18,7 @@ const PREFIXOS_STAFF: { prefixo: string; roles: string[] }[] = [
   { prefixo: "/gestao", roles: ["gestao"] },
   { prefixo: "/atendente", roles: ["atendente", "at"] },
   { prefixo: "/auxiliar", roles: ["aux_adm"] },
+  { prefixo: "/plano-terapeutico", roles: ["gestao", "supervisora", "especialista"] },
 ];
 
 // Pra onde mandar de volta quando o role não bate com a rota acessada.

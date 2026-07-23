@@ -57,6 +57,11 @@ const COMPORTAMENTOS_GENERICOS = [
   "Vocalização alta / gritos",
   "Recusa em iniciar atividade",
   "Sair da sala sem autorização",
+  "Entrou em outra sala sem autorização",
+  "Bateu ou verbalizou abuso contra outro paciente/colega",
+  "Tocou área íntima de um funcionário",
+  "Bateu em um funcionário",
+  "Acessou notebook/computador sem permissão",
 ];
 
 const ANTECEDENTES = [

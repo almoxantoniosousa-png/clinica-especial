@@ -123,6 +123,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/brinquedos",          label: "Brinquedos",   icon: "🧸" },
     { href: "/patrimonio",          label: "Reportar Defeito", icon: "🔧" },
     { href: "/gestao/relatorios",   label: "Relatórios",   icon: "📈" },
+    { href: "/plano-terapeutico",   label: "Plano Terapêutico", icon: "📋" },
     { href: "/adm/atendimentos-especialistas", label: "Atendimentos Especialistas", icon: "🩺" },
     { href: "/reuniao",             label: "Reunião",      icon: "🗒️" },
     { href: "/chat",                label: "Chat",         icon: "💬" },
@@ -154,6 +155,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const menuSupervisora = [
     ...(userContataFamilia ? [{ href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }] : []),
     { href: "/supervisora/relatorio",   label: "Registro ABC",      icon: "📝" },
+    { href: "/plano-terapeutico",       label: "Plano Terapêutico", icon: "📋" },
     { href: "/escala",                label: "Escala",                 icon: "📅" },
     { href: "/requisicoes",             label: "Requisições",       icon: "🛒" },
     { href: "/brinquedos",              label: "Brinquedos",        icon: "🧸" },
@@ -170,6 +172,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/especialista/escala",      label: "Minha Escala", icon: "📅" },
     { href: "/especialista/relatorio",   label: "Prontuário",   icon: "📋" },
     { href: "/especialista/prontuarios", label: "Relatório",    icon: "📝" },
+    { href: "/plano-terapeutico",        label: "Plano Terapêutico", icon: "📋" },
     { href: "/requisicoes",              label: "Requisições",  icon: "🛒" },
     { href: "/brinquedos",               label: "Brinquedos",   icon: "🧸" },
     { href: "/patrimonio",               label: "Reportar Defeito", icon: "🔧" },

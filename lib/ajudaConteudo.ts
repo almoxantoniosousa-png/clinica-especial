@@ -186,6 +186,11 @@ const GESTAO: AjudaConteudo = {
       texto: "Reúne todos os prontuários e relatórios enviados pela equipe sobre os atendimentos das crianças — inclui os prontuários dos Especialistas (Avaliação, Resultados, Intervenção, Avanços e Conclusão) e os Registros ABC que a Supervisora faz quando acompanha uma criança pontualmente (comportamentos-alvo, entrada, períodos com antecedente/comportamento/consequência, e observações gerais).\n\nUse a busca (criança ou profissional) e o botão \"Filtros\" para refinar por profissional ou período (\"De\"/\"Até\"). Clique em um relatório pra abrir. Se ainda não tiver resposta, aparece um campo pra você escrever um feedback — ao enviar, a Supervisora recebe uma notificação e o feedback fica salvo junto do relatório dela."
     },
     {
+      icone: "📋", titulo: "Plano Terapêutico", mockup: "lista-cards",
+      texto: "Cadastro do plano definido em reunião entre Gestão e Supervisão (as Especialistas participam da reunião, mas só visualizam o resultado por aqui — quem cadastra é Gestão ou Supervisora). Clique em \"Novo plano\", escolha a criança, a data da reunião, quem participou, e vá adicionando os comportamentos-alvo — cada um com uma definição operacional (o que conta como esse comportamento acontecendo). Preencha também as estratégias gerais recomendadas e, se quiser, uma data prevista pra próxima revisão.\n\nNão é pré-requisito pra nada — pelo contrário: o plano nasce do histórico de Registros ABC que a Supervisora já vem preenchendo, então normalmente essa reunião acontece depois de um tempo observando a criança.",
+      reflexo: "Uma vez cadastrado, esse plano fica visível pra Supervisora acompanhar e pra Especialista consultar. Não há ligação automática ainda com o Registro ABC (os comportamentos não aparecem pré-selecionados lá)."
+    },
+    {
       icone: "🩺", titulo: "Atendimentos Especialistas", mockup: "tabela",
       texto: "Mostra, por mês, quantos atendimentos cada especialista teve: P (presença), F (falta avisada em cima da hora — profissional recebe) e FJ (falta avisada com antecedência — não recebe).\n\nEscolha o mês no seletor do topo. Clique no nome de uma especialista para ver o detalhe de cada atendimento (criança, data, status e o motivo da falta, quando houver).",
       reflexo: "Esses dados vêm do que cada especialista marca em \"Minha Escala\" — servem de referência pra saber quanto pagar no mês, junto com o Financeiro."
@@ -246,6 +251,11 @@ const SUPERVISORA: AjudaConteudo = {
       icone: "📝", titulo: "Registro ABC", mockup: "lista-cards",
       texto: "Registro estruturado pra quando você fica acompanhando uma criança pontualmente — clique em \"Novo registro\", escolha a criança e vá preenchendo: comportamentos-alvo observados, entrada (local, horário, comportamento na chegada), e um ou mais períodos de aula, cada um com atividade oferecida, comportamentos interferentes, o que antecedeu, consequência aplicada, frequência e intervenções preventivas usadas. Tem também um campo de observações gerais em texto livre no final.\n\nNão precisa que já exista um Plano Terapêutico pra essa criança — é justamente esse tipo de registro, ao longo do tempo, que embasa a reunião onde vocês e a Gestão definem o plano depois.\n\nAo enviar, a Gestão recebe uma notificação e pode ler e deixar um feedback, que aparece aqui embaixo do registro assim que for respondido. Esta tela mostra só os registros que você mesma fez.",
       reflexo: "A Gestão (Simone) vê e pode responder pelo lado dela em Relatórios — você recebe uma notificação quando ela deixa um feedback."
+    },
+    {
+      icone: "📋", titulo: "Plano Terapêutico", mockup: "lista-cards",
+      texto: "Você e a Gestão cadastram aqui o plano definido em reunião (as Especialistas participam da reunião, mas não mexem nessa tela). Clique em \"Novo plano\", escolha a criança, a data, quem participou, e adicione os comportamentos-alvo com a definição de cada um, além das estratégias gerais recomendadas.\n\nUse o histórico de Registros ABC que você já vem preenchendo como base — normalmente essa reunião acontece depois de já ter acumulado algumas observações sobre a criança.",
+      reflexo: "A Especialista consegue visualizar o plano depois de pronto, mas não edita."
     },
     {
       icone: "📅", titulo: "Escala", mockup: "escala",
@@ -312,6 +322,11 @@ const ESPECIALISTA: AjudaConteudo = {
       icone: "📝", titulo: "Relatório", mockup: "tabela",
       texto: "Lista/histórico de tudo que você já enviou (prontuários e relatórios), com filtros por criança e por tipo. Clique em um item para abrir e ver os detalhes.\n\nUse \"+ Prontuário\" para ir ao registro diário de sessão (fica interno, não vai para a família), ou \"+ Relatório\" para preencher um Relatório de Evolução completo (período, evolução geral, objetivos trabalhados/alcançados, dificuldades e recomendações) — use este quando quiser registrar a evolução da criança para a família ficar sabendo.",
       reflexo: "O Relatório de Evolução enviado aqui aparece na tela Relatórios da Gestão e na aba Evolução da Supervisora, que revisa o conteúdo e decide quando enviar para a família no Portal."
+    },
+    {
+      icone: "📋", titulo: "Plano Terapêutico", mockup: "lista-cards",
+      texto: "Mostra os planos terapêuticos já definidos em reunião entre Gestão e Supervisão — comportamentos-alvo de cada criança, com a definição de cada um, e as estratégias gerais recomendadas. Você participa da reunião onde isso é discutido, mas o cadastro em si é feito pela Gestão ou pela Supervisora; aqui você só consulta.",
+      reflexo: "Use como referência pra alinhar seu atendimento com o que foi combinado na reunião."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
