@@ -187,7 +187,7 @@ const GESTAO: AjudaConteudo = {
     },
     {
       icone: "📋", titulo: "Plano Terapêutico", mockup: "lista-cards",
-      texto: "Cadastro do plano definido em reunião entre Gestão e Supervisão (as Especialistas participam da reunião, mas só visualizam o resultado por aqui — quem cadastra é Gestão ou Supervisora). Clique em \"Novo plano\", escolha a criança, a data da reunião, quem participou, e vá adicionando os comportamentos-alvo — cada um com uma definição operacional (o que conta como esse comportamento acontecendo). Preencha também as estratégias gerais recomendadas e, se quiser, uma data prevista pra próxima revisão.\n\nNão é pré-requisito pra nada — pelo contrário: o plano nasce do histórico de Registros ABC que a Supervisora já vem preenchendo, então normalmente essa reunião acontece depois de um tempo observando a criança.",
+      texto: "Cadastro do plano definido em reunião entre Gestão e Supervisão (as Especialistas participam da reunião, mas só visualizam o resultado por aqui — quem cadastra é Gestão ou Supervisora). Clique em \"Novo plano\", escolha a criança, a data da reunião, quem participou, e vá adicionando os comportamentos-alvo — cada um com uma definição operacional (o que conta como esse comportamento acontecendo). Preencha também as estratégias gerais recomendadas, um registro fotográfico da reunião (se quiser) e, se quiser, uma data prevista pra próxima revisão.\n\nNão é pré-requisito pra nada — pelo contrário: o plano nasce do histórico de Registros ABC que a Supervisora já vem preenchendo, então normalmente essa reunião acontece depois de um tempo observando a criança.",
       reflexo: "Uma vez cadastrado, esse plano fica visível pra Supervisora acompanhar e pra Especialista consultar. Não há ligação automática ainda com o Registro ABC (os comportamentos não aparecem pré-selecionados lá)."
     },
     {
@@ -254,7 +254,7 @@ const SUPERVISORA: AjudaConteudo = {
     },
     {
       icone: "📋", titulo: "Plano Terapêutico", mockup: "lista-cards",
-      texto: "Você e a Gestão cadastram aqui o plano definido em reunião (as Especialistas participam da reunião, mas não mexem nessa tela). Clique em \"Novo plano\", escolha a criança, a data, quem participou, e adicione os comportamentos-alvo com a definição de cada um, além das estratégias gerais recomendadas.\n\nUse o histórico de Registros ABC que você já vem preenchendo como base — normalmente essa reunião acontece depois de já ter acumulado algumas observações sobre a criança.",
+      texto: "Você e a Gestão cadastram aqui o plano definido em reunião (as Especialistas participam da reunião, mas não mexem nessa tela). Clique em \"Novo plano\", escolha a criança, a data, quem participou, e adicione os comportamentos-alvo com a definição de cada um, as estratégias gerais recomendadas e, se quiser, fotos da reunião.\n\nUse o histórico de Registros ABC que você já vem preenchendo como base — normalmente essa reunião acontece depois de já ter acumulado algumas observações sobre a criança.",
       reflexo: "A Especialista consegue visualizar o plano depois de pronto, mas não edita."
     },
     {

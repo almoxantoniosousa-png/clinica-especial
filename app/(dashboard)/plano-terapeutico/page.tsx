@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
-import { Plus, X, Trash2, ClipboardList } from "lucide-react";
+import { Plus, X, Trash2, ClipboardList, Camera } from "lucide-react";
 
 type Crianca = { id: string; nome: string; foto_url?: string | null };
 
@@ -18,6 +18,7 @@ type Plano = {
   comportamentos_alvo: ComportamentoAlvo[];
   estrategias_gerais: string | null;
   proxima_revisao: string | null;
+  fotos: string[];
   criado_por_nome: string | null;
   ativo: boolean;
   created_at: string;
@@ -51,6 +52,9 @@ export default function PlanoTerapeuticoPage() {
   const [comportamentos, setComportamentos] = useState<ComportamentoAlvo[]>([]);
   const [estrategiasGerais, setEstrategiasGerais] = useState("");
   const [proximaRevisao, setProximaRevisao] = useState("");
+  const [fotos, setFotos] = useState<string[]>([]);
+  const [enviandoFoto, setEnviandoFoto] = useState(false);
+  const inputFotoRef = useRef<HTMLInputElement>(null);
 
   const podeEditar = role === "gestao" || role === "supervisora";
 
@@ -92,6 +96,7 @@ export default function PlanoTerapeuticoPage() {
     setComportamentos([]);
     setEstrategiasGerais("");
     setProximaRevisao("");
+    setFotos([]);
     setErro("");
     setView("form");
   }
@@ -106,8 +111,31 @@ export default function PlanoTerapeuticoPage() {
     setComportamentos(p.comportamentos_alvo || []);
     setEstrategiasGerais(p.estrategias_gerais || "");
     setProximaRevisao(p.proxima_revisao || "");
+    setFotos(p.fotos || []);
     setErro("");
     setView("form");
+  }
+
+  async function enviarFotos(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setEnviandoFoto(true);
+    const novasUrls: string[] = [];
+    for (const file of Array.from(files)) {
+      const ext = file.name.split(".").pop();
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("planos-terapeuticos-fotos").upload(path, file);
+      if (!error) {
+        const { data } = supabase.storage.from("planos-terapeuticos-fotos").getPublicUrl(path);
+        novasUrls.push(data.publicUrl);
+      }
+    }
+    setFotos((prev) => [...prev, ...novasUrls]);
+    setEnviandoFoto(false);
+    if (inputFotoRef.current) inputFotoRef.current.value = "";
+  }
+
+  function removerFoto(url: string) {
+    setFotos((prev) => prev.filter((f) => f !== url));
   }
 
   function adicionarParticipante() {
@@ -144,6 +172,7 @@ export default function PlanoTerapeuticoPage() {
       comportamentos_alvo: comportamentos.filter((c) => c.comportamento.trim()),
       estrategias_gerais: estrategiasGerais || null,
       proxima_revisao: proximaRevisao || null,
+      fotos,
     };
 
     const { error } = editandoId
@@ -284,6 +313,29 @@ export default function PlanoTerapeuticoPage() {
           </div>
         </div>
 
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-3">
+          <p className="text-xs font-extrabold text-slate-700 flex items-center gap-1.5">📷 Registro fotográfico da reunião</p>
+          {fotos.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {fotos.map((url) => (
+                <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group">
+                  <img src={url} alt="Foto da reunião" className="w-full h-full object-cover" />
+                  <button onClick={() => removerFoto(url)}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 transition">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <input ref={inputFotoRef} type="file" accept="image/*" multiple className="hidden"
+            onChange={(e) => enviarFotos(e.target.files)} />
+          <button type="button" onClick={() => inputFotoRef.current?.click()} disabled={enviandoFoto}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-slate-300 text-slate-500 text-xs font-bold hover:border-blue-400 hover:text-blue-700 hover:bg-blue-50 transition disabled:opacity-50">
+            <Camera className="w-4 h-4" /> {enviandoFoto ? "Enviando..." : "Adicionar foto(s)"}
+          </button>
+        </div>
+
         <div className="flex gap-3 justify-end">
           <button onClick={() => setView("lista")}
             className="h-11 px-5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
@@ -381,9 +433,19 @@ export default function PlanoTerapeuticoPage() {
               )}
 
               {p.proxima_revisao && (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-400 mb-2">
                   Próxima revisão prevista: {new Date(p.proxima_revisao + "T12:00:00").toLocaleDateString("pt-BR")}
                 </p>
+              )}
+
+              {p.fotos?.length > 0 && (
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
+                  {p.fotos.map((url) => (
+                    <a key={url} href={url} target="_blank" rel="noreferrer" className="aspect-square rounded-lg overflow-hidden border border-slate-200 block">
+                      <img src={url} alt="Foto da reunião" className="w-full h-full object-cover hover:scale-105 transition" />
+                    </a>
+                  ))}
+                </div>
               )}
             </div>
           ))}
