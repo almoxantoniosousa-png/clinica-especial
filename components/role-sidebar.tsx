@@ -156,6 +156,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     ...(userContataFamilia ? [{ href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }] : []),
     { href: "/supervisora/relatorio",   label: "Registro ABC",      icon: "📝" },
     { href: "/plano-terapeutico",       label: "Plano Terapêutico", icon: "📋" },
+    { href: "/ocorrencias",             label: "Ocorrência Diária", icon: "📓" },
     { href: "/escala",                label: "Escala",                 icon: "📅" },
     { href: "/requisicoes",             label: "Requisições",       icon: "🛒" },
     { href: "/brinquedos",              label: "Brinquedos",        icon: "🧸" },

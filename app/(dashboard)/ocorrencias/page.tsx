@@ -102,7 +102,7 @@ export default function OcorrenciasPage() {
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
   const [usuarioRole, setUsuarioRole] = useState("");
-  const podeCriar = ["adm", "admin", "aux_adm"].includes(usuarioRole);
+  const podeCriar = ["adm", "admin", "aux_adm", "supervisora"].includes(usuarioRole);
   const isAdmOverride = ["adm", "admin"].includes(usuarioRole);
 
   const [minhaAssinatura, setMinhaAssinatura] = useState<string | null>(null);
