@@ -19,6 +19,7 @@ type ContaPagar = {
   id: string; descricao: string; categoria: string;
   valor: number; vencimento: string; status: string;
   observacao?: string | null; pago_em?: string | null;
+  valor_pago?: number;
 };
 type ModeloPagar = { id: string; descricao: string; categoria: string; valor: number; observacao?: string | null };
 type ContaReceber = {
@@ -158,6 +159,9 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
   const [confirmandoDescricao, setConfirmandoDescricao] = useState("");
   const [confirmandoValor, setConfirmandoValor] = useState(0);
+  const [confirmandoJaPago, setConfirmandoJaPago] = useState(0);
+  const [valorPagando, setValorPagando] = useState("");
+  const [erroPagamento, setErroPagamento] = useState("");
   const [processando, setProcessando] = useState(false);
   const [excluindoId, setExcluindoId] = useState<string | null>(null);
 
@@ -253,20 +257,41 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     }
   }
 
-  async function marcarPago() {
+  function fecharModalPagamento() {
+    setConfirmandoId(null); setConfirmandoDescricao(""); setConfirmandoValor(0);
+    setConfirmandoJaPago(0); setValorPagando(""); setErroPagamento("");
+  }
+
+  async function confirmarPagamento() {
     if (!confirmandoId) return;
+    const restante = confirmandoValor - confirmandoJaPago;
+    const valorAgora = Number(valorPagando.replace(",", "."));
+    if (!valorAgora || valorAgora <= 0) { setErroPagamento("Informe um valor válido."); return; }
+    if (valorAgora > restante + 0.01) {
+      setErroPagamento(`O valor não pode passar do restante (R$ ${restante.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}).`);
+      return;
+    }
+    setErroPagamento("");
     setProcessando(true);
-    await supabase.from("contas_pagar").update({ status: "pago", pago_em: hoje }).eq("id", confirmandoId);
-    mostrarFeedback("sucesso", "Marcado como pago!");
+    const totalPago = confirmandoJaPago + valorAgora;
+    const quitado = totalPago >= confirmandoValor - 0.01;
+    await supabase.from("contas_pagar").update({
+      valor_pago: quitado ? confirmandoValor : totalPago,
+      status: quitado ? "pago" : "parcial",
+      pago_em: quitado ? hoje : null,
+    }).eq("id", confirmandoId);
+    mostrarFeedback("sucesso", quitado ? "Marcado como pago!" : "Adiantamento registrado!");
     const { data: { user } } = await supabase.auth.getUser();
     await registrarLog(supabase, {
       usuario_email: user?.email || "desconhecido",
-      acao: "Pagou",
+      acao: quitado ? "Pagou" : "Pagou parcialmente",
       tabela: "contas_pagar",
       registro_id: confirmandoId,
-      descricao: `Pagou conta: ${confirmandoDescricao} — R$ ${confirmandoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+      descricao: quitado
+        ? `Pagou conta: ${confirmandoDescricao} — R$ ${valorAgora.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}${confirmandoJaPago > 0 ? ` (concluindo pagamento de R$ ${confirmandoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})` : ""}`
+        : `Adiantamento em ${confirmandoDescricao}: R$ ${valorAgora.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} (restam R$ ${(confirmandoValor - totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} de R$ ${confirmandoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})`,
     });
-    setConfirmandoId(null); setConfirmandoDescricao(""); setConfirmandoValor(0); setProcessando(false);
+    fecharModalPagamento(); setProcessando(false);
     carregar();
   }
 
@@ -301,8 +326,8 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     }).length;
     return {
       total:    contas.reduce((acc, c) => acc + Number(c.valor || 0), 0),
-      pago:     contas.filter(c => c.status === "pago").reduce((acc, c) => acc + Number(c.valor || 0), 0),
-      pendente: contas.filter(c => c.status !== "pago").reduce((acc, c) => acc + Number(c.valor || 0), 0),
+      pago:     contas.reduce((acc, c) => acc + Number(c.valor_pago || 0), 0),
+      pendente: contas.filter(c => c.status !== "pago").reduce((acc, c) => acc + (Number(c.valor || 0) - Number(c.valor_pago || 0)), 0),
       vencidas,
     };
   }, [contas, hoje]);
@@ -320,7 +345,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const porCategoria = useMemo(() =>
     Object.entries(
       contas.filter(c => c.status !== "pago").reduce((acc: Record<string, number>, c) => {
-        acc[c.categoria] = (acc[c.categoria] || 0) + Number(c.valor || 0);
+        acc[c.categoria] = (acc[c.categoria] || 0) + (Number(c.valor || 0) - Number(c.valor_pago || 0));
         return acc;
       }, {})
     ).sort((a, b) => b[1] - a[1]),
@@ -354,7 +379,8 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   }
 
   const nPendentes = contas.filter(c => c.status !== "pago").length;
-  const nPagas    = contas.filter(c => c.status === "pago").length;
+  const nPagas     = contas.filter(c => c.status === "pago").length;
+  const nParciais  = contas.filter(c => c.status === "parcial").length;
 
   return (
     <div className="space-y-5">
@@ -385,7 +411,10 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
         <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Pago</p>
           <p className="text-2xl font-bold text-emerald-600">R$ {totais.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-          <p className="text-xs text-slate-400 mt-1">{nPagas} {nPagas === 1 ? "conta quitada" : "contas quitadas"}</p>
+          <p className="text-xs text-slate-400 mt-1">
+            {nPagas} {nPagas === 1 ? "conta quitada" : "contas quitadas"}
+            {nParciais > 0 && ` · ${nParciais} com adiantamento`}
+          </p>
         </div>
       </div>
 
@@ -446,18 +475,29 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-slate-800 text-sm truncate">{c.descricao}</p>
+                    {c.status === "parcial" && <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-full">Parcial</span>}
                     {badgeVenc(c)}
                   </div>
                   <p className="text-xs text-slate-400">Vencimento: {new Date(c.vencimento + "T12:00:00").toLocaleDateString("pt-BR")}</p>
+                  {c.status === "parcial" && (
+                    <p className="text-xs text-blue-500">Pago: R$ {Number(c.valor_pago || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} de R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                  )}
                   {c.observacao && <p className="text-xs text-slate-400 truncate">{c.observacao}</p>}
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <p className="font-bold text-slate-800 text-sm">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                <p className="font-bold text-slate-800 text-sm">
+                  R$ {(c.status === "pago" ? Number(c.valor) : Number(c.valor) - Number(c.valor_pago || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
                 {c.status !== "pago" ? (
                   <>
                     <button
-                      onClick={() => { setConfirmandoId(c.id); setConfirmandoDescricao(c.descricao); setConfirmandoValor(Number(c.valor)); }}
+                      onClick={() => {
+                        const restante = Number(c.valor) - Number(c.valor_pago || 0);
+                        setConfirmandoId(c.id); setConfirmandoDescricao(c.descricao);
+                        setConfirmandoValor(Number(c.valor)); setConfirmandoJaPago(Number(c.valor_pago || 0));
+                        setValorPagando(restante.toFixed(2)); setErroPagamento("");
+                      }}
                       className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
                       Pagar
                     </button>
@@ -489,24 +529,37 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                 <Check className="h-8 w-8 text-emerald-500" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-800 text-lg">Confirmar pagamento?</h3>
+                <h3 className="font-bold text-slate-800 text-lg">Registrar pagamento</h3>
                 <p className="text-sm text-slate-600 mt-1 font-medium">{confirmandoDescricao}</p>
-                <p className="text-xl font-bold text-emerald-700 mt-1">
-                  R$ {confirmandoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                <p className="text-xs text-slate-400 mt-1">
+                  Valor total: R$ {confirmandoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  {confirmandoJaPago > 0 && ` · já pago: R$ ${confirmandoJaPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
                 </p>
-                <p className="text-xs text-slate-400 mt-1">Esta ação não poderá ser desfeita.</p>
               </div>
             </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-500 uppercase">Valor a pagar agora *</label>
+              <input
+                type="number" min="0.01" step="0.01" max={confirmandoValor - confirmandoJaPago}
+                value={valorPagando} onChange={e => { setValorPagando(e.target.value); setErroPagamento(""); }}
+                className="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-center font-bold"/>
+              <p className="text-xs text-slate-400 mt-1 text-center">
+                Pra pagar menos que o total, edite o valor — o restante fica pendente como adiantamento.
+              </p>
+              {erroPagamento && <p className="text-xs text-red-500 mt-1 text-center font-semibold">{erroPagamento}</p>}
+            </div>
+
             <div className="flex gap-3">
               <button
-                onClick={() => { setConfirmandoId(null); setConfirmandoDescricao(""); setConfirmandoValor(0); }}
+                onClick={fecharModalPagamento}
                 disabled={processando}
                 className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50">
                 Cancelar
               </button>
-              <button onClick={marcarPago} disabled={processando}
+              <button onClick={confirmarPagamento} disabled={processando}
                 className="flex-1 h-11 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50">
-                {processando ? "Confirmando..." : "Sim, pagar"}
+                {processando ? "Confirmando..." : "Confirmar"}
               </button>
             </div>
           </div>
