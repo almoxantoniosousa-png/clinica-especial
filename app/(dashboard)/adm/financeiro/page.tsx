@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
-import { Check } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 import { saudacao } from "@/components/painel-informacoes";
 
@@ -631,6 +631,10 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [processando, setProcessando] = useState(false);
   const [dataConfirmacao, setDataConfirmacao] = useState(() => new Date().toISOString().slice(0, 10));
 
+  type ExclusaoFatura = { id: string; nomeLabel?: string; valor: number } | null;
+  const [excluindo, setExcluindo] = useState<ExclusaoFatura>(null);
+  const [processandoExclusao, setProcessandoExclusao] = useState(false);
+
   const carregar = async () => {
     setLoading(true);
     const { data } = await supabase.from("contas_receber")
@@ -768,6 +772,25 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     carregar();
   }
 
+  async function confirmarExclusao() {
+    if (!excluindo) return;
+    setProcessandoExclusao(true);
+    const { error } = await supabase.from("contas_receber").delete().eq("id", excluindo.id);
+    setProcessandoExclusao(false);
+    if (error) { mostrarFeedback("erro", "Erro ao excluir: " + error.message); return; }
+    mostrarFeedback("sucesso", "Fatura excluída!");
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: "Excluiu",
+      tabela: "contas_receber",
+      registro_id: excluindo.id,
+      descricao: `Excluiu fatura de ${excluindo.nomeLabel} — R$ ${excluindo.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+    });
+    setExcluindo(null);
+    carregar();
+  }
+
   const totais = useMemo(() => ({
     total: contas.reduce((acc, c) => acc + Number(c.valor_liquido ?? c.valor_total ?? 0), 0),
     recebido: contas.filter(c => c.status === "recebido").reduce((acc, c) => acc + Number(c.valor_liquido ?? c.valor_total ?? 0), 0),
@@ -881,6 +904,11 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                       </button>
                     </>
                   )}
+                  <button
+                    onClick={() => setExcluindo({ id: c.id, nomeLabel: c.criancas?.nome, valor: Number(valorFinal) })}
+                    className="h-8 px-3 text-xs font-semibold bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition border border-red-200 ml-auto flex items-center gap-1.5">
+                    <Trash2 className="h-3.5 w-3.5" /> Excluir
+                  </button>
                 </div>
               </div>
             );
@@ -921,6 +949,36 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
               <button onClick={confirmarAlteracao} disabled={processando}
                 className={`flex-1 h-11 rounded-xl text-white text-sm font-bold transition disabled:opacity-50 ${confirmando.novoStatus === "recebido" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}`}>
                 {processando ? "Salvando..." : "Sim, confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {excluindo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center bg-red-50">
+                <Trash2 className="h-8 w-8 text-red-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Excluir fatura?</h3>
+                <p className="text-sm text-slate-600 mt-1 font-medium">{excluindo.nomeLabel}</p>
+                <p className="text-xl font-bold mt-1 text-red-600">
+                  R$ {excluindo.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">Esta ação não poderá ser desfeita.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setExcluindo(null)} disabled={processandoExclusao}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50">
+                Cancelar
+              </button>
+              <button onClick={confirmarExclusao} disabled={processandoExclusao}
+                className="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition disabled:opacity-50">
+                {processandoExclusao ? "Excluindo..." : "Sim, excluir"}
               </button>
             </div>
           </div>
