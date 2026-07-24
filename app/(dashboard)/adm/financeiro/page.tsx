@@ -26,6 +26,7 @@ type ContaReceber = {
   valor_total: number; valor_liquido?: number | null; valor_iss?: number | null;
   status: string; plano: string;
   numero_nota_fiscal?: string | null; data_envio?: string | null; observacao?: string | null;
+  faturado_em?: string | null; recebido_em?: string | null;
   especialidades?: ItemEsp[];
   sessoes_realizadas?: number | null; valor_sessao?: number | null;
   plano_saude?: string | null; desconto_iss?: number | null;
@@ -870,6 +871,8 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                       {c.plano_saude && <p className="text-xs text-slate-400">Plano: {c.plano_saude}</p>}
                       {c.numero_nota_fiscal && <p className="text-xs text-slate-400">NF: {c.numero_nota_fiscal}</p>}
                       {c.data_envio && <p className="text-xs text-slate-400">Envio: {new Date(c.data_envio + "T12:00:00").toLocaleDateString("pt-BR")}</p>}
+                      {c.faturado_em && <p className="text-xs text-blue-500">Faturado em: {new Date(c.faturado_em + "T12:00:00").toLocaleDateString("pt-BR")}</p>}
+                      {c.recebido_em && <p className="text-xs text-emerald-600 font-medium">Recebido em: {new Date(c.recebido_em + "T12:00:00").toLocaleDateString("pt-BR")}</p>}
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
