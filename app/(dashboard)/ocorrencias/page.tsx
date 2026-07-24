@@ -18,6 +18,7 @@ type Ocorrencia = {
   data: string;
   autor_email: string;
   autor_nome: string | null;
+  autor_role: string | null;
   assinatura_base64: string | null;
   assinado_em: string | null;
   created_at: string;
@@ -172,7 +173,7 @@ export default function OcorrenciasPage() {
   async function iniciarDia() {
     setIniciandoDia(true);
     await supabase.from("ocorrencias_diarias").insert({
-      data: hoje(), autor_email: usuarioEmail, autor_nome: usuarioNome || null,
+      data: hoje(), autor_email: usuarioEmail, autor_nome: usuarioNome || null, autor_role: usuarioRole || null,
     });
     setIniciandoDia(false);
     carregar();
