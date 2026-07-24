@@ -205,7 +205,7 @@ export default function FormularioEscolarPage() {
       <div>
         <h1 className="text-xl font-bold text-slate-900">{editandoId ? "Corrigindo Comunicado" : "Comunicado Diário"}</h1>
         <p className="text-xs text-slate-400 mt-0.5">
-          {atNome || "Atendente"} · {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+          {atNome || "Acompanhante"} · {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
         </p>
         {editandoId && (
           <div className="mt-3 bg-orange-50 border border-orange-200 rounded-xl p-3">

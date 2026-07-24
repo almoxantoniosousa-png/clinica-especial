@@ -44,7 +44,7 @@ function fmt(d: string) {
 
 const ROLE_LABEL: Record<string, string> = {
   supervisora: "Supervisora", gestao: "Gestão", especialista: "Especialista",
-  atendente: "Atendente", adm: "ADM", admin: "ADM",
+  atendente: "Acompanhante", adm: "ADM", admin: "ADM",
 };
 
 export default function RequisicoesPaginaAdm() {
