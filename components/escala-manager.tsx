@@ -38,14 +38,31 @@ function ordenarHorarios(lista: string[]): string[] {
   });
 }
 
-// Segunda a sexta da semana atual, ex: "20 a 24/07/2026" — a escala é por
-// dia da semana (recorrente), então na impressão usamos a semana de hoje.
-function intervaloSemanaAtual(): string {
+// Segunda-feira da semana atual — base pra calcular a data de qualquer dia
+// da semana. A escala é por dia da semana (recorrente), não por data fixa,
+// mas mostrar a data da semana atual ao lado do dia dá um ponto de
+// referência claro (ex: "Sexta 25/07") sem prender a escala a uma data só.
+function segundaDaSemanaAtual(): Date {
   const hoje = new Date();
   const diaSemana = hoje.getDay();
   const diffSegunda = diaSemana === 0 ? -6 : 1 - diaSemana;
   const segunda = new Date(hoje);
   segunda.setDate(hoje.getDate() + diffSegunda);
+  return segunda;
+}
+
+// Data (DD/MM) do dia de índice `i` (0=Segunda...6=Domingo) na semana atual.
+function dataDoDia(i: number): string {
+  const d = new Date(segundaDaSemanaAtual());
+  d.setDate(d.getDate() + i);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}`;
+}
+
+// Segunda a sexta da semana atual, ex: "20 a 24/07/2026" — usado na impressão.
+function intervaloSemanaAtual(): string {
+  const segunda = segundaDaSemanaAtual();
   const sexta = new Date(segunda);
   sexta.setDate(segunda.getDate() + 4);
   const dd = (d: Date) => String(d.getDate()).padStart(2, "0");
@@ -662,13 +679,16 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               <button
                 key={d}
                 onClick={() => setDiaAtivo(i)}
-                className={`flex-1 min-w-[80px] py-2 rounded-xl text-sm font-semibold transition-all ${
+                className={`flex-1 min-w-[80px] py-2 rounded-xl text-sm font-semibold transition-all leading-tight ${
                   diaAtivo === i
                     ? "bg-blue-600 text-white shadow-md"
                     : "bg-white border border-slate-200 text-slate-600 hover:bg-blue-50"
                 }`}
               >
                 {d}
+                <span className={`block text-[10px] font-normal ${diaAtivo === i ? "text-blue-100" : "text-slate-400"}`}>
+                  {dataDoDia(i)}
+                </span>
               </button>
             ))}
           </div>
@@ -802,8 +822,10 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             <thead>
               <tr>
                 <th className="border-b border-slate-200 px-2 py-2 bg-slate-50 text-left w-28">Horário</th>
-                {DIAS.slice(0, 5).map((d) => (
-                  <th key={d} className="border-b border-l border-slate-200 px-2 py-2 bg-slate-50 text-left min-w-[160px]">{d}</th>
+                {DIAS.slice(0, 5).map((d, i) => (
+                  <th key={d} className="border-b border-l border-slate-200 px-2 py-2 bg-slate-50 text-left min-w-[160px]">
+                    {d} <span className="font-normal text-slate-400">· {dataDoDia(i)}</span>
+                  </th>
                 ))}
               </tr>
               <tr>
@@ -1356,8 +1378,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               <thead>
                 <tr>
                   <th className="border border-slate-300 px-2 py-1.5 bg-slate-100 text-left w-28">Horário</th>
-                  {DIAS.slice(0, 5).map((d) => (
-                    <th key={d} className="border border-slate-300 px-2 py-1.5 bg-slate-100 text-left">{d}</th>
+                  {DIAS.slice(0, 5).map((d, i) => (
+                    <th key={d} className="border border-slate-300 px-2 py-1.5 bg-slate-100 text-left">{d} · {dataDoDia(i)}</th>
                   ))}
                 </tr>
               </thead>
