@@ -1404,7 +1404,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                               <div className="text-slate-600">
                                 {s.servico}
                                 {s.profissional_nome && <> — {s.profissional_nome}</>}
-                                {s.local && s.local !== "Clínica" && <> ({s.local})</>}
+                                {s.local && <> ({s.local})</>}
                               </div>
                             </div>
                           ))}
