@@ -15,11 +15,12 @@ function anosDisponiveis() {
   return [atual - 1, atual, atual + 1, atual + 2];
 }
 
+type PagamentoConta = { data: string; valor: number };
 type ContaPagar = {
   id: string; descricao: string; categoria: string;
   valor: number; vencimento: string; status: string;
   observacao?: string | null; pago_em?: string | null;
-  adiantamento?: number; desconto?: number; valor_liquido?: number;
+  pagamentos?: PagamentoConta[];
 };
 type ModeloPagar = { id: string; descricao: string; categoria: string; valor: number; observacao?: string | null };
 type ContaReceber = {
@@ -153,15 +154,14 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("aluguel");
   const [valor, setValor] = useState("");
-  const [adiantamento, setAdiantamento] = useState("0");
-  const [desconto, setDesconto] = useState("0");
   const [vencimento, setVencimento] = useState("");
   const [observacao, setObservacao] = useState("");
   const [salvarModelo, setSalvarModelo] = useState(false);
 
-  const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
-  const [confirmandoDescricao, setConfirmandoDescricao] = useState("");
-  const [confirmandoValor, setConfirmandoValor] = useState(0);
+  const [pagandoId, setPagandoId] = useState<string | null>(null);
+  const [valorPagamento, setValorPagamento] = useState("");
+  const [dataPagamento, setDataPagamento] = useState("");
+  const [erroPagamento, setErroPagamento] = useState("");
   const [processando, setProcessando] = useState(false);
   const [excluindoId, setExcluindoId] = useState<string | null>(null);
 
@@ -200,6 +200,13 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     return "ok";
   }
 
+  function totalPago(c: ContaPagar): number {
+    return (c.pagamentos || []).reduce((acc, p) => acc + Number(p.valor || 0), 0);
+  }
+  function restante(c: ContaPagar): number {
+    return Number(c.valor) - totalPago(c);
+  }
+
   function handleDescricaoChange(val: string) {
     setDescricao(val);
     const m = modelos.find(m => m.descricao.toLowerCase() === val.toLowerCase());
@@ -227,7 +234,6 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     setModalAberto(false);
     setEditandoId(null);
     setDescricao(""); setValor(""); setVencimento(vencimentoDefault()); setObservacao("");
-    setAdiantamento("0"); setDesconto("0");
     setSalvarModelo(false); setCategoria("aluguel");
   }
 
@@ -235,7 +241,6 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     setEditandoId(c.id);
     setDescricao(c.descricao); setCategoria(c.categoria); setValor(String(c.valor));
     setVencimento(c.vencimento); setObservacao(c.observacao || "");
-    setAdiantamento(String(c.adiantamento || 0)); setDesconto(String(c.desconto || 0));
     setSalvarModelo(false);
     setModalAberto(true);
   }
@@ -243,11 +248,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   async function salvar() {
     if (!descricao || !valor || !vencimento) { mostrarFeedback("erro", "Preencha todos os campos obrigatórios."); return; }
     setSalvando(true);
-    const payload = {
-      descricao, categoria, valor: Number(valor),
-      adiantamento: Number(adiantamento) || 0, desconto: Number(desconto) || 0,
-      vencimento, observacao,
-    };
+    const payload = { descricao, categoria, valor: Number(valor), vencimento, observacao };
     const { data: { user } } = await supabase.auth.getUser();
 
     if (editandoId) {
@@ -290,20 +291,47 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     }
   }
 
-  async function marcarPago() {
-    if (!confirmandoId) return;
+  function abrirPagamento(c: ContaPagar) {
+    setPagandoId(c.id);
+    const falta = restante(c);
+    setValorPagamento(falta > 0 ? falta.toFixed(2) : "");
+    setDataPagamento(hoje);
+    setErroPagamento("");
+  }
+
+  function fecharPagamento() {
+    setPagandoId(null); setValorPagamento(""); setDataPagamento(""); setErroPagamento("");
+  }
+
+  async function registrarPagamento(c: ContaPagar) {
+    const valorAgora = Number(valorPagamento.replace(",", "."));
+    const falta = restante(c);
+    if (!valorAgora || valorAgora <= 0) { setErroPagamento("Informe um valor válido."); return; }
+    if (!dataPagamento) { setErroPagamento("Informe a data do pagamento."); return; }
+    if (valorAgora > falta + 0.01) {
+      setErroPagamento(`O valor não pode passar do restante (R$ ${falta.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}).`);
+      return;
+    }
+    setErroPagamento("");
     setProcessando(true);
-    await supabase.from("contas_pagar").update({ status: "pago", pago_em: hoje }).eq("id", confirmandoId);
-    mostrarFeedback("sucesso", "Marcado como pago!");
+    const novosPagamentos = [...(c.pagamentos || []), { data: dataPagamento, valor: valorAgora }];
+    const novoRestante = Number(c.valor) - novosPagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
+    const quitado = novoRestante <= 0.01;
+    await supabase.from("contas_pagar").update({
+      pagamentos: novosPagamentos,
+      status: quitado ? "pago" : "pendente",
+      pago_em: quitado ? dataPagamento : null,
+    }).eq("id", c.id);
+    mostrarFeedback("sucesso", quitado ? "Marcado como pago!" : "Pagamento registrado!");
     const { data: { user } } = await supabase.auth.getUser();
     await registrarLog(supabase, {
       usuario_email: user?.email || "desconhecido",
-      acao: "Pagou",
+      acao: quitado ? "Pagou" : "Registrou pagamento",
       tabela: "contas_pagar",
-      registro_id: confirmandoId,
-      descricao: `Pagou conta: ${confirmandoDescricao} — R$ ${confirmandoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+      registro_id: c.id,
+      descricao: `${quitado ? "Pagou" : "Registrou pagamento em"} conta: ${c.descricao} — R$ ${valorAgora.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} em ${new Date(dataPagamento + "T12:00:00").toLocaleDateString("pt-BR")}${!quitado ? ` (restam R$ ${novoRestante.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})` : ""}`,
     });
-    setConfirmandoId(null); setConfirmandoDescricao(""); setConfirmandoValor(0); setProcessando(false);
+    fecharPagamento(); setProcessando(false);
     carregar();
   }
 
@@ -338,8 +366,8 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     }).length;
     return {
       total:    contas.reduce((acc, c) => acc + Number(c.valor || 0), 0),
-      pago:     contas.filter(c => c.status === "pago").reduce((acc, c) => acc + Number(c.valor_liquido ?? c.valor ?? 0), 0),
-      pendente: contas.filter(c => c.status !== "pago").reduce((acc, c) => acc + Number(c.valor_liquido ?? c.valor ?? 0), 0),
+      pago:     contas.reduce((acc, c) => acc + totalPago(c), 0),
+      pendente: contas.filter(c => c.status !== "pago").reduce((acc, c) => acc + restante(c), 0),
       vencidas,
     };
   }, [contas, hoje]);
@@ -357,7 +385,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const porCategoria = useMemo(() =>
     Object.entries(
       contas.filter(c => c.status !== "pago").reduce((acc: Record<string, number>, c) => {
-        acc[c.categoria] = (acc[c.categoria] || 0) + Number(c.valor_liquido ?? c.valor ?? 0);
+        acc[c.categoria] = (acc[c.categoria] || 0) + restante(c);
         return acc;
       }, {})
     ).sort((a, b) => b[1] - a[1]),
@@ -399,7 +427,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-slate-700">Contas a Pagar</h2>
-        <button onClick={() => { setEditandoId(null); setAdiantamento("0"); setDesconto("0"); setVencimento(vencimentoDefault()); setModalAberto(true); }}
+        <button onClick={() => { setEditandoId(null); setVencimento(vencimentoDefault()); setModalAberto(true); }}
           className="h-9 px-4 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition">
           + Nova Conta
         </button>
@@ -487,34 +515,40 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                   </div>
                   <p className="text-xs text-slate-400">Vencimento: {new Date(c.vencimento + "T12:00:00").toLocaleDateString("pt-BR")}</p>
                   {c.observacao && <p className="text-xs text-slate-400 truncate">{c.observacao}</p>}
+                  {(c.pagamentos || []).length > 0 && (
+                    <div className="mt-1 space-y-0.5">
+                      {(c.pagamentos || []).map((p, i) => (
+                        <p key={i} className="text-[11px] text-slate-400">
+                          💳 {new Date(p.data + "T12:00:00").toLocaleDateString("pt-BR")} — R$ {Number(p.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-4 flex-shrink-0">
-                {((c.adiantamento || 0) > 0 || (c.desconto || 0) > 0) && (
+                {totalPago(c) > 0 && (
                   <>
                     <div className="text-right hidden sm:block">
-                      <p className="text-[10px] text-slate-400">Valor base</p>
+                      <p className="text-[10px] text-slate-400">Valor do serviço</p>
                       <p className="text-xs font-semibold text-slate-500">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                     </div>
                     <div className="text-right hidden sm:block">
-                      <p className="text-[10px] text-slate-400">Descontos</p>
-                      <p className="text-xs font-semibold text-red-600">- R$ {(Number(c.adiantamento || 0) + Number(c.desconto || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                      <p className="text-[10px] text-slate-400">Valor pago</p>
+                      <p className="text-xs font-semibold text-red-600">- R$ {totalPago(c).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                     </div>
                   </>
                 )}
                 <div className="text-right">
-                  {((c.adiantamento || 0) > 0 || (c.desconto || 0) > 0) && <p className="text-[10px] text-slate-400">Líquido</p>}
+                  {totalPago(c) > 0 && <p className="text-[10px] text-slate-400">Valor restante</p>}
                   <p className="font-bold text-slate-800 text-sm">
-                    R$ {Number(c.valor_liquido ?? c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    R$ {Math.max(restante(c), 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </p>
                 </div>
                 {c.status !== "pago" ? (
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => {
-                        setConfirmandoId(c.id); setConfirmandoDescricao(c.descricao);
-                        setConfirmandoValor(Number(c.valor_liquido ?? c.valor));
-                      }}
+                      onClick={() => abrirPagamento(c)}
                       className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
                       Pagar
                     </button>
@@ -542,39 +576,66 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
         </div>
       )}
 
-      {/* Modal confirmação pagamento */}
-      {confirmandoId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
-            <div className="flex flex-col items-center text-center gap-3">
-              <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center">
-                <Check className="h-8 w-8 text-emerald-500" />
+      {/* Modal registrar pagamento */}
+      {pagandoId && (() => {
+        const conta = contas.find(c => c.id === pagandoId);
+        if (!conta) return null;
+        const falta = restante(conta);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+            <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center">
+                  <Check className="h-8 w-8 text-emerald-500" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-lg">Registrar pagamento</h3>
+                  <p className="text-sm text-slate-600 mt-1 font-medium">{conta.descricao}</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Valor do serviço: R$ {Number(conta.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    {totalPago(conta) > 0 && ` · já pago: R$ ${totalPago(conta).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+                    {" · restam R$ "}{falta.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-slate-800 text-lg">Confirmar pagamento?</h3>
-                <p className="text-sm text-slate-600 mt-1 font-medium">{confirmandoDescricao}</p>
-                <p className="text-xl font-bold text-emerald-700 mt-1">
-                  R$ {confirmandoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </p>
-                <p className="text-xs text-slate-400 mt-1">Pra pagar um valor diferente do total, use o botão de editar (✎) na conta antes de confirmar. Esta ação não poderá ser desfeita.</p>
-              </div>
-            </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => { setConfirmandoId(null); setConfirmandoDescricao(""); setConfirmandoValor(0); }}
-                disabled={processando}
-                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50">
-                Cancelar
-              </button>
-              <button onClick={marcarPago} disabled={processando}
-                className="flex-1 h-11 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50">
-                {processando ? "Confirmando..." : "Sim, pagar"}
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Valor pago *</label>
+                  <input
+                    type="number" min="0.01" step="0.01" max={falta}
+                    value={valorPagamento} onChange={e => { setValorPagamento(e.target.value); setErroPagamento(""); }}
+                    className="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-center font-bold"/>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Data do pagamento *</label>
+                  <input
+                    type="date" value={dataPagamento}
+                    onChange={e => { setDataPagamento(e.target.value); setErroPagamento(""); }}
+                    className="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 text-center">
+                Pra pagar menos que o total, edite o valor — o restante fica pendente na mesma conta pra pagar depois.
+              </p>
+              {erroPagamento && <p className="text-xs text-red-500 text-center font-semibold">{erroPagamento}</p>}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={fecharPagamento}
+                  disabled={processando}
+                  className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50">
+                  Cancelar
+                </button>
+                <button onClick={() => registrarPagamento(conta)} disabled={processando}
+                  className="flex-1 h-11 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50">
+                  {processando ? "Confirmando..." : "Confirmar"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Modal nova conta */}
       {modalAberto && (
@@ -627,7 +688,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Valor *</label>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Valor do serviço *</label>
                   <input type="number" min="0" step="0.01" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00"
                     className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
@@ -637,26 +698,6 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                 <input type="date" value={vencimento} onChange={e => setVencimento(e.target.value)}
                   className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Adiantamento (R$)</label>
-                  <input type="number" min="0" step="0.01" value={adiantamento} onChange={e => setAdiantamento(e.target.value)}
-                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 uppercase">Desconto (R$)</label>
-                  <input type="number" min="0" step="0.01" value={desconto} onChange={e => setDesconto(e.target.value)}
-                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                </div>
-              </div>
-              {valor && (
-                <div className="bg-blue-50 rounded-xl px-4 py-3 flex items-center justify-between">
-                  <span className="text-sm text-blue-700 font-medium">Valor líquido a pagar:</span>
-                  <span className="text-lg font-bold text-blue-800">
-                    R$ {(Number(valor || 0) - Number(adiantamento || 0) - Number(desconto || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-              )}
               <div>
                 <label className="text-xs font-semibold text-slate-500 uppercase">Observação</label>
                 <input type="text" value={observacao} onChange={e => setObservacao(e.target.value)} placeholder="Opcional"
