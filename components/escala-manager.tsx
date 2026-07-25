@@ -1354,6 +1354,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
     {/* VERSÃO PRA IMPRIMIR — uma grade separada por função, pro mural físico (sem motivo/presença) */}
     <div className="hidden print:block">
+      <style>{`@page { size: landscape; margin: 10mm; }`}</style>
       {rolesParaImprimir
         .filter((r) => categoriaImpressao === "todos" || categoriaImpressao === r)
         .map((r, i) => {
@@ -1365,43 +1366,46 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         const horariosDoRole = ordenarHorarios(slotsDoRole.map((s) => s.horario));
         return (
           <div key={r} className={i > 0 ? "break-before-page" : ""}>
-            <h1 className="text-3xl font-bold text-slate-900 text-center mb-1">{titulo}</h1>
-            <p className="text-lg font-semibold text-slate-700 text-center mb-1">{LABEL_ROLE[r] || r}</p>
-            <p className="text-sm text-slate-500 text-center mb-4">
+            <h1 className="text-2xl font-bold text-slate-900 text-center mb-1">{titulo}</h1>
+            <p className="text-base font-semibold text-slate-700 text-center mb-1">{LABEL_ROLE[r] || r}</p>
+            <p className="text-xs text-slate-500 text-center mb-3">
               Escala semanal — {intervaloSemanaAtual()} — impresso em {new Date().toLocaleDateString("pt-BR")}
             </p>
-            <table className="w-full border-collapse text-[15px] mb-2">
+            <table className="w-full border-collapse table-fixed text-sm mb-2">
               <tbody>
                 <tr>
-                  <td className="border border-slate-300 px-2 py-1.5 font-semibold w-28">🍎 Lanche</td>
+                  <td className="border border-slate-300 px-3 py-2 font-semibold w-[13%]">🍎 Lanche</td>
                   {DIAS.slice(0, 5).map((d) => (
-                    <td key={d} className="border border-slate-300 px-2 py-1.5">{lancheDia[d] || "—"}</td>
+                    <td key={d} className="border border-slate-300 px-3 py-2 w-[17.4%]">{lancheDia[d] || "—"}</td>
                   ))}
                 </tr>
               </tbody>
             </table>
-            <table className="w-full border-collapse text-[15px]">
+            <table className="w-full border-collapse table-fixed text-sm">
               <thead>
                 <tr>
-                  <th className="border border-slate-300 px-2 py-1.5 bg-slate-100 text-left w-28">Horário</th>
+                  <th className="border border-slate-300 px-3 py-2 bg-slate-100 text-left w-[13%]">Horário</th>
                   {DIAS.slice(0, 5).map((d, i) => (
-                    <th key={d} className="border border-slate-300 px-2 py-1.5 bg-slate-100 text-left">{d} · {dataDoDia(i)}</th>
+                    <th key={d} className="border border-slate-300 px-3 py-2 bg-slate-100 text-left w-[17.4%]">{d} · {dataDoDia(i)}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {horariosDoRole.map((horario) => (
                   <tr key={horario}>
-                    <td className="border border-slate-300 px-2 py-1.5 font-semibold align-top">{horario}</td>
+                    <td className="border border-slate-300 px-3 py-2 font-semibold align-top">{horario}</td>
                     {DIAS.slice(0, 5).map((d) => {
                       const doDia = slotsDoRole.filter((s) => s.dia === d && s.horario === horario);
                       return (
-                        <td key={d} className="border border-slate-300 px-2 py-1.5 align-top">
+                        <td key={d} className="border border-slate-300 px-2 py-2 align-top">
                           {doDia.map((s) => (
-                            <div key={s.id} className="mb-1.5 last:mb-0">
-                              <strong>👶 {s.crianca}</strong> · {s.servico}
-                              {s.profissional_nome && <> — 👤 {s.profissional_nome}</>}
-                              {s.local && <> ({s.local})</>}
+                            <div key={s.id} className="mb-1.5 last:mb-0 px-1.5 py-1 rounded border border-slate-200 bg-slate-50 leading-snug">
+                              <div className="font-semibold">{s.crianca}</div>
+                              <div className="text-slate-600">
+                                {s.servico}
+                                {s.profissional_nome && <> — {s.profissional_nome}</>}
+                                {s.local && s.local !== "Clínica" && <> ({s.local})</>}
+                              </div>
                             </div>
                           ))}
                         </td>
