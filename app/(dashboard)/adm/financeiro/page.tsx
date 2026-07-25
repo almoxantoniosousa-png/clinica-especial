@@ -527,20 +527,18 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                 </div>
               </div>
               <div className="flex items-center gap-4 flex-shrink-0">
-                {totalPago(c) > 0 && (
-                  <>
-                    <div className="text-right hidden sm:block">
-                      <p className="text-[10px] text-slate-400">Valor do serviço</p>
-                      <p className="text-xs font-semibold text-slate-500">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                    </div>
-                    <div className="text-right hidden sm:block">
-                      <p className="text-[10px] text-slate-400">Valor pago</p>
-                      <p className="text-xs font-semibold text-red-600">- R$ {totalPago(c).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                    </div>
-                  </>
-                )}
+                <div className="text-right hidden sm:block">
+                  <p className="text-[10px] text-slate-400">Valor do serviço</p>
+                  <p className="text-xs font-semibold text-slate-500">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                </div>
+                <div className="text-right hidden sm:block">
+                  <p className="text-[10px] text-slate-400">Valor pago</p>
+                  <p className={`text-xs font-semibold ${totalPago(c) > 0 ? "text-red-600" : "text-slate-400"}`}>
+                    {totalPago(c) > 0 ? "- " : ""}R$ {totalPago(c).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
                 <div className="text-right">
-                  {totalPago(c) > 0 && <p className="text-[10px] text-slate-400">Valor restante</p>}
+                  <p className="text-[10px] text-slate-400">Valor restante</p>
                   <p className="font-bold text-slate-800 text-sm">
                     R$ {Math.max(restante(c), 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </p>
