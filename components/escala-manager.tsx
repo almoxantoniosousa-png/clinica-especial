@@ -802,7 +802,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                           <td key={d} className="border-b border-l border-slate-100 px-2 py-2 align-top">
                             {doDia.map((s) => (
                               <div key={s.id} className="mb-1 last:mb-0">
-                                <strong>{s.crianca}</strong> · {s.servico}
+                                <strong>👶 {s.crianca}</strong> · {s.servico}
                                 {s.profissional_nome && <div className="opacity-70">👤 {s.profissional_nome}</div>}
                               </div>
                             ))}
@@ -869,7 +869,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                           {doDia.map((s) => (
                             <button key={s.id} onClick={() => podeEditar && abrirEditar(s)}
                               className={`text-left px-1.5 py-1 rounded border ${getCorServico(s.servico, corMap)} ${podeEditar ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}>
-                              <strong>{s.crianca}</strong> · {s.servico}
+                              <strong>👶 {s.crianca}</strong> · {s.servico}
                               {s.profissional_nome && <div className="opacity-70">👤 {s.profissional_nome}</div>}
                               {s.presenca && <span className="ml-1 font-bold">[{s.presenca}]</span>}
                             </button>
@@ -913,6 +913,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 <div className="bg-slate-50 px-4 py-2 flex items-center gap-2 border-b border-slate-200">
                   <Clock className="h-4 w-4 text-blue-500" />
                   <span className="text-sm font-semibold text-slate-700">{horario}</span>
+                  <span className="text-xs text-slate-400">· {dataDoDia(diaAtivo)}</span>
                   <span className="ml-auto text-xs text-slate-400">
                     {slotsHorario.length} atendimento{slotsHorario.length !== 1 ? "s" : ""}
                   </span>
@@ -928,7 +929,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                           className={`flex flex-col px-3 py-2 rounded-lg border text-xs font-medium ${getCorServico(slot.servico, corMap)}`}
                         >
                           <div className="flex items-center gap-2">
-                            <span className="font-bold">{slot.crianca}</span>
+                            <span className="font-bold">👶 {slot.crianca}</span>
                             <span className="opacity-60">·</span>
                             <span>{slot.servico}</span>
                             {podeEditar && (
@@ -985,6 +986,11 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                               {slot.presenca}
                             </span>
                           ) : null}
+                          {slot.presenca && slot.atualizado_em && (
+                            <span className="text-[10px] opacity-60 mt-0.5">
+                              marcado em {new Date(slot.atualizado_em).toLocaleDateString("pt-BR")} às {new Date(slot.atualizado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1393,8 +1399,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                         <td key={d} className="border border-slate-300 px-2 py-1.5 align-top">
                           {doDia.map((s) => (
                             <div key={s.id} className="mb-1.5 last:mb-0">
-                              <strong>{s.crianca}</strong> · {s.servico}
-                              {s.profissional_nome && <> — {s.profissional_nome}</>}
+                              <strong>👶 {s.crianca}</strong> · {s.servico}
+                              {s.profissional_nome && <> — 👤 {s.profissional_nome}</>}
                               {s.local && <> ({s.local})</>}
                             </div>
                           ))}
