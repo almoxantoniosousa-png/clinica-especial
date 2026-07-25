@@ -225,6 +225,8 @@ export default function FolhaPagamentoPage() {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; padding: 40px; max-width: 680px; margin: auto; }
         .header { border-bottom: 2px solid #1e40af; padding-bottom: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .header-esquerda { display: flex; align-items: center; gap: 12px; }
+        .logo { width: 48px; height: 48px; object-fit: contain; }
         .clinica { font-size: 16px; font-weight: 700; color: #0f172a; }
         .sub { font-size: 11px; color: #64748b; margin-top: 2px; }
         .badge { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
@@ -248,9 +250,12 @@ export default function FolhaPagamentoPage() {
       </style>
     </head><body>
       <div class="header">
-        <div>
-          <div class="clinica">Clínica Abraço</div>
-          <div class="sub">Comprovante de Pagamento</div>
+        <div class="header-esquerda">
+          <img class="logo" src="${window.location.origin}/logo.png" alt="Clínica Abraço"/>
+          <div>
+            <div class="clinica">Clínica Abraço</div>
+            <div class="sub">Comprovante de Pagamento</div>
+          </div>
         </div>
         <div class="badge">${MESES[folha.mes - 1]} / ${folha.ano}</div>
       </div>

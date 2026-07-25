@@ -467,7 +467,11 @@ export default function OcorrenciasPage() {
 
       {/* VERSÃO PRA IMPRIMIR */}
       <div className="hidden print:block p-6">
-        <h1 className="text-xl font-bold text-slate-900 mb-1">Ocorrência Diária — Clínica Abraço</h1>
+        <div className="flex items-center gap-3 border-b-2 border-blue-900 pb-2 mb-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Clínica Abraço" className="w-12 h-12 object-contain" />
+          <h1 className="text-xl font-bold text-slate-900">Ocorrência Diária — Clínica Abraço</h1>
+        </div>
         <p className="text-xs text-slate-400 mb-6">
           {ocorrencias.length} dia{ocorrencias.length !== 1 ? "s" : ""} registrado{ocorrencias.length !== 1 ? "s" : ""}
         </p>

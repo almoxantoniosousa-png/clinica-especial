@@ -684,7 +684,14 @@ export default function ReuniaoPage() {
     {/* VERSÃO PRA IMPRIMIR */}
     {aberta && (
       <div className="hidden print:block">
-        <h1 className="text-xl font-bold text-slate-900">{aberta.titulo}</h1>
+        <div className="flex items-center gap-3 border-b-2 border-blue-900 pb-2 mb-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Clínica Abraço" className="w-12 h-12 object-contain" />
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Clínica Abraço — Ata de Reunião</p>
+            <h1 className="text-xl font-bold text-slate-900 leading-tight">{aberta.titulo}</h1>
+          </div>
+        </div>
         <p className="text-sm text-slate-500 mb-1">
           {new Date(aberta.data + "T12:00:00").toLocaleDateString("pt-BR")}{aberta.hora ? ` às ${aberta.hora}` : ""}
           {aberta.data_proxima_reuniao && <> — Próxima reunião: {new Date(aberta.data_proxima_reuniao + "T12:00:00").toLocaleDateString("pt-BR")}</>}

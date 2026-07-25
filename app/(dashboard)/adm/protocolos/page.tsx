@@ -212,7 +212,8 @@ export default function ProtocolosPage() {
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; padding: 40px; max-width: 720px; margin: auto; }
-        .header { border-bottom: 2px solid #1e40af; padding-bottom: 16px; margin-bottom: 24px; }
+        .header { border-bottom: 2px solid #1e40af; padding-bottom: 16px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px; }
+        .logo { width: 40px; height: 40px; object-fit: contain; margin-top: 2px; }
         .clinica { font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
         .cargo-badge { display: inline-block; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-bottom: 10px; }
         h1 { font-size: 18px; font-weight: 700; color: #0f172a; line-height: 1.3; }
@@ -226,9 +227,12 @@ export default function ProtocolosPage() {
       </style>
     </head><body>
       <div class="header">
-        <div class="clinica">Clínica Abraço — Protocolo de Conduta</div>
-        <div class="cargo-badge">${p.cargo}</div>
-        <h1>${p.titulo}</h1>
+        <img class="logo" src="${window.location.origin}/logo.png" alt="Clínica Abraço"/>
+        <div>
+          <div class="clinica">Clínica Abraço — Protocolo de Conduta</div>
+          <div class="cargo-badge">${p.cargo}</div>
+          <h1>${p.titulo}</h1>
+        </div>
       </div>
       <div class="conteudo">${p.conteudo.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
       <div class="assinatura">

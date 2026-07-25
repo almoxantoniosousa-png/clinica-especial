@@ -1366,9 +1366,14 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         const horariosDoRole = ordenarHorarios(slotsDoRole.map((s) => s.horario));
         return (
           <div key={r} className={i > 0 ? "break-before-page" : ""}>
-            <h1 className="text-2xl font-bold text-slate-900 text-center mb-1">{titulo}</h1>
-            <p className="text-base font-semibold text-slate-700 text-center mb-1">{LABEL_ROLE[r] || r}</p>
-            <p className="text-xs text-slate-500 text-center mb-3">
+            <div className="flex items-center gap-3 border-b-2 border-blue-900 pb-2 mb-2">
+              <img src="/logo.png" alt="Clínica Abraço" className="w-12 h-12 object-contain" />
+              <div>
+                <h1 className="text-xl font-bold text-slate-900 leading-tight">{titulo}</h1>
+                <p className="text-sm font-semibold text-slate-700 leading-tight">{LABEL_ROLE[r] || r}</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 mb-3">
               Escala semanal — {intervaloSemanaAtual()} — impresso em {new Date().toLocaleDateString("pt-BR")}
             </p>
             <table className="w-full border-collapse table-fixed text-sm mb-2">

@@ -251,6 +251,8 @@ export default function AdmCriancasPage() {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: Arial, sans-serif; font-size: 12px; color: #1e293b; padding: 40px; max-width: 720px; margin: auto; }
         .header { border-bottom: 2px solid #1e40af; padding-bottom: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .header-esquerda { display: flex; align-items: center; gap: 12px; }
+        .logo { width: 48px; height: 48px; object-fit: contain; }
         .clinica { font-size: 16px; font-weight: 700; color: #0f172a; }
         .sub { font-size: 11px; color: #64748b; margin-top: 2px; }
         .nome { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
@@ -271,9 +273,12 @@ export default function AdmCriancasPage() {
       </style>
     </head><body>
       <div class="header">
-        <div>
-          <div class="clinica">Clínica Abraço</div>
-          <div class="sub">Ficha da Criança</div>
+        <div class="header-esquerda">
+          <img class="logo" src="${window.location.origin}/logo.png" alt="Clínica Abraço"/>
+          <div>
+            <div class="clinica">Clínica Abraço</div>
+            <div class="sub">Ficha da Criança</div>
+          </div>
         </div>
         <div class="sub">Nº Processo: ${esc(c.numero_processo)}</div>
       </div>
