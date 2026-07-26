@@ -505,7 +505,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       ) : (
         <div className="space-y-3">
           {contasFiltradas.map(c => (
-            <div key={c.id} className={`border rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4 ${estiloCard(c)}`}>
+            <div key={c.id} className={`border rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 ${estiloCard(c)}`}>
               <div className="flex items-center gap-3 min-w-0">
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0 ${corCategoria(c.categoria)}`}>{c.categoria}</span>
                 <div className="min-w-0">
@@ -526,25 +526,27 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-4 flex-shrink-0">
-                <div className="text-right hidden sm:block">
-                  <p className="text-[10px] text-slate-400">Valor do serviço</p>
-                  <p className="text-xs font-semibold text-slate-500">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                </div>
-                <div className="text-right hidden sm:block">
-                  <p className="text-[10px] text-slate-400">Valor pago</p>
-                  <p className={`text-xs font-semibold ${totalPago(c) > 0 ? "text-red-600" : "text-slate-400"}`}>
-                    {totalPago(c) > 0 ? "- " : ""}R$ {totalPago(c).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-slate-400">Valor restante</p>
-                  <p className="font-bold text-slate-800 text-sm">
-                    R$ {Math.max(restante(c), 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </p>
+              <div className="flex items-center justify-between flex-wrap gap-3 sm:flex-shrink-0">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="text-right hidden sm:block">
+                    <p className="text-[10px] text-slate-400">Valor do serviço</p>
+                    <p className="text-xs font-semibold text-slate-500">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    <p className="text-[10px] text-slate-400">Valor pago</p>
+                    <p className={`text-xs font-semibold ${totalPago(c) > 0 ? "text-red-600" : "text-slate-400"}`}>
+                      {totalPago(c) > 0 ? "- " : ""}R$ {totalPago(c).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-slate-400">Valor restante</p>
+                    <p className="font-bold text-slate-800 text-sm">
+                      R$ {Math.max(restante(c), 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
                 </div>
                 {c.status !== "pago" ? (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                       onClick={() => abrirPagamento(c)}
                       className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
@@ -563,7 +565,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                     </button>
                   </div>
                 ) : (
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0">
                     <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">Pago</span>
                     {c.pago_em && <p className="text-[10px] text-slate-400 mt-0.5">{new Date(c.pago_em + "T12:00:00").toLocaleDateString("pt-BR")}</p>}
                   </div>
