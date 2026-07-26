@@ -165,6 +165,11 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [processando, setProcessando] = useState(false);
   const [excluindoId, setExcluindoId] = useState<string | null>(null);
 
+  const [editandoPagamento, setEditandoPagamento] = useState<{ contaId: string; index: number } | null>(null);
+  const [valorPagamentoEdit, setValorPagamentoEdit] = useState("");
+  const [dataPagamentoEdit, setDataPagamentoEdit] = useState("");
+  const [erroPagamentoEdit, setErroPagamentoEdit] = useState("");
+
   const categorias = ["aluguel","energia","agua","internet","fornecedor","salario","imposto","outro"];
 
   const carregar = async () => {
@@ -333,6 +338,76 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     });
     fecharPagamento(); setProcessando(false);
     carregar();
+  }
+
+  function abrirEditarPagamento(c: ContaPagar, index: number) {
+    const p = (c.pagamentos || [])[index];
+    if (!p) return;
+    setEditandoPagamento({ contaId: c.id, index });
+    setValorPagamentoEdit(String(p.valor));
+    setDataPagamentoEdit(p.data);
+    setErroPagamentoEdit("");
+  }
+
+  function fecharEdicaoPagamento() {
+    setEditandoPagamento(null); setValorPagamentoEdit(""); setDataPagamentoEdit(""); setErroPagamentoEdit("");
+  }
+
+  async function aplicarPagamentos(c: ContaPagar, novosPagamentos: { data: string; valor: number }[], acaoLog: string) {
+    const totalPago = novosPagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
+    const novoRestante = Number(c.valor) - totalPago;
+    const quitado = novoRestante <= 0.01;
+    const ultimaData = novosPagamentos.length > 0 ? novosPagamentos.reduce((a, b) => (a.data > b.data ? a : b)).data : null;
+    await supabase.from("contas_pagar").update({
+      pagamentos: novosPagamentos,
+      status: quitado ? "pago" : "pendente",
+      pago_em: quitado ? ultimaData : null,
+    }).eq("id", c.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: "Editou",
+      tabela: "contas_pagar",
+      registro_id: c.id,
+      descricao: `${acaoLog} em ${c.descricao} — restam R$ ${Math.max(novoRestante, 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+    });
+    carregar();
+  }
+
+  async function salvarEdicaoPagamento(c: ContaPagar) {
+    if (!editandoPagamento) return;
+    const valorNovo = Number(valorPagamentoEdit.replace(",", "."));
+    if (!valorNovo || valorNovo <= 0) { setErroPagamentoEdit("Informe um valor válido."); return; }
+    if (!dataPagamentoEdit) { setErroPagamentoEdit("Informe a data do pagamento."); return; }
+    const pagamentos = [...(c.pagamentos || [])];
+    const outros = pagamentos.filter((_, i) => i !== editandoPagamento.index);
+    const totalOutros = outros.reduce((acc, p) => acc + Number(p.valor || 0), 0);
+    if (totalOutros + valorNovo > Number(c.valor) + 0.01) {
+      setErroPagamentoEdit(`A soma dos pagamentos não pode passar do valor do serviço (R$ ${Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}).`);
+      return;
+    }
+    setErroPagamentoEdit("");
+    setProcessando(true);
+    const antigo = pagamentos[editandoPagamento.index];
+    pagamentos[editandoPagamento.index] = { data: dataPagamentoEdit, valor: valorNovo };
+    await aplicarPagamentos(
+      c, pagamentos,
+      `Editou pagamento (era R$ ${Number(antigo.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} em ${new Date(antigo.data + "T12:00:00").toLocaleDateString("pt-BR")}, virou R$ ${valorNovo.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} em ${new Date(dataPagamentoEdit + "T12:00:00").toLocaleDateString("pt-BR")})`
+    );
+    setProcessando(false);
+    fecharEdicaoPagamento();
+  }
+
+  async function excluirPagamento(c: ContaPagar, index: number) {
+    const alvo = (c.pagamentos || [])[index];
+    if (!alvo) return;
+    setProcessando(true);
+    const pagamentos = (c.pagamentos || []).filter((_, i) => i !== index);
+    await aplicarPagamentos(
+      c, pagamentos,
+      `Removeu pagamento de R$ ${Number(alvo.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} em ${new Date(alvo.data + "T12:00:00").toLocaleDateString("pt-BR")}`
+    );
+    setProcessando(false);
   }
 
   async function excluir(id: string) {
@@ -516,12 +591,42 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                   <p className="text-xs text-slate-400">Vencimento: {new Date(c.vencimento + "T12:00:00").toLocaleDateString("pt-BR")}</p>
                   {c.observacao && <p className="text-xs text-slate-400 truncate">{c.observacao}</p>}
                   {(c.pagamentos || []).length > 0 && (
-                    <div className="mt-1 space-y-0.5">
-                      {(c.pagamentos || []).map((p, i) => (
-                        <p key={i} className="text-[11px] text-slate-400">
-                          💳 {new Date(p.data + "T12:00:00").toLocaleDateString("pt-BR")} — R$ {Number(p.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                        </p>
-                      ))}
+                    <div className="mt-1 space-y-1">
+                      {(c.pagamentos || []).map((p, i) =>
+                        editandoPagamento?.contaId === c.id && editandoPagamento.index === i ? (
+                          <div key={i} className="flex flex-wrap items-center gap-1.5 bg-slate-50 rounded-lg p-1.5">
+                            <input type="number" min="0.01" step="0.01" value={valorPagamentoEdit}
+                              onChange={e => { setValorPagamentoEdit(e.target.value); setErroPagamentoEdit(""); }}
+                              className="h-7 w-24 px-2 rounded-md border border-slate-200 text-[11px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            <input type="date" value={dataPagamentoEdit}
+                              onChange={e => { setDataPagamentoEdit(e.target.value); setErroPagamentoEdit(""); }}
+                              className="h-7 px-2 rounded-md border border-slate-200 text-[11px] focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            <button onClick={() => salvarEdicaoPagamento(c)} disabled={processando}
+                              className="h-7 px-2 text-[11px] font-semibold bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition disabled:opacity-50">
+                              Salvar
+                            </button>
+                            <button onClick={fecharEdicaoPagamento} disabled={processando}
+                              className="h-7 px-2 text-[11px] font-semibold text-slate-500 hover:bg-slate-100 rounded-md transition">
+                              Cancelar
+                            </button>
+                            {erroPagamentoEdit && <p className="w-full text-[10px] text-red-500 font-semibold">{erroPagamentoEdit}</p>}
+                          </div>
+                        ) : (
+                          <div key={i} className="flex items-center gap-1.5">
+                            <p className="text-[11px] text-slate-400">
+                              💳 {new Date(p.data + "T12:00:00").toLocaleDateString("pt-BR")} — R$ {Number(p.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            </p>
+                            <button onClick={() => abrirEditarPagamento(c, i)} title="Editar pagamento"
+                              className="text-slate-300 hover:text-blue-600 transition">
+                              <Pencil className="h-3 w-3" />
+                            </button>
+                            <button onClick={() => excluirPagamento(c, i)} disabled={processando} title="Remover pagamento"
+                              className="text-slate-300 hover:text-red-500 transition disabled:opacity-40">
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        )
+                      )}
                     </div>
                   )}
                 </div>
