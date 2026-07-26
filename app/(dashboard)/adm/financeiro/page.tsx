@@ -840,7 +840,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
 // =============================================
 // ABA CONTAS A RECEBER
 // =============================================
-type ItemEsp = { especialidade: string; qtd: string; valor_sessao: string; subtotal?: number };
+type ItemEsp = { especialidade: string; qtd: string; valor_sessao: string; unidade?: string; subtotal?: number };
 
 function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [contas, setContas] = useState<ContaReceber[]>([]);
@@ -851,7 +851,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [criancaId, setCriancaId] = useState("");
   const [mesAnoFatura, setMesAnoFatura] = useState(mesAno);
-  const [especialidades, setEspecialidades] = useState<ItemEsp[]>([{ especialidade: "", qtd: "", valor_sessao: "" }]);
+  const [especialidades, setEspecialidades] = useState<ItemEsp[]>([{ especialidade: "", qtd: "", valor_sessao: "", unidade: "sessao" }]);
   const [plano, setPlano] = useState("");
   const [numeroNotaFiscal, setNumeroNotaFiscal] = useState("");
   const [dataEnvio, setDataEnvio] = useState("");
@@ -891,7 +891,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const totalLiquido = totalBruto - valorISS;
 
   function addEspecialidade() {
-    setEspecialidades(prev => [...prev, { especialidade: "", qtd: "", valor_sessao: "" }]);
+    setEspecialidades(prev => [...prev, { especialidade: "", qtd: "", valor_sessao: "", unidade: "sessao" }]);
   }
   function removeEspecialidade(i: number) {
     setEspecialidades(prev => prev.filter((_, idx) => idx !== i));
@@ -904,7 +904,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     setEditandoId(null);
     setCriancaId("");
     setMesAnoFatura(mesAno);
-    setEspecialidades([{ especialidade: "", qtd: "", valor_sessao: "" }]);
+    setEspecialidades([{ especialidade: "", qtd: "", valor_sessao: "", unidade: "sessao" }]);
     setPlano(""); setNumeroNotaFiscal(""); setDataEnvio(""); setDescontoISS(""); setObservacao("");
   }
 
@@ -921,8 +921,9 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       especialidade: e.especialidade,
       qtd: String(e.qtd ?? ""),
       valor_sessao: String(e.valor_sessao ?? ""),
+      unidade: e.unidade || "sessao",
     }));
-    setEspecialidades(esps.length > 0 ? esps : [{ especialidade: "", qtd: "", valor_sessao: "" }]);
+    setEspecialidades(esps.length > 0 ? esps : [{ especialidade: "", qtd: "", valor_sessao: "", unidade: "sessao" }]);
     setPlano(c.plano_saude || "");
     setNumeroNotaFiscal(c.numero_nota_fiscal || "");
     setDataEnvio(c.data_envio || "");
@@ -941,6 +942,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       especialidade: e.especialidade,
       qtd: Number(e.qtd),
       valor_sessao: Number(e.valor_sessao),
+      unidade: e.unidade || "sessao",
       subtotal: Number(e.qtd) * Number(e.valor_sessao),
     }));
     const bruto = espComSubtotal.reduce((acc, e) => acc + e.subtotal, 0);
@@ -1090,7 +1092,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                       <div className="mt-2 space-y-1">
                         {esps.map((e, i) => (
                           <div key={i} className="flex justify-between text-xs text-slate-500">
-                            <span>{e.especialidade} — {e.qtd}x R$ {Number(e.valor_sessao).toFixed(2)}</span>
+                            <span>{e.especialidade} — {e.qtd}x R$ {Number(e.valor_sessao).toFixed(2)} ({e.unidade === "credito" ? "crédito" : "sessão"})</span>
                             <span className="font-semibold">R$ {Number(e.subtotal).toFixed(2)}</span>
                           </div>
                         ))}
@@ -1264,13 +1266,14 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                 </div>
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-1 text-xs text-slate-400 px-1">
-                    <span className="col-span-5">Especialidade</span>
-                    <span className="col-span-2 text-center">Qtd</span>
-                    <span className="col-span-4">R$/sessão</span>
+                    <span className="col-span-4">Especialidade</span>
+                    <span className="col-span-1 text-center">Qtd</span>
+                    <span className="col-span-3">Unidade</span>
+                    <span className="col-span-3">Valor (R$)</span>
                   </div>
                   {especialidades.map((e, i) => (
                     <div key={i} className="grid grid-cols-12 gap-1 items-center">
-                      <div className="col-span-5">
+                      <div className="col-span-4">
                         <select value={e.especialidade}
                           onChange={ev => updateEspecialidade(i, "especialidade", ev.target.value)}
                           className="w-full h-9 px-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -1287,13 +1290,21 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                           <option value="Terapia Ocupacional">Terapia Ocupacional</option>
                         </select>
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1">
                         <input type="number" min="0" value={e.qtd}
                           onChange={ev => updateEspecialidade(i, "qtd", ev.target.value)}
                           placeholder="0"
-                          className="w-full h-9 px-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"/>
+                          className="w-full h-9 px-1 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"/>
                       </div>
-                      <div className="col-span-4">
+                      <div className="col-span-3">
+                        <select value={e.unidade || "sessao"}
+                          onChange={ev => updateEspecialidade(i, "unidade", ev.target.value)}
+                          className="w-full h-9 px-1 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          <option value="sessao">Sessão</option>
+                          <option value="credito">Crédito</option>
+                        </select>
+                      </div>
+                      <div className="col-span-3">
                         <input type="number" min="0" value={e.valor_sessao}
                           onChange={ev => updateEspecialidade(i, "valor_sessao", ev.target.value)}
                           placeholder="0,00"
