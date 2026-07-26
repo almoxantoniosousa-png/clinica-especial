@@ -884,9 +884,16 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     if (criancaSelecionada && !editandoId) setPlano(criancaSelecionada.plano_saude || "");
   }, [criancaId]);
 
-  const totalBruto = especialidades.reduce(
-    (acc, e) => acc + (Number(e.qtd) || 0) * (Number(e.valor_sessao) || 0), 0
-  );
+  // No modo "crédito", Qtd é opcional — sem Qtd preenchida, o valor digitado
+  // já é o subtotal da linha (Qtd conta como 1 pro cálculo).
+  function qtdEfetiva(e: ItemEsp): number {
+    return Number(e.qtd) || ((e.unidade || "sessao") === "credito" ? 1 : 0);
+  }
+  function subtotalLinha(e: ItemEsp): number {
+    return qtdEfetiva(e) * (Number(e.valor_sessao) || 0);
+  }
+
+  const totalBruto = especialidades.reduce((acc, e) => acc + subtotalLinha(e), 0);
   const valorISS = Math.min(Number(descontoISS) || 0, totalBruto);
   const totalLiquido = totalBruto - valorISS;
 
@@ -934,17 +941,25 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
 
   async function salvar() {
     if (!criancaId) { mostrarFeedback("erro", "Selecione a criança."); return; }
-    if (especialidades.some(e => !e.especialidade || !e.qtd || !e.valor_sessao)) {
-      mostrarFeedback("erro", "Preencha todos os campos de especialidade."); return;
+    if (especialidades.some(e => {
+      if (!e.valor_sessao) return true;
+      if ((e.unidade || "sessao") !== "credito") return !e.especialidade || !e.qtd;
+      return false;
+    })) {
+      mostrarFeedback("erro", "Preencha ao menos o valor de cada especialidade (especialidade e quantidade são obrigatórias só quando não for crédito)."); return;
     }
     setSalvando(true);
-    const espComSubtotal = especialidades.map(e => ({
-      especialidade: e.especialidade,
-      qtd: Number(e.qtd),
-      valor_sessao: Number(e.valor_sessao),
-      unidade: e.unidade || "sessao",
-      subtotal: Number(e.qtd) * Number(e.valor_sessao),
-    }));
+    const espComSubtotal = especialidades.map(e => {
+      const unidade = e.unidade || "sessao";
+      const qtd = qtdEfetiva(e);
+      return {
+        especialidade: e.especialidade || (unidade === "credito" ? "Crédito" : ""),
+        qtd,
+        valor_sessao: Number(e.valor_sessao),
+        unidade,
+        subtotal: qtd * Number(e.valor_sessao),
+      };
+    });
     const bruto = espComSubtotal.reduce((acc, e) => acc + e.subtotal, 0);
     const iss = Math.min(Number(descontoISS) || 0, bruto);
     const payload = {
@@ -1325,10 +1340,10 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                     </div>
                   ))}
                 </div>
-                {especialidades.some(e => e.qtd && e.valor_sessao) && (
+                {especialidades.some(e => e.valor_sessao) && (
                   <div className="mt-2 space-y-1 px-1">
                     {especialidades.map((e, i) => {
-                      const sub = (Number(e.qtd) || 0) * (Number(e.valor_sessao) || 0);
+                      const sub = subtotalLinha(e);
                       if (!sub) return null;
                       return (
                         <div key={i} className="flex justify-between text-xs text-slate-400">
