@@ -33,6 +33,17 @@ function formatarHora(dt: string) {
   return new Date(dt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
+const MESES_FILTRO = [
+  { valor: "01", label: "Janeiro" }, { valor: "02", label: "Fevereiro" }, { valor: "03", label: "Março" },
+  { valor: "04", label: "Abril" }, { valor: "05", label: "Maio" }, { valor: "06", label: "Junho" },
+  { valor: "07", label: "Julho" }, { valor: "08", label: "Agosto" }, { valor: "09", label: "Setembro" },
+  { valor: "10", label: "Outubro" }, { valor: "11", label: "Novembro" }, { valor: "12", label: "Dezembro" },
+];
+const DIAS_SEMANA_FILTRO = [
+  { valor: "1", label: "Segunda" }, { valor: "2", label: "Terça" }, { valor: "3", label: "Quarta" },
+  { valor: "4", label: "Quinta" }, { valor: "5", label: "Sexta" }, { valor: "6", label: "Sábado" }, { valor: "0", label: "Domingo" },
+];
+
 const inputClass = "w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition";
 
 function CardItem({
@@ -99,6 +110,9 @@ export default function OcorrenciasPage() {
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
+  const [filtroMes, setFiltroMes] = useState("");
+  const [filtroAno, setFiltroAno] = useState("");
+  const [filtroDiaSemana, setFiltroDiaSemana] = useState("");
 
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
@@ -263,11 +277,22 @@ export default function OcorrenciasPage() {
   }
 
   const historico = ocorrencias.filter((o) => !meusAbertos.includes(o));
-  const historicoFiltrado = historico.filter((o) =>
-    o.itens.some((i) => i.texto.toLowerCase().includes(busca.toLowerCase())) ||
-    (o.autor_nome || "").toLowerCase().includes(busca.toLowerCase()) ||
-    o.data.includes(busca)
-  );
+
+  const anosDisponiveis = Array.from(new Set(historico.map((o) => o.data.slice(0, 4)))).sort((a, b) => b.localeCompare(a));
+
+  const filtrosAtivos = !!(busca || filtroMes || filtroAno || filtroDiaSemana);
+
+  const historicoFiltrado = historico.filter((o) => {
+    const buscaOk = !busca ||
+      o.itens.some((i) => i.texto.toLowerCase().includes(busca.toLowerCase())) ||
+      (o.autor_nome || "").toLowerCase().includes(busca.toLowerCase()) ||
+      o.data.includes(busca);
+    if (!buscaOk) return false;
+    if (filtroAno && o.data.slice(0, 4) !== filtroAno) return false;
+    if (filtroMes && o.data.slice(5, 7) !== filtroMes) return false;
+    if (filtroDiaSemana && String(new Date(o.data + "T12:00:00").getDay()) !== filtroDiaSemana) return false;
+    return true;
+  });
 
   function propsItem(item: Item) {
     return {
@@ -402,11 +427,36 @@ export default function OcorrenciasPage() {
         )}
 
         {/* HISTÓRICO */}
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <input type="text" placeholder="Buscar por texto, autor ou data (aaaa-mm-dd)..." value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="w-full sm:w-96 rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition" />
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <input type="text" placeholder="Buscar por texto, autor ou data (aaaa-mm-dd)..." value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="w-full sm:w-96 rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <select value={filtroAno} onChange={(e) => setFiltroAno(e.target.value)}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Todo ano</option>
+              {anosDisponiveis.map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
+            <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Todo mês</option>
+              {MESES_FILTRO.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
+            </select>
+            <select value={filtroDiaSemana} onChange={(e) => setFiltroDiaSemana(e.target.value)}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Todo dia da semana</option>
+              {DIAS_SEMANA_FILTRO.map((d) => <option key={d.valor} value={d.valor}>{d.label}</option>)}
+            </select>
+            {(filtroMes || filtroAno || filtroDiaSemana) && (
+              <button onClick={() => { setFiltroMes(""); setFiltroAno(""); setFiltroDiaSemana(""); }}
+                className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-2">
+                Limpar filtros
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -414,7 +464,7 @@ export default function OcorrenciasPage() {
         ) : historicoFiltrado.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
             <span className="text-5xl">📓</span>
-            <p className="text-sm text-slate-400 mt-2">{busca ? "Nenhuma ocorrência encontrada." : "Nenhum outro dia registrado ainda."}</p>
+            <p className="text-sm text-slate-400 mt-2">{filtrosAtivos ? "Nenhuma ocorrência encontrada." : "Nenhum outro dia registrado ainda."}</p>
           </div>
         ) : (
           <div className="space-y-3">
