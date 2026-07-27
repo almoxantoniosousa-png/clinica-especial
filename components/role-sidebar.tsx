@@ -226,9 +226,10 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     : isFamilia ? "Família"
     : isAuxAdm ? "Aux. Administrativo"
     : isFinanceiro ? "Financeiro"
-    : "Acompanhante";
+    : "Acompanhante Terapêutica";
 
-  const identLabel = userNome ? `${userNome} - ${roleLabel}` : roleLabel;
+  const nomeExibicao = userNome ? userNome.split(" ").slice(0, 2).join(" ") : "";
+  const identLabel = userNome ? `${nomeExibicao} - ${roleLabel}` : roleLabel;
 
   const Logo = ({ size }: { size: "sm" | "md" }) => {
     const dim = size === "sm" ? "w-9 h-9" : "w-10 h-10";

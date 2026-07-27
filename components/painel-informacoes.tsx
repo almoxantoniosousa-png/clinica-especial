@@ -140,7 +140,7 @@ export function saudacao(nome?: string) {
   const h = new Date().getHours();
   const turno = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
   const icone = h < 12 ? "☀️" : h < 18 ? "🌤️" : "🌙";
-  return `${icone} ${turno}${nome ? `, ${nome.split(" ")[0]}` : ""}!`;
+  return `${icone} ${turno}${nome ? `, ${nome.split(" ").slice(0, 2).join(" ")}` : ""}!`;
 }
 
 function formatarData() {
