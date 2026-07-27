@@ -142,7 +142,7 @@ export default function EspecialistaEscalaPage() {
       const { data: profissional, error: profError } = await supabase
         .from("atendentes")
         .select("id, nome")
-        .eq("usuario_id", userData.user.id)
+        .eq("email", userData.user.email)
         .single();
 
       if (profError || !profissional) {

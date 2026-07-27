@@ -71,7 +71,7 @@ export default function AtendenteEscalaPage() {
       const { data: atendente, error: atError } = await supabase
         .from("atendentes")
         .select("id, nome")
-        .eq("usuario_id", userData.user.id)
+        .eq("email", userData.user.email)
         .single();
 
       if (atError || !atendente) {
