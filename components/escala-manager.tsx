@@ -238,6 +238,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [categoriaImpressao, setCategoriaImpressao] = useState("todos");
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
+  const [meuAtendenteId, setMeuAtendenteId] = useState<string | null>(null);
+  const [somenteMeus, setSomenteMeus] = useState(false);
   const [servicoLivre, setServicoLivre] = useState(false);
   const [profissionalLivre, setProfissionalLivre] = useState(false);
   const [categoriaNovoAvulso, setCategoriaNovoAvulso] = useState<"especialista" | "atendente" | "">("");
@@ -320,9 +322,15 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       setPodeEditar(role === "supervisora" || role === "adm" || role === "admin");
       return;
     }
-    const { data: a } = await supabase.from("atendentes").select("role, nome").eq("email", user.email).maybeSingle();
+    const { data: a } = await supabase.from("atendentes").select("id, role, nome").eq("email", user.email).maybeSingle();
     setUsuarioNome(a?.nome || "");
     setPodeEditar((a?.role || "").toString().trim().toLowerCase() === "supervisora");
+    // AT/Especialista logando direto (sem estar em `usuarios`) começa vendo
+    // só os próprios atendimentos — a equipe inteira fica um clique além.
+    if (a?.id) {
+      setMeuAtendenteId(a.id);
+      setSomenteMeus(true);
+    }
   }
 
   async function carregarTudo() {
@@ -790,7 +798,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   });
 
   const itensCalendario: (ItemCalendario & { cancelado: boolean })[] = [
-    ...slots.filter((s) => s.dia === diaSemanaAtiva).map((s) => {
+    ...slots.filter((s) => s.dia === diaSemanaAtiva && (!somenteMeus || s.profissional_id === meuAtendenteId)).map((s) => {
       const exc = excecaoPorEscalaId[s.id];
       const slotFinal: Slot = exc
         ? {
@@ -902,6 +910,17 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
           </button>
         ))}
       </div>
+
+      {meuAtendenteId && (
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+          {([{ v: true, label: "Meus atendimentos" }, { v: false, label: "Toda a equipe" }] as const).map((o) => (
+            <button key={String(o.v)} onClick={() => setSomenteMeus(o.v)}
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${somenteMeus === o.v ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* NAVEGAÇÃO DE CALENDÁRIO */}
       {visualizacao === "calendario" && (
@@ -1111,6 +1130,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                   {DIAS.slice(0, 5).map((d) => {
                     const doDia = slots.filter((s) => {
                       if (s.dia !== d || s.horario !== horario) return false;
+                      if (somenteMeus && s.profissional_id !== meuAtendenteId) return false;
                       if (filtroCrianca && s.crianca !== filtroCrianca) return false;
                       if (filtroServico && s.servico !== filtroServico) return false;
                       return true;

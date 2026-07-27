@@ -142,7 +142,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/atendente/meus-atendimentos",  label: "Meus Atendimentos", icon: "📋" },
     { href: "/atendente/formulario-escolar", label: "Comunicado Diário", icon: "📄" },
     { href: "/atendente/meus-comunicados",   label: "Meus Comunicados",  icon: "📬" },
-    { href: "/atendente/escala",             label: "Minha Escala",      icon: "📅" },
+    { href: "/escala",                       label: "Minha Escala",      icon: "📅" },
     { href: "/brinquedos",                   label: "Brinquedos",        icon: "🧸" },
     { href: "/materiais-adaptados",          label: "Materiais Adaptados", icon: "📚" },
     { href: "/protocolos",                   label: "Protocolos",        icon: "📜" },
