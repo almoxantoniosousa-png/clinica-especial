@@ -220,8 +220,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [avulsos, setAvulsos] = useState<{ nome: string; categoria: string | null }[]>([]);
   const nomesAvulsos = avulsos.map((a) => a.nome);
   const [loading, setLoading] = useState(true);
-  const [diaAtivo, setDiaAtivo] = useState(0);
-  const [visualizacao, setVisualizacao] = useState<"dia" | "semana" | "anterior" | "calendario">("dia");
+  const [visualizacao, setVisualizacao] = useState<"semana" | "anterior" | "calendario">("calendario");
 
   // calendário (exceções por data específica)
   const [dataAtiva, setDataAtiva] = useState<Date>(() => new Date());
@@ -271,8 +270,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [deletandoLabel, setDeletandoLabel] = useState("");
   const [excluindo, setExcluindo] = useState(false);
   const [erroExclusao, setErroExclusao] = useState("");
-
-  const dia = DIAS[diaAtivo];
 
   const corMap: Record<string, string> = {};
   servicos.forEach((nome, i) => { corMap[nome] = CORES[i % CORES.length]; });
@@ -355,7 +352,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
   function abrirNovo() {
     setEditandoId(null);
-    setForm({ ...FORM_VAZIO, dia });
+    setForm(FORM_VAZIO);
     setErroForm("");
     setServicoLivre(false);
     setProfissionalLivre(false);
@@ -417,7 +414,9 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   }
 
   function abrirEditarNaData(item: ItemCalendario) {
-    setEditandoId(null);
+    // editandoId fica pronto pra "Salvar sempre" reaproveitar o salvar() normal
+    // (edita o registro permanente se ele já existir, senão cadastra um novo).
+    setEditandoId(item.escalaIdOrigem);
     setModoExcecao({
       dataISO: formatarISO(dataAtiva),
       escalaId: item.escalaIdOrigem,
@@ -434,7 +433,9 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       motivo: item.slot.motivo ?? "",
     });
     setServicoLivre(!!item.slot.servico && !servicos.includes(item.slot.servico));
-    setProfissionalLivre(false);
+    const profissionalConhecido = !!item.slot.profissional_nome &&
+      nomesAvulsos.some((n) => n.toLowerCase() === item.slot.profissional_nome!.toLowerCase());
+    setProfissionalLivre(!item.slot.profissional_id && !!item.slot.profissional_nome && !profissionalConhecido);
     setCategoriaNovoAvulso("");
     setErroForm("");
     setModalAberto(true);
@@ -765,16 +766,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     await abrirSnapshot(indexAlvo);
   }
 
-  const slotsDoDia = slots.filter((s) => {
-    if (s.dia !== dia) return false;
-    if (filtroCrianca && s.crianca !== filtroCrianca) return false;
-    if (filtroServico && s.servico !== filtroServico) return false;
-    return true;
-  });
-
   // Horário agora é texto livre — os "slots de horário" de cada visualização
   // vêm do que já foi digitado, ordenados cronologicamente quando dá pra ler.
-  const horariosDoDia = ordenarHorarios(slots.filter((s) => s.dia === dia).map((s) => s.horario));
   const horariosSemana = ordenarHorarios(slots.filter((s) => DIAS.slice(0, 5).includes(s.dia)).map((s) => s.horario));
   const horariosAnterior = ordenarHorarios((consultaResultado?.dados ?? []).map((s) => s.horario));
 
@@ -834,7 +827,11 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     if (filtroServico && it.slot.servico !== filtroServico) return false;
     return true;
   });
-  const horariosCalendario = ordenarHorarios(itensCalendarioFiltrados.map((it) => it.slot.horario));
+  const lancheHorarioAtivo = lancheDia[diaSemanaAtiva] || "";
+  const horariosCalendario = ordenarHorarios([
+    ...itensCalendarioFiltrados.map((it) => it.slot.horario),
+    ...(lancheHorarioAtivo ? [lancheHorarioAtivo] : []),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -892,51 +889,13 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
       {/* ALTERNAR DIA / SEMANA / ANTERIOR */}
       <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
-        {([{ v: "dia", label: "Por dia" }, { v: "semana", label: "Semana inteira" }, { v: "calendario", label: "Calendário" }, { v: "anterior", label: "Escala anterior" }] as const).map((o) => (
+        {([{ v: "calendario", label: "Calendário" }, { v: "semana", label: "Semana inteira" }, { v: "anterior", label: "Escala anterior" }] as const).map((o) => (
           <button key={o.v} onClick={() => { setVisualizacao(o.v); if (o.v === "anterior" && snapshotsLista.length === 0) carregarListaSnapshots(); }}
             className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${visualizacao === o.v ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
             {o.label}
           </button>
         ))}
       </div>
-
-      {/* NAVEGAÇÃO DE DIAS */}
-      {visualizacao === "dia" && (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setDiaAtivo((p) => Math.max(0, p - 1))}
-            disabled={diaAtivo === 0}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <div className="flex gap-2 flex-1 overflow-x-auto">
-            {DIAS.map((d, i) => (
-              <button
-                key={d}
-                onClick={() => setDiaAtivo(i)}
-                className={`flex-1 min-w-[80px] py-2 rounded-xl text-sm font-semibold transition-all leading-tight ${
-                  diaAtivo === i
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "bg-white border border-slate-200 text-slate-600 hover:bg-blue-50"
-                }`}
-              >
-                {d}
-                <span className={`block text-[10px] font-normal ${diaAtivo === i ? "text-blue-100" : "text-slate-400"}`}>
-                  {dataDoDia(i)}
-                </span>
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setDiaAtivo((p) => Math.min(DIAS.length - 1, p + 1))}
-            disabled={diaAtivo === DIAS.length - 1}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
 
       {/* NAVEGAÇÃO DE CALENDÁRIO */}
       {visualizacao === "calendario" && (
@@ -949,7 +908,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
           </button>
           <div className="flex-1 min-w-[180px]">
             <p className="text-sm font-semibold text-slate-700 capitalize">{formatarDataLonga(dataAtiva)}</p>
-            <p className="text-[11px] text-slate-400">Parte do padrão de {diaSemanaAtiva} — ajustes aqui valem só pra esta data</p>
+            <p className="text-[11px] text-slate-400">Parte do padrão de {diaSemanaAtiva} — ao editar, escolha se vale só hoje ou pra sempre</p>
           </div>
           <button
             onClick={() => setDataAtiva((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; })}
@@ -967,6 +926,26 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             Hoje
           </button>
         </div>
+      )}
+
+      {visualizacao === "calendario" && podeEditar && !lancheHorarioAtivo && (
+        editandoLancheDia === diaSemanaAtiva ? (
+          <div className="flex items-center gap-1.5 text-xs">
+            <span>🍎 Lanche:</span>
+            <input autoFocus type="text" value={lancheInput} onChange={(e) => setLancheInput(e.target.value)}
+              placeholder="Ex: 15:00 – 15:30"
+              className="rounded-lg border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <button onClick={() => salvarLancheDia(diaSemanaAtiva)} className="text-emerald-600 text-xs font-bold px-1">✓ salvar</button>
+            <button onClick={() => setEditandoLancheDia(null)} className="text-slate-400 text-xs px-1">cancelar</button>
+          </div>
+        ) : (
+          <button
+            onClick={() => { setEditandoLancheDia(diaSemanaAtiva); setLancheInput(""); }}
+            className="text-xs font-semibold text-amber-600 hover:underline w-fit"
+          >
+            🍎 + Definir horário do lanche de {diaSemanaAtiva}
+          </button>
+        )
       )}
 
       {/* FILTROS */}
@@ -1150,18 +1129,38 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             </tbody>
           </table>
         </div>
-      ) : visualizacao === "calendario" ? (
+      ) : (
         <div className="space-y-3">
           {horariosCalendario.length === 0 && (
             <p className="text-xs text-slate-400 text-center py-8">Nenhum atendimento nesta data.</p>
           )}
           {horariosCalendario.map((horario) => {
             const itensHorario = itensCalendarioFiltrados.filter((it) => it.slot.horario === horario);
+            const ehHorarioDoLanche = horario === lancheHorarioAtivo;
             return (
               <div key={horario} className="rounded-xl border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-4 py-2 flex items-center gap-2 border-b border-slate-200">
+                <div className="bg-slate-50 px-4 py-2 flex items-center gap-2 border-b border-slate-200 flex-wrap">
                   <Clock className="h-4 w-4 text-blue-500" />
                   <span className="text-sm font-semibold text-slate-700">{horario}</span>
+                  {ehHorarioDoLanche && (
+                    editandoLancheDia === diaSemanaAtiva ? (
+                      <div className="flex items-center gap-1.5">
+                        <input autoFocus type="text" value={lancheInput} onChange={(e) => setLancheInput(e.target.value)}
+                          placeholder="Ex: 15:00 – 15:30"
+                          className="rounded-lg border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <button onClick={() => salvarLancheDia(diaSemanaAtiva)} className="text-emerald-600 text-xs font-bold px-1">✓</button>
+                        <button onClick={() => setEditandoLancheDia(null)} className="text-slate-400 text-xs px-1">✕</button>
+                      </div>
+                    ) : (
+                      <button
+                        disabled={!podeEditar}
+                        onClick={() => { setEditandoLancheDia(diaSemanaAtiva); setLancheInput(lancheDia[diaSemanaAtiva] || ""); }}
+                        className={`text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 ${podeEditar ? "hover:bg-amber-200 cursor-pointer" : "cursor-default"}`}
+                      >
+                        🍎 Lanche
+                      </button>
+                    )
+                  )}
                   <span className="ml-auto text-xs text-slate-400">
                     {itensHorario.length} atendimento{itensHorario.length !== 1 ? "s" : ""}
                   </span>
@@ -1232,123 +1231,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             );
           })}
         </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="rounded-xl border border-slate-200 px-4 py-2.5 flex items-center gap-2">
-            <span className="text-sm">🍎</span>
-            <span className="text-xs font-semibold text-slate-500">Hora do lanche:</span>
-            {editandoLancheDia === dia ? (
-              <div className="flex items-center gap-1.5">
-                <input autoFocus type="text" value={lancheInput} onChange={(e) => setLancheInput(e.target.value)}
-                  placeholder="Ex: 15:00 – 15:30"
-                  className="rounded-lg border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <button onClick={() => salvarLancheDia(dia)} className="text-emerald-600 text-xs font-bold px-1">✓ salvar</button>
-                <button onClick={() => setEditandoLancheDia(null)} className="text-slate-400 text-xs px-1">cancelar</button>
-              </div>
-            ) : (
-              <button
-                disabled={!podeEditar}
-                onClick={() => { setEditandoLancheDia(dia); setLancheInput(lancheDia[dia] || ""); }}
-                className={`text-xs font-semibold ${lancheDia[dia] ? "text-slate-700" : "text-slate-300"} ${podeEditar ? "hover:text-blue-600 cursor-pointer" : "cursor-default"}`}>
-                {lancheDia[dia] || (podeEditar ? "+ definir horário" : "não definido")}
-              </button>
-            )}
-          </div>
-          {horariosDoDia.map((horario) => {
-            const slotsHorario = slotsDoDia.filter((s) => s.horario === horario);
-            if (slotsHorario.length === 0 && (filtroCrianca || filtroServico)) return null;
-            return (
-              <div key={horario} className="rounded-xl border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 px-4 py-2 flex items-center gap-2 border-b border-slate-200">
-                  <Clock className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm font-semibold text-slate-700">{horario}</span>
-                  <span className="text-xs text-slate-400">· {dataDoDia(diaAtivo)}</span>
-                  <span className="ml-auto text-xs text-slate-400">
-                    {slotsHorario.length} atendimento{slotsHorario.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                <div className="p-3">
-                  {slotsHorario.length === 0 ? (
-                    <p className="text-xs text-slate-400 text-center py-2">Nenhum atendimento neste horário</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {slotsHorario.map((slot) => (
-                        <div
-                          key={slot.id}
-                          className={`flex flex-col px-3 py-2 rounded-lg border text-xs font-medium ${getCorServico(slot.servico, corMap)}`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold">👶 {slot.crianca}</span>
-                            <span className="opacity-60">·</span>
-                            <span>{slot.servico}</span>
-                            {podeEditar && (
-                              <div className="flex items-center gap-1 ml-auto pl-2">
-                                <button
-                                  onClick={() => abrirEditar(slot)}
-                                  className="p-0.5 rounded hover:bg-black/10 transition-colors"
-                                  title="Editar"
-                                >
-                                  <Pencil className="h-3 w-3" />
-                                </button>
-                                <button
-                                  onClick={() => { setDeletandoId(slot.id); setDeletandoLabel(`${slot.crianca} · ${slot.servico}`); }}
-                                  className="p-0.5 rounded hover:bg-red-200 text-red-600 transition-colors"
-                                  title="Excluir"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          {slot.profissional_nome && (
-                            <span className="text-xs opacity-70 mt-0.5">
-                              👤 {slot.profissional_nome}
-                            </span>
-                          )}
-                          {slot.local && (
-                            <span className="text-xs opacity-70">
-                              📍 {slot.local}
-                            </span>
-                          )}
-                          {slot.motivo && (
-                            <span className="text-[11px] bg-black/10 rounded px-1.5 py-1 mt-1 leading-snug">
-                              ⚠️ {slot.motivo}
-                            </span>
-                          )}
-                          {podeEditar ? (
-                            <div className="flex items-center gap-1 mt-1">
-                              {PRESENCAS.map((p) => (
-                                <button
-                                  key={p.valor}
-                                  onClick={() => marcarPresenca(slot, p.valor)}
-                                  title={p.label}
-                                  className={`w-6 h-5 rounded text-[10px] font-bold border transition-colors ${
-                                    slot.presenca === p.valor ? p.cor : "bg-white/60 text-current border-current/20 opacity-50 hover:opacity-100"
-                                  }`}
-                                >
-                                  {p.valor}
-                                </button>
-                              ))}
-                            </div>
-                          ) : slot.presenca ? (
-                            <span className={`inline-block w-fit mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold border ${PRESENCAS.find((p) => p.valor === slot.presenca)!.cor}`}>
-                              {slot.presenca}
-                            </span>
-                          ) : null}
-                          {slot.presenca && slot.atualizado_em && (
-                            <span className="text-[10px] opacity-60 mt-0.5">
-                              marcado em {new Date(slot.atualizado_em).toLocaleDateString("pt-BR")} às {new Date(slot.atualizado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
       )}
 
       {/* LEGENDA */}
@@ -1408,11 +1290,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             {/* cabeçalho */}
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-800">
-                {modoExcecao
-                  ? modoExcecao.excecaoId || modoExcecao.escalaId
-                    ? "Ajustar só nesta data"
-                    : "Adicionar só nesta data"
-                  : editandoId ? "Editar atendimento" : "Novo atendimento"}
+                {modoExcecao ? "Atendimento" : editandoId ? "Editar atendimento" : "Novo atendimento"}
               </h2>
               <button onClick={fecharModal} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
@@ -1426,6 +1304,9 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               {modoExcecao ? (
                 <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-500">
                   📅 {formatarDataLonga(dataAtiva)}
+                  <p className="text-[11px] text-slate-400 mt-1 normal-case">
+                    Ao final, escolha "Salvar só neste dia" (só {formatarISO(dataAtiva).split("-").reverse().join("/")}) ou "Salvar sempre" (toda {diaSemanaAtiva}-feira).
+                  </p>
                 </div>
               ) : (
                 <div>
@@ -1617,13 +1498,33 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               >
                 Cancelar
               </button>
-              <button
-                onClick={modoExcecao ? salvarExcecao : salvar}
-                disabled={salvando}
-                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl disabled:opacity-50 transition-colors"
-              >
-                {salvando ? "Salvando..." : modoExcecao ? "Salvar" : editandoId ? "Salvar alterações" : "Cadastrar"}
-              </button>
+              {modoExcecao ? (
+                <>
+                  <button
+                    onClick={salvar}
+                    disabled={salvando}
+                    title={`Atualiza o padrão permanente de toda ${form.dia}-feira`}
+                    className="px-4 py-2 text-sm font-semibold text-slate-700 border-2 border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors"
+                  >
+                    {salvando ? "Salvando..." : "Salvar sempre"}
+                  </button>
+                  <button
+                    onClick={salvarExcecao}
+                    disabled={salvando}
+                    className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl disabled:opacity-50 transition-colors"
+                  >
+                    {salvando ? "Salvando..." : "Salvar só neste dia"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={salvar}
+                  disabled={salvando}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl disabled:opacity-50 transition-colors"
+                >
+                  {salvando ? "Salvando..." : editandoId ? "Salvar alterações" : "Cadastrar"}
+                </button>
+              )}
             </div>
           </div>
         </div>
