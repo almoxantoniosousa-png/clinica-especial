@@ -66,7 +66,7 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
-      texto: "Conversas internas, no estilo de um aplicativo de mensagens.\n\nClique no ícone de lápis (✎) para iniciar uma nova conversa. Você pode enviar texto, arquivos, imagens e áudios, e reagir às mensagens com emojis (👍 ❤️ 😂 😮 😢 🙏). Use a busca para encontrar conversas antigas.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada. Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
+      texto: "Conversas internas, no estilo de um aplicativo de mensagens.\n\nClique no ícone de lápis (✎) para iniciar uma nova conversa. Você pode enviar texto, arquivos, imagens e áudios, e reagir às mensagens com emojis (👍 ❤️ 😂 😮 😢 🙏). Use a busca para encontrar conversas antigas.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada (se pedir pra fazer login, é o próprio Google — entre com qualquer conta Google). Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
     {
       icone: "📅", titulo: "Escala", mockup: "escala",
@@ -202,7 +202,7 @@ const GESTAO: AjudaConteudo = {
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
-      texto: "Conversas internas estilo aplicativo de mensagens. Clique no lápis para iniciar uma nova conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada. Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado.",
+      texto: "Conversas internas estilo aplicativo de mensagens. Clique no lápis para iniciar uma nova conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada (se pedir pra fazer login, é o próprio Google — entre com qualquer conta Google). Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado.",
       reflexo: "Use a videochamada para avisar a equipe sobre reuniões — o cartão \"Entrar na reunião\" aparece automaticamente na conversa de quem você chamar, e quem tiver as notificações ativadas recebe um aviso na hora."
     },
     {
@@ -283,7 +283,7 @@ const SUPERVISORA: AjudaConteudo = {
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
-      texto: "Conversas internas estilo aplicativo de mensagens. Clique no lápis para iniciar uma nova conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada. Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
+      texto: "Conversas internas estilo aplicativo de mensagens. Clique no lápis para iniciar uma nova conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada (se pedir pra fazer login, é o próprio Google — entre com qualquer conta Google). Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
     {
       icone: "📚", titulo: "Materiais Adaptados", mockup: "abas",
@@ -364,7 +364,7 @@ const ESPECIALISTA: AjudaConteudo = {
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
-      texto: "Conversas internas. Clique no lápis para iniciar uma conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada. Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
+      texto: "Conversas internas. Clique no lápis para iniciar uma conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada (se pedir pra fazer login, é o próprio Google — entre com qualquer conta Google). Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
   ],
 };
@@ -434,7 +434,7 @@ const ATENDENTE: AjudaConteudo = {
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
-      texto: "Conversas internas. Clique no lápis para iniciar uma nova conversa (atendentes podem falar com ADM e Supervisora). Envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada. Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
+      texto: "Conversas internas. Clique no lápis para iniciar uma nova conversa (atendentes podem falar com ADM e Supervisora). Envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada (se pedir pra fazer login, é o próprio Google — entre com qualquer conta Google). Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
   ],
 };
@@ -481,7 +481,7 @@ const FINANCEIRO: AjudaConteudo = {
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
-      texto: "Conversas internas. Clique no lápis para iniciar uma conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada. Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
+      texto: "Conversas internas. Clique no lápis para iniciar uma conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada (se pedir pra fazer login, é o próprio Google — entre com qualquer conta Google). Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
   ],
 };
@@ -532,7 +532,7 @@ const AUX_ADM: AjudaConteudo = {
     },
     {
       icone: "💬", titulo: "Chat", mockup: "chat",
-      texto: "Conversas internas. Clique no lápis para iniciar uma conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada. Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
+      texto: "Conversas internas. Clique no lápis para iniciar uma conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🎥 Videochamada: dentro de uma conversa, toque no ícone de vídeo no topo — o Google Meet abre em uma nova aba já com a sala criada (se pedir pra fazer login, é o próprio Google — entre com qualquer conta Google). Cole o link gerado na janela que aparece e toque em \"Enviar no chat\": um cartão \"Videochamada\" com o botão \"Entrar na reunião\" é enviado para a outra pessoa, que pode entrar quando quiser.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens (e avisos de reunião) mesmo com o Chat fechado."
     },
   ],
 };
