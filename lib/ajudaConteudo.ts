@@ -31,7 +31,7 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "👶", titulo: "Crianças", mockup: "lista-cards",
-      texto: "Lista de todas as crianças atendidas pela clínica, com cadastro completo: dados pessoais, filiação (nome da mãe e do pai), responsável, escola, série escolar, plano de saúde, diagnóstico/CID, alergias e medicações.\n\nClique no lápis para editar os dados de uma criança, na lixeira para excluir (pede confirmação) e no botão \"Ficha\" para gerar a ficha completa da criança pronta para impressão/PDF.",
+      texto: "Lista de todas as crianças atendidas pela clínica, com cadastro completo: dados pessoais, filiação (nome da mãe e do pai), responsável, escola, série escolar, plano de saúde, diagnóstico/CID, alergias, medicações e documentos anexados (opcional).\n\nClique no lápis para editar os dados de uma criança, na lixeira para excluir (pede confirmação) e no botão \"Ficha\" para gerar a ficha completa da criança pronta para impressão/PDF.",
       reflexo: "A criança cadastrada aqui passa a aparecer para a Gestão (lista de Crianças) e para os Atendentes e Especialistas, que podem selecioná-la ao registrar atendimentos, comunicados e prontuários."
     },
     {
@@ -80,17 +80,17 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "👤", titulo: "Acompanhantes (Colaboradores)", mockup: "form-lista",
-      texto: "Cadastro dos Acompanhantes Terapêuticos (ATs).\n\nPreencha o formulário no topo (nome, e-mail, CPF, RG, data de nascimento, WhatsApp, especialidade, registro profissional e endereço) e clique em \"Cadastrar Acompanhante\". O CPF é formatado e validado automaticamente. Na lista abaixo, use \"Editar\" ou \"Excluir\" para gerenciar os já cadastrados.",
+      texto: "Cadastro dos Acompanhantes Terapêuticos (ATs).\n\nPreencha o formulário no topo (nome, e-mail, CPF, RG, data de nascimento, WhatsApp, especialidade, registro profissional e endereço) e clique em \"Cadastrar Acompanhante\". O CPF é formatado e validado automaticamente. Documentos (opcional) podem ser anexados no cadastro ou depois, editando. Na lista abaixo, use \"Editar\" ou \"Excluir\" para gerenciar os já cadastrados.",
       reflexo: "Depois de cadastrado, o Acompanhante pode fazer login no sistema, aparece na lista de Colaboradores da Gestão e pode ser escalado na tela Escala."
     },
     {
       icone: "🩺", titulo: "Especialistas (Colaboradores)", mockup: "form-lista",
-      texto: "Cadastro dos especialistas da clínica (psicólogos, fonoaudiólogos, terapeutas ocupacionais etc.).\n\nFunciona como o cadastro de Acompanhantes, mas com campos específicos de área de atuação e registro profissional (CRP, CRM, CREFONO etc.). Clique em \"Cadastrar Especialista\" para salvar, e use \"Editar\"/\"Excluir\" na lista.",
+      texto: "Cadastro dos especialistas da clínica (psicólogos, fonoaudiólogos, terapeutas ocupacionais etc.).\n\nFunciona como o cadastro de Acompanhantes, mas com campos específicos de área de atuação e registro profissional (CRP, CRM, CREFONO etc.), com a mesma opção de anexar documentos. Clique em \"Cadastrar Especialista\" para salvar, e use \"Editar\"/\"Excluir\" na lista.",
       reflexo: "Depois de cadastrado, o Especialista pode fazer login no sistema, aparece na lista de Colaboradores da Gestão e pode ser escalado na tela Escala."
     },
     {
       icone: "🏠", titulo: "Internas (Colaboradores)", mockup: "form-lista",
-      texto: "Cadastro das colaboradoras internas (Auxiliar Administrativa e Agente de Limpeza).\n\nClique em \"Nova colaboradora\" para cadastrar (nome, cargo, CPF, RG, datas de nascimento e admissão, e-mail, WhatsApp e endereço). Use o lápis para editar e a lixeira para excluir.",
+      texto: "Cadastro das colaboradoras internas (Auxiliar Administrativa e Agente de Limpeza).\n\nClique em \"Nova colaboradora\" para cadastrar (nome, cargo, CPF, RG, datas de nascimento e admissão, e-mail, WhatsApp, endereço e documentos opcionais). Use o lápis para editar e a lixeira para excluir.",
       reflexo: "Depois de cadastrada, a colaboradora pode fazer login no sistema com o cargo definido (Auxiliar Administrativo ou Limpeza) e passa a aparecer na lista de Colaboradores da Gestão."
     },
     {
