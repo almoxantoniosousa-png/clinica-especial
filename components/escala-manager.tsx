@@ -1634,45 +1634,42 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
           }
           return false;
         });
-        const horariosDoRole = ordenarHorarios(slotsDoRole.map((s) => s.horario));
+        const horariosLanche = Array.from(new Set(DIAS.slice(0, 5).map((d) => lancheDia[d]).filter(Boolean))) as string[];
+        const horariosDoRole = ordenarHorarios([...slotsDoRole.map((s) => s.horario), ...horariosLanche]);
         return (
           <div key={r} className={i > 0 ? "break-before-page" : ""}>
-            <div className="flex items-center gap-3 border-b-2 border-blue-900 pb-1.5 mb-1.5">
-              <img src="/logo.png" alt="Clínica Abraço" className="w-10 h-10 object-contain" />
-              <h1 className="text-lg font-bold text-slate-900 leading-tight">{titulo}</h1>
+            <div className="flex items-center gap-3 border-b-2 border-blue-900 pb-1 mb-1.5">
+              <img src="/logo.png" alt="Clínica Abraço" className="w-9 h-9 object-contain" />
+              <div>
+                <h1 className="text-base font-bold text-slate-900 leading-tight">{titulo}</h1>
+                <p className="text-[10px] text-slate-500 leading-tight">
+                  Escala semanal — {intervaloSemanaAtual()} — impresso em {new Date().toLocaleDateString("pt-BR")}
+                </p>
+              </div>
             </div>
-            <p className="text-[11px] text-slate-500 mb-2">
-              Escala semanal — {intervaloSemanaAtual()} — impresso em {new Date().toLocaleDateString("pt-BR")}
-            </p>
-            <table className="w-full border-collapse table-fixed text-xs mb-1.5">
-              <tbody>
-                <tr>
-                  <td className="border border-slate-300 px-2 py-1 font-semibold w-[13%]">🍎 Lanche</td>
-                  {DIAS.slice(0, 5).map((d) => (
-                    <td key={d} className="border border-slate-300 px-2 py-1 w-[17.4%]">{lancheDia[d] || "—"}</td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-            <table className="w-full border-collapse table-fixed text-xs">
+            <table className="w-full border-collapse table-fixed text-[10px]">
               <thead>
                 <tr>
-                  <th className="border border-slate-300 px-2 py-1 bg-slate-100 text-left w-[13%]">Horário</th>
+                  <th className="border border-slate-300 px-1.5 py-0.5 bg-slate-100 text-left w-[13%]">Horário</th>
                   {DIAS.slice(0, 5).map((d, i) => (
-                    <th key={d} className="border border-slate-300 px-2 py-1 bg-slate-100 text-left w-[17.4%]">{d} · {dataDoDia(i)}</th>
+                    <th key={d} className="border border-slate-300 px-1.5 py-0.5 bg-slate-100 text-left w-[17.4%]">{d} · {dataDoDia(i)}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {horariosDoRole.map((horario) => (
                   <tr key={horario}>
-                    <td className="border border-slate-300 px-2 py-1 font-semibold align-top">{horario}</td>
+                    <td className="border border-slate-300 px-1.5 py-0.5 font-semibold align-top">{horario}</td>
                     {DIAS.slice(0, 5).map((d) => {
                       const doDia = slotsDoRole.filter((s) => s.dia === d && s.horario === horario);
+                      const ehLanche = lancheDia[d] === horario;
                       return (
-                        <td key={d} className="border border-slate-300 px-1.5 py-1 align-top">
+                        <td key={d} className="border border-slate-300 px-1 py-0.5 align-top">
+                          {ehLanche && (
+                            <div className="leading-snug text-amber-700">🍎 Lanche</div>
+                          )}
                           {doDia.map((s, idx) => (
-                            <div key={s.id} className={`leading-snug ${idx > 0 ? "border-t border-slate-200 mt-0.5 pt-0.5" : ""}`}>
+                            <div key={s.id} className={`leading-snug ${idx > 0 || ehLanche ? "border-t border-slate-200 mt-px pt-px" : ""}`}>
                               <span className="font-semibold">{nomeAbreviado(s.crianca)}</span>
                               {" · "}{s.servico}
                               {s.profissional_nome && <> — {nomeAbreviado(s.profissional_nome)}</>}
