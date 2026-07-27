@@ -119,7 +119,7 @@ export default function AtendenteEscalaPage() {
           </h1>
           {profissionalNome && (
             <p className="text-sm text-slate-400 mt-1">
-              Atendente: <span className="font-medium text-slate-600">{profissionalNome}</span>
+              Acompanhante: <span className="font-medium text-slate-600">{profissionalNome}</span>
             </p>
           )}
         </div>

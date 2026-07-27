@@ -94,7 +94,7 @@ export default function AtendimentoForm() {
     setLoading(true)
     setMsg(null)
 
-    const relatoCompleto = `Atendente: ${nomeAtendente} | ${local === 'escola' ? 'Escola' : 'Responsável'}: ${localDetalhe} | Entrada: ${horaEntrada} | Saída: ${horaSaida} | ${ocorrencia}`
+    const relatoCompleto = `Acompanhante: ${nomeAtendente} | ${local === 'escola' ? 'Escola' : 'Responsável'}: ${localDetalhe} | Entrada: ${horaEntrada} | Saída: ${horaSaida} | ${ocorrencia}`
 
     const res = await createAtendimento({
       crianca_id: criancaId,
@@ -169,7 +169,7 @@ export default function AtendimentoForm() {
         {/* ATENDENTE (automático, editável se necessário) */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            Atendente
+            Acompanhante
           </label>
           <div className="flex items-center gap-3 h-12 px-4 rounded-xl bg-slate-50 border border-slate-200 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition">
             <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs flex-shrink-0">
@@ -179,7 +179,7 @@ export default function AtendimentoForm() {
               type="text"
               value={nomeAtendente}
               onChange={(e) => setNomeAtendente(e.target.value)}
-              placeholder="Nome do atendente..."
+              placeholder="Nome do acompanhante..."
               className="flex-1 bg-transparent text-sm font-medium text-slate-700 focus:outline-none placeholder:text-slate-400"
             />
           </div>
