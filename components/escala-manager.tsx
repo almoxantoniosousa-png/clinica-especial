@@ -60,6 +60,24 @@ function dataDoDia(i: number): string {
   return `${dd}/${mm}`;
 }
 
+// Data no formato YYYY-MM-DD (fuso local, não UTC) — usada como chave das exceções.
+function formatarISO(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+// Nome do dia da semana (bate com DIAS) pra uma data real qualquer.
+function diaSemanaDe(d: Date): string {
+  const idx = (d.getDay() + 6) % 7; // getDay(): 0=Domingo..6=Sábado -> 0=Segunda..6=Domingo
+  return DIAS[idx];
+}
+
+function formatarDataLonga(d: Date): string {
+  return d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+}
+
 // Segunda a sexta da semana atual, ex: "20 a 24/07/2026" — usado na impressão.
 function intervaloSemanaAtual(): string {
   const segunda = segundaDaSemanaAtual();
@@ -114,6 +132,29 @@ type Atendente = {
   id: string;
   nome: string;
   role: string;
+};
+
+// Exceção de uma data específica: sobrepõe, cancela ou adiciona um
+// atendimento só naquele dia, sem alterar o molde recorrente.
+type Excecao = {
+  id: string;
+  data: string;
+  escala_id: string | null;
+  cancelado: boolean;
+  horario: string | null;
+  crianca: string | null;
+  servico: string | null;
+  profissional_id: string | null;
+  profissional_nome: string | null;
+  local: string | null;
+  motivo: string | null;
+};
+
+type ItemCalendario = {
+  chave: string;
+  slot: Slot;
+  excecao: Excecao | null;
+  escalaIdOrigem: string | null; // id na tabela `escala` que originou este item (null = criado só nesta data)
 };
 
 const LABEL_ROLE: Record<string, string> = {
@@ -180,7 +221,12 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const nomesAvulsos = avulsos.map((a) => a.nome);
   const [loading, setLoading] = useState(true);
   const [diaAtivo, setDiaAtivo] = useState(0);
-  const [visualizacao, setVisualizacao] = useState<"dia" | "semana" | "anterior">("dia");
+  const [visualizacao, setVisualizacao] = useState<"dia" | "semana" | "anterior" | "calendario">("dia");
+
+  // calendário (exceções por data específica)
+  const [dataAtiva, setDataAtiva] = useState<Date>(() => new Date());
+  const [excecoesData, setExcecoesData] = useState<Excecao[]>([]);
+  const [modoExcecao, setModoExcecao] = useState<{ dataISO: string; escalaId: string | null; excecaoId: string | null } | null>(null);
   const [filtroCrianca, setFiltroCrianca] = useState("");
   const [filtroServico, setFiltroServico] = useState("");
   const [podeEditar, setPodeEditar] = useState(false);
@@ -249,6 +295,16 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     verificarPermissao();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (visualizacao === "calendario") carregarExcecoesData(dataAtiva);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visualizacao, dataAtiva]);
+
+  async function carregarExcecoesData(d: Date) {
+    const { data } = await supabase.from("escala_excecoes").select("*").eq("data", formatarISO(d));
+    setExcecoesData((data ?? []) as Excecao[]);
+  }
 
   async function verificarPermissao() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -345,7 +401,129 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   function fecharModal() {
     setModalAberto(false);
     setEditandoId(null);
+    setModoExcecao(null);
     setErroForm("");
+  }
+
+  function abrirNovoNaData() {
+    setEditandoId(null);
+    setModoExcecao({ dataISO: formatarISO(dataAtiva), escalaId: null, excecaoId: null });
+    setForm({ ...FORM_VAZIO, dia: diaSemanaDe(dataAtiva) });
+    setErroForm("");
+    setServicoLivre(false);
+    setProfissionalLivre(false);
+    setCategoriaNovoAvulso("");
+    setModalAberto(true);
+  }
+
+  function abrirEditarNaData(item: ItemCalendario) {
+    setEditandoId(null);
+    setModoExcecao({
+      dataISO: formatarISO(dataAtiva),
+      escalaId: item.escalaIdOrigem,
+      excecaoId: item.excecao?.id ?? null,
+    });
+    setForm({
+      dia: diaSemanaDe(dataAtiva),
+      horario: item.slot.horario,
+      crianca: item.slot.crianca,
+      servico: item.slot.servico,
+      profissional_id: item.slot.profissional_id ?? "",
+      profissional_nome: item.slot.profissional_nome ?? "",
+      local: item.slot.local ?? LOCAIS[0],
+      motivo: item.slot.motivo ?? "",
+    });
+    setServicoLivre(!!item.slot.servico && !servicos.includes(item.slot.servico));
+    setProfissionalLivre(false);
+    setCategoriaNovoAvulso("");
+    setErroForm("");
+    setModalAberto(true);
+  }
+
+  async function salvarExcecao() {
+    if (!modoExcecao) return;
+    if (!form.crianca || !form.servico) {
+      setErroForm("Criança e serviço são obrigatórios.");
+      return;
+    }
+    setSalvando(true);
+    setErroForm("");
+
+    const payload = {
+      data: modoExcecao.dataISO,
+      escala_id: modoExcecao.escalaId,
+      cancelado: false,
+      horario: form.horario || null,
+      crianca: form.crianca,
+      servico: form.servico,
+      profissional_id: form.profissional_id || null,
+      profissional_nome: form.profissional_nome || null,
+      local: form.local || null,
+      motivo: form.motivo.trim() || null,
+      atualizado_por_email: usuarioEmail,
+      atualizado_por_nome: usuarioNome || null,
+      atualizado_em: new Date().toISOString(),
+    };
+
+    const { error } = modoExcecao.excecaoId
+      ? await supabase.from("escala_excecoes").update(payload).eq("id", modoExcecao.excecaoId)
+      : await supabase.from("escala_excecoes").insert({
+          ...payload,
+          criado_por_email: usuarioEmail,
+          criado_por_nome: usuarioNome || null,
+        });
+
+    setSalvando(false);
+    if (error) {
+      setErroForm(error.message);
+      return;
+    }
+    await registrarLog(supabase, {
+      usuario_email: usuarioEmail, usuario_nome: usuarioNome,
+      acao: modoExcecao.excecaoId ? "Ajustou atendimento só numa data" : "Adicionou atendimento só numa data",
+      tabela: "escala_excecoes",
+      descricao: `${payload.crianca} · ${payload.servico} (${modoExcecao.dataISO})`,
+    });
+    fecharModal();
+    carregarExcecoesData(dataAtiva);
+  }
+
+  async function cancelarNestaData(item: ItemCalendario) {
+    const dataISO = formatarISO(dataAtiva);
+    const { error } = item.excecao
+      ? await supabase.from("escala_excecoes").update({
+          cancelado: true,
+          atualizado_por_email: usuarioEmail,
+          atualizado_por_nome: usuarioNome || null,
+          atualizado_em: new Date().toISOString(),
+        }).eq("id", item.excecao.id)
+      : await supabase.from("escala_excecoes").insert({
+          data: dataISO,
+          escala_id: item.escalaIdOrigem,
+          cancelado: true,
+          criado_por_email: usuarioEmail,
+          criado_por_nome: usuarioNome || null,
+        });
+    if (!error) {
+      await registrarLog(supabase, {
+        usuario_email: usuarioEmail, usuario_nome: usuarioNome, acao: "Cancelou atendimento só nesta data",
+        tabela: "escala_excecoes", descricao: `${item.slot.crianca} · ${item.slot.servico} (${dataISO})`,
+      });
+      carregarExcecoesData(dataAtiva);
+    }
+  }
+
+  async function restaurarPadrao(item: ItemCalendario) {
+    if (!item.excecao) return;
+    const { error } = await supabase.from("escala_excecoes").delete().eq("id", item.excecao.id);
+    if (!error) {
+      await registrarLog(supabase, {
+        usuario_email: usuarioEmail, usuario_nome: usuarioNome,
+        acao: item.escalaIdOrigem ? "Restaurou o padrão nesta data" : "Removeu atendimento adicionado só nesta data",
+        tabela: "escala_excecoes", descricao: `${item.slot.crianca} · ${item.slot.servico} (${formatarISO(dataAtiva)})`,
+      });
+      carregarExcecoesData(dataAtiva);
+    }
   }
 
   function handleProfissional(id: string) {
@@ -600,6 +778,64 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const horariosSemana = ordenarHorarios(slots.filter((s) => DIAS.slice(0, 5).includes(s.dia)).map((s) => s.horario));
   const horariosAnterior = ordenarHorarios((consultaResultado?.dados ?? []).map((s) => s.horario));
 
+  // Monta os atendimentos de uma data real: parte do molde recorrente do dia
+  // da semana correspondente, aplica sobreposições/cancelamentos daquela
+  // data específica e inclui os atendimentos avulsos criados só pra ela.
+  const diaSemanaAtiva = diaSemanaDe(dataAtiva);
+  const dataISOAtiva = formatarISO(dataAtiva);
+  const excecaoPorEscalaId: Record<string, Excecao> = {};
+  const excecoesAdhoc: Excecao[] = [];
+  excecoesData.forEach((e) => {
+    if (e.escala_id) excecaoPorEscalaId[e.escala_id] = e;
+    else excecoesAdhoc.push(e);
+  });
+
+  const itensCalendario: (ItemCalendario & { cancelado: boolean })[] = [
+    ...slots.filter((s) => s.dia === diaSemanaAtiva).map((s) => {
+      const exc = excecaoPorEscalaId[s.id];
+      const slotFinal: Slot = exc
+        ? {
+            ...s,
+            horario: exc.horario ?? s.horario,
+            crianca: exc.crianca ?? s.crianca,
+            servico: exc.servico ?? s.servico,
+            profissional_id: exc.profissional_id ?? s.profissional_id,
+            profissional_nome: exc.profissional_nome ?? s.profissional_nome,
+            local: exc.local ?? s.local,
+            motivo: exc.motivo ?? s.motivo,
+          }
+        : s;
+      return { chave: s.id, slot: slotFinal, excecao: exc ?? null, escalaIdOrigem: s.id, cancelado: !!exc?.cancelado };
+    }),
+    ...excecoesAdhoc.map((e) => ({
+      chave: e.id,
+      slot: {
+        id: e.id,
+        dia: diaSemanaAtiva,
+        horario: e.horario ?? "",
+        crianca: e.crianca ?? "",
+        servico: e.servico ?? "",
+        profissional_id: e.profissional_id,
+        profissional_nome: e.profissional_nome,
+        local: e.local,
+        presenca: null,
+        motivo: e.motivo,
+        atualizado_por_nome: null,
+        atualizado_em: null,
+      } as Slot,
+      excecao: e,
+      escalaIdOrigem: null,
+      cancelado: false,
+    })),
+  ];
+
+  const itensCalendarioFiltrados = itensCalendario.filter((it) => {
+    if (filtroCrianca && it.slot.crianca !== filtroCrianca) return false;
+    if (filtroServico && it.slot.servico !== filtroServico) return false;
+    return true;
+  });
+  const horariosCalendario = ordenarHorarios(itensCalendarioFiltrados.map((it) => it.slot.horario));
+
   return (
     <div className="space-y-6">
     <div className="print:hidden space-y-6">
@@ -644,7 +880,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
           </button>
           {podeEditar && (
             <button
-              onClick={abrirNovo}
+              onClick={visualizacao === "calendario" ? abrirNovoNaData : abrirNovo}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
             >
               <Plus className="h-4 w-4" />
@@ -656,7 +892,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
       {/* ALTERNAR DIA / SEMANA / ANTERIOR */}
       <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
-        {([{ v: "dia", label: "Por dia" }, { v: "semana", label: "Semana inteira" }, { v: "anterior", label: "Escala anterior" }] as const).map((o) => (
+        {([{ v: "dia", label: "Por dia" }, { v: "semana", label: "Semana inteira" }, { v: "calendario", label: "Calendário" }, { v: "anterior", label: "Escala anterior" }] as const).map((o) => (
           <button key={o.v} onClick={() => { setVisualizacao(o.v); if (o.v === "anterior" && snapshotsLista.length === 0) carregarListaSnapshots(); }}
             className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${visualizacao === o.v ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
             {o.label}
@@ -698,6 +934,37 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30"
           >
             <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* NAVEGAÇÃO DE CALENDÁRIO */}
+      {visualizacao === "calendario" && (
+        <div className="flex items-center gap-2 flex-wrap rounded-xl border border-slate-200 px-3 py-2.5">
+          <button
+            onClick={() => setDataAtiva((d) => { const n = new Date(d); n.setDate(n.getDate() - 1); return n; })}
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 flex-shrink-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div className="flex-1 min-w-[180px]">
+            <p className="text-sm font-semibold text-slate-700 capitalize">{formatarDataLonga(dataAtiva)}</p>
+            <p className="text-[11px] text-slate-400">Parte do padrão de {diaSemanaAtiva} — ajustes aqui valem só pra esta data</p>
+          </div>
+          <button
+            onClick={() => setDataAtiva((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; })}
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 flex-shrink-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <input
+            type="date"
+            value={dataISOAtiva}
+            onChange={(e) => { if (e.target.value) setDataAtiva(new Date(`${e.target.value}T12:00:00`)); }}
+            className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button onClick={() => setDataAtiva(new Date())} className="text-xs font-semibold text-blue-600 hover:underline px-1">
+            Hoje
           </button>
         </div>
       )}
@@ -883,6 +1150,88 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             </tbody>
           </table>
         </div>
+      ) : visualizacao === "calendario" ? (
+        <div className="space-y-3">
+          {horariosCalendario.length === 0 && (
+            <p className="text-xs text-slate-400 text-center py-8">Nenhum atendimento nesta data.</p>
+          )}
+          {horariosCalendario.map((horario) => {
+            const itensHorario = itensCalendarioFiltrados.filter((it) => it.slot.horario === horario);
+            return (
+              <div key={horario} className="rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-slate-50 px-4 py-2 flex items-center gap-2 border-b border-slate-200">
+                  <Clock className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-semibold text-slate-700">{horario}</span>
+                  <span className="ml-auto text-xs text-slate-400">
+                    {itensHorario.length} atendimento{itensHorario.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="p-3 flex flex-wrap gap-2">
+                  {itensHorario.map((item) => (
+                    <div
+                      key={item.chave}
+                      className={`flex flex-col px-3 py-2 rounded-lg border text-xs font-medium ${
+                        item.cancelado ? "bg-slate-100 text-slate-400 border-slate-200 line-through" : getCorServico(item.slot.servico, corMap)
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">👶 {item.slot.crianca}</span>
+                        <span className="opacity-60">·</span>
+                        <span>{item.slot.servico}</span>
+                        {podeEditar && (
+                          <div className="flex items-center gap-1 ml-auto pl-2 no-underline">
+                            {!item.cancelado && (
+                              <button onClick={() => abrirEditarNaData(item)} className="p-0.5 rounded hover:bg-black/10 transition-colors" title="Ajustar só nesta data">
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                            )}
+                            {item.cancelado ? (
+                              <button onClick={() => restaurarPadrao(item)} className="text-[10px] font-semibold underline hover:text-blue-600" title="Restaurar padrão">
+                                restaurar
+                              </button>
+                            ) : item.escalaIdOrigem ? (
+                              <button onClick={() => cancelarNestaData(item)} className="p-0.5 rounded hover:bg-red-200 text-red-600 transition-colors" title="Cancelar só nesta data">
+                                <X className="h-3 w-3" />
+                              </button>
+                            ) : (
+                              <button onClick={() => restaurarPadrao(item)} className="p-0.5 rounded hover:bg-red-200 text-red-600 transition-colors" title="Remover">
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {item.slot.profissional_nome && <span className="text-xs opacity-70 mt-0.5">👤 {item.slot.profissional_nome}</span>}
+                      {item.slot.local && <span className="text-xs opacity-70">📍 {item.slot.local}</span>}
+                      {item.slot.motivo && <span className="text-[11px] bg-black/10 rounded px-1.5 py-1 mt-1 leading-snug">⚠️ {item.slot.motivo}</span>}
+                      {item.excecao && !item.cancelado && (
+                        <span className="text-[10px] mt-1 font-semibold opacity-70">
+                          {item.escalaIdOrigem ? "✎ ajustado só nesta data" : "＋ adicionado só nesta data"}
+                        </span>
+                      )}
+                      {!item.cancelado && item.escalaIdOrigem && (
+                        <div className="flex items-center gap-1 mt-1">
+                          {PRESENCAS.map((p) => (
+                            <button
+                              key={p.valor}
+                              onClick={() => marcarPresenca({ ...item.slot, id: item.escalaIdOrigem! } as Slot, p.valor)}
+                              title={p.label}
+                              className={`w-6 h-5 rounded text-[10px] font-bold border transition-colors ${
+                                item.slot.presenca === p.valor ? p.cor : "bg-white/60 text-current border-current/20 opacity-50 hover:opacity-100"
+                              }`}
+                            >
+                              {p.valor}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <div className="space-y-3">
           <div className="rounded-xl border border-slate-200 px-4 py-2.5 flex items-center gap-2">
@@ -1059,7 +1408,11 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             {/* cabeçalho */}
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-800">
-                {editandoId ? "Editar atendimento" : "Novo atendimento"}
+                {modoExcecao
+                  ? modoExcecao.excecaoId || modoExcecao.escalaId
+                    ? "Ajustar só nesta data"
+                    : "Adicionar só nesta data"
+                  : editandoId ? "Editar atendimento" : "Novo atendimento"}
               </h2>
               <button onClick={fecharModal} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
@@ -1069,17 +1422,23 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             {/* campos */}
             <div className="space-y-4">
 
-              {/* dia */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Dia</label>
-                <select
-                  value={form.dia}
-                  onChange={(e) => setForm((f) => ({ ...f, dia: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {DIAS.map((d) => <option key={d} value={d}>{d}</option>)}
-                </select>
-              </div>
+              {/* dia — na exceção de calendário já vem da data escolhida, não dá pra trocar */}
+              {modoExcecao ? (
+                <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-500">
+                  📅 {formatarDataLonga(dataAtiva)}
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Dia</label>
+                  <select
+                    value={form.dia}
+                    onChange={(e) => setForm((f) => ({ ...f, dia: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {DIAS.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              )}
 
               {/* horário — texto livre, cobre manhã e tarde */}
               <div>
@@ -1259,11 +1618,11 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 Cancelar
               </button>
               <button
-                onClick={salvar}
+                onClick={modoExcecao ? salvarExcecao : salvar}
                 disabled={salvando}
                 className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl disabled:opacity-50 transition-colors"
               >
-                {salvando ? "Salvando..." : editandoId ? "Salvar alterações" : "Cadastrar"}
+                {salvando ? "Salvando..." : modoExcecao ? "Salvar" : editandoId ? "Salvar alterações" : "Cadastrar"}
               </button>
             </div>
           </div>
@@ -1360,7 +1719,12 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         .map((r, i) => {
         const slotsDoRole = slots.filter((s) => {
           if (s.profissional_id) return roleDoProfissional[s.profissional_id] === r;
-          if (s.profissional_nome) return categoriaDoAvulso[s.profissional_nome.toLowerCase()] === r;
+          if (s.profissional_nome) {
+            const categoria = categoriaDoAvulso[s.profissional_nome.toLowerCase()];
+            // Sem categoria salva (nome digitado antes de existir essa opção, ou
+            // por qualquer outro motivo) — nunca esconder, mostra em qualquer seção.
+            return categoria ? categoria === r : true;
+          }
           return false;
         });
         const horariosDoRole = ordenarHorarios(slotsDoRole.map((s) => s.horario));
