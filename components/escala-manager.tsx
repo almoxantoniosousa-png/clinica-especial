@@ -693,8 +693,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             ))}
           </div>
           <button
-            onClick={() => setDiaAtivo((p) => Math.min(4, p + 1))}
-            disabled={diaAtivo === 4}
+            onClick={() => setDiaAtivo((p) => Math.min(DIAS.length - 1, p + 1))}
+            disabled={diaAtivo === DIAS.length - 1}
             className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30"
           >
             <ChevronRight className="h-4 w-4" />
