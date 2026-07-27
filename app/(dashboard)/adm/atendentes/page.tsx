@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
+import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
 
 export default function CadastrarAtendentePage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -29,6 +30,24 @@ export default function CadastrarAtendentePage() {
   const [razaoSocial, setRazaoSocial] = useState("");
   const [dataDemissao, setDataDemissao] = useState("");
   const [motivoSaida, setMotivoSaida] = useState("");
+  const [documentosPendentes, setDocumentosPendentes] = useState<File[]>([]);
+  const [enviandoDocumentos, setEnviandoDocumentos] = useState(false);
+
+  async function enviarDocumentosPendentes(registroId: string): Promise<DocumentoAnexo[]> {
+    if (documentosPendentes.length === 0) return [];
+    setEnviandoDocumentos(true);
+    const docs: DocumentoAnexo[] = [];
+    for (const file of documentosPendentes) {
+      const caminho = `${registroId}/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from("documentos-cadastro").upload(caminho, file);
+      if (!error) {
+        const { data } = supabase.storage.from("documentos-cadastro").getPublicUrl(caminho);
+        docs.push({ nome: file.name, url: data.publicUrl });
+      }
+    }
+    setEnviandoDocumentos(false);
+    return docs;
+  }
 
   const MOTIVOS_SAIDA = [
     "Pedido de demissão",
@@ -104,6 +123,10 @@ export default function CadastrarAtendentePage() {
     if (error) {
       mostrarFeedback("erro", "Erro ao cadastrar: " + error.message);
     } else {
+      if (novo?.id && documentosPendentes.length > 0) {
+        const docs = await enviarDocumentosPendentes(novo.id);
+        if (docs.length > 0) await supabase.from("atendentes").update({ documentos: docs }).eq("id", novo.id);
+      }
       const user = await getUsuarioLogado();
       await registrarLog(supabase, {
         usuario_email: user?.email || "desconhecido",
@@ -115,7 +138,7 @@ export default function CadastrarAtendentePage() {
       mostrarFeedback("sucesso", "Acompanhante cadastrado com sucesso!");
       setNome(""); setEmail(""); setWhatsapp(""); setEspecialidade("");
       setRegistro(""); setCpf(""); setRg(""); setDataNascimento(""); setEndereco("");
-      setCnpj(""); setRazaoSocial(""); setDataDemissao(""); setMotivoSaida("");
+      setCnpj(""); setRazaoSocial(""); setDataDemissao(""); setMotivoSaida(""); setDocumentosPendentes([]);
       carregarAtendentes();
     }
     setLoading(false);
@@ -143,6 +166,7 @@ export default function CadastrarAtendentePage() {
       data_demissao: editando.data_demissao || null,
       motivo_saida: editando.motivo_saida || null,
       ativo: editando.ativo !== false,
+      documentos: editando.documentos || [],
     }).eq("id", editando.id);
 
     if (!error) {
@@ -311,9 +335,17 @@ export default function CadastrarAtendentePage() {
               <input type="text" placeholder="Nome da empresa (MEI, etc.)" value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} className={inputClass} />
             </div>
           </div>
-          <button type="submit" disabled={loading}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Documentos (opcional)</label>
+            <input type="file" multiple onChange={(e) => setDocumentosPendentes(Array.from(e.target.files || []))}
+              className="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-emerald-50 file:text-emerald-700 file:text-xs file:font-semibold hover:file:bg-emerald-100 file:cursor-pointer" />
+            {documentosPendentes.length > 0 && (
+              <p className="text-xs text-slate-400">{documentosPendentes.length} arquivo{documentosPendentes.length !== 1 ? "s" : ""} selecionado{documentosPendentes.length !== 1 ? "s" : ""}</p>
+            )}
+          </div>
+          <button type="submit" disabled={loading || enviandoDocumentos}
             className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 shadow-sm">
-            {loading ? "Cadastrando..." : "Cadastrar Acompanhante"}
+            {loading ? "Cadastrando..." : enviandoDocumentos ? "Enviando documentos..." : "Cadastrar Acompanhante"}
           </button>
         </form>
       </div>
@@ -527,6 +559,11 @@ export default function CadastrarAtendentePage() {
                   </label>
                 </div>
               </div>
+              <AnexoDocumentos
+                pastaId={editando.id}
+                documentos={editando.documentos || []}
+                onChange={(docs) => setEditando({ ...editando, documentos: docs })}
+              />
             </div>
             {feedback && (
               <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border

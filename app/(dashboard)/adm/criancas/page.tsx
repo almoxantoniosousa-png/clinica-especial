@@ -5,6 +5,7 @@ import { Printer } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
+import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
 
 function Secao({ titulo, icone, children }: { titulo: string; icone: string; children: React.ReactNode }) {
   return (
@@ -46,6 +47,24 @@ export default function AdmCriancasPage() {
   const [fotoEditFile, setFotoEditFile] = useState<File | null>(null);
   const [fotoEditPreview, setFotoEditPreview] = useState<string | null>(null);
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+  const [documentosPendentes, setDocumentosPendentes] = useState<File[]>([]);
+  const [enviandoDocumentos, setEnviandoDocumentos] = useState(false);
+
+  async function enviarDocumentosPendentes(registroId: string): Promise<DocumentoAnexo[]> {
+    if (documentosPendentes.length === 0) return [];
+    setEnviandoDocumentos(true);
+    const docs: DocumentoAnexo[] = [];
+    for (const file of documentosPendentes) {
+      const caminho = `${registroId}/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from("documentos-cadastro").upload(caminho, file);
+      if (!error) {
+        const { data } = supabase.storage.from("documentos-cadastro").getPublicUrl(caminho);
+        docs.push({ nome: file.name, url: data.publicUrl });
+      }
+    }
+    setEnviandoDocumentos(false);
+    return docs;
+  }
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -117,6 +136,11 @@ export default function AdmCriancasPage() {
       if (url) await supabase.from("criancas").update({ foto_url: url }).eq("id", nova.id);
     }
 
+    if (documentosPendentes.length > 0) {
+      const docs = await enviarDocumentosPendentes(nova.id);
+      if (docs.length > 0) await supabase.from("criancas").update({ documentos: docs }).eq("id", nova.id);
+    }
+
     // ✅ LOG DE AUDITORIA
     const user = await getUsuarioLogado();
     await registrarLog(supabaseClient, {
@@ -128,7 +152,7 @@ export default function AdmCriancasPage() {
     });
 
     setForm({ nome: "", cpf: "", data_nascimento: "", sexo: "", responsavel: "", telefone_responsavel: "", email_responsavel: "", nome_mae: "", nome_pai: "", escola_id: "", serie: "", plano_saude: "", numero_processo: "", diagnostico: "", cid: "", alergias: "", medicamentos: "", observacoes: "" });
-    setFotoFile(null); setFotoPreview(null);
+    setFotoFile(null); setFotoPreview(null); setDocumentosPendentes([]);
     setUploadingFoto(false);
     carregarDados();
     mostrarFeedback("sucesso", "Criança cadastrada com sucesso!");
@@ -155,9 +179,11 @@ export default function AdmCriancasPage() {
       alergias: crianca.alergias || "",
       medicamentos: crianca.medicamentos || "",
       observacoes: crianca.observacoes || "",
+      documentos: crianca.documentos || [],
     });
     setFotoEditPreview(crianca.foto_url || null);
     setFotoEditFile(null);
+    setDocumentosPendentes([]);
   }
 
   async function salvarEdicao() {
@@ -470,15 +496,23 @@ export default function AdmCriancasPage() {
             </div>
           </Secao>
 
-          <button type="submit" disabled={isPending || uploadingFoto || !form.nome.trim()}
+          <Secao titulo="Documentos" icone="📎">
+            <input type="file" multiple onChange={(e) => setDocumentosPendentes(Array.from(e.target.files || []))}
+              className="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 file:text-xs file:font-semibold hover:file:bg-blue-100 file:cursor-pointer" />
+            {documentosPendentes.length > 0 && (
+              <p className="text-xs text-slate-400 mt-1.5">{documentosPendentes.length} arquivo{documentosPendentes.length !== 1 ? "s" : ""} selecionado{documentosPendentes.length !== 1 ? "s" : ""}</p>
+            )}
+          </Secao>
+
+          <button type="submit" disabled={isPending || uploadingFoto || enviandoDocumentos || !form.nome.trim()}
             className="w-full h-12 bg-blue-900 hover:bg-blue-800 active:scale-95 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 shadow-sm">
-            {isPending || uploadingFoto ? (
+            {isPending || uploadingFoto || enviandoDocumentos ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                 </svg>
-                Salvando prontuário...
+                {enviandoDocumentos ? "Enviando documentos..." : "Salvando prontuário..."}
               </span>
             ) : "Cadastrar Criança"}
           </button>
@@ -681,12 +715,20 @@ export default function AdmCriancasPage() {
                 </div>
               </Secao>
 
+              <Secao titulo="Documentos" icone="📎">
+                <AnexoDocumentos
+                  pastaId={editando.id}
+                  documentos={formEdit.documentos || []}
+                  onChange={(docs) => setFormEdit({ ...formEdit, documentos: docs })}
+                />
+              </Secao>
+
               <div className="flex gap-3">
                 <button onClick={() => setEditando(null)}
                   className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
                   Cancelar
                 </button>
-                <button onClick={salvarEdicao} disabled={salvandoEdicao || !formEdit.nome?.trim()}
+                <button onClick={salvarEdicao} disabled={salvandoEdicao || enviandoDocumentos || !formEdit.nome?.trim()}
                   className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
                   {salvandoEdicao ? "Salvando..." : "Salvar prontuário"}
                 </button>

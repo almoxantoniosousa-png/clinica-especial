@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { Users, Plus, Pencil, Trash2, X, Check } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
+import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
 
 const CARGOS = ["Auxiliar Administrativa", "Agente de Limpeza"];
 
@@ -32,9 +33,27 @@ export default function InternasPage() {
     nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "",
     data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "",
     cnpj: "", razao_social: "", data_demissao: "", motivo_saida: "",
-    ativo: true,
+    ativo: true, documentos: [] as DocumentoAnexo[],
   });
   const [mostrarInativos, setMostrarInativos] = useState(false);
+  const [documentosPendentes, setDocumentosPendentes] = useState<File[]>([]);
+  const [enviandoDocumentos, setEnviandoDocumentos] = useState(false);
+
+  async function enviarDocumentosPendentes(registroId: string): Promise<DocumentoAnexo[]> {
+    if (documentosPendentes.length === 0) return [];
+    setEnviandoDocumentos(true);
+    const docs: DocumentoAnexo[] = [];
+    for (const file of documentosPendentes) {
+      const caminho = `${registroId}/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from("documentos-cadastro").upload(caminho, file);
+      if (!error) {
+        const { data } = supabase.storage.from("documentos-cadastro").getPublicUrl(caminho);
+        docs.push({ nome: file.name, url: data.publicUrl });
+      }
+    }
+    setEnviandoDocumentos(false);
+    return docs;
+  }
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -57,7 +76,8 @@ export default function InternasPage() {
 
   function abrirNovo() {
     setEditando(null);
-    setForm({ nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "", data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "", cnpj: "", razao_social: "", data_demissao: "", motivo_saida: "", ativo: true });
+    setForm({ nome: "", email: "", cargo: CARGOS[0], cpf: "", rg: "", data_nascimento: "", data_admissao: "", whatsapp: "", endereco: "", cnpj: "", razao_social: "", data_demissao: "", motivo_saida: "", ativo: true, documentos: [] });
+    setDocumentosPendentes([]);
     setModalAberto(true);
   }
 
@@ -70,8 +90,9 @@ export default function InternasPage() {
       whatsapp: col.whatsapp || "", endereco: col.endereco || "",
       cnpj: col.cnpj || "", razao_social: col.razao_social || "",
       data_demissao: col.data_demissao || "", motivo_saida: col.motivo_saida || "",
-      ativo: col.ativo !== false,
+      ativo: col.ativo !== false, documentos: col.documentos || [],
     });
+    setDocumentosPendentes([]);
     setModalAberto(true);
   }
 
@@ -106,6 +127,10 @@ export default function InternasPage() {
       const { data: nova, error } = await supabase.from("colaboradoras_internas").insert(payload).select().single();
       if (error) mostrarFeedback("erro", error.message);
       else {
+        if (nova?.id && documentosPendentes.length > 0) {
+          const docs = await enviarDocumentosPendentes(nova.id);
+          if (docs.length > 0) await supabase.from("colaboradoras_internas").update({ documentos: docs }).eq("id", nova.id);
+        }
         await registrarLog(supabase, {
           usuario_email: user?.email || "desconhecido",
           acao: "Criou",
@@ -372,15 +397,32 @@ export default function InternasPage() {
               </div>
             </div>
 
+            {editando ? (
+              <AnexoDocumentos
+                pastaId={editando.id}
+                documentos={form.documentos}
+                onChange={(docs) => setForm({ ...form, documentos: docs })}
+              />
+            ) : (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Documentos (opcional)</label>
+                <input type="file" multiple onChange={(e) => setDocumentosPendentes(Array.from(e.target.files || []))}
+                  className="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 file:text-xs file:font-semibold hover:file:bg-blue-100 file:cursor-pointer" />
+                {documentosPendentes.length > 0 && (
+                  <p className="text-xs text-slate-400">{documentosPendentes.length} arquivo{documentosPendentes.length !== 1 ? "s" : ""} selecionado{documentosPendentes.length !== 1 ? "s" : ""}</p>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-3 pt-2">
               <button onClick={() => setModalAberto(false)}
                 className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
                 Cancelar
               </button>
-              <button onClick={salvar} disabled={salvando || !form.nome.trim()}
+              <button onClick={salvar} disabled={salvando || enviandoDocumentos || !form.nome.trim()}
                 className="flex-1 h-11 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
                 <Check className="h-4 w-4" />
-                {salvando ? "Salvando..." : "Salvar"}
+                {salvando ? "Salvando..." : enviandoDocumentos ? "Enviando documentos..." : "Salvar"}
               </button>
             </div>
           </div>
