@@ -5,6 +5,23 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Clock, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+
+function segundaDaSemanaAtual(): Date {
+  const hoje = new Date();
+  const diaSemana = hoje.getDay();
+  const diffSegunda = diaSemana === 0 ? -6 : 1 - diaSemana;
+  const segunda = new Date(hoje);
+  segunda.setDate(hoje.getDate() + diffSegunda);
+  return segunda;
+}
+
+function dataDoDia(i: number): string {
+  const d = new Date(segundaDaSemanaAtual());
+  d.setDate(d.getDate() + i);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}`;
+}
 const HORARIOS = [
   "13:00 – 13:30",
   "13:30 – 14:30",
@@ -139,19 +156,22 @@ export default function AtendenteEscalaPage() {
             <button
               key={d}
               onClick={() => setDiaAtivo(i)}
-              className={`flex-1 min-w-[80px] py-2 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 min-w-[80px] py-2 rounded-xl text-sm font-semibold leading-tight transition-all ${
                 diaAtivo === i
                   ? "bg-blue-600 text-white shadow-md"
                   : "bg-white border border-slate-200 text-slate-600 hover:bg-blue-50"
               }`}
             >
               {d}
+              <span className={`block text-[10px] font-normal ${diaAtivo === i ? "text-blue-100" : "text-slate-400"}`}>
+                {dataDoDia(i)}
+              </span>
             </button>
           ))}
         </div>
         <button
-          onClick={() => setDiaAtivo((p) => Math.min(4, p + 1))}
-          disabled={diaAtivo === 4}
+          onClick={() => setDiaAtivo((p) => Math.min(DIAS.length - 1, p + 1))}
+          disabled={diaAtivo === DIAS.length - 1}
           className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30"
         >
           <ChevronRight className="h-4 w-4" />
