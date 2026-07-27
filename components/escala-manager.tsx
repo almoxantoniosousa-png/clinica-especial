@@ -78,6 +78,12 @@ function formatarDataLonga(d: Date): string {
   return d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
 }
 
+// Primeiro nome + primeiro sobrenome, pra impressão caber numa folha A4 sem
+// perder a diferenciação entre pessoas com o mesmo primeiro nome.
+function nomeAbreviado(nome: string): string {
+  return nome.split(" ").slice(0, 2).join(" ");
+}
+
 // Segunda a sexta da semana atual, ex: "20 a 24/07/2026" — usado na impressão.
 function intervaloSemanaAtual(): string {
   const segunda = segundaDaSemanaAtual();
@@ -1631,51 +1637,45 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         const horariosDoRole = ordenarHorarios(slotsDoRole.map((s) => s.horario));
         return (
           <div key={r} className={i > 0 ? "break-before-page" : ""}>
-            <div className="flex items-center gap-3 border-b-2 border-blue-900 pb-2 mb-2">
-              <img src="/logo.png" alt="Clínica Abraço" className="w-12 h-12 object-contain" />
-              <div>
-                <h1 className="text-xl font-bold text-slate-900 leading-tight">{titulo}</h1>
-                <p className="text-sm font-semibold text-slate-700 leading-tight">{LABEL_ROLE[r] || r}</p>
-              </div>
+            <div className="flex items-center gap-3 border-b-2 border-blue-900 pb-1.5 mb-1.5">
+              <img src="/logo.png" alt="Clínica Abraço" className="w-10 h-10 object-contain" />
+              <h1 className="text-lg font-bold text-slate-900 leading-tight">{titulo}</h1>
             </div>
-            <p className="text-xs text-slate-500 mb-3">
+            <p className="text-[11px] text-slate-500 mb-2">
               Escala semanal — {intervaloSemanaAtual()} — impresso em {new Date().toLocaleDateString("pt-BR")}
             </p>
-            <table className="w-full border-collapse table-fixed text-sm mb-2">
+            <table className="w-full border-collapse table-fixed text-xs mb-1.5">
               <tbody>
                 <tr>
-                  <td className="border border-slate-300 px-3 py-2 font-semibold w-[13%]">🍎 Lanche</td>
+                  <td className="border border-slate-300 px-2 py-1 font-semibold w-[13%]">🍎 Lanche</td>
                   {DIAS.slice(0, 5).map((d) => (
-                    <td key={d} className="border border-slate-300 px-3 py-2 w-[17.4%]">{lancheDia[d] || "—"}</td>
+                    <td key={d} className="border border-slate-300 px-2 py-1 w-[17.4%]">{lancheDia[d] || "—"}</td>
                   ))}
                 </tr>
               </tbody>
             </table>
-            <table className="w-full border-collapse table-fixed text-sm">
+            <table className="w-full border-collapse table-fixed text-xs">
               <thead>
                 <tr>
-                  <th className="border border-slate-300 px-3 py-2 bg-slate-100 text-left w-[13%]">Horário</th>
+                  <th className="border border-slate-300 px-2 py-1 bg-slate-100 text-left w-[13%]">Horário</th>
                   {DIAS.slice(0, 5).map((d, i) => (
-                    <th key={d} className="border border-slate-300 px-3 py-2 bg-slate-100 text-left w-[17.4%]">{d} · {dataDoDia(i)}</th>
+                    <th key={d} className="border border-slate-300 px-2 py-1 bg-slate-100 text-left w-[17.4%]">{d} · {dataDoDia(i)}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {horariosDoRole.map((horario) => (
                   <tr key={horario}>
-                    <td className="border border-slate-300 px-3 py-2 font-semibold align-top">{horario}</td>
+                    <td className="border border-slate-300 px-2 py-1 font-semibold align-top">{horario}</td>
                     {DIAS.slice(0, 5).map((d) => {
                       const doDia = slotsDoRole.filter((s) => s.dia === d && s.horario === horario);
                       return (
-                        <td key={d} className="border border-slate-300 px-2 py-2 align-top">
-                          {doDia.map((s) => (
-                            <div key={s.id} className="mb-1.5 last:mb-0 px-1.5 py-1 rounded border border-slate-200 bg-slate-50 leading-snug">
-                              <div className="font-semibold">{s.crianca}</div>
-                              <div className="text-slate-600">
-                                {s.servico}
-                                {s.profissional_nome && <> — {s.profissional_nome}</>}
-                                {s.local && <> ({s.local})</>}
-                              </div>
+                        <td key={d} className="border border-slate-300 px-1.5 py-1 align-top">
+                          {doDia.map((s, idx) => (
+                            <div key={s.id} className={`leading-snug ${idx > 0 ? "border-t border-slate-200 mt-0.5 pt-0.5" : ""}`}>
+                              <span className="font-semibold">{nomeAbreviado(s.crianca)}</span>
+                              {" · "}{s.servico}
+                              {s.profissional_nome && <> — {nomeAbreviado(s.profissional_nome)}</>}
                             </div>
                           ))}
                         </td>
