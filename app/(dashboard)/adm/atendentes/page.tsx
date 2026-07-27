@@ -511,7 +511,15 @@ export default function CadastrarAtendentePage() {
                 </div>
                 <div className="flex items-end pb-1">
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <div onClick={() => setEditando({ ...editando, ativo: !editando.ativo })}
+                    <div onClick={() => {
+                        const novoAtivo = !(editando.ativo !== false);
+                        // Reativar limpa data/motivo de saída — os dois campos não são
+                        // ligados automaticamente, e ficar "Ativo" com uma demissão
+                        // registrada é um estado inconsistente que já confundiu antes.
+                        setEditando(novoAtivo
+                          ? { ...editando, ativo: true, data_demissao: null, motivo_saida: null }
+                          : { ...editando, ativo: false });
+                      }}
                       className={`w-12 h-6 rounded-full transition-colors ${editando.ativo !== false ? "bg-emerald-500" : "bg-red-400"} relative`}>
                       <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${editando.ativo !== false ? "left-6" : "left-0.5"}`} />
                     </div>
