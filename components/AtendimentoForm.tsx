@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { createAtendimento } from '@/app/actions'
 import { useRouter } from 'next/navigation'
-import { Home, School, Calendar, Clock, FileText, Baby, MapPin, DollarSign } from 'lucide-react'
+import { Home, School, Building2, Calendar, Clock, FileText, Baby, MapPin, DollarSign } from 'lucide-react'
 
 export default function AtendimentoForm() {
-  const [local, setLocal] = useState<'casa' | 'escola'>('casa')
+  const [local, setLocal] = useState<'casa' | 'escola' | 'clinica'>('casa')
+  const [valorHoraClinica, setValorHoraClinica] = useState('')
   const [nomeAtendente, setNomeAtendente] = useState('')
   const [localDetalhe, setLocalDetalhe] = useState('')
   const [horaEntrada, setHoraEntrada] = useState('')
@@ -83,12 +84,17 @@ export default function AtendimentoForm() {
     }
   }, [horaEntrada, horaSaida])
 
-  const valorTotalCalculado = horasTrabalhadas * VALOR_HORA
+  const valorHoraEfetivo = local === 'clinica' ? (Number(valorHoraClinica) || 0) : VALOR_HORA
+  const valorTotalCalculado = horasTrabalhadas * valorHoraEfetivo
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!criancaId || horasTrabalhadas <= 0 || !data || !localDetalhe) {
       setMsg({ type: 'error', text: 'Por favor, preencha todos os campos obrigatórios.' })
+      return
+    }
+    if (local === 'clinica' && valorHoraEfetivo <= 0) {
+      setMsg({ type: 'error', text: 'Informe o valor por hora do atendimento na clínica.' })
       return
     }
     setLoading(true)
@@ -102,6 +108,7 @@ export default function AtendimentoForm() {
       data,
       horas: horasTrabalhadas,
       local,
+      valorHora: local === 'clinica' ? valorHoraEfetivo : undefined,
       ocorrencia: relatoCompleto
     })
 
@@ -113,6 +120,7 @@ export default function AtendimentoForm() {
       setMsg({ type: 'success', text: 'Atendimento registrado com sucesso!' })
       setOcorrencia('')
       setLocalDetalhe('')
+      setValorHoraClinica('')
       setHoraEntrada('')
       setHoraSaida('')
       setCriancaId('')
@@ -190,7 +198,7 @@ export default function AtendimentoForm() {
           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
             Local do atendimento
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
               type="button"
               onClick={() => { setLocal('casa'); setLocalDetalhe('') }}
@@ -224,7 +232,44 @@ export default function AtendimentoForm() {
                 <p className="text-xs text-emerald-600 font-semibold">R$ 30,00/h</p>
               </div>
             </button>
+
+            <button
+              type="button"
+              onClick={() => { setLocal('clinica'); setLocalDetalhe('') }}
+              className={`flex items-center gap-3 p-4 rounded-xl border-2 transition select-none
+                ${local === 'clinica'
+                  ? 'border-blue-600 bg-blue-50 text-blue-900'
+                  : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+              <div className={`p-2 rounded-lg ${local === 'clinica' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>
+                <Building2 size={18} />
+              </div>
+              <div className="text-left">
+                <p className="font-bold text-sm">Clínica</p>
+                <p className="text-xs text-slate-400 font-semibold">Valor livre</p>
+              </div>
+            </button>
           </div>
+
+          {local === 'clinica' && (
+            <div className="space-y-1.5 pt-1">
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                <DollarSign size={13} /> Valor por hora (R$)
+              </label>
+              <input
+                type="number"
+                required
+                min="0.01"
+                step="0.01"
+                inputMode="decimal"
+                placeholder="Ex: 20,00"
+                value={valorHoraClinica}
+                onChange={(e) => setValorHoraClinica(e.target.value)}
+                className="w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition"
+              />
+            </div>
+          )}
         </div>
 
         {/* CAMPO DINÂMICO */}
@@ -335,7 +380,7 @@ export default function AtendimentoForm() {
               <p className="text-base font-bold text-slate-800 mt-0.5">
                 {Math.floor(horasTrabalhadas)}h {Math.round((horasTrabalhadas % 1) * 60)}min trabalhados
               </p>
-              <p className="text-xs text-emerald-600">R$ 30,00/h</p>
+              <p className="text-xs text-emerald-600">R$ {valorHoraEfetivo.toFixed(2)}/h</p>
             </div>
             <div className="sm:text-right">
               <p className="text-xs text-slate-400">Valor do registro</p>

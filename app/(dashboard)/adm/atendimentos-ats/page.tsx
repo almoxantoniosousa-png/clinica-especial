@@ -199,7 +199,7 @@ export default function AtendimentosAtsPage() {
                               {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}
                             </span>
                             <span className="font-medium text-slate-700">{r.crianca_nome}</span>
-                            {r.local && <span className="text-xs text-slate-400">📍 {r.local === "escola" ? "Escola" : "Casa"}</span>}
+                            {r.local && <span className="text-xs text-slate-400">📍 {r.local === "escola" ? "Escola" : r.local === "clinica" ? "Clínica" : "Casa"}</span>}
                             <span className="text-xs text-slate-400">{Number(r.horas).toFixed(2)}h</span>
                             <span className="text-xs font-semibold text-emerald-700">R$ {Number(r.valor_total || 0).toFixed(2)}</span>
                             <span className={`text-xs font-bold px-2 py-0.5 rounded-full border shrink-0 ${st.cor}`}>{st.label}</span>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, Home, School, Clock, DollarSign } from 'lucide-react'
+import { CalendarDays, Home, School, Building2, Clock, DollarSign } from 'lucide-react'
 
 export default function MeusAtendimentosPage() {
   const [atendimentos, setAtendimentos] = useState<any[]>([])
@@ -179,6 +179,8 @@ export default function MeusAtendimentosPage() {
                   <div className="flex items-center gap-2 mb-3">
                     {item.local?.toLowerCase() === 'escola'
                       ? <School size={14} className="text-blue-500"/>
+                      : item.local?.toLowerCase() === 'clinica'
+                      ? <Building2 size={14} className="text-purple-500"/>
                       : <Home size={14} className="text-amber-500"/>}
                     <span className="text-xs text-slate-500 capitalize">{item.local}</span>
                   </div>

@@ -126,10 +126,17 @@ export async function createAtendimento(input: any) {
     return { success: false, error: "Seu perfil de atendente não foi encontrado no cadastro. Contate o administrador." };
   }
 
-  const local = input.local?.toLowerCase().includes("escola") ? "escola" : "casa";
-  const valorHora = 30.00;
+  const localInput = String(input.local || "").toLowerCase();
+  const local = localInput.includes("clinica") ? "clinica" : localInput.includes("escola") ? "escola" : "casa";
+  // Casa/Escola têm valor fixo. Clínica é digitado livremente pelo AT na hora
+  // (não fica travado num valor só, já que varia por acompanhante/combinado).
+  const valorHora = local === "clinica" ? Number(input.valorHora ?? 0) : 30.00;
   const horas = Number(input.horas ?? 0);
   const valorTotal = horas * valorHora;
+
+  if (local === "clinica" && valorHora <= 0) {
+    return { success: false, error: "Informe o valor por hora do atendimento na clínica." };
+  }
 
   const { data, error } = await supabase
     .from("atendimentos")
