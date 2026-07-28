@@ -123,6 +123,16 @@ export default function EscalaAdministrativaPage() {
         theme: "grid",
       });
 
+      // Assinatura da administração, logo depois da tabela
+      const finalY = (doc as any).lastAutoTable.finalY;
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const yAssinatura = finalY + 20 > pageHeight - 10 ? pageHeight - 20 : finalY + 20;
+      doc.line(8, yAssinatura, 88, yAssinatura);
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text("Administração", 8, yAssinatura + 5);
+      doc.setTextColor(0);
+
       doc.save(`Escala Administrativa - ${new Date().toLocaleDateString("pt-BR").replace(/\//g, "-")}.pdf`);
     } finally {
       setBaixandoPdf(false);

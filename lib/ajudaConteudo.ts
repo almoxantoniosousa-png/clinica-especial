@@ -85,7 +85,7 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "🗓️", titulo: "Escala Administrativa", mockup: "tabela",
-      texto: "Horário de trabalho de cada Auxiliar Administrativa e Agente de Limpeza. Acessível pela aba \"Administrativa\" no topo da tela de Escala (a aba \"Atendimentos\" volta pra escala clínica). Clique em \"Nova escala\", escolha a colaboradora, marque os dias da semana e defina o horário de início e fim (padrão sugerido: Segunda a Sexta, 08h às 18h). Use o lápis para editar ou a lixeira para remover. \"Baixar PDF\" gera um arquivo com a lista completa, pronto pra abrir ou imprimir.",
+      texto: "Horário de trabalho de cada Auxiliar Administrativa e Agente de Limpeza. Acessível pela aba \"Administrativa\" no topo da tela de Escala (a aba \"Atendimentos\" volta pra escala clínica). Clique em \"Nova escala\", escolha a colaboradora, marque os dias da semana e defina o horário de início e fim (padrão sugerido: Segunda a Sexta, 08h às 18h). Use o lápis para editar ou a lixeira para remover. \"Baixar PDF\" gera um arquivo com a lista completa e um espaço de assinatura da Administração no final, pronto pra abrir ou imprimir.",
       reflexo: "Diferente da Escala clínica (especialistas e ATs), essa tela é só sobre horário de trabalho — não tem criança nem serviço envolvido."
     },
     {
