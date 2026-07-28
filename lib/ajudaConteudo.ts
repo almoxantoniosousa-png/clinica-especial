@@ -79,19 +79,9 @@ const ADM: AjudaConteudo = {
       reflexo: "Toda ação relevante feita nas demais telas do sistema (cadastros, edições, exclusões, pagamentos, login, brinquedos, requisições) gera automaticamente um registro aqui."
     },
     {
-      icone: "👤", titulo: "Acompanhantes (Colaboradores)", mockup: "form-lista",
-      texto: "Cadastro dos Acompanhantes Terapêuticos (ATs).\n\nPreencha o formulário no topo (nome, e-mail, CPF, RG, data de nascimento, WhatsApp, especialidade, registro profissional e endereço) e clique em \"Cadastrar Acompanhante\". O CPF é formatado e validado automaticamente. Documentos (opcional) podem ser anexados no cadastro ou depois, editando. Na lista abaixo, use \"Editar\" ou \"Excluir\" para gerenciar os já cadastrados.",
-      reflexo: "Depois de cadastrado, o Acompanhante pode fazer login no sistema, aparece na lista de Colaboradores da Gestão e pode ser escalado na tela Escala."
-    },
-    {
-      icone: "🩺", titulo: "Especialistas (Colaboradores)", mockup: "form-lista",
-      texto: "Cadastro dos especialistas da clínica (psicólogos, fonoaudiólogos, terapeutas ocupacionais etc.).\n\nFunciona como o cadastro de Acompanhantes, mas com campos específicos de área de atuação e registro profissional (CRP, CRM, CREFONO etc.), com a mesma opção de anexar documentos. Clique em \"Cadastrar Especialista\" para salvar, e use \"Editar\"/\"Excluir\" na lista.",
-      reflexo: "Depois de cadastrado, o Especialista pode fazer login no sistema, aparece na lista de Colaboradores da Gestão e pode ser escalado na tela Escala."
-    },
-    {
-      icone: "🏠", titulo: "Internas (Colaboradores)", mockup: "form-lista",
-      texto: "Cadastro das colaboradoras internas (Auxiliar Administrativa e Agente de Limpeza).\n\nClique em \"Nova colaboradora\" para cadastrar (nome, cargo, CPF, RG, datas de nascimento e admissão, e-mail, WhatsApp, endereço e documentos opcionais). Use o lápis para editar e a lixeira para excluir.",
-      reflexo: "Depois de cadastrada, a colaboradora pode fazer login no sistema com o cargo definido (Auxiliar Administrativo ou Limpeza) e passa a aparecer na lista de Colaboradores da Gestão."
+      icone: "👥", titulo: "Colaboradores", mockup: "form-lista",
+      texto: "Cadastro único de todos os colaboradores da clínica — Especialistas, Acompanhantes Terapêuticos (ATs) e Apoio (Auxiliar Administrativa/Agente de Limpeza).\n\nEscolha a categoria no topo do formulário — os campos mudam de acordo: Especialista e Acompanhante pedem área de atuação/especialidade e registro profissional (CRP, CRM, CREFONO etc.); Apoio pede cargo e data de admissão. Os demais campos (nome, e-mail, CPF, RG, nascimento, WhatsApp, endereço, CNPJ/Razão Social se for MEI, documentos opcionais) são comuns às três. O CPF é formatado e validado automaticamente.\n\nA lista abaixo agrupa por categoria (Especialistas, Acompanhantes, Apoio) com contador — use \"Editar\" ou \"Excluir\" em qualquer um. A busca funciona por nome, especialidade ou cargo, e há uma seção separada e retrátil pros inativos.",
+      reflexo: "Depois de cadastrado, o colaborador pode fazer login no sistema (conforme a categoria), aparece na lista de Colaboradores da Gestão e — se for Especialista ou Acompanhante — pode ser escalado na tela Escala."
     },
     {
       icone: "🗓️", titulo: "Escala Administrativa", mockup: "tabela",
@@ -211,8 +201,8 @@ const GESTAO: AjudaConteudo = {
       reflexo: "Avisos publicados aqui aparecem na aba Avisos do Portal da Família, e os registros de evolução aparecem na aba Evolução — a família vê tudo isso assim que você publica."
     },
     {
-      icone: "👥", titulo: "Colaboradores (Acompanhantes / Especialistas / Internas)", mockup: "lista-cards",
-      texto: "Listas de consulta da equipe: Acompanhantes Terapêuticos, Especialistas e Colaboradoras Internas, com dados de contato (nome, e-mail, especialidade/cargo, WhatsApp etc.).\n\nUse a busca para filtrar por nome ou especialidade/cargo, e \"Ver mais\" para carregar mais resultados. Em cada cartão há botões para abrir WhatsApp ou e-mail diretamente."
+      icone: "👥", titulo: "Colaboradores", mockup: "lista-cards",
+      texto: "Lista de consulta de toda a equipe — Especialistas, Acompanhantes Terapêuticos e Apoio — com dados de contato (nome, e-mail, especialidade/cargo, WhatsApp etc.) e uma etiqueta indicando a categoria de cada um.\n\nUse a busca para filtrar por nome, especialidade ou cargo, e \"Ver mais\" para carregar mais resultados. Em cada cartão há botões para abrir WhatsApp ou e-mail diretamente. Somente leitura — quem cadastra e edita é a ADM."
     },
     {
       icone: "📚", titulo: "Materiais Adaptados", mockup: "abas",

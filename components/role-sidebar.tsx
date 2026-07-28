@@ -35,10 +35,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const isFinanceiro  = role === "financeiro";
 
   useEffect(() => {
-    if (
-      pathname.includes("/adm/atendentes") || pathname.includes("/adm/especialistas") || pathname.includes("/adm/internas") ||
-      pathname.includes("/gestao/atendentes") || pathname.includes("/gestao/especialistas") || pathname.includes("/gestao/internas")
-    ) {
+    if (pathname.includes("/adm/colaboradores") || pathname.includes("/gestao/colaboradores")) {
       setColaboradoresAberto(true);
     }
     if (pathname.includes("/adm/financeiro") || pathname.includes("/adm/folha-pagamento")) {
@@ -70,16 +67,12 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   }
 
   const subMenuColaboradoresAdm = [
-    { href: "/adm/atendentes",    label: "Acompanhantes", icon: "👤" },
-    { href: "/adm/especialistas", label: "Especialistas",  icon: "🩺" },
-    { href: "/adm/internas",      label: "Internas",       icon: "🏠" },
-    { href: "/adm/escala-administrativa", label: "Escala Administrativa", icon: "🗓️" },
+    { href: "/adm/colaboradores",          label: "Colaboradores",         icon: "👥" },
+    { href: "/adm/escala-administrativa",  label: "Escala Administrativa", icon: "🗓️" },
   ];
 
   const subMenuColaboradoresGestao = [
-    { href: "/gestao/atendentes",    label: "Acompanhantes", icon: "👤" },
-    { href: "/gestao/especialistas", label: "Especialistas",  icon: "🩺" },
-    { href: "/gestao/internas",      label: "Internas",       icon: "🏠" },
+    { href: "/gestao/colaboradores", label: "Colaboradores", icon: "👥" },
   ];
 
   const subMenuFinanceiro = [
