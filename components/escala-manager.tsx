@@ -170,12 +170,6 @@ type ItemCalendario = {
   escalaIdOrigem: string | null; // id na tabela `escala` que originou este item (null = criado só nesta data)
 };
 
-const LABEL_ROLE: Record<string, string> = {
-  especialista: "Especialistas",
-  atendente: "Acompanhantes Terapêuticos (AT)",
-  at: "Acompanhantes Terapêuticos (AT)",
-};
-
 type FormData = {
   dia: string;
   horario: string;
@@ -289,19 +283,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
   const corMap: Record<string, string> = {};
   servicos.forEach((nome, i) => { corMap[nome] = CORES[i % CORES.length]; });
-
-  // "at" e "atendente" são o mesmo cargo (grafias diferentes já usadas no
-  // banco) — normaliza pra não virarem duas seções duplicadas na impressão.
-  const normalizarRole = (r: string) => (r === "at" ? "atendente" : r);
-
-  const roleDoProfissional: Record<string, string> = {};
-  atendentes.forEach((a) => { roleDoProfissional[a.id] = normalizarRole((a.role || "").toString().trim().toLowerCase()); });
-  const rolesParaImprimir = Array.from(new Set(rolesPermitidos.map((r) => normalizarRole(r.toLowerCase()))));
-
-  // categoria de quem foi digitado na mão (sem cadastro), pra impressão
-  // conseguir separar por função igual já faz com quem tem cadastro
-  const categoriaDoAvulso: Record<string, string> = {};
-  avulsos.forEach((a) => { if (a.categoria) categoriaDoAvulso[a.nome.toLowerCase()] = a.categoria; });
 
   useEffect(() => {
     carregarTudo();
@@ -855,17 +836,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     ...(lancheHorarioAtivo ? [lancheHorarioAtivo] : []),
   ]);
 
-  function slotsDaRole(r: string): Slot[] {
-    return slots.filter((s) => {
-      if (s.profissional_id) return roleDoProfissional[s.profissional_id] === r;
-      if (s.profissional_nome) {
-        const categoria = categoriaDoAvulso[s.profissional_nome.toLowerCase()];
-        return categoria ? categoria === r : true;
-      }
-      return false;
-    });
-  }
-
   async function logoComoBuffer(): Promise<ArrayBuffer | null> {
     try {
       const res = await fetch("/logo.png");
@@ -876,7 +846,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     }
   }
 
-  const SHEET_NOME: Record<string, string> = { especialista: "Especialistas", atendente: "Acompanhantes", at: "Acompanhantes" };
   const BORDA_FINA = { top: { style: "thin" as const }, bottom: { style: "thin" as const }, left: { style: "thin" as const }, right: { style: "thin" as const } };
 
   // Escala completa: nomes por extenso, local, e espaço de assinatura no
@@ -891,77 +860,74 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       const logoBuffer = await logoComoBuffer();
       const logoId = logoBuffer ? wb.addImage({ buffer: logoBuffer as any, extension: "png" }) : null;
 
-      for (const r of rolesParaImprimir) {
-        const doRole = slotsDaRole(r);
-        const horariosDoRole = ordenarHorarios(doRole.map((s) => s.horario));
-        const ws = wb.addWorksheet(SHEET_NOME[r] || r, {
-          pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0, footer: 0 } as any },
+      const horariosGeral = ordenarHorarios(slots.map((s) => s.horario));
+      const ws = wb.addWorksheet("Escala", {
+        pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0, footer: 0 } as any },
+      });
+
+      if (logoId !== null) ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 50, height: 50 } });
+
+      ws.mergeCells(1, 2, 1, 6);
+      ws.getCell(1, 2).value = `Escala Semanal — Especialistas e Acompanhantes — ${intervaloSemanaAtual()}`;
+      ws.getCell(1, 2).font = { bold: true, size: 14 };
+      ws.mergeCells(2, 2, 2, 6);
+      ws.getCell(2, 2).value = `Impresso em ${new Date().toLocaleDateString("pt-BR")}`;
+      ws.getCell(2, 2).font = { italic: true, size: 9, color: { argb: "FF64748B" } };
+
+      const headerRow = 4;
+      ws.getCell(headerRow, 1).value = "Horário";
+      DIAS.slice(0, 5).forEach((d, i) => { ws.getCell(headerRow, i + 2).value = `${d} · ${dataDoDia(i)}`; });
+      ws.getRow(headerRow).font = { bold: true };
+      ws.getRow(headerRow).eachCell((cell) => {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF6FF" } };
+        cell.border = BORDA_FINA;
+      });
+
+      let linha = headerRow + 1;
+      const lancheRow = ws.getRow(linha);
+      lancheRow.getCell(1).value = "🍎 Lanche";
+      lancheRow.getCell(1).font = { bold: true };
+      DIAS.slice(0, 5).forEach((d, i) => { lancheRow.getCell(i + 2).value = lancheDia[d] || "—"; });
+      lancheRow.eachCell((cell) => { cell.border = BORDA_FINA; });
+      linha++;
+
+      horariosGeral.forEach((horario) => {
+        const row = ws.getRow(linha);
+        row.getCell(1).value = horario;
+        row.getCell(1).font = { bold: true };
+        let maxLinhas = 1;
+        DIAS.slice(0, 5).forEach((d, i) => {
+          const doDia = slots.filter((s) => s.dia === d && s.horario === horario);
+          const texto = doDia.map((s) => {
+            let l = `${s.crianca} · ${s.servico}`;
+            if (s.profissional_nome) l += ` — ${s.profissional_nome}`;
+            if (s.local) l += ` (${s.local})`;
+            return l;
+          }).join("\n");
+          const cell = row.getCell(i + 2);
+          cell.value = texto;
+          cell.alignment = { wrapText: true, vertical: "top" };
+          maxLinhas = Math.max(maxLinhas, doDia.length || 1);
         });
-
-        if (logoId !== null) ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 50, height: 50 } });
-
-        ws.mergeCells(1, 2, 1, 6);
-        ws.getCell(1, 2).value = `Escala Semanal — ${LABEL_ROLE[r] || r} — ${intervaloSemanaAtual()}`;
-        ws.getCell(1, 2).font = { bold: true, size: 14 };
-        ws.mergeCells(2, 2, 2, 6);
-        ws.getCell(2, 2).value = `Impresso em ${new Date().toLocaleDateString("pt-BR")}`;
-        ws.getCell(2, 2).font = { italic: true, size: 9, color: { argb: "FF64748B" } };
-
-        const headerRow = 4;
-        ws.getCell(headerRow, 1).value = "Horário";
-        DIAS.slice(0, 5).forEach((d, i) => { ws.getCell(headerRow, i + 2).value = `${d} · ${dataDoDia(i)}`; });
-        ws.getRow(headerRow).font = { bold: true };
-        ws.getRow(headerRow).eachCell((cell) => {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF6FF" } };
-          cell.border = BORDA_FINA;
-        });
-
-        let linha = headerRow + 1;
-        const lancheRow = ws.getRow(linha);
-        lancheRow.getCell(1).value = "🍎 Lanche";
-        lancheRow.getCell(1).font = { bold: true };
-        DIAS.slice(0, 5).forEach((d, i) => { lancheRow.getCell(i + 2).value = lancheDia[d] || "—"; });
-        lancheRow.eachCell((cell) => { cell.border = BORDA_FINA; });
+        row.eachCell((cell) => { cell.border = BORDA_FINA; });
+        row.height = Math.max(18, maxLinhas * 15);
         linha++;
+      });
 
-        horariosDoRole.forEach((horario) => {
-          const row = ws.getRow(linha);
-          row.getCell(1).value = horario;
-          row.getCell(1).font = { bold: true };
-          let maxLinhas = 1;
-          DIAS.slice(0, 5).forEach((d, i) => {
-            const doDia = doRole.filter((s) => s.dia === d && s.horario === horario);
-            const texto = doDia.map((s) => {
-              let l = `${s.crianca} · ${s.servico}`;
-              if (s.profissional_nome) l += ` — ${s.profissional_nome}`;
-              if (s.local) l += ` (${s.local})`;
-              return l;
-            }).join("\n");
-            const cell = row.getCell(i + 2);
-            cell.value = texto;
-            cell.alignment = { wrapText: true, vertical: "top" };
-            maxLinhas = Math.max(maxLinhas, doDia.length || 1);
-          });
-          row.eachCell((cell) => { cell.border = BORDA_FINA; });
-          row.height = Math.max(18, maxLinhas * 15);
-          linha++;
-        });
+      ws.getColumn(1).width = 16;
+      for (let c = 2; c <= 6; c++) ws.getColumn(c).width = 34;
 
-        ws.getColumn(1).width = 16;
-        for (let c = 2; c <= 6; c++) ws.getColumn(c).width = 34;
-
-        linha += 2;
-        ws.getCell(linha, 1).value = "Assinaturas:";
-        ws.getCell(linha, 1).font = { bold: true };
-        linha += 2;
-        (["Supervisora", "ADM", "Gestão"] as const).forEach((label, i) => {
-          const colStart = 1 + i * 2;
-          ws.mergeCells(linha, colStart, linha, colStart + 1);
-          ws.getCell(linha, colStart).border = { bottom: { style: "thin" } };
-          ws.getCell(linha + 1, colStart).value = label;
-          ws.getCell(linha + 1, colStart).font = { size: 9, color: { argb: "FF64748B" } };
-        });
-      }
+      linha += 2;
+      ws.getCell(linha, 1).value = "Assinaturas:";
+      ws.getCell(linha, 1).font = { bold: true };
+      linha += 2;
+      (["Supervisora", "ADM", "Gestão"] as const).forEach((label, i) => {
+        const colStart = 1 + i * 2;
+        ws.mergeCells(linha, colStart, linha, colStart + 1);
+        ws.getCell(linha, colStart).border = { bottom: { style: "thin" } };
+        ws.getCell(linha + 1, colStart).value = label;
+        ws.getCell(linha + 1, colStart).font = { size: 9, color: { argb: "FF64748B" } };
+      });
 
       const buffer = await wb.xlsx.writeBuffer();
       dispararDownload(buffer, `Escala Completa - ${intervaloSemanaAtual().replace(/\//g, "-")}.xlsx`);
@@ -981,51 +947,48 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       const logoBuffer = await logoComoBuffer();
       const logoId = logoBuffer ? wb.addImage({ buffer: logoBuffer as any, extension: "png" }) : null;
 
-      for (const r of rolesParaImprimir) {
-        const doRole = slotsDaRole(r);
-        const horariosDoRole = ordenarHorarios(doRole.map((s) => s.horario));
-        const ws = wb.addWorksheet(SHEET_NOME[r] || r, {
-          pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 1, margins: { left: 0.2, right: 0.2, top: 0.3, bottom: 0.3, header: 0, footer: 0 } as any },
+      const horariosGeral = ordenarHorarios(slots.map((s) => s.horario));
+      const ws = wb.addWorksheet("Escala", {
+        pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 1, margins: { left: 0.2, right: 0.2, top: 0.3, bottom: 0.3, header: 0, footer: 0 } as any },
+      });
+
+      if (logoId !== null) ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 36, height: 36 } });
+
+      ws.mergeCells(1, 2, 1, 6);
+      ws.getCell(1, 2).value = `Escala — ${intervaloSemanaAtual()}`;
+      ws.getCell(1, 2).font = { bold: true, size: 12 };
+
+      const headerRow = 3;
+      ws.getCell(headerRow, 1).value = "Horário";
+      DIAS.slice(0, 5).forEach((d, i) => { ws.getCell(headerRow, i + 2).value = `${d} · ${dataDoDia(i)}`; });
+      ws.getRow(headerRow).font = { bold: true, size: 9 };
+      ws.getRow(headerRow).eachCell((cell) => {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF6FF" } };
+        cell.border = BORDA_FINA;
+      });
+
+      let linha = headerRow + 1;
+      horariosGeral.forEach((horario) => {
+        const row = ws.getRow(linha);
+        row.getCell(1).value = horario;
+        row.getCell(1).font = { bold: true, size: 9 };
+        let maxLinhas = 1;
+        DIAS.slice(0, 5).forEach((d, i) => {
+          const doDia = slots.filter((s) => s.dia === d && s.horario === horario);
+          const texto = doDia.map((s) => `${s.crianca.split(" ")[0]} — ${s.profissional_nome ? s.profissional_nome.split(" ")[0] : "—"}`).join("\n");
+          const cell = row.getCell(i + 2);
+          cell.value = texto;
+          cell.alignment = { wrapText: true, vertical: "top" };
+          cell.font = { size: 8 };
+          maxLinhas = Math.max(maxLinhas, doDia.length || 1);
         });
+        row.eachCell((cell) => { cell.border = BORDA_FINA; });
+        row.height = Math.max(12, maxLinhas * 11);
+        linha++;
+      });
 
-        if (logoId !== null) ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 36, height: 36 } });
-
-        ws.mergeCells(1, 2, 1, 6);
-        ws.getCell(1, 2).value = `Escala — ${LABEL_ROLE[r] || r} — ${intervaloSemanaAtual()}`;
-        ws.getCell(1, 2).font = { bold: true, size: 12 };
-
-        const headerRow = 3;
-        ws.getCell(headerRow, 1).value = "Horário";
-        DIAS.slice(0, 5).forEach((d, i) => { ws.getCell(headerRow, i + 2).value = `${d} · ${dataDoDia(i)}`; });
-        ws.getRow(headerRow).font = { bold: true, size: 9 };
-        ws.getRow(headerRow).eachCell((cell) => {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF6FF" } };
-          cell.border = BORDA_FINA;
-        });
-
-        let linha = headerRow + 1;
-        horariosDoRole.forEach((horario) => {
-          const row = ws.getRow(linha);
-          row.getCell(1).value = horario;
-          row.getCell(1).font = { bold: true, size: 9 };
-          let maxLinhas = 1;
-          DIAS.slice(0, 5).forEach((d, i) => {
-            const doDia = doRole.filter((s) => s.dia === d && s.horario === horario);
-            const texto = doDia.map((s) => `${s.crianca.split(" ")[0]} — ${s.profissional_nome ? s.profissional_nome.split(" ")[0] : "—"}`).join("\n");
-            const cell = row.getCell(i + 2);
-            cell.value = texto;
-            cell.alignment = { wrapText: true, vertical: "top" };
-            cell.font = { size: 8 };
-            maxLinhas = Math.max(maxLinhas, doDia.length || 1);
-          });
-          row.eachCell((cell) => { cell.border = BORDA_FINA; });
-          row.height = Math.max(12, maxLinhas * 11);
-          linha++;
-        });
-
-        ws.getColumn(1).width = 12;
-        for (let c = 2; c <= 6; c++) ws.getColumn(c).width = 22;
-      }
+      ws.getColumn(1).width = 12;
+      for (let c = 2; c <= 6; c++) ws.getColumn(c).width = 22;
 
       const buffer = await wb.xlsx.writeBuffer();
       dispararDownload(buffer, `Escala de Impressão - ${intervaloSemanaAtual().replace(/\//g, "-")}.xlsx`);
