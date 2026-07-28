@@ -114,6 +114,7 @@ export default function OcorrenciasPage() {
   const [filtroAno, setFiltroAno] = useState("");
   const [filtroDiaSemana, setFiltroDiaSemana] = useState("");
   const [filtroData, setFiltroData] = useState("");
+  const [maisFiltrosAberto, setMaisFiltrosAberto] = useState(false);
 
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
@@ -468,38 +469,47 @@ export default function OcorrenciasPage() {
 
         {/* HISTÓRICO */}
         <div className="space-y-2">
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-            <input type="text" placeholder="Buscar por texto, autor ou data (aaaa-mm-dd)..." value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="w-full sm:w-96 rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition" />
-          </div>
           <div className="flex flex-wrap gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              <input type="text" placeholder="Buscar por texto ou autor..." value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="w-full sm:w-96 rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition" />
+            </div>
             <input type="date" value={filtroData} onChange={(e) => setFiltroData(e.target.value)}
-              title="Escolher uma data exata"
+              title="Filtrar por uma data exata"
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <select value={filtroAno} onChange={(e) => setFiltroAno(e.target.value)}
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Todo ano</option>
-              {anosDisponiveis.map((a) => <option key={a} value={a}>{a}</option>)}
-            </select>
-            <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Todo mês</option>
-              {MESES_FILTRO.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
-            </select>
-            <select value={filtroDiaSemana} onChange={(e) => setFiltroDiaSemana(e.target.value)}
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Todo dia da semana</option>
-              {DIAS_SEMANA_FILTRO.map((d) => <option key={d.valor} value={d.valor}>{d.label}</option>)}
-            </select>
-            {(filtroMes || filtroAno || filtroDiaSemana || filtroData) && (
-              <button onClick={() => { setFiltroMes(""); setFiltroAno(""); setFiltroDiaSemana(""); setFiltroData(""); }}
-                className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-2">
-                Limpar filtros
-              </button>
-            )}
+            <button onClick={() => setMaisFiltrosAberto(!maisFiltrosAberto)}
+              className="text-sm text-slate-500 hover:text-blue-600 font-semibold px-2">
+              {maisFiltrosAberto ? "Menos filtros ▴" : "Mais filtros ▾"}
+            </button>
           </div>
+
+          {(maisFiltrosAberto || filtroAno || filtroMes || filtroDiaSemana) && (
+            <div className="flex flex-wrap gap-2">
+              <select value={filtroAno} onChange={(e) => setFiltroAno(e.target.value)}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Todo ano</option>
+                {anosDisponiveis.map((a) => <option key={a} value={a}>{a}</option>)}
+              </select>
+              <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Todo mês</option>
+                {MESES_FILTRO.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
+              </select>
+              <select value={filtroDiaSemana} onChange={(e) => setFiltroDiaSemana(e.target.value)}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Todo dia da semana</option>
+                {DIAS_SEMANA_FILTRO.map((d) => <option key={d.valor} value={d.valor}>{d.label}</option>)}
+              </select>
+              {(filtroMes || filtroAno || filtroDiaSemana || filtroData) && (
+                <button onClick={() => { setFiltroMes(""); setFiltroAno(""); setFiltroDiaSemana(""); setFiltroData(""); }}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-2">
+                  Limpar filtros
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {loading ? (
