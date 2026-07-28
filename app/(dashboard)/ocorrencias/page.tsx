@@ -113,6 +113,7 @@ export default function OcorrenciasPage() {
   const [filtroMes, setFiltroMes] = useState("");
   const [filtroAno, setFiltroAno] = useState("");
   const [filtroDiaSemana, setFiltroDiaSemana] = useState("");
+  const [filtroData, setFiltroData] = useState("");
 
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
@@ -280,7 +281,7 @@ export default function OcorrenciasPage() {
 
   const anosDisponiveis = Array.from(new Set(historico.map((o) => o.data.slice(0, 4)))).sort((a, b) => b.localeCompare(a));
 
-  const filtrosAtivos = !!(busca || filtroMes || filtroAno || filtroDiaSemana);
+  const filtrosAtivos = !!(busca || filtroMes || filtroAno || filtroDiaSemana || filtroData);
 
   const historicoFiltrado = historico.filter((o) => {
     const buscaOk = !busca ||
@@ -288,6 +289,7 @@ export default function OcorrenciasPage() {
       (o.autor_nome || "").toLowerCase().includes(busca.toLowerCase()) ||
       o.data.includes(busca);
     if (!buscaOk) return false;
+    if (filtroData && o.data !== filtroData) return false;
     if (filtroAno && o.data.slice(0, 4) !== filtroAno) return false;
     if (filtroMes && o.data.slice(5, 7) !== filtroMes) return false;
     if (filtroDiaSemana && String(new Date(o.data + "T12:00:00").getDay()) !== filtroDiaSemana) return false;
@@ -435,6 +437,9 @@ export default function OcorrenciasPage() {
               className="w-full sm:w-96 rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition" />
           </div>
           <div className="flex flex-wrap gap-2">
+            <input type="date" value={filtroData} onChange={(e) => setFiltroData(e.target.value)}
+              title="Escolher uma data exata"
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <select value={filtroAno} onChange={(e) => setFiltroAno(e.target.value)}
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Todo ano</option>
@@ -450,8 +455,8 @@ export default function OcorrenciasPage() {
               <option value="">Todo dia da semana</option>
               {DIAS_SEMANA_FILTRO.map((d) => <option key={d.valor} value={d.valor}>{d.label}</option>)}
             </select>
-            {(filtroMes || filtroAno || filtroDiaSemana) && (
-              <button onClick={() => { setFiltroMes(""); setFiltroAno(""); setFiltroDiaSemana(""); }}
+            {(filtroMes || filtroAno || filtroDiaSemana || filtroData) && (
+              <button onClick={() => { setFiltroMes(""); setFiltroAno(""); setFiltroDiaSemana(""); setFiltroData(""); }}
                 className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-2">
                 Limpar filtros
               </button>
