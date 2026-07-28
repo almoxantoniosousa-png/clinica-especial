@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
-import { Pencil, Trash2, X, Plus } from "lucide-react";
+import { Pencil, Trash2, X, Plus, FileText } from "lucide-react";
+import { logoComoDataUrl } from "@/lib/pdfUtils";
 
 type Item = {
   colaboradora_id: string;
@@ -43,6 +45,7 @@ export default function EscalaAdministrativaPage() {
   const [excluindoId, setExcluindoId] = useState<string | null>(null);
   const [excluindoNome, setExcluindoNome] = useState("");
   const [excluindo, setExcluindo] = useState(false);
+  const [baixandoPdf, setBaixandoPdf] = useState(false);
 
   useEffect(() => { carregar(); }, []);
 
@@ -89,6 +92,41 @@ export default function EscalaAdministrativaPage() {
   function faixaDias(dias: string[]) {
     if (dias.length === 5 && dias[0] === "Segunda" && dias[4] === "Sexta") return "Segunda a Sexta";
     return dias.join(", ");
+  }
+
+  async function baixarPDF() {
+    setBaixandoPdf(true);
+    try {
+      const [{ default: jsPDF }, autoTableMod] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
+      const autoTable = autoTableMod.default;
+
+      const logoDataUrl = await logoComoDataUrl();
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 8, 6, 14, 14);
+      doc.setFontSize(14);
+      doc.text("Escala Administrativa — Auxiliares Administrativas e Agentes de Limpeza", 26, 12);
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text(`Impresso em ${new Date().toLocaleDateString("pt-BR")}`, 26, 18);
+      doc.setTextColor(0);
+
+      autoTable(doc, {
+        head: [["Colaboradora", "Cargo", "Dias", "Horário"]],
+        body: itens.map((item) => [item.nome, item.cargo || "—", faixaDias(item.dias), `${item.horario_inicio} – ${item.horario_fim}`]),
+        startY: 24,
+        margin: { left: 8, right: 8 },
+        styles: { fontSize: 10, cellPadding: 2.5, valign: "top" },
+        headStyles: { fillColor: [239, 246, 255], textColor: [30, 41, 59], fontStyle: "bold" },
+        theme: "grid",
+      });
+
+      doc.save(`Escala Administrativa - ${new Date().toLocaleDateString("pt-BR").replace(/\//g, "-")}.pdf`);
+    } finally {
+      setBaixandoPdf(false);
+    }
   }
 
   function abrirNovo() {
@@ -170,16 +208,32 @@ export default function EscalaAdministrativaPage() {
 
   return (
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-6">
+      <div className="flex items-center gap-2">
+        <Link href="/escala"
+          className="px-4 py-1.5 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition">
+          Atendimentos
+        </Link>
+        <span className="px-4 py-1.5 rounded-lg text-sm font-semibold bg-blue-600 text-white">Administrativa</span>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Escala Administrativa</h1>
           <p className="text-xs text-slate-400 mt-0.5">Horário de trabalho de Auxiliares Administrativas e Agentes de Limpeza.</p>
         </div>
-        <button onClick={abrirNovo}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
-          <Plus className="h-4 w-4" />
-          Nova escala
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={baixarPDF} disabled={baixandoPdf || itens.length === 0}
+            className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
+            title="Baixar PDF pra visualizar ou imprimir">
+            <FileText className="h-4 w-4" />
+            {baixandoPdf ? "Gerando..." : "Baixar PDF"}
+          </button>
+          <button onClick={abrirNovo}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+            <Plus className="h-4 w-4" />
+            Nova escala
+          </button>
+        </div>
       </div>
 
       {loading ? (

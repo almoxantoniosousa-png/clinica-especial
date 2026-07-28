@@ -1,18 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, History, FileText } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
-
-// Converte o buffer da logo (baixada via fetch) pra data URL, formato que o
-// jsPDF exige pra inserir imagem.
-function bufferParaDataUrl(buffer: ArrayBuffer, mime: string): string {
-  let binario = "";
-  const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < bytes.byteLength; i++) binario += String.fromCharCode(bytes[i]);
-  return `data:${mime};base64,${btoa(binario)}`;
-}
+import { logoComoDataUrl } from "@/lib/pdfUtils";
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
@@ -237,6 +230,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [avisoImpressao, setAvisoImpressao] = useState("");
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
+  const [ehAdmin, setEhAdmin] = useState(false);
   const [meuAtendenteId, setMeuAtendenteId] = useState<string | null>(null);
   const [somenteMeus, setSomenteMeus] = useState(false);
   const [servicoLivre, setServicoLivre] = useState(false);
@@ -306,6 +300,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     if (role) {
       setUsuarioNome(u?.nome || "");
       setPodeEditar(role === "supervisora" || role === "adm" || role === "admin");
+      setEhAdmin(role === "adm" || role === "admin");
       return;
     }
     const { data: a } = await supabase.from("atendentes").select("id, role, nome").eq("email", user.email).maybeSingle();
@@ -833,16 +828,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     ...(lancheHorarioAtivo ? [lancheHorarioAtivo] : []),
   ]);
 
-  async function logoComoBuffer(): Promise<ArrayBuffer | null> {
-    try {
-      const res = await fetch("/logo.png");
-      if (!res.ok) return null;
-      return await res.arrayBuffer();
-    } catch {
-      return null;
-    }
-  }
-
   // Escala completa: nomes por extenso, local, lanche e espaço de assinatura
   // no final — pra baixar/arquivar como comprovação. Também em PDF (mais
   // fácil de abrir), mas sem forçar caber numa página só — pode gerar
@@ -875,8 +860,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         return linha;
       });
 
-      const logoBuffer = await logoComoBuffer();
-      const logoDataUrl = logoBuffer ? bufferParaDataUrl(logoBuffer, "image/png") : null;
+      const logoDataUrl = await logoComoDataUrl();
 
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 8, 6, 14, 14);
@@ -950,8 +934,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         return linha;
       });
 
-      const logoBuffer = await logoComoBuffer();
-      const logoDataUrl = logoBuffer ? bufferParaDataUrl(logoBuffer, "image/png") : null;
+      const logoDataUrl = await logoComoDataUrl();
 
       let fontSize = 9;
       let doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
@@ -986,6 +969,16 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   return (
     <div className="space-y-6">
     <div className="print:hidden space-y-6">
+
+      {ehAdmin && (
+        <div className="flex items-center gap-2">
+          <span className="px-4 py-1.5 rounded-lg text-sm font-semibold bg-blue-600 text-white">Atendimentos</span>
+          <Link href="/adm/escala-administrativa"
+            className="px-4 py-1.5 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition">
+            Administrativa
+          </Link>
+        </div>
+      )}
 
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
