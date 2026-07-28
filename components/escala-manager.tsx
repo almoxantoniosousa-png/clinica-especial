@@ -1050,14 +1050,45 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         </div>
       )}
 
-      {/* ALTERNAR DIA / SEMANA / ANTERIOR */}
-      <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
-        {([{ v: "calendario", label: "Calendário" }, { v: "semana", label: "Semana inteira" }, { v: "anterior", label: "Escala anterior" }] as const).map((o) => (
-          <button key={o.v} onClick={() => { setVisualizacao(o.v); if (o.v === "anterior" && snapshotsLista.length === 0) carregarListaSnapshots(); }}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${visualizacao === o.v ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
-            {o.label}
-          </button>
-        ))}
+      {/* ALTERNAR DIA / SEMANA / ANTERIOR + FILTROS na mesma linha */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+          {([{ v: "calendario", label: "Calendário" }, { v: "semana", label: "Semana inteira" }, { v: "anterior", label: "Escala anterior" }] as const).map((o) => (
+            <button key={o.v} onClick={() => { setVisualizacao(o.v); if (o.v === "anterior" && snapshotsLista.length === 0) carregarListaSnapshots(); }}
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${visualizacao === o.v ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+
+        {visualizacao !== "anterior" && (
+          <div className="flex gap-3 flex-wrap">
+            <select
+              value={filtroCrianca}
+              onChange={(e) => setFiltroCrianca(e.target.value)}
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todas as crianças</option>
+              {criancas.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select
+              value={filtroServico}
+              onChange={(e) => setFiltroServico(e.target.value)}
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todos os serviços</option>
+              {servicos.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+            {(filtroCrianca || filtroServico) && (
+              <button
+                onClick={() => { setFiltroCrianca(""); setFiltroServico(""); }}
+                className="px-3 py-2 text-sm text-slate-500 hover:text-red-600 border border-slate-200 rounded-lg hover:border-red-200"
+              >
+                Limpar filtros
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {meuAtendenteId && (
@@ -1120,36 +1151,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             🍎 + Definir horário do lanche de {diaSemanaAtiva}
           </button>
         )
-      )}
-
-      {/* FILTROS */}
-      {visualizacao !== "anterior" && (
-      <div className="flex gap-3 flex-wrap">
-        <select
-          value={filtroCrianca}
-          onChange={(e) => setFiltroCrianca(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Todas as crianças</option>
-          {criancas.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select
-          value={filtroServico}
-          onChange={(e) => setFiltroServico(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Todos os serviços</option>
-          {servicos.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-        {(filtroCrianca || filtroServico) && (
-          <button
-            onClick={() => { setFiltroCrianca(""); setFiltroServico(""); }}
-            className="px-3 py-2 text-sm text-slate-500 hover:text-red-600 border border-slate-200 rounded-lg hover:border-red-200"
-          >
-            Limpar filtros
-          </button>
-        )}
-      </div>
       )}
 
       {/* HORÁRIOS */}
