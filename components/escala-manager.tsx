@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
-import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, History, FileSpreadsheet } from "lucide-react";
+import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, History, FileSpreadsheet, FileText } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 
 // Dispara o download de um arquivo já gerado em memória (buffer do Excel).
@@ -16,6 +16,15 @@ function dispararDownload(buffer: BlobPart, nomeArquivo: string) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+// Converte o buffer da logo (baixada via fetch) pra data URL, formato que o
+// jsPDF exige pra inserir imagem.
+function bufferParaDataUrl(buffer: ArrayBuffer, mime: string): string {
+  let binario = "";
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.byteLength; i++) binario += String.fromCharCode(bytes[i]);
+  return `data:${mime};base64,${btoa(binario)}`;
 }
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
@@ -238,6 +247,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [podeEditar, setPodeEditar] = useState(false);
   const [baixandoCompleta, setBaixandoCompleta] = useState(false);
   const [baixandoImpressao, setBaixandoImpressao] = useState(false);
+  const [avisoImpressao, setAvisoImpressao] = useState("");
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
   const [meuAtendenteId, setMeuAtendenteId] = useState<string | null>(null);
@@ -937,61 +947,60 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   }
 
   // Escala de impressão: só primeiro nome + horário, sempre cabendo numa
-  // página (fitToHeight 1) — feita pra imprimir e colar no mural.
+  // página — feita pra imprimir e colar no mural.
+  // Gera em PDF (não Excel) — abre só de clicar duas vezes, sem precisar de
+  // Google Drive/conta nenhuma. Testa a fonte em tamanhos decrescentes até
+  // caber numa página só; se nem na fonte mínima couber, avisa em vez de
+  // silenciosamente sair em mais de uma folha.
   async function baixarEscalaImpressao() {
     setBaixandoImpressao(true);
+    setAvisoImpressao("");
     try {
-      const ExcelJS = (await import("exceljs")).default;
-      const wb = new ExcelJS.Workbook();
-      wb.creator = "Clínica Abraço";
-      const logoBuffer = await logoComoBuffer();
-      const logoId = logoBuffer ? wb.addImage({ buffer: logoBuffer as any, extension: "png" }) : null;
+      const [{ default: jsPDF }, autoTableMod] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
+      const autoTable = autoTableMod.default;
 
       const horariosGeral = ordenarHorarios(slots.map((s) => s.horario));
-      const ws = wb.addWorksheet("Escala", {
-        pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 1, margins: { left: 0.2, right: 0.2, top: 0.3, bottom: 0.3, header: 0, footer: 0 } as any },
-      });
-
-      if (logoId !== null) ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 36, height: 36 } });
-
-      ws.mergeCells(1, 2, 1, 6);
-      ws.getCell(1, 2).value = `Escala — ${intervaloSemanaAtual()}`;
-      ws.getCell(1, 2).font = { bold: true, size: 12 };
-
-      const headerRow = 3;
-      ws.getCell(headerRow, 1).value = "Horário";
-      DIAS.slice(0, 5).forEach((d, i) => { ws.getCell(headerRow, i + 2).value = `${d} · ${dataDoDia(i)}`; });
-      ws.getRow(headerRow).font = { bold: true, size: 9 };
-      ws.getRow(headerRow).eachCell((cell) => {
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF6FF" } };
-        cell.border = BORDA_FINA;
-      });
-
-      let linha = headerRow + 1;
-      horariosGeral.forEach((horario) => {
-        const row = ws.getRow(linha);
-        row.getCell(1).value = horario;
-        row.getCell(1).font = { bold: true, size: 9 };
-        let maxLinhas = 1;
-        DIAS.slice(0, 5).forEach((d, i) => {
+      const head = [["Horário", ...DIAS.slice(0, 5).map((d, i) => `${d} · ${dataDoDia(i)}`)]];
+      const body = horariosGeral.map((horario) => {
+        const linha: string[] = [horario];
+        DIAS.slice(0, 5).forEach((d) => {
           const doDia = slots.filter((s) => s.dia === d && s.horario === horario);
-          const texto = doDia.map((s) => `${s.crianca.split(" ")[0]} — ${s.profissional_nome ? s.profissional_nome.split(" ")[0] : "—"}`).join("\n");
-          const cell = row.getCell(i + 2);
-          cell.value = texto;
-          cell.alignment = { wrapText: true, vertical: "top" };
-          cell.font = { size: 8 };
-          maxLinhas = Math.max(maxLinhas, doDia.length || 1);
+          linha.push(doDia.map((s) => `${s.crianca.split(" ")[0]} — ${s.profissional_nome ? s.profissional_nome.split(" ")[0] : "—"}`).join("\n"));
         });
-        row.eachCell((cell) => { cell.border = BORDA_FINA; });
-        row.height = Math.max(12, maxLinhas * 11);
-        linha++;
+        return linha;
       });
 
-      ws.getColumn(1).width = 12;
-      for (let c = 2; c <= 6; c++) ws.getColumn(c).width = 22;
+      const logoBuffer = await logoComoBuffer();
+      const logoDataUrl = logoBuffer ? bufferParaDataUrl(logoBuffer, "image/png") : null;
 
-      const buffer = await wb.xlsx.writeBuffer();
-      dispararDownload(buffer, `Escala de Impressão - ${intervaloSemanaAtual().replace(/\//g, "-")}.xlsx`);
+      let fontSize = 9;
+      let doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      while (true) {
+        doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+        if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 8, 6, 12, 12);
+        doc.setFontSize(12);
+        doc.text(`Escala — ${intervaloSemanaAtual()}`, 24, 13);
+        autoTable(doc, {
+          head,
+          body,
+          startY: 20,
+          margin: { left: 8, right: 8 },
+          styles: { fontSize, cellPadding: 1.2, valign: "top", overflow: "linebreak" },
+          headStyles: { fillColor: [239, 246, 255], textColor: [30, 41, 59], fontStyle: "bold" },
+          theme: "grid",
+        });
+        if (doc.getNumberOfPages() <= 1 || fontSize <= 5) break;
+        fontSize -= 1;
+      }
+
+      if (doc.getNumberOfPages() > 1) {
+        setAvisoImpressao("A escala tem atendimentos demais pra caber numa página só, mesmo com a fonte mínima — o arquivo baixou, mas vai sair em mais de uma folha.");
+      }
+
+      doc.save(`Escala de Impressão - ${intervaloSemanaAtual().replace(/\//g, "-")}.pdf`);
     } finally {
       setBaixandoImpressao(false);
     }
@@ -1031,9 +1040,9 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             onClick={baixarEscalaImpressao}
             disabled={baixandoImpressao}
             className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
-            title="Baixar Excel enxuto (só primeiro nome e horário), pronto pra imprimir e colar no mural"
+            title="Baixar PDF enxuto (só primeiro nome e horário), pronto pra abrir e imprimir — cabe numa página só"
           >
-            <FileSpreadsheet className="h-4 w-4" />
+            <FileText className="h-4 w-4" />
             {baixandoImpressao ? "Gerando..." : "Escala de impressão"}
           </button>
           {podeEditar && (
@@ -1047,6 +1056,12 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
           )}
         </div>
       </div>
+
+      {avisoImpressao && (
+        <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium rounded-xl px-3 py-2">
+          ⚠️ {avisoImpressao}
+        </div>
+      )}
 
       {/* ALTERNAR DIA / SEMANA / ANTERIOR */}
       <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
