@@ -2,21 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
-import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, History, FileSpreadsheet, FileText } from "lucide-react";
+import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, History, FileText } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
-
-// Dispara o download de um arquivo já gerado em memória (buffer do Excel).
-function dispararDownload(buffer: BlobPart, nomeArquivo: string) {
-  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = nomeArquivo;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
 
 // Converte o buffer da logo (baixada via fetch) pra data URL, formato que o
 // jsPDF exige pra inserir imagem.
@@ -856,91 +843,78 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     }
   }
 
-  const BORDA_FINA = { top: { style: "thin" as const }, bottom: { style: "thin" as const }, left: { style: "thin" as const }, right: { style: "thin" as const } };
-
-  // Escala completa: nomes por extenso, local, e espaço de assinatura no
-  // final — pra baixar/enviar como comprovação, não é feita pra imprimir
-  // direto do navegador (por isso não tem mais botão de "Imprimir").
+  // Escala completa: nomes por extenso, local, lanche e espaço de assinatura
+  // no final — pra baixar/arquivar como comprovação. Também em PDF (mais
+  // fácil de abrir), mas sem forçar caber numa página só — pode gerar
+  // várias páginas, já que tem bem mais detalhe que a de impressão.
   async function baixarEscalaCompleta() {
     setBaixandoCompleta(true);
     try {
-      const ExcelJS = (await import("exceljs")).default;
-      const wb = new ExcelJS.Workbook();
-      wb.creator = "Clínica Abraço";
-      const logoBuffer = await logoComoBuffer();
-      const logoId = logoBuffer ? wb.addImage({ buffer: logoBuffer as any, extension: "png" }) : null;
+      const [{ default: jsPDF }, autoTableMod] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
+      const autoTable = autoTableMod.default;
 
-      const horariosGeral = ordenarHorarios(slots.map((s) => s.horario));
-      const ws = wb.addWorksheet("Escala", {
-        pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0, footer: 0 } as any },
-      });
-
-      if (logoId !== null) ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 50, height: 50 } });
-
-      ws.mergeCells(1, 2, 1, 6);
-      ws.getCell(1, 2).value = `Escala Semanal — Especialistas e Acompanhantes — ${intervaloSemanaAtual()}`;
-      ws.getCell(1, 2).font = { bold: true, size: 14 };
-      ws.mergeCells(2, 2, 2, 6);
-      ws.getCell(2, 2).value = `Impresso em ${new Date().toLocaleDateString("pt-BR")}`;
-      ws.getCell(2, 2).font = { italic: true, size: 9, color: { argb: "FF64748B" } };
-
-      const headerRow = 4;
-      ws.getCell(headerRow, 1).value = "Horário";
-      DIAS.slice(0, 5).forEach((d, i) => { ws.getCell(headerRow, i + 2).value = `${d} · ${dataDoDia(i)}`; });
-      ws.getRow(headerRow).font = { bold: true };
-      ws.getRow(headerRow).eachCell((cell) => {
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF6FF" } };
-        cell.border = BORDA_FINA;
-      });
-
-      let linha = headerRow + 1;
-      const lancheRow = ws.getRow(linha);
-      lancheRow.getCell(1).value = "🍎 Lanche";
-      lancheRow.getCell(1).font = { bold: true };
-      DIAS.slice(0, 5).forEach((d, i) => { lancheRow.getCell(i + 2).value = lancheDia[d] || "—"; });
-      lancheRow.eachCell((cell) => { cell.border = BORDA_FINA; });
-      linha++;
-
-      horariosGeral.forEach((horario) => {
-        const row = ws.getRow(linha);
-        row.getCell(1).value = horario;
-        row.getCell(1).font = { bold: true };
-        let maxLinhas = 1;
-        DIAS.slice(0, 5).forEach((d, i) => {
+      const horariosLancheGeral = Array.from(new Set(DIAS.slice(0, 5).map((d) => lancheDia[d]).filter(Boolean))) as string[];
+      const horariosGeral = ordenarHorarios([...slots.map((s) => s.horario), ...horariosLancheGeral]);
+      const head = [["Horário", ...DIAS.slice(0, 5).map((d, i) => `${d} · ${dataDoDia(i)}`)]];
+      const body = horariosGeral.map((horario) => {
+        const linha: string[] = [horario];
+        DIAS.slice(0, 5).forEach((d) => {
           const doDia = slots.filter((s) => s.dia === d && s.horario === horario);
-          const texto = doDia.map((s) => {
+          const partes = doDia.map((s) => {
             let l = `${s.crianca} · ${s.servico}`;
             if (s.profissional_nome) l += ` — ${s.profissional_nome}`;
             if (s.local) l += ` (${s.local})`;
             return l;
-          }).join("\n");
-          const cell = row.getCell(i + 2);
-          cell.value = texto;
-          cell.alignment = { wrapText: true, vertical: "top" };
-          maxLinhas = Math.max(maxLinhas, doDia.length || 1);
+          });
+          if (lancheDia[d] === horario) partes.unshift("🍎 Lanche");
+          linha.push(partes.join("\n\n"));
         });
-        row.eachCell((cell) => { cell.border = BORDA_FINA; });
-        row.height = Math.max(18, maxLinhas * 15);
-        linha++;
+        return linha;
       });
 
-      ws.getColumn(1).width = 16;
-      for (let c = 2; c <= 6; c++) ws.getColumn(c).width = 34;
+      const logoBuffer = await logoComoBuffer();
+      const logoDataUrl = logoBuffer ? bufferParaDataUrl(logoBuffer, "image/png") : null;
 
-      linha += 2;
-      ws.getCell(linha, 1).value = "Assinaturas:";
-      ws.getCell(linha, 1).font = { bold: true };
-      linha += 2;
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 8, 6, 14, 14);
+      doc.setFontSize(14);
+      doc.text(`Escala Semanal — Especialistas e Acompanhantes — ${intervaloSemanaAtual()}`, 26, 12);
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text(`Impresso em ${new Date().toLocaleDateString("pt-BR")}`, 26, 18);
+      doc.setTextColor(0);
+
+      autoTable(doc, {
+        head,
+        body,
+        startY: 24,
+        margin: { left: 8, right: 8 },
+        styles: { fontSize: 8, cellPadding: 1.5, valign: "top", overflow: "linebreak" },
+        headStyles: { fillColor: [239, 246, 255], textColor: [30, 41, 59], fontStyle: "bold" },
+        theme: "grid",
+      });
+
+      // Assinaturas na última página, logo depois da tabela
+      const finalY = (doc as any).lastAutoTable.finalY;
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const yAssinatura = finalY + 20 > pageHeight - 10 ? pageHeight - 20 : finalY + 20;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("Assinaturas:", 8, yAssinatura - 6);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
       (["Supervisora", "ADM", "Gestão"] as const).forEach((label, i) => {
-        const colStart = 1 + i * 2;
-        ws.mergeCells(linha, colStart, linha, colStart + 1);
-        ws.getCell(linha, colStart).border = { bottom: { style: "thin" } };
-        ws.getCell(linha + 1, colStart).value = label;
-        ws.getCell(linha + 1, colStart).font = { size: 9, color: { argb: "FF64748B" } };
+        const x = 8 + i * 95;
+        doc.line(x, yAssinatura, x + 80, yAssinatura);
+        doc.setTextColor(100);
+        doc.text(label, x, yAssinatura + 5);
+        doc.setTextColor(0);
       });
 
-      const buffer = await wb.xlsx.writeBuffer();
-      dispararDownload(buffer, `Escala Completa - ${intervaloSemanaAtual().replace(/\//g, "-")}.xlsx`);
+      doc.save(`Escala Completa - ${intervaloSemanaAtual().replace(/\//g, "-")}.pdf`);
     } finally {
       setBaixandoCompleta(false);
     }
@@ -962,13 +936,16 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       ]);
       const autoTable = autoTableMod.default;
 
-      const horariosGeral = ordenarHorarios(slots.map((s) => s.horario));
+      const horariosLancheGeral = Array.from(new Set(DIAS.slice(0, 5).map((d) => lancheDia[d]).filter(Boolean))) as string[];
+      const horariosGeral = ordenarHorarios([...slots.map((s) => s.horario), ...horariosLancheGeral]);
       const head = [["Horário", ...DIAS.slice(0, 5).map((d, i) => `${d} · ${dataDoDia(i)}`)]];
       const body = horariosGeral.map((horario) => {
         const linha: string[] = [horario];
         DIAS.slice(0, 5).forEach((d) => {
           const doDia = slots.filter((s) => s.dia === d && s.horario === horario);
-          linha.push(doDia.map((s) => `${s.crianca.split(" ")[0]} — ${s.profissional_nome ? s.profissional_nome.split(" ")[0] : "—"}`).join("\n"));
+          const partes = doDia.map((s) => `${s.crianca.split(" ")[0]} — ${s.profissional_nome ? s.profissional_nome.split(" ")[0] : "—"}`);
+          if (lancheDia[d] === horario) partes.unshift("🍎 Lanche");
+          linha.push(partes.join("\n\n"));
         });
         return linha;
       });
@@ -1031,9 +1008,9 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             onClick={baixarEscalaCompleta}
             disabled={baixandoCompleta}
             className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
-            title="Baixar Excel com todos os detalhes (nomes completos, local) e espaço de assinatura — pra comprovação"
+            title="Baixar PDF com todos os detalhes (nomes completos, local) e espaço de assinatura — pra comprovação"
           >
-            <FileSpreadsheet className="h-4 w-4" />
+            <FileText className="h-4 w-4" />
             {baixandoCompleta ? "Gerando..." : "Escala completa"}
           </button>
           <button
