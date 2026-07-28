@@ -507,11 +507,17 @@ export default function ReuniaoPage() {
                           Imprimir
                         </button>
                         {r.criado_por_email === usuarioEmail && (
-                          <button onClick={() => setDeletandoId(r.id)}
-                            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-red-600 px-2 py-1">
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Excluir
-                          </button>
+                          confirmacoes.length === 0 ? (
+                            <button onClick={() => setDeletandoId(r.id)}
+                              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-red-600 px-2 py-1">
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Excluir
+                            </button>
+                          ) : (
+                            <p className="text-[11px] text-slate-400 italic px-2 py-1" title="Já tem assinatura registrada — se precisar remover, fale com o suporte técnico.">
+                              Já assinada, não pode mais excluir
+                            </p>
+                          )
                         )}
                       </div>
                     </div>
