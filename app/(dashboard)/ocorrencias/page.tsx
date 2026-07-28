@@ -138,6 +138,9 @@ export default function OcorrenciasPage() {
   const [erroAssinatura, setErroAssinatura] = useState("");
 
   const [iniciandoDia, setIniciandoDia] = useState(false);
+  const [dataNovoDia, setDataNovoDia] = useState(hoje());
+  const [erroNovoDia, setErroNovoDia] = useState("");
+  const [focoId, setFocoId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -185,17 +188,32 @@ export default function OcorrenciasPage() {
     .filter((o) => o.autor_email === usuarioEmail && !o.assinado_em)
     .sort((a, b) => (a.data < b.data ? 1 : -1));
 
+  const diaEmFoco = meusAbertos.find((o) => o.id === focoId);
+
+  useEffect(() => {
+    if (!focoId && meuDiaAberto) setFocoId(meuDiaAberto.id);
+  }, [meuDiaAberto, focoId]);
+
   async function iniciarDia() {
+    setErroNovoDia("");
+    if (dataNovoDia > hoje()) { setErroNovoDia("Não é possível registrar um dia futuro."); return; }
+    const jaExiste = ocorrencias.find((o) => o.data === dataNovoDia && o.autor_email === usuarioEmail);
+    if (jaExiste) {
+      if (jaExiste.assinado_em) { setErroNovoDia("Já existe um registro assinado (fechado) pra esse dia."); return; }
+      setFocoId(jaExiste.id);
+      return;
+    }
     setIniciandoDia(true);
-    await supabase.from("ocorrencias_diarias").insert({
-      data: hoje(), autor_email: usuarioEmail, autor_nome: usuarioNome || null, autor_role: usuarioRole || null,
-    });
+    const { data: novo } = await supabase.from("ocorrencias_diarias").insert({
+      data: dataNovoDia, autor_email: usuarioEmail, autor_nome: usuarioNome || null, autor_role: usuarioRole || null,
+    }).select().single();
     setIniciandoDia(false);
+    if (novo?.id) setFocoId(novo.id);
     carregar();
   }
 
   async function adicionarItem() {
-    if (!meuDiaAberto || !novoTexto.trim()) { setErroItem("Escreva o que aconteceu."); return; }
+    if (!diaEmFoco || !novoTexto.trim()) { setErroItem("Escreva o que aconteceu."); return; }
     setSalvandoItem(true);
     setErroItem("");
 
@@ -208,7 +226,7 @@ export default function OcorrenciasPage() {
     }
 
     const { data: novo, error } = await supabase.from("ocorrencias_diarias_itens").insert({
-      ocorrencia_id: meuDiaAberto.id, texto: novoTexto.trim(), foto_url,
+      ocorrencia_id: diaEmFoco.id, texto: novoTexto.trim(), foto_url,
     }).select().single();
 
     setSalvandoItem(false);
@@ -332,12 +350,12 @@ export default function OcorrenciasPage() {
         {podeCriar && (
           <>
             {meusAbertos.map((o) => {
-              const ehHoje = o.id === meuDiaAberto?.id;
+              const emFoco = o.id === focoId;
               return (
                 <div key={o.id} className="bg-white border-2 border-blue-200 rounded-2xl shadow-sm p-5">
                   <div className="flex items-center justify-between gap-3 mb-1">
                     <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">
-                      {ehHoje ? "Hoje — " : ""}{formatarData(o.data)}
+                      {o.data === hoje() ? "Hoje — " : ""}{formatarData(o.data)}
                     </p>
                     <span className="text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 px-2 py-1 rounded-full whitespace-nowrap">
                       Ainda não assinado
@@ -352,7 +370,14 @@ export default function OcorrenciasPage() {
                     </div>
                   )}
 
-                  {ehHoje && (
+                  {!emFoco && (
+                    <button onClick={() => { setFocoId(o.id); setErroItem(""); }}
+                      className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-800">
+                      + Adicionar ocorrência neste dia
+                    </button>
+                  )}
+
+                  {emFoco && (
                     <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
                       <textarea rows={3} placeholder="Descreva uma nova ocorrência..." value={novoTexto}
                         onChange={(e) => setNovoTexto(e.target.value)} className={`${inputClass} resize-none`} />
@@ -416,10 +441,23 @@ export default function OcorrenciasPage() {
             })}
 
             {meusAbertos.length === 0 ? (
-              <button onClick={iniciarDia} disabled={iniciandoDia}
-                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 text-slate-500 text-sm font-semibold py-5 rounded-2xl hover:bg-slate-50 hover:border-blue-300 hover:text-blue-600 transition disabled:opacity-50">
-                <Plus className="h-4 w-4" /> {iniciandoDia ? "Iniciando..." : "Começar ocorrências de hoje"}
-              </button>
+              <div className="border-2 border-dashed border-slate-300 rounded-2xl p-5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide shrink-0">Data do registro</label>
+                  <input type="date" value={dataNovoDia} max={hoje()} min="2026-07-22"
+                    onChange={(e) => { setDataNovoDia(e.target.value); setErroNovoDia(""); }}
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto" />
+                </div>
+                {dataNovoDia !== hoje() && (
+                  <p className="text-xs text-slate-400">Registro retroativo — esqueceu de registrar no dia? Escolha a data certa acima antes de começar.</p>
+                )}
+                {erroNovoDia && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{erroNovoDia}</p>}
+                <button onClick={iniciarDia} disabled={iniciandoDia}
+                  className="w-full flex items-center justify-center gap-2 text-slate-500 text-sm font-semibold py-3 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition disabled:opacity-50">
+                  <Plus className="h-4 w-4" />
+                  {iniciandoDia ? "Iniciando..." : dataNovoDia === hoje() ? "Começar ocorrências de hoje" : `Começar ocorrências de ${formatarData(dataNovoDia)}`}
+                </button>
+              </div>
             ) : !meuDiaAberto && (
               <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
                 ⚠️ Você tem um dia anterior sem assinar. Assine-o antes de começar um novo registro.
