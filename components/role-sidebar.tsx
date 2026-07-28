@@ -21,7 +21,6 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const [saindo, setSaindo] = useState(false);
   const [menuAberto, setMenuAberto] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
-  const [colaboradoresAberto, setColaboradoresAberto] = useState(false);
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
   const [geralAberto, setGeralAberto] = useState(true);
 
@@ -35,9 +34,6 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const isFinanceiro  = role === "financeiro";
 
   useEffect(() => {
-    if (pathname.includes("/adm/colaboradores") || pathname.includes("/gestao/colaboradores")) {
-      setColaboradoresAberto(true);
-    }
     if (pathname.includes("/adm/financeiro") || pathname.includes("/adm/folha-pagamento")) {
       setFinanceiroAberto(true);
     }
@@ -291,12 +287,9 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
             <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-3 pb-1">Pessoas</p>
           </div>
 
-          <Accordion
-            label="Colaboradores" icon="👥"
-            subItems={isAdmin ? subMenuColaboradoresAdm : subMenuColaboradoresGestao}
-            aberto={colaboradoresAberto}
-            onToggle={() => setColaboradoresAberto(!colaboradoresAberto)}
-          />
+          {(isAdmin ? subMenuColaboradoresAdm : subMenuColaboradoresGestao).map((item) => (
+            <MenuItem key={item.href} item={item} />
+          ))}
 
           {isAdmin && (
             <>
