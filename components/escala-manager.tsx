@@ -2,8 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
-import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, History, Printer } from "lucide-react";
+import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, History, FileSpreadsheet } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
+
+// Dispara o download de um arquivo já gerado em memória (buffer do Excel).
+function dispararDownload(buffer: BlobPart, nomeArquivo: string) {
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nomeArquivo;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
@@ -76,12 +89,6 @@ function diaSemanaDe(d: Date): string {
 
 function formatarDataLonga(d: Date): string {
   return d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
-}
-
-// Primeiro nome + primeiro sobrenome, pra impressão caber numa folha A4 sem
-// perder a diferenciação entre pessoas com o mesmo primeiro nome.
-function nomeAbreviado(nome: string): string {
-  return nome.split(" ").slice(0, 2).join(" ");
 }
 
 // Segunda a sexta da semana atual, ex: "20 a 24/07/2026" — usado na impressão.
@@ -235,7 +242,8 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [filtroCrianca, setFiltroCrianca] = useState("");
   const [filtroServico, setFiltroServico] = useState("");
   const [podeEditar, setPodeEditar] = useState(false);
-  const [categoriaImpressao, setCategoriaImpressao] = useState("todos");
+  const [baixandoCompleta, setBaixandoCompleta] = useState(false);
+  const [baixandoImpressao, setBaixandoImpressao] = useState(false);
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
   const [meuAtendenteId, setMeuAtendenteId] = useState<string | null>(null);
@@ -847,6 +855,185 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     ...(lancheHorarioAtivo ? [lancheHorarioAtivo] : []),
   ]);
 
+  function slotsDaRole(r: string): Slot[] {
+    return slots.filter((s) => {
+      if (s.profissional_id) return roleDoProfissional[s.profissional_id] === r;
+      if (s.profissional_nome) {
+        const categoria = categoriaDoAvulso[s.profissional_nome.toLowerCase()];
+        return categoria ? categoria === r : true;
+      }
+      return false;
+    });
+  }
+
+  async function logoComoBuffer(): Promise<ArrayBuffer | null> {
+    try {
+      const res = await fetch("/logo.png");
+      if (!res.ok) return null;
+      return await res.arrayBuffer();
+    } catch {
+      return null;
+    }
+  }
+
+  const SHEET_NOME: Record<string, string> = { especialista: "Especialistas", atendente: "Acompanhantes", at: "Acompanhantes" };
+  const BORDA_FINA = { top: { style: "thin" as const }, bottom: { style: "thin" as const }, left: { style: "thin" as const }, right: { style: "thin" as const } };
+
+  // Escala completa: nomes por extenso, local, e espaço de assinatura no
+  // final — pra baixar/enviar como comprovação, não é feita pra imprimir
+  // direto do navegador (por isso não tem mais botão de "Imprimir").
+  async function baixarEscalaCompleta() {
+    setBaixandoCompleta(true);
+    try {
+      const ExcelJS = (await import("exceljs")).default;
+      const wb = new ExcelJS.Workbook();
+      wb.creator = "Clínica Abraço";
+      const logoBuffer = await logoComoBuffer();
+      const logoId = logoBuffer ? wb.addImage({ buffer: logoBuffer as any, extension: "png" }) : null;
+
+      for (const r of rolesParaImprimir) {
+        const doRole = slotsDaRole(r);
+        const horariosDoRole = ordenarHorarios(doRole.map((s) => s.horario));
+        const ws = wb.addWorksheet(SHEET_NOME[r] || r, {
+          pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0, footer: 0 } as any },
+        });
+
+        if (logoId !== null) ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 50, height: 50 } });
+
+        ws.mergeCells(1, 2, 1, 6);
+        ws.getCell(1, 2).value = `Escala Semanal — ${LABEL_ROLE[r] || r} — ${intervaloSemanaAtual()}`;
+        ws.getCell(1, 2).font = { bold: true, size: 14 };
+        ws.mergeCells(2, 2, 2, 6);
+        ws.getCell(2, 2).value = `Impresso em ${new Date().toLocaleDateString("pt-BR")}`;
+        ws.getCell(2, 2).font = { italic: true, size: 9, color: { argb: "FF64748B" } };
+
+        const headerRow = 4;
+        ws.getCell(headerRow, 1).value = "Horário";
+        DIAS.slice(0, 5).forEach((d, i) => { ws.getCell(headerRow, i + 2).value = `${d} · ${dataDoDia(i)}`; });
+        ws.getRow(headerRow).font = { bold: true };
+        ws.getRow(headerRow).eachCell((cell) => {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF6FF" } };
+          cell.border = BORDA_FINA;
+        });
+
+        let linha = headerRow + 1;
+        const lancheRow = ws.getRow(linha);
+        lancheRow.getCell(1).value = "🍎 Lanche";
+        lancheRow.getCell(1).font = { bold: true };
+        DIAS.slice(0, 5).forEach((d, i) => { lancheRow.getCell(i + 2).value = lancheDia[d] || "—"; });
+        lancheRow.eachCell((cell) => { cell.border = BORDA_FINA; });
+        linha++;
+
+        horariosDoRole.forEach((horario) => {
+          const row = ws.getRow(linha);
+          row.getCell(1).value = horario;
+          row.getCell(1).font = { bold: true };
+          let maxLinhas = 1;
+          DIAS.slice(0, 5).forEach((d, i) => {
+            const doDia = doRole.filter((s) => s.dia === d && s.horario === horario);
+            const texto = doDia.map((s) => {
+              let l = `${s.crianca} · ${s.servico}`;
+              if (s.profissional_nome) l += ` — ${s.profissional_nome}`;
+              if (s.local) l += ` (${s.local})`;
+              return l;
+            }).join("\n");
+            const cell = row.getCell(i + 2);
+            cell.value = texto;
+            cell.alignment = { wrapText: true, vertical: "top" };
+            maxLinhas = Math.max(maxLinhas, doDia.length || 1);
+          });
+          row.eachCell((cell) => { cell.border = BORDA_FINA; });
+          row.height = Math.max(18, maxLinhas * 15);
+          linha++;
+        });
+
+        ws.getColumn(1).width = 16;
+        for (let c = 2; c <= 6; c++) ws.getColumn(c).width = 34;
+
+        linha += 2;
+        ws.getCell(linha, 1).value = "Assinaturas:";
+        ws.getCell(linha, 1).font = { bold: true };
+        linha += 2;
+        (["Supervisora", "ADM", "Gestão"] as const).forEach((label, i) => {
+          const colStart = 1 + i * 2;
+          ws.mergeCells(linha, colStart, linha, colStart + 1);
+          ws.getCell(linha, colStart).border = { bottom: { style: "thin" } };
+          ws.getCell(linha + 1, colStart).value = label;
+          ws.getCell(linha + 1, colStart).font = { size: 9, color: { argb: "FF64748B" } };
+        });
+      }
+
+      const buffer = await wb.xlsx.writeBuffer();
+      dispararDownload(buffer, `Escala Completa - ${intervaloSemanaAtual().replace(/\//g, "-")}.xlsx`);
+    } finally {
+      setBaixandoCompleta(false);
+    }
+  }
+
+  // Escala de impressão: só primeiro nome + horário, sempre cabendo numa
+  // página (fitToHeight 1) — feita pra imprimir e colar no mural.
+  async function baixarEscalaImpressao() {
+    setBaixandoImpressao(true);
+    try {
+      const ExcelJS = (await import("exceljs")).default;
+      const wb = new ExcelJS.Workbook();
+      wb.creator = "Clínica Abraço";
+      const logoBuffer = await logoComoBuffer();
+      const logoId = logoBuffer ? wb.addImage({ buffer: logoBuffer as any, extension: "png" }) : null;
+
+      for (const r of rolesParaImprimir) {
+        const doRole = slotsDaRole(r);
+        const horariosDoRole = ordenarHorarios(doRole.map((s) => s.horario));
+        const ws = wb.addWorksheet(SHEET_NOME[r] || r, {
+          pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 1, margins: { left: 0.2, right: 0.2, top: 0.3, bottom: 0.3, header: 0, footer: 0 } as any },
+        });
+
+        if (logoId !== null) ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 36, height: 36 } });
+
+        ws.mergeCells(1, 2, 1, 6);
+        ws.getCell(1, 2).value = `Escala — ${LABEL_ROLE[r] || r} — ${intervaloSemanaAtual()}`;
+        ws.getCell(1, 2).font = { bold: true, size: 12 };
+
+        const headerRow = 3;
+        ws.getCell(headerRow, 1).value = "Horário";
+        DIAS.slice(0, 5).forEach((d, i) => { ws.getCell(headerRow, i + 2).value = `${d} · ${dataDoDia(i)}`; });
+        ws.getRow(headerRow).font = { bold: true, size: 9 };
+        ws.getRow(headerRow).eachCell((cell) => {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF6FF" } };
+          cell.border = BORDA_FINA;
+        });
+
+        let linha = headerRow + 1;
+        horariosDoRole.forEach((horario) => {
+          const row = ws.getRow(linha);
+          row.getCell(1).value = horario;
+          row.getCell(1).font = { bold: true, size: 9 };
+          let maxLinhas = 1;
+          DIAS.slice(0, 5).forEach((d, i) => {
+            const doDia = doRole.filter((s) => s.dia === d && s.horario === horario);
+            const texto = doDia.map((s) => `${s.crianca.split(" ")[0]} — ${s.profissional_nome ? s.profissional_nome.split(" ")[0] : "—"}`).join("\n");
+            const cell = row.getCell(i + 2);
+            cell.value = texto;
+            cell.alignment = { wrapText: true, vertical: "top" };
+            cell.font = { size: 8 };
+            maxLinhas = Math.max(maxLinhas, doDia.length || 1);
+          });
+          row.eachCell((cell) => { cell.border = BORDA_FINA; });
+          row.height = Math.max(12, maxLinhas * 11);
+          linha++;
+        });
+
+        ws.getColumn(1).width = 12;
+        for (let c = 2; c <= 6; c++) ws.getColumn(c).width = 22;
+      }
+
+      const buffer = await wb.xlsx.writeBuffer();
+      dispararDownload(buffer, `Escala de Impressão - ${intervaloSemanaAtual().replace(/\//g, "-")}.xlsx`);
+    } finally {
+      setBaixandoImpressao(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
     <div className="print:hidden space-y-6">
@@ -868,26 +1055,23 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             <History className="h-4 w-4" />
             Histórico
           </button>
-          {rolesParaImprimir.length > 1 && (
-            <select
-              value={categoriaImpressao}
-              onChange={(e) => setCategoriaImpressao(e.target.value)}
-              className="rounded-xl border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              title="Escolher o que sai na impressão"
-            >
-              <option value="todos">Imprimir: tudo</option>
-              {rolesParaImprimir.map((r) => (
-                <option key={r} value={r}>Imprimir: só {LABEL_ROLE[r] || r}</option>
-              ))}
-            </select>
-          )}
           <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
-            title="Imprimir a escala semanal pra colocar no mural"
+            onClick={baixarEscalaCompleta}
+            disabled={baixandoCompleta}
+            className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
+            title="Baixar Excel com todos os detalhes (nomes completos, local) e espaço de assinatura — pra comprovação"
           >
-            <Printer className="h-4 w-4" />
-            Imprimir
+            <FileSpreadsheet className="h-4 w-4" />
+            {baixandoCompleta ? "Gerando..." : "Escala completa"}
+          </button>
+          <button
+            onClick={baixarEscalaImpressao}
+            disabled={baixandoImpressao}
+            className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
+            title="Baixar Excel enxuto (só primeiro nome e horário), pronto pra imprimir e colar no mural"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            {baixandoImpressao ? "Gerando..." : "Escala de impressão"}
           </button>
           {podeEditar && (
             <button
@@ -1636,75 +1820,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
           </div>
         </div>
       )}
-    </div>
-
-    {/* VERSÃO PRA IMPRIMIR — uma grade separada por função, pro mural físico (sem motivo/presença) */}
-    <div className="hidden print:block">
-      <style>{`@page { size: landscape; margin: 10mm; }`}</style>
-      {rolesParaImprimir
-        .filter((r) => categoriaImpressao === "todos" || categoriaImpressao === r)
-        .map((r, i) => {
-        const slotsDoRole = slots.filter((s) => {
-          if (s.profissional_id) return roleDoProfissional[s.profissional_id] === r;
-          if (s.profissional_nome) {
-            const categoria = categoriaDoAvulso[s.profissional_nome.toLowerCase()];
-            // Sem categoria salva (nome digitado antes de existir essa opção, ou
-            // por qualquer outro motivo) — nunca esconder, mostra em qualquer seção.
-            return categoria ? categoria === r : true;
-          }
-          return false;
-        });
-        const horariosLanche = Array.from(new Set(DIAS.slice(0, 5).map((d) => lancheDia[d]).filter(Boolean))) as string[];
-        const horariosDoRole = ordenarHorarios([...slotsDoRole.map((s) => s.horario), ...horariosLanche]);
-        return (
-          <div key={r} className={i > 0 ? "break-before-page" : ""}>
-            <div className="flex items-center gap-3 border-b-2 border-blue-900 pb-1 mb-1.5">
-              <img src="/logo.png" alt="Clínica Abraço" className="w-9 h-9 object-contain" />
-              <div>
-                <h1 className="text-base font-bold text-slate-900 leading-tight">{titulo}</h1>
-                <p className="text-[10px] text-slate-500 leading-tight">
-                  Escala semanal — {intervaloSemanaAtual()} — impresso em {new Date().toLocaleDateString("pt-BR")}
-                </p>
-              </div>
-            </div>
-            <table className="w-full border-collapse table-fixed text-[10px]">
-              <thead>
-                <tr>
-                  <th className="border border-slate-300 px-1.5 py-0.5 bg-slate-100 text-left w-[13%]">Horário</th>
-                  {DIAS.slice(0, 5).map((d, i) => (
-                    <th key={d} className="border border-slate-300 px-1.5 py-0.5 bg-slate-100 text-left w-[17.4%]">{d} · {dataDoDia(i)}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {horariosDoRole.map((horario) => (
-                  <tr key={horario}>
-                    <td className="border border-slate-300 px-1.5 py-0.5 font-semibold align-top">{horario}</td>
-                    {DIAS.slice(0, 5).map((d) => {
-                      const doDia = slotsDoRole.filter((s) => s.dia === d && s.horario === horario);
-                      const ehLanche = lancheDia[d] === horario;
-                      return (
-                        <td key={d} className="border border-slate-300 px-1 py-0.5 align-top">
-                          {ehLanche && (
-                            <div className="leading-snug text-amber-700">🍎 Lanche</div>
-                          )}
-                          {doDia.map((s, idx) => (
-                            <div key={s.id} className={`leading-snug ${idx > 0 || ehLanche ? "border-t border-slate-200 mt-px pt-px" : ""}`}>
-                              <span className="font-semibold">{nomeAbreviado(s.crianca)}</span>
-                              {" · "}{s.servico}
-                              {s.profissional_nome && <> — {nomeAbreviado(s.profissional_nome)}</>}
-                            </div>
-                          ))}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
-      })}
     </div>
     </div>
   );
