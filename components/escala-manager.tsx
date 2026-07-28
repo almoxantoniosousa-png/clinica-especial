@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
-import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, History, FileText } from "lucide-react";
+import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, History, FileText, MoreHorizontal } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 import { logoComoDataUrl } from "@/lib/pdfUtils";
 
@@ -244,6 +244,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
   // histórico
   const [historicoAberto, setHistoricoAberto] = useState(false);
+  const [menuAcoesAberto, setMenuAcoesAberto] = useState(false);
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
   const [carregandoHistorico, setCarregandoHistorico] = useState(false);
   const [historicoDe, setHistoricoDe] = useState("");
@@ -990,31 +991,47 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
           <p className="text-sm text-slate-400 mt-1">{subtitulo}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => { setHistoricoAberto(true); carregarHistorico(); }}
-            className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
-          >
-            <History className="h-4 w-4" />
-            Histórico
-          </button>
-          <button
-            onClick={baixarEscalaCompleta}
-            disabled={baixandoCompleta}
-            className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
-            title="Baixar PDF com todos os detalhes (nomes completos, local) e espaço de assinatura — pra comprovação"
-          >
-            <FileText className="h-4 w-4" />
-            {baixandoCompleta ? "Gerando..." : "Escala completa"}
-          </button>
-          <button
-            onClick={baixarEscalaImpressao}
-            disabled={baixandoImpressao}
-            className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
-            title="Baixar PDF enxuto (só primeiro nome e horário), pronto pra abrir e imprimir — cabe numa página só"
-          >
-            <FileText className="h-4 w-4" />
-            {baixandoImpressao ? "Gerando..." : "Escala de impressão"}
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setMenuAcoesAberto(!menuAcoesAberto)}
+              className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+              Mais opções
+            </button>
+            {menuAcoesAberto && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setMenuAcoesAberto(false)} />
+                <div className="absolute left-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-20 py-1.5 overflow-hidden">
+                  <button
+                    onClick={() => { setHistoricoAberto(true); carregarHistorico(); setMenuAcoesAberto(false); }}
+                    className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    <History className="h-4 w-4 text-slate-400" />
+                    Histórico
+                  </button>
+                  <button
+                    onClick={() => { baixarEscalaCompleta(); setMenuAcoesAberto(false); }}
+                    disabled={baixandoCompleta}
+                    title="Baixar PDF com todos os detalhes (nomes completos, local) e espaço de assinatura — pra comprovação"
+                    className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    <FileText className="h-4 w-4 text-slate-400" />
+                    {baixandoCompleta ? "Gerando..." : "Escala completa"}
+                  </button>
+                  <button
+                    onClick={() => { baixarEscalaImpressao(); setMenuAcoesAberto(false); }}
+                    disabled={baixandoImpressao}
+                    title="Baixar PDF enxuto (só primeiro nome e horário), pronto pra abrir e imprimir — cabe numa página só"
+                    className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    <FileText className="h-4 w-4 text-slate-400" />
+                    {baixandoImpressao ? "Gerando..." : "Escala de impressão"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
           {podeEditar && (
             <button
               onClick={visualizacao === "calendario" ? abrirNovoNaData : abrirNovo}
