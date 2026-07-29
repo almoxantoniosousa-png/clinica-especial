@@ -68,7 +68,7 @@ export default function AtendimentosAtsPage() {
 
     const { data } = await supabase
       .from("atendimentos")
-      .select("id, atendente_id, data, horas, local, valor_hora, valor_total, ocorrencia, status, criancas(nome), atendentes(nome)")
+      .select("id, atendente_id, data, horas, local, valor_hora, valor_total, ocorrencia, status, crianca_texto, criancas(nome), atendentes(nome)")
       .gte("data", inicio)
       .lte("data", fim)
       .order("data", { ascending: false });
@@ -77,7 +77,7 @@ export default function AtendimentosAtsPage() {
       id: r.id,
       atendente_id: r.atendente_id,
       atendente_nome: r.atendentes?.nome || "Sem nome",
-      crianca_nome: r.criancas?.nome || "Sem criança",
+      crianca_nome: r.criancas?.nome || r.crianca_texto || "Sem criança",
       data: r.data,
       horas: r.horas,
       local: r.local,

@@ -41,7 +41,7 @@ export default function MeusAtendimentosPage() {
 
       const { data, error } = await supabase
         .from('atendimentos')
-        .select('id, data, local, horas, valor_hora, valor_total, status, criancas(nome)')
+        .select('id, data, local, horas, valor_hora, valor_total, status, crianca_texto, criancas(nome)')
         .eq('atendente_id', atendenteId)
         .gte('data', primeiroDia)
         .lte('data', ultimoDia)
@@ -169,7 +169,7 @@ export default function MeusAtendimentosPage() {
                   ${pago ? 'border-l-emerald-400' : 'border-l-amber-400'} border-slate-200`}>
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-bold text-slate-800 truncate">
-                      {(item.criancas as any)?.nome ?? <span className="text-slate-400 italic">Criança não informada</span>}
+                      {(item.criancas as any)?.nome ?? (item as any).crianca_texto ?? <span className="text-slate-400 italic">Criança não informada</span>}
                     </p>
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full ml-2 shrink-0
                       ${pago ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
@@ -229,7 +229,7 @@ export default function MeusAtendimentosPage() {
                           {item.data?.split('T')[0].split('-').reverse().join('/')}
                         </td>
                         <td className="px-5 py-3 font-semibold text-slate-800 whitespace-nowrap">
-                          {(item.criancas as any)?.nome ?? <span className="text-slate-400 italic text-xs">—</span>}
+                          {(item.criancas as any)?.nome ?? (item as any).crianca_texto ?? <span className="text-slate-400 italic text-xs">—</span>}
                         </td>
                         <td className="px-5 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-2">

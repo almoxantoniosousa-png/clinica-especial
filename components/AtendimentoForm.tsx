@@ -18,6 +18,9 @@ export default function AtendimentoForm() {
   const [criancaId, setCriancaId] = useState('')
   const [nomeCrianca, setNomeCrianca] = useState('')
   const [criancas, setCriancas] = useState<any[]>([])
+  const [criancaTexto, setCriancaTexto] = useState('')
+  const [criancaLivre, setCriancaLivre] = useState(false)
+  const [criancaSelecao, setCriancaSelecao] = useState('')
   const [ocorrencia, setOcorrencia] = useState('')
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -89,7 +92,8 @@ export default function AtendimentoForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!criancaId || horasTrabalhadas <= 0 || !data || !localDetalhe) {
+    const criancaOk = local === 'clinica' ? (criancaId || criancaTexto.trim()) : criancaId
+    if (!criancaOk || horasTrabalhadas <= 0 || !data || !localDetalhe) {
       setMsg({ type: 'error', text: 'Por favor, preencha todos os campos obrigatórios.' })
       return
     }
@@ -103,7 +107,8 @@ export default function AtendimentoForm() {
     const relatoCompleto = `Acompanhante: ${nomeAtendente} | ${local === 'escola' ? 'Escola' : 'Responsável'}: ${localDetalhe} | Entrada: ${horaEntrada} | Saída: ${horaSaida} | ${ocorrencia}`
 
     const res = await createAtendimento({
-      crianca_id: criancaId,
+      crianca_id: criancaId || null,
+      crianca_texto: criancaId ? '' : criancaTexto.trim(),
       nome_crianca: nomeCrianca,
       data,
       horas: horasTrabalhadas,
@@ -201,7 +206,7 @@ export default function AtendimentoForm() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
               type="button"
-              onClick={() => { setLocal('casa'); setLocalDetalhe('') }}
+              onClick={() => { setLocal('casa'); setLocalDetalhe(''); setCriancaLivre(false); setCriancaTexto(''); if (criancaSelecao === '__ADAPTADO__' || criancaSelecao === '__LIVRE__') { setCriancaSelecao(''); setCriancaId('') } }}
               className={`flex items-center gap-3 p-4 rounded-xl border-2 transition select-none
                 ${local === 'casa'
                   ? 'border-blue-600 bg-blue-50 text-blue-900'
@@ -218,7 +223,7 @@ export default function AtendimentoForm() {
 
             <button
               type="button"
-              onClick={() => { setLocal('escola'); setLocalDetalhe('') }}
+              onClick={() => { setLocal('escola'); setLocalDetalhe(''); setCriancaLivre(false); setCriancaTexto(''); if (criancaSelecao === '__ADAPTADO__' || criancaSelecao === '__LIVRE__') { setCriancaSelecao(''); setCriancaId('') } }}
               className={`flex items-center gap-3 p-4 rounded-xl border-2 transition select-none
                 ${local === 'escola'
                   ? 'border-blue-600 bg-blue-50 text-blue-900'
@@ -338,23 +343,57 @@ export default function AtendimentoForm() {
         <div className="space-y-1.5">
           <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
             <Baby size={13} /> Criança
+            {local === 'clinica' && <span className="normal-case text-slate-400 font-normal">(opcional se for atendimento adaptado)</span>}
           </label>
-          <select
-            required
-            value={criancaId}
-            onChange={(e) => {
-              setCriancaId(e.target.value)
-              const sel = criancas.find(c => c.id === e.target.value)
-              setNomeCrianca(sel ? sel.nome : '')
-            }}
-            className="w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm
-              bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-          >
-            <option value="">Selecione a criança...</option>
-            {criancas.map(c => (
-              <option key={c.id} value={c.id}>{c.nome}</option>
-            ))}
-          </select>
+
+          {criancaLivre ? (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                required
+                autoFocus
+                placeholder='Ex: "Adaptado", cobertura geral...'
+                value={criancaTexto}
+                onChange={(e) => setCriancaTexto(e.target.value)}
+                className="flex-1 h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition"
+              />
+              <button
+                type="button"
+                onClick={() => { setCriancaLivre(false); setCriancaTexto(''); setCriancaSelecao('') }}
+                className="px-3 text-xs font-semibold text-slate-400 hover:text-slate-600 shrink-0"
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : (
+            <select
+              required={local !== 'clinica'}
+              value={criancaSelecao}
+              onChange={(e) => {
+                const v = e.target.value
+                setCriancaSelecao(v)
+                if (v === '__ADAPTADO__') {
+                  setCriancaId(''); setNomeCrianca(''); setCriancaTexto('Adaptado')
+                } else if (v === '__LIVRE__') {
+                  setCriancaId(''); setNomeCrianca(''); setCriancaTexto(''); setCriancaLivre(true)
+                } else {
+                  setCriancaId(v); setCriancaTexto('')
+                  const sel = criancas.find(c => c.id === v)
+                  setNomeCrianca(sel ? sel.nome : '')
+                }
+              }}
+              className="w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm
+                bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            >
+              <option value="">Selecione a criança...</option>
+              {criancas.map(c => (
+                <option key={c.id} value={c.id}>{c.nome}</option>
+              ))}
+              {local === 'clinica' && <option value="__ADAPTADO__">🔧 Adaptado (atendimento geral)</option>}
+              {local === 'clinica' && <option value="__LIVRE__">+ Escrever outro...</option>}
+            </select>
+          )}
         </div>
 
         {/* OCORRÊNCIA */}

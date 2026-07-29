@@ -138,11 +138,22 @@ export async function createAtendimento(input: any) {
     return { success: false, error: "Informe o valor por hora do atendimento na clínica." };
   }
 
+  const criancaTexto = String(input.crianca_texto ?? "").trim() || null;
+  // Fora da Clínica, criança do cadastro continua obrigatória. Na Clínica,
+  // aceita um texto livre (ex: "Adaptado") no lugar de uma criança específica.
+  if (local !== "clinica" && !input.crianca_id) {
+    return { success: false, error: "Selecione a criança." };
+  }
+  if (local === "clinica" && !input.crianca_id && !criancaTexto) {
+    return { success: false, error: "Selecione a criança ou informe \"Adaptado\"/uma descrição." };
+  }
+
   const { data, error } = await supabase
     .from("atendimentos")
     .insert([{
       atendente_id: atendenteId,
-      crianca_id: input.crianca_id,
+      crianca_id: input.crianca_id || null,
+      crianca_texto: input.crianca_id ? null : criancaTexto,
       data: input.data,
       horas,
       local,
