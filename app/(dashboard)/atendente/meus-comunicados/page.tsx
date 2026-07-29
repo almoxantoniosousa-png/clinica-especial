@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
+import { Search } from "lucide-react";
+
+const POR_PAGINA = 8;
 
 export default function MeusComunicadosPage() {
   const [comunicados, setComunicados] = useState<any[]>([]);
@@ -10,6 +13,9 @@ export default function MeusComunicadosPage() {
   const [atId, setAtId] = useState("");
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
   const [detalhe, setDetalhe] = useState<any | null>(null);
+  const [busca, setBusca] = useState("");
+  const [filtroData, setFiltroData] = useState("");
+  const [visiveis, setVisiveis] = useState(POR_PAGINA);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -72,6 +78,15 @@ export default function MeusComunicadosPage() {
   const pendentes = comunicados.filter(c => !c.enviado_familia).length;
   const enviados  = comunicados.filter(c => c.enviado_familia).length;
   const correcaoPendente = comunicados.find(c => c.correcao_solicitada);
+
+  const filtrados = comunicados.filter(c =>
+    (!busca || (c.criancas?.nome || "").toLowerCase().includes(busca.toLowerCase())) &&
+    (!filtroData || c.data === filtroData)
+  );
+  const exibidos = filtrados.slice(0, visiveis);
+  const temMais = visiveis < filtrados.length;
+
+  useEffect(() => { setVisiveis(POR_PAGINA); }, [busca, filtroData]);
 
   return (
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-6">
@@ -139,6 +154,27 @@ export default function MeusComunicadosPage() {
       )}
 
 
+      {/* FILTROS */}
+      {!loading && comunicados.length > 0 && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"/>
+            <input type="text" placeholder="Buscar por criança..." value={busca}
+              onChange={e => setBusca(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <input type="date" value={filtroData} onChange={e => setFiltroData(e.target.value)}
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          {(busca || filtroData) && (
+            <button onClick={() => { setBusca(""); setFiltroData(""); }}
+              className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-2">
+              Limpar filtros
+            </button>
+          )}
+          {(busca || filtroData) && <span className="text-xs text-slate-400">{filtrados.length} resultado{filtrados.length !== 1 ? "s" : ""}</span>}
+        </div>
+      )}
+
       {/* LISTA */}
       {loading ? (
         <div className="flex items-center justify-center py-20 gap-3">
@@ -153,9 +189,14 @@ export default function MeusComunicadosPage() {
           <span className="text-5xl">📄</span>
           <p className="text-sm text-slate-400 font-medium">Nenhum comunicado enviado ainda.</p>
         </div>
+      ) : filtrados.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white rounded-2xl border border-slate-200">
+          <span className="text-5xl">📄</span>
+          <p className="text-sm text-slate-400 font-medium">Nenhum comunicado encontrado.</p>
+        </div>
       ) : (
         <div className="space-y-3">
-          {comunicados.map(c => {
+          {exibidos.map(c => {
             const cfg = statusConfig[c.status] || statusConfig.aguardando;
             return (
               <div key={c.id} onClick={() => setDetalhe(c)}
@@ -202,6 +243,14 @@ export default function MeusComunicadosPage() {
               </div>
             );
           })}
+          {temMais && (
+            <div className="flex justify-center pt-2">
+              <button onClick={() => setVisiveis(v => v + POR_PAGINA)}
+                className="px-6 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:border-blue-300 hover:text-blue-700 transition">
+                Ver mais {Math.min(POR_PAGINA, filtrados.length - visiveis)} →
+              </button>
+            </div>
+          )}
         </div>
       )}
 
