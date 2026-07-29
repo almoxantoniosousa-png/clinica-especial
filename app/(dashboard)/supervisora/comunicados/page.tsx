@@ -661,12 +661,11 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
                   <div className="p-3 space-y-2">
                     <div className="space-y-1">
                       <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Qual seção precisa corrigir? (opcional)</p>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5">
                         {TOPICOS_CORRECAO.map((topico) => (
-                          <label key={topico}
-                            className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border cursor-pointer transition
-                              ${correcaoTopicos.includes(topico) ? "bg-orange-500 border-orange-500 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-orange-300"}`}>
-                            <input type="checkbox" checked={correcaoTopicos.includes(topico)} onChange={() => toggleTopicoCorrecao(topico)} className="hidden" />
+                          <label key={topico} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                            <input type="checkbox" checked={correcaoTopicos.includes(topico)} onChange={() => toggleTopicoCorrecao(topico)}
+                              className="w-4 h-4 rounded border-slate-300 accent-orange-500 cursor-pointer" />
                             {topico}
                           </label>
                         ))}
