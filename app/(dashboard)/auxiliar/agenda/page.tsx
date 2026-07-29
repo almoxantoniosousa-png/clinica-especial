@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, Check } from "lucide-react";
 import { saudacao } from "@/components/painel-informacoes";
+import { hojeLocal, paraISOLocal } from "@/lib/dataUtils";
 
 const HORAS = [
   "07:00","07:30","08:00","08:30","09:00","09:30",
@@ -36,13 +37,13 @@ type FormData = {
 
 const FORM_VAZIO: FormData = {
   crianca_id: "", at_id: "",
-  data: new Date().toISOString().slice(0, 10),
+  data: hojeLocal(),
   hora_inicio: "08:00", hora_fim: "09:00",
   local: "clinica", modalidade: "convenio",
   tipo: "sessao", observacao: "",
 };
 
-function toISO(d: Date) { return d.toISOString().slice(0, 10); }
+function toISO(d: Date) { return paraISOLocal(d); }
 function getSegunda(base: Date) {
   const d = new Date(base);
   const dow = d.getDay();

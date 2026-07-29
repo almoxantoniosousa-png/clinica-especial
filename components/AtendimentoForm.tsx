@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { createAtendimento } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Home, School, Building2, Calendar, Clock, FileText, Baby, MapPin, DollarSign } from 'lucide-react'
+import { hojeLocal } from '@/lib/dataUtils'
 
 export default function AtendimentoForm() {
   const [local, setLocal] = useState<'casa' | 'escola' | 'clinica'>('casa')
@@ -35,7 +36,7 @@ export default function AtendimentoForm() {
       const { data: list } = await supabase.from('criancas').select('*').order('nome')
       if (list) setCriancas(list)
 
-      setData(new Date().toISOString().split('T')[0])
+      setData(hojeLocal())
 
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import QRCode from "qrcode";
 import { supabase } from "@/lib/supabaseClient";
+import { hojeLocal } from "@/lib/dataUtils";
 import { registrarLog } from "@/lib/auditoria";
 
 type Patrimonio = {
@@ -260,7 +261,7 @@ export default function PatrimonioPage() {
         descricao: `Manutenção: ${bem?.nome || "equipamento"} — ${detalheManut.defeito_relatado.slice(0, 80)}`,
         categoria: "Manutenção de Equipamentos",
         valor: custoNum,
-        vencimento: new Date().toISOString().slice(0, 10),
+        vencimento: hojeLocal(),
         status: "pendente",
         observacao: `Gerado automaticamente a partir do chamado de manutenção.`,
       }).select().single();

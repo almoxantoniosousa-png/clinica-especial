@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { registrarLog } from "@/lib/auditoria";
+import { hojeLocal } from "@/lib/dataUtils";
 import { Calendar, Plus, X, Printer, Trash2, Users, Paperclip, Upload, CheckCircle2, PenLine } from "lucide-react";
 import { AssinaturaPad } from "@/components/assinatura-pad";
 
@@ -45,7 +46,7 @@ const ORDEM_ROLES = ["adm", "gestao", "supervisora", "especialista", "atendente"
 const ITEM_ACAO_VAZIO: ItemAcao = { causa: "", acao: "", responsavel: "", prazo: "" };
 const FORM_VAZIO = {
   titulo: "",
-  data: new Date().toISOString().slice(0, 10),
+  data: hojeLocal(),
   hora: "",
   dataProximaReuniao: "",
   pessoasSelecionadas: [] as string[],

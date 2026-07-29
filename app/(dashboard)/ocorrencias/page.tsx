@@ -5,6 +5,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
 import { AssinaturaPad } from "@/components/assinatura-pad";
 import { Search, Plus, Printer, Camera, PenLine, Pencil, Trash2, Check, X } from "lucide-react";
+import { hojeLocal } from "@/lib/dataUtils";
 
 type Item = {
   id: string;
@@ -26,7 +27,7 @@ type Ocorrencia = {
 };
 
 function hoje() {
-  return new Date().toISOString().slice(0, 10);
+  return hojeLocal();
 }
 
 function formatarHora(dt: string) {

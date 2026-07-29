@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
+import { hojeLocal } from "@/lib/dataUtils";
 import { FileText, Plus, MessageSquare, ArrowLeft, ChevronDown, ChevronUp, Trash2, X } from "lucide-react";
 
 type Crianca = { id: string; nome: string };
@@ -115,7 +116,7 @@ export default function RelatorioSupervisoraPage() {
 
   // Campos do novo registro
   const [criancaId, setCriancaId] = useState("");
-  const [dataEvento, setDataEvento] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dataEvento, setDataEvento] = useState(() => hojeLocal());
   const [local, setLocal] = useState("");
   const [horaChegada, setHoraChegada] = useState("");
   const [comportamentoEntrada, setComportamentoEntrada] = useState("");
@@ -157,7 +158,7 @@ export default function RelatorioSupervisoraPage() {
 
   function abrirNovo() {
     setCriancaId("");
-    setDataEvento(new Date().toISOString().slice(0, 10));
+    setDataEvento(hojeLocal());
     setLocal("");
     setHoraChegada("");
     setComportamentoEntrada("");

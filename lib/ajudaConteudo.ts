@@ -392,7 +392,7 @@ const ATENDENTE: AjudaConteudo = {
     },
     {
       icone: "📬", titulo: "Meus Comunicados", mockup: "tabela",
-      texto: "Histórico dos comunicados diários que você enviou.\n\nNo topo aparecem cartões com o total de comunicados, quantos estão \"Em revisão\" e quantos já foram \"Enviados para família\". Cada comunicado mostra a criança, a data e o status. Se a supervisora deixar uma observação, ela aparece destacada em azul. Assim que a supervisora enviar para a família, o status muda para \"✓ Enviado\" sozinho na tela, sem precisar atualizar a página. Tela apenas de consulta."
+      texto: "Histórico dos comunicados diários que você enviou.\n\nNo topo aparecem cartões com o total de comunicados, quantos estão \"Em revisão\" e quantos já foram \"Enviados para supervisão\". Cada comunicado mostra a criança, a data e o status. Clique em qualquer um pra ver tudo que você preencheu naquele dia (as 4 etapas completas). Se a supervisora deixar uma observação, ela aparece destacada em azul. Atualiza sozinha quando a supervisora revisar ou pedir correção, sem precisar atualizar a página. Tela apenas de consulta."
     },
     {
       icone: "📅", titulo: "Minha Escala", mockup: "escala",

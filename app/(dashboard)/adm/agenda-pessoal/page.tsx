@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { paraISOLocal } from "@/lib/dataUtils";
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -32,7 +33,7 @@ type Compromisso = {
   concluido: boolean;
 };
 
-function toISO(d: Date) { return d.toISOString().slice(0, 10); }
+function toISO(d: Date) { return paraISOLocal(d); }
 function inicioDaSemana(d: Date) {
   const dia = d.getDay(); // 0=domingo
   const deslocamento = dia === 0 ? -6 : 1 - dia;

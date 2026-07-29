@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { hojeLocal } from "@/lib/dataUtils";
 
 export default function ProntuarioPage() {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function ProntuarioPage() {
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
 
   const [criancaId, setCriancaId] = useState("");
-  const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
+  const [data, setData] = useState(() => hojeLocal());
   const [tipoSessao, setTipoSessao] = useState("sessao");
   const [objetivoAtendimento, setObjetivoAtendimento] = useState("");
   const [avaliacao, setAvaliacao] = useState("");
@@ -108,7 +109,7 @@ export default function ProntuarioPage() {
       setCriancaId(""); setObjetivoAtendimento(""); setAvaliacao("");
       setResultado(""); setIntervencao(""); setAvancos(""); setConclusao("");
       setTipoSessao("sessao");
-      setData(new Date().toISOString().slice(0, 10));
+      setData(hojeLocal());
     }
   }
 

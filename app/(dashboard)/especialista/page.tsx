@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { hojeLocal } from "@/lib/dataUtils";
 
 export default function RelatorioPage() {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function RelatorioPage() {
 
   // Campos do relatório
   const [criancaId, setCriancaId] = useState("");
-  const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
+  const [data, setData] = useState(() => hojeLocal());
   const [objetivoAtendimento, setObjetivoAtendimento] = useState("");
   const [avaliacao, setAvaliacao] = useState("");       // Como a criança chegou?
   const [resultado, setResultado] = useState("");        // O que identificou?
@@ -96,7 +97,7 @@ export default function RelatorioPage() {
       setIntervencao("");
       setAvancos("");
       setConclusao("");
-      setData(new Date().toISOString().slice(0, 10));
+      setData(hojeLocal());
     }
   }
 

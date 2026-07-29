@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { paraISOLocal } from "@/lib/dataUtils";
 
 function getSegundaDaSemana(base: Date): Date {
   const d = new Date(base);
@@ -14,7 +15,7 @@ function getSegundaDaSemana(base: Date): Date {
   return d;
 }
 
-function toISO(d: Date) { return d.toISOString().slice(0, 10); }
+function toISO(d: Date) { return paraISOLocal(d); }
 
 function nomeDiaCurto(dateStr: string) {
   return new Date(dateStr + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");

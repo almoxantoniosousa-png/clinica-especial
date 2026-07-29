@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { registrarLog } from "@/lib/auditoria";
+import { hojeLocal } from "@/lib/dataUtils";
 import { saudacao } from "@/components/painel-informacoes";
 
 const TOPICOS_CORRECAO = ["Entrada e Interação", "Autonomia e Higiene", "Recreio e Socialização", "Agenda e Recados"];
@@ -140,7 +141,7 @@ function AbaDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeLocal();
   const hojeFormatado = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
 
   useEffect(() => {
@@ -288,7 +289,7 @@ function AbaDashboard() {
 // supervisora revisa e envia direto para família
 // =============================================
 function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeLocal();
   const [formularios, setFormularios] = useState<FormularioEscolar[]>([]);
   const [totalPendentes, setTotalPendentes] = useState(0);
   const [loading, setLoading] = useState(true);

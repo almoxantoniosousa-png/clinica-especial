@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { hojeLocal } from "@/lib/dataUtils";
 
 const ETAPAS = [
   { num: 1, titulo: "Entrada e Interação", icon: "🏁" },
@@ -42,7 +43,7 @@ export default function FormularioEscolarPage() {
   const [obsGerais, setObsGerais] = useState("");
   const [eventosEscolares, setEventosEscolares] = useState("");
 
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = hojeLocal();
 
   useEffect(() => {
     async function inicializar() {

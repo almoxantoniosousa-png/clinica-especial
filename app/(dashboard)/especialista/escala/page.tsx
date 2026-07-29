@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Clock, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { saudacao } from "@/components/painel-informacoes";
+import { hojeLocal } from "@/lib/dataUtils";
 
 const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
@@ -61,8 +62,7 @@ function getCorServico(servico: string, corMap: Record<string, string>) {
 }
 
 function hojeISO() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
+  return hojeLocal();
 }
 
 export default function EspecialistaEscalaPage() {

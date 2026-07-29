@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { hojeLocal } from "@/lib/dataUtils";
 
 export default function RelatorioPage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function RelatorioPage() {
   // Campos do relatório completo
   const [rCriancaId, setRCriancaId] = useState("");
   const [rDataInicio, setRDataInicio] = useState("");
-  const [rDataFim, setRDataFim] = useState(() => new Date().toISOString().slice(0, 10));
+  const [rDataFim, setRDataFim] = useState(() => hojeLocal());
   const [rEvolucaoGeral, setREvolucaoGeral] = useState("");
   const [rObjetivos, setRObjetivos] = useState("");
   const [rAlcancados, setRAlcancados] = useState("");
@@ -60,7 +61,7 @@ export default function RelatorioPage() {
 
   function fecharModal() {
     setModalAberto(false);
-    setRCriancaId(""); setRDataInicio(""); setRDataFim(new Date().toISOString().slice(0, 10));
+    setRCriancaId(""); setRDataInicio(""); setRDataFim(hojeLocal());
     setREvolucaoGeral(""); setRObjetivos(""); setRAlcancados("");
     setRDificuldades(""); setRRecomendacoes(""); setRObsPlano("");
   }

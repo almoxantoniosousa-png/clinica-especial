@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { PainelInformacoes, saudacao } from "@/components/painel-informacoes";
+import { hojeLocal, paraISOLocal } from "@/lib/dataUtils";
 import { Bar, Line, Pie } from "react-chartjs-2";
 import type { ChartData } from "chart.js";
 import {
@@ -50,8 +51,8 @@ export default function GestaoDashboardPage() {
     crescimento: 0, totalRelatorios: 0, mediaDiaria: 0, melhorProfissional: ""
   });
 
-  const hoje = new Date().toISOString().split("T")[0];
-  const mesAtual = new Date().toISOString().slice(0, 7);
+  const hoje = hojeLocal();
+  const mesAtual = hoje.slice(0, 7);
 
   useEffect(() => {
     async function carregarNome() {
@@ -126,7 +127,7 @@ export default function GestaoDashboardPage() {
         .from("liminares")
         .select("*, criancas(nome)")
         .eq("status", "ativo")
-        .lte("data_vencimento", em30dias.toISOString().split("T")[0])
+        .lte("data_vencimento", paraISOLocal(em30dias))
         .order("data_vencimento");
       setLiminares(liminaresDados || []);
 

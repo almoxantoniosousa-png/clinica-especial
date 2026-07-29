@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
+import { mesAtualLocal } from "@/lib/dataUtils";
 
 type Registro = {
   id: string;
@@ -23,13 +24,9 @@ const STATUS_LABEL: Record<string, { label: string; cor: string }> = {
   pago:     { label: "Pago",     cor: "bg-emerald-50 text-emerald-700 border-emerald-100" },
 };
 
-function mesAtualISO() {
-  return new Date().toISOString().slice(0, 7);
-}
-
 export default function AtendimentosAtsPage() {
   const supabase = createSupabaseBrowserClient();
-  const [mesAno, setMesAno] = useState(mesAtualISO());
+  const [mesAno, setMesAno] = useState(mesAtualLocal());
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandido, setExpandido] = useState<string | null>(null);

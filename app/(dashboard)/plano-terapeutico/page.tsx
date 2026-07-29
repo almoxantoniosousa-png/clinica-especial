@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
+import { hojeLocal } from "@/lib/dataUtils";
 import { Plus, X, Trash2, ClipboardList, Camera } from "lucide-react";
 
 type Crianca = { id: string; nome: string; foto_url?: string | null };
@@ -45,7 +46,7 @@ export default function PlanoTerapeuticoPage() {
 
   // Campos do formulário
   const [criancaId, setCriancaId] = useState("");
-  const [dataReuniao, setDataReuniao] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dataReuniao, setDataReuniao] = useState(() => hojeLocal());
   const [localContexto, setLocalContexto] = useState("");
   const [participantes, setParticipantes] = useState<string[]>([]);
   const [novoParticipante, setNovoParticipante] = useState("");
@@ -89,7 +90,7 @@ export default function PlanoTerapeuticoPage() {
   function abrirNovo() {
     setEditandoId(null);
     setCriancaId("");
-    setDataReuniao(new Date().toISOString().slice(0, 10));
+    setDataReuniao(hojeLocal());
     setLocalContexto("");
     setParticipantes(nome ? [nome] : []);
     setNovoParticipante("");

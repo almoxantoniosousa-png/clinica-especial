@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, ChevronRight, ChevronDown, Trash2, X, Check, Copy, ClipboardCheck } from "lucide-react";
+import { paraISOLocal } from "@/lib/dataUtils";
 
 // ── Cards de tipo de evento ──────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ type Evento = {
 const DIAS_FULL = ["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
 const MESES     = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
-function toISO(d: Date) { return d.toISOString().slice(0, 10); }
+function toISO(d: Date) { return paraISOLocal(d); }
 function getSegunda(base: Date) {
   const d = new Date(base); const dow = d.getDay();
   d.setDate(d.getDate() + (dow === 0 ? -6 : 1 - dow)); d.setHours(0,0,0,0); return d;

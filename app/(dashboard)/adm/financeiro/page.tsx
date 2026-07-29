@@ -5,6 +5,7 @@ import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClie
 import { Check, Trash2, Pencil } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 import { saudacao } from "@/components/painel-informacoes";
+import { hojeLocal, mesAtualLocal } from "@/lib/dataUtils";
 
 type Aba = "contas_pagar" | "contas_receber" | "fluxo" | "emprestimos";
 type SupabaseClient = ReturnType<typeof createSupabaseBrowserClient>;
@@ -49,7 +50,7 @@ type ColaboradorOpcao = { nome: string; cpf: string | null };
 export default function FinanceiroPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [aba, setAba] = useState<Aba>("contas_pagar");
-  const [mesAno, setMesAno] = useState(() => new Date().toISOString().slice(0, 7));
+  const [mesAno, setMesAno] = useState(() => mesAtualLocal());
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
   const [role, setRole] = useState("");
   const [nome, setNome] = useState<string | undefined>(undefined);
@@ -141,7 +142,7 @@ export default function FinanceiroPage() {
 // ABA CONTAS A PAGAR
 // =============================================
 function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeLocal();
 
   const [contas, setContas] = useState<ContaPagar[]>([]);
   const [modelos, setModelos] = useState<ModeloPagar[]>([]);
@@ -861,7 +862,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   type Confirmacao = { id: string; novoStatus: string; nomeLabel?: string; valor: number } | null;
   const [confirmando, setConfirmando] = useState<Confirmacao>(null);
   const [processando, setProcessando] = useState(false);
-  const [dataConfirmacao, setDataConfirmacao] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dataConfirmacao, setDataConfirmacao] = useState(() => hojeLocal());
 
   type ExclusaoFatura = { id: string; nomeLabel?: string; valor: number } | null;
   const [excluindo, setExcluindo] = useState<ExclusaoFatura>(null);
@@ -1143,13 +1144,13 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                     <>
                       {c.status === "pendente" && (
                         <button
-                          onClick={() => { setDataConfirmacao(new Date().toISOString().slice(0, 10)); setConfirmando({ id: c.id, novoStatus: "faturado", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) }); }}
+                          onClick={() => { setDataConfirmacao(hojeLocal()); setConfirmando({ id: c.id, novoStatus: "faturado", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) }); }}
                           className="h-8 px-3 text-xs font-semibold bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">
                           Marcar Faturado
                         </button>
                       )}
                       <button
-                        onClick={() => { setDataConfirmacao(new Date().toISOString().slice(0, 10)); setConfirmando({ id: c.id, novoStatus: "recebido", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) }); }}
+                        onClick={() => { setDataConfirmacao(hojeLocal()); setConfirmando({ id: c.id, novoStatus: "recebido", nomeLabel: c.criancas?.nome, valor: Number(valorFinal) }); }}
                         className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
                         Marcar Recebido
                       </button>
@@ -1668,7 +1669,7 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
   const [colaboradorNome, setColaboradorNome] = useState("");
   const [colaboradorCpf, setColaboradorCpf] = useState("");
   const [valorTotal, setValorTotal] = useState("");
-  const [dataEmprestimo, setDataEmprestimo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dataEmprestimo, setDataEmprestimo] = useState(() => hojeLocal());
   const [numeroParcelas, setNumeroParcelas] = useState("1");
   const [observacao, setObservacao] = useState("");
 
@@ -1701,7 +1702,7 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
   useEffect(() => { carregar(); }, []);
 
   function resetForm() {
-    setColaboradorNome(""); setColaboradorCpf(""); setValorTotal(""); setDataEmprestimo(new Date().toISOString().slice(0, 10));
+    setColaboradorNome(""); setColaboradorCpf(""); setValorTotal(""); setDataEmprestimo(hojeLocal());
     setNumeroParcelas("1"); setObservacao("");
   }
 

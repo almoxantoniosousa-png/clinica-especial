@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { DollarSign, Check, Clock, Plus, Pencil, X, ChevronDown, ChevronRight, Trash2, Printer } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
+import { hojeLocal } from "@/lib/dataUtils";
 
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
@@ -157,7 +158,7 @@ export default function FolhaPagamentoPage() {
     setProcessandoPagamento(true);
     const { error } = await supabase.from("folha_pagamento").update({
       status: "pago",
-      data_pagamento: new Date().toISOString().split("T")[0],
+      data_pagamento: hojeLocal(),
     }).eq("id", folha.id);
 
     if (!error) {

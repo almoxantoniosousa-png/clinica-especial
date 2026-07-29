@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
+import { mesAtualLocal } from "@/lib/dataUtils";
 
 type Aba = "diario" | "comunicados" | "momentos" | "evolucao";
 
@@ -178,7 +179,7 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
   const [loading, setLoading] = useState(true);
   const [detalhe, setDetalhe] = useState<any | null>(null);
   const [ocultando, setOcultando] = useState(false);
-  const mesAtual = new Date().toISOString().slice(0, 7); // "2026-06"
+  const mesAtual = mesAtualLocal(); // "2026-06"
   const [mesesAbertos, setMesesAbertos] = useState<Set<string>>(new Set([mesAtual]));
 
   const carregar = async () => {
@@ -415,7 +416,7 @@ function labelMes(mes: string) {
 }
 
 function useMesesAbertos() {
-  const mesAtual = new Date().toISOString().slice(0, 7);
+  const mesAtual = mesAtualLocal();
   const [abertos, setAbertos] = useState<Set<string>>(new Set([mesAtual]));
   const toggle = (mes: string) => setAbertos(prev => {
     const n = new Set(prev);

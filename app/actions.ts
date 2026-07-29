@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { registrarLog } from "@/lib/auditoria";
+import { hojeBrasil } from "@/lib/dataUtils";
 
 // ============================
 // LOGIN
@@ -208,7 +209,7 @@ export async function carregarDadosDashboard() {
 
     if (error) throw error;
 
-    const hojeStr = new Date().toISOString().split("T")[0];
+    const hojeStr = hojeBrasil();
 
     let totalDia = 0;
     let pendentes = 0;
