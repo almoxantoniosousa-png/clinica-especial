@@ -139,7 +139,11 @@ export default function FormularioEscolarPage() {
 
     setSalvando(false);
     if (error) {
-      mostrarFeedback("erro", "Erro ao enviar: " + error.message);
+      const bloqueadoPorCorrecao = error.message.toLowerCase().includes("row-level security") || error.code === "42501";
+      mostrarFeedback("erro", bloqueadoPorCorrecao
+        ? "Você tem uma correção pendente da supervisora — corrija o comunicado antigo antes de criar um novo."
+        : "Erro ao enviar: " + error.message);
+      if (bloqueadoPorCorrecao) window.location.reload();
     } else {
       mostrarFeedback("sucesso", editandoId ? "Comunicado corrigido e reenviado à supervisora!" : "Comunicado enviado! Aguardando aprovação da supervisora.");
       setTimeout(() => router.push("/atendente/meus-atendimentos"), 2000);
@@ -183,6 +187,13 @@ export default function FormularioEscolarPage() {
               </span>{" "}
               do dia {new Date(correcaoPendente.data + "T12:00:00").toLocaleDateString("pt-BR")}:
             </p>
+            {!!correcaoPendente.correcao_topicos?.length && (
+              <div className="flex flex-wrap gap-1.5">
+                {correcaoPendente.correcao_topicos.map((t: string) => (
+                  <span key={t} className="text-[11px] font-semibold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{t}</span>
+                ))}
+              </div>
+            )}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
               <p className="text-sm text-slate-700">{correcaoPendente.correcao_texto}</p>
             </div>

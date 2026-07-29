@@ -65,7 +65,7 @@ export default function MeusComunicadosPage() {
   const statusConfig: any = {
     aguardando: { label: "⏳ Em revisão", color: "bg-amber-50 text-amber-700 border-amber-200", borda: "border-l-amber-400" },
     aprovado:   { label: "⏳ Em revisão", color: "bg-amber-50 text-amber-700 border-amber-200", borda: "border-l-amber-400" },
-    enviado:    { label: "✓ Enviado para família", color: "bg-emerald-50 text-emerald-700 border-emerald-200", borda: "border-l-emerald-400" },
+    enviado:    { label: "✓ Enviado para supervisão", color: "bg-emerald-50 text-emerald-700 border-emerald-200", borda: "border-l-emerald-400" },
   };
 
   const pendentes = comunicados.filter(c => !c.enviado_familia).length;
@@ -99,6 +99,13 @@ export default function MeusComunicadosPage() {
             <span className="text-2xl">🔁</span>
             <div>
               <p className="text-sm font-bold text-orange-700">Correção pendente da supervisora</p>
+              {!!correcaoPendente.correcao_topicos?.length && (
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {correcaoPendente.correcao_topicos.map((t: string) => (
+                    <span key={t} className="text-[10px] font-semibold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{t}</span>
+                  ))}
+                </div>
+              )}
               <p className="text-xs text-orange-600 mt-0.5">
                 {correcaoPendente.criancas?.nome} · {correcaoPendente.correcao_texto}
               </p>

@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { registrarLog } from "@/lib/auditoria";
 import { saudacao } from "@/components/painel-informacoes";
 
+const TOPICOS_CORRECAO = ["Entrada e Interação", "Autonomia e Higiene", "Recreio e Socialização", "Agenda e Recados"];
+
 type Aba = "dashboard" | "comunicados" | "momentos" | "evolucao" | "avisos";
 type MostrarFeedbackFn = (tipo: "sucesso" | "erro", msg: string) => void;
 type AbaProps = { mostrarFeedback: MostrarFeedbackFn };
@@ -12,7 +14,7 @@ type AbaProps = { mostrarFeedback: MostrarFeedbackFn };
 type FormularioEscolar = {
   id: string; created_at: string; status: string; data: string;
   enviado_familia?: boolean; obs_supervisora?: string | null;
-  correcao_solicitada?: boolean; correcao_texto?: string | null;
+  correcao_solicitada?: boolean; correcao_texto?: string | null; correcao_topicos?: string[] | null;
   hora_chegada?: string; interacao?: string[];
   autonomia_nivel?: number; idas_banheiro?: number;
   evacuou?: boolean; periodo_menstrual?: boolean; agua_ingestao?: string;
@@ -296,6 +298,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
   const [obs, setObs] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [correcaoTexto, setCorrecaoTexto] = useState("");
+  const [correcaoTopicos, setCorrecaoTopicos] = useState<string[]>([]);
   const [solicitandoCorrecao, setSolicitandoCorrecao] = useState(false);
 
   async function carregar() {
@@ -352,12 +355,16 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
     else { mostrarFeedback("sucesso", "Comunicado enviado para a família!"); setDetalhe(null); setObs(""); carregar(); }
   }
 
+  function toggleTopicoCorrecao(topico: string) {
+    setCorrecaoTopicos((prev) => prev.includes(topico) ? prev.filter((t) => t !== topico) : [...prev, topico]);
+  }
+
   async function solicitarCorrecao(id: string) {
     if (!correcaoTexto.trim()) { mostrarFeedback("erro", "Escreva o que precisa ser refeito."); return; }
     setSolicitandoCorrecao(true);
     const { error } = await supabase
       .from("formularios_escolares")
-      .update({ correcao_solicitada: true, correcao_texto: correcaoTexto.trim() })
+      .update({ correcao_solicitada: true, correcao_texto: correcaoTexto.trim(), correcao_topicos: correcaoTopicos })
       .eq("id", id);
 
     if (!error) {
@@ -367,13 +374,17 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
         acao: "Solicitou correção",
         tabela: "formularios_escolares",
         registro_id: id,
-        descricao: `Pediu para refazer o comunicado de ${detalhe?.criancas?.nome || "criança"}: ${correcaoTexto.trim()}`,
+        descricao: `Pediu para refazer o comunicado de ${detalhe?.criancas?.nome || "criança"}${correcaoTopicos.length ? ` (${correcaoTopicos.join(", ")})` : ""}: ${correcaoTexto.trim()}`,
       });
     }
 
     setSolicitandoCorrecao(false);
     if (error) mostrarFeedback("erro", "Erro: " + error.message);
-    else { mostrarFeedback("sucesso", "Correção solicitada à AT."); setCorrecaoTexto(""); carregar(); if (detalhe) setDetalhe({ ...detalhe, correcao_solicitada: true, correcao_texto: correcaoTexto.trim() }); }
+    else {
+      mostrarFeedback("sucesso", "Correção solicitada à AT.");
+      setCorrecaoTexto(""); setCorrecaoTopicos([]); carregar();
+      if (detalhe) setDetalhe({ ...detalhe, correcao_solicitada: true, correcao_texto: correcaoTexto.trim(), correcao_topicos: correcaoTopicos });
+    }
   }
 
   const filtrados = formularios;
@@ -606,12 +617,32 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
                   <p className="text-xs font-bold text-orange-600 uppercase tracking-wide">🔁 Correção para a AT</p>
                 </div>
                 {detalhe.correcao_solicitada ? (
-                  <div className="p-3 space-y-1">
+                  <div className="p-3 space-y-2">
                     <p className="text-xs font-semibold text-orange-600">Aguardando a AT refazer:</p>
+                    {!!detalhe.correcao_topicos?.length && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {detalhe.correcao_topicos.map((t) => (
+                          <span key={t} className="text-[11px] font-semibold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{t}</span>
+                        ))}
+                      </div>
+                    )}
                     <p className="text-sm text-slate-700">{detalhe.correcao_texto}</p>
                   </div>
                 ) : (
                   <div className="p-3 space-y-2">
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Qual seção precisa corrigir? (opcional)</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {TOPICOS_CORRECAO.map((topico) => (
+                          <label key={topico}
+                            className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border cursor-pointer transition
+                              ${correcaoTopicos.includes(topico) ? "bg-orange-500 border-orange-500 text-white" : "bg-white border-slate-200 text-slate-600 hover:border-orange-300"}`}>
+                            <input type="checkbox" checked={correcaoTopicos.includes(topico)} onChange={() => toggleTopicoCorrecao(topico)} className="hidden" />
+                            {topico}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                     <textarea rows={2} value={correcaoTexto} onChange={e => setCorrecaoTexto(e.target.value)}
                       placeholder="O que a AT precisa refazer ou corrigir?"
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"/>
