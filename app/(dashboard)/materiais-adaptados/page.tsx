@@ -64,6 +64,14 @@ export default function MateriaisAdaptadosPage() {
   const [meuNome, setMeuNome] = useState<string>("");
   const [meuEmail, setMeuEmail] = useState<string>("");
   const [podeRevisar, setPodeRevisar] = useState(false);
+  const [meuFazAdaptado, setMeuFazAdaptado] = useState(false);
+
+  // Navegação por criança
+  const [criancaSelecionada, setCriancaSelecionada] = useState<{ id: string; nome: string; foto_url?: string | null } | null>(null);
+  const [modalCriancaAberto, setModalCriancaAberto] = useState(false);
+  const [nomeNovaCrianca, setNomeNovaCrianca] = useState("");
+  const [salvandoCrianca, setSalvandoCrianca] = useState(false);
+  const [baixandoArquivos, setBaixandoArquivos] = useState(false);
 
   // Modal de criação/edição
   const [modalAberto, setModalAberto] = useState(false);
@@ -122,7 +130,7 @@ export default function MateriaisAdaptadosPage() {
 
       const { data: atendente } = await supabase
         .from("atendentes")
-        .select("role, nome")
+        .select("role, nome, faz_adaptado")
         .eq("email", user.email)
         .maybeSingle();
 
@@ -130,6 +138,7 @@ export default function MateriaisAdaptadosPage() {
         setMeuNome(atendente.nome || user.email || "");
         const role = (atendente.role || "").toLowerCase();
         setPodeRevisar(["adm", "admin", "gestao", "supervisora"].includes(role));
+        setMeuFazAdaptado(!!atendente.faz_adaptado);
       } else {
         setMeuNome(user.email || "");
       }
@@ -142,7 +151,7 @@ export default function MateriaisAdaptadosPage() {
     setLoading(true);
     const [{ data: mats, error }, { data: cri }] = await Promise.all([
       supabase.from("materiais_adaptados").select("*, criancas(nome)").order("created_at", { ascending: false }),
-      supabase.from("criancas").select("id, nome").order("nome"),
+      supabase.from("criancas").select("id, nome, foto_url").order("nome"),
     ]);
     if (error) mostrarFeedback("erro", "Erro ao carregar materiais: " + error.message);
     setMateriais(mats || []);
@@ -151,6 +160,15 @@ export default function MateriaisAdaptadosPage() {
   }
 
   useEffect(() => { carregar(); }, []);
+
+  // Ponto 6: supervisora acompanha a produção ao vivo (rascunhos inclusive)
+  useEffect(() => {
+    const canal = supabase
+      .channel("materiais_adaptados_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "materiais_adaptados" }, () => carregar())
+      .subscribe();
+    return () => { supabase.removeChannel(canal); };
+  }, []);
 
   // ── Filtros por aba ──────────────────────────────────────────────────────
   const termoBusca = busca.trim().toLowerCase();
@@ -163,14 +181,18 @@ export default function MateriaisAdaptadosPage() {
       m.serie?.toLowerCase().includes(termoBusca))
   );
 
-  const meus = materiais.filter(m => m.criado_por === meuId);
+  const criancasComMaterial = new Set(materiais.filter(m => m.crianca_id).map(m => m.crianca_id));
+
+  const materiaisDaCriancaSelecionada = criancaSelecionada
+    ? materiais.filter(m => m.crianca_id === criancaSelecionada.id)
+    : [];
 
   const emRevisao = materiais.filter(m => m.status === "em_revisao");
 
   // ── Formulário ───────────────────────────────────────────────────────────
-  function abrirNovo() {
+  function abrirNovo(criancaPreSelecionada?: string) {
     setEditando(null);
-    setTituloLivro(""); setMateria(""); setSerie(""); setCriancaId("");
+    setTituloLivro(""); setMateria(""); setSerie(""); setCriancaId(criancaPreSelecionada || "");
     setNivelAdaptacao(""); setObservacoes("");
     setFotosExistentes([]); setFotosNovas([]); setFotosPreviews([]);
     setBuscaPictograma(""); setResultadosPictogramas([]);
@@ -363,17 +385,81 @@ export default function MateriaisAdaptadosPage() {
     carregar();
   }
 
+  // ── Exclusão (Supervisora/Gestão/ADM) ───────────────────────────────────
+  async function excluirMaterial(m: Material) {
+    if (!confirm(`Excluir "${m.titulo_livro}"? O arquivo continua salvo com a AT, só o registro no sistema será removido.`)) return;
+    const { error } = await supabase.from("materiais_adaptados").delete().eq("id", m.id);
+    if (error) { mostrarFeedback("erro", error.message); return; }
+    await registrarLog(supabase, {
+      usuario_email: meuEmail, usuario_nome: meuNome,
+      acao: "Excluiu material adaptado", tabela: "materiais_adaptados", registro_id: m.id,
+      descricao: m.titulo_livro,
+    });
+    mostrarFeedback("sucesso", "Material excluído.");
+    carregar();
+  }
+
+  // ── Navegação por criança ────────────────────────────────────────────────
+  function iniciaisCrianca(nome: string) {
+    return nome.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
+  }
+  const coresAvatarCrianca = ["bg-blue-100 text-blue-700", "bg-purple-100 text-purple-700", "bg-emerald-100 text-emerald-700", "bg-amber-100 text-amber-700", "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700"];
+  function corAvatarCrianca(nome: string) { return coresAvatarCrianca[nome.charCodeAt(0) % coresAvatarCrianca.length]; }
+
+  async function salvarNovaCrianca() {
+    if (!nomeNovaCrianca.trim()) { mostrarFeedback("erro", "Informe o nome da criança."); return; }
+    setSalvandoCrianca(true);
+    const { data: nova, error } = await supabase.from("criancas").insert({ nome: nomeNovaCrianca.trim() }).select("id, nome, foto_url").single();
+    setSalvandoCrianca(false);
+    if (error) { mostrarFeedback("erro", "Erro ao cadastrar criança: " + error.message); return; }
+    await registrarLog(supabase, {
+      usuario_email: meuEmail, usuario_nome: meuNome,
+      acao: "Cadastrou criança (via Materiais Adaptados)", tabela: "criancas", registro_id: nova?.id,
+      descricao: nomeNovaCrianca.trim(),
+    });
+    mostrarFeedback("sucesso", "Criança cadastrada!");
+    setModalCriancaAberto(false);
+    setNomeNovaCrianca("");
+    setCriancas(prev => [...prev, nova].sort((a, b) => a.nome.localeCompare(b.nome)));
+    if (nova) setCriancaSelecionada(nova);
+  }
+
+  async function baixarArquivosCrianca() {
+    if (!criancaSelecionada) return;
+    const urls = materiaisDaCriancaSelecionada.flatMap(m => m.fotos || []);
+    if (urls.length === 0) { mostrarFeedback("erro", "Nenhum arquivo para baixar."); return; }
+    setBaixandoArquivos(true);
+    try {
+      for (const [i, url] of urls.entries()) {
+        const resp = await fetch(url);
+        const blob = await resp.blob();
+        const ext = url.split(".").pop()?.split("?")[0] || "jpg";
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${criancaSelecionada.nome} - ${i + 1}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      mostrarFeedback("sucesso", `${urls.length} arquivo(s) baixado(s)!`);
+    } catch {
+      mostrarFeedback("erro", "Erro ao baixar um ou mais arquivos.");
+    } finally {
+      setBaixandoArquivos(false);
+    }
+  }
+
   // ── UI ──────────────────────────────────────────────────────────────────
   const abas = [
     { id: "acervo", label: "Acervo", icon: "📚", count: acervo.length },
-    { id: "meus",   label: "Meus Materiais", icon: "📝", count: meus.length },
+    ...((meuFazAdaptado || podeRevisar) ? [{ id: "meus", label: "Por Criança", icon: "👶", count: criancasComMaterial.size }] : []),
     ...(podeRevisar ? [{ id: "revisao", label: "Em Revisão", icon: "⏳", count: emRevisao.length }] : []),
   ];
 
   return (
     <div className="space-y-5 pb-10">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 print:hidden">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()}
             className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition shrink-0">
@@ -386,10 +472,12 @@ export default function MateriaisAdaptadosPage() {
             <p className="text-xs text-slate-400 mt-0.5">Acervo de livros e materiais adaptados</p>
           </div>
         </div>
-        <button onClick={abrirNovo}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-900 text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition shrink-0">
-          ➕ <span className="hidden sm:inline">Novo material</span>
-        </button>
+        {(meuFazAdaptado || !podeRevisar) && (
+          <button onClick={() => abrirNovo(criancaSelecionada?.id)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-900 text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition shrink-0">
+            ➕ <span className="hidden sm:inline">Novo material</span>
+          </button>
+        )}
       </div>
 
       {feedback && (
@@ -401,9 +489,9 @@ export default function MateriaisAdaptadosPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm overflow-x-auto w-fit">
+      <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl p-1.5 shadow-sm overflow-x-auto w-fit print:hidden">
         {abas.map(a => (
-          <button key={a.id} onClick={() => setAba(a.id as Aba)}
+          <button key={a.id} onClick={() => { setAba(a.id as Aba); setCriancaSelecionada(null); }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all
               ${aba === a.id ? "bg-blue-900 text-white shadow-sm" : "text-slate-500 hover:bg-slate-50"}`}>
             <span>{a.icon}</span>
@@ -459,51 +547,138 @@ export default function MateriaisAdaptadosPage() {
             </div>
           )}
 
-          {/* ABA MEUS MATERIAIS */}
+          {/* ABA POR CRIANÇA */}
           {aba === "meus" && (
-            <div className="space-y-3">
-              {meus.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-slate-200">
-                  <span className="text-4xl">📝</span>
-                  <p className="text-sm text-slate-400 mt-2">Você ainda não cadastrou nenhum material.</p>
+            <div className="space-y-4">
+              {!criancaSelecionada ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {criancas.map(c => {
+                    const qtd = materiais.filter(m => m.crianca_id === c.id).length;
+                    return (
+                      <button key={c.id} onClick={() => setCriancaSelecionada(c)}
+                        className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex flex-col items-center gap-2 hover:shadow-md hover:border-blue-300 transition text-center">
+                        <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-200 shrink-0">
+                          {c.foto_url ? (
+                            <img src={c.foto_url} alt={c.nome} className="w-full h-full object-cover"/>
+                          ) : (
+                            <div className={`w-full h-full flex items-center justify-center font-bold text-lg ${corAvatarCrianca(c.nome)}`}>{iniciaisCrianca(c.nome)}</div>
+                          )}
+                        </div>
+                        <p className="font-semibold text-slate-800 text-sm line-clamp-2">{c.nome}</p>
+                        {qtd > 0 && (
+                          <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full font-medium">
+                            {qtd} {qtd > 1 ? "materiais" : "material"}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                  {meuFazAdaptado && (
+                    <button onClick={() => { setNomeNovaCrianca(""); setModalCriancaAberto(true); }}
+                      className="border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-blue-400 hover:bg-blue-50/30 transition text-center min-h-[128px]">
+                      <span className="text-2xl text-slate-400">➕</span>
+                      <p className="text-xs font-semibold text-slate-500">Nova criança</p>
+                    </button>
+                  )}
+                  {criancas.length === 0 && (
+                    <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-slate-200">
+                      <span className="text-4xl">👶</span>
+                      <p className="text-sm text-slate-400 mt-2">Nenhuma criança cadastrada ainda.</p>
+                    </div>
+                  )}
                 </div>
               ) : (
-                meus.map(m => {
-                  const info = STATUS_INFO[m.status];
-                  return (
-                    <div key={m.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-800 text-sm">{m.titulo_livro}</p>
-                          <p className="text-xs text-slate-400">{[m.materia, m.serie].filter(Boolean).join(" · ") || "—"}</p>
-                        </div>
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full border shrink-0 ${info.cor}`}>
-                          {info.icon} {info.label}
-                        </span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <button onClick={() => setCriancaSelecionada(null)}
+                        className="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition shrink-0 print:hidden">
+                        <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+                        </svg>
+                      </button>
+                      <div className="w-11 h-11 rounded-full overflow-hidden border border-slate-200 shrink-0">
+                        {criancaSelecionada.foto_url ? (
+                          <img src={criancaSelecionada.foto_url} alt={criancaSelecionada.nome} className="w-full h-full object-cover"/>
+                        ) : (
+                          <div className={`w-full h-full flex items-center justify-center font-bold text-sm ${corAvatarCrianca(criancaSelecionada.nome)}`}>{iniciaisCrianca(criancaSelecionada.nome)}</div>
+                        )}
                       </div>
-                      <CardFotos fotos={m.fotos} />
-                      {m.observacoes && <p className="text-sm text-slate-600 leading-relaxed">{m.observacoes}</p>}
-                      {m.status === "ajustes_solicitados" && m.observacao_revisao && (
-                        <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2">
-                          <p className="text-xs font-bold text-red-600">Ajustes solicitados:</p>
-                          <p className="text-sm text-red-700 mt-0.5">{m.observacao_revisao}</p>
-                        </div>
-                      )}
-                      {(m.status === "rascunho" || m.status === "ajustes_solicitados") && (
-                        <div className="flex gap-2 pt-1">
-                          <button onClick={() => abrirEdicao(m)}
-                            className="flex-1 h-10 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
-                            ✏️ Editar
-                          </button>
-                          <button onClick={() => enviarParaRevisao(m)}
-                            className="flex-1 h-10 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
-                            📤 Enviar para revisão
-                          </button>
-                        </div>
+                      <p className="font-bold text-slate-800 truncate">{criancaSelecionada.nome}</p>
+                    </div>
+                    <div className="flex gap-2 print:hidden">
+                      <button onClick={baixarArquivosCrianca} disabled={baixandoArquivos || materiaisDaCriancaSelecionada.length === 0}
+                        className="h-9 px-3 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition disabled:opacity-50 flex items-center gap-1.5">
+                        {baixandoArquivos ? "Baixando..." : "⬇️ Baixar arquivos"}
+                      </button>
+                      {podeRevisar && (
+                        <button onClick={() => window.print()} disabled={materiaisDaCriancaSelecionada.length === 0}
+                          className="h-9 px-3 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition disabled:opacity-50 flex items-center gap-1.5">
+                          🖨️ Imprimir
+                        </button>
                       )}
                     </div>
-                  );
-                })
+                  </div>
+
+                  {materiaisDaCriancaSelecionada.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-slate-200">
+                      <span className="text-4xl">📝</span>
+                      <p className="text-sm text-slate-400 mt-2">Nenhum material adaptado para {criancaSelecionada.nome} ainda.</p>
+                    </div>
+                  ) : (
+                    materiaisDaCriancaSelecionada.map(m => {
+                      const info = STATUS_INFO[m.status];
+                      const podeEditar = meuFazAdaptado || m.criado_por === meuId;
+                      return (
+                        <div key={m.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="font-semibold text-slate-800 text-sm">{m.titulo_livro}</p>
+                              <p className="text-xs text-slate-400">{[m.materia, m.serie].filter(Boolean).join(" · ") || "—"} · por {m.criado_por_nome || "—"}</p>
+                            </div>
+                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full border shrink-0 ${info.cor}`}>
+                              {info.icon} {info.label}
+                            </span>
+                          </div>
+                          <CardFotos fotos={m.fotos} />
+                          {m.observacoes && <p className="text-sm text-slate-600 leading-relaxed">{m.observacoes}</p>}
+                          {m.status === "ajustes_solicitados" && m.observacao_revisao && (
+                            <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                              <p className="text-xs font-bold text-red-600">Ajustes solicitados:</p>
+                              <p className="text-sm text-red-700 mt-0.5">{m.observacao_revisao}</p>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between gap-2 pt-1 print:hidden">
+                            {podeEditar && (m.status === "rascunho" || m.status === "ajustes_solicitados") ? (
+                              <div className="flex gap-2 flex-1">
+                                <button onClick={() => abrirEdicao(m)}
+                                  className="flex-1 h-10 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                                  ✏️ Editar
+                                </button>
+                                <button onClick={() => enviarParaRevisao(m)}
+                                  className="flex-1 h-10 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
+                                  📤 Enviar para revisão
+                                </button>
+                              </div>
+                            ) : <span />}
+                            {podeRevisar && (
+                              <div className="flex items-center gap-3 shrink-0">
+                                <button onClick={() => abrirRevisao(m)}
+                                  className="text-xs text-blue-700 hover:text-blue-900 font-semibold">
+                                  🔎 {m.status === "rascunho" ? "Ver e comentar" : "Revisar"}
+                                </button>
+                                <button onClick={() => excluirMaterial(m)}
+                                  className="text-xs text-red-500 hover:text-red-700 font-semibold">
+                                  🗑️ Excluir
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -686,10 +861,16 @@ export default function MateriaisAdaptadosPage() {
           onClick={e => { if (e.target === e.currentTarget) setRevisando(null); }}>
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="bg-blue-900 px-5 py-4 flex items-center justify-between">
-              <h2 className="font-bold text-white text-sm">Revisar material</h2>
+              <h2 className="font-bold text-white text-sm">{revisando.status === "rascunho" ? "Acompanhar produção" : "Revisar material"}</h2>
               <button onClick={() => setRevisando(null)} className="text-white/70 hover:text-white">✕</button>
             </div>
             <div className="overflow-y-auto flex-1 p-5 space-y-3 bg-slate-50">
+              {revisando.status === "rascunho" && (
+                <div className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 flex items-center gap-2">
+                  <span>✏️</span>
+                  <p className="text-xs text-slate-600">A AT ainda está trabalhando neste material — ele não foi enviado para revisão ainda. Você já pode deixar uma correção.</p>
+                </div>
+              )}
               <div>
                 <p className="font-semibold text-slate-800">{revisando.titulo_livro}</p>
                 <p className="text-xs text-slate-400">{[revisando.materia, revisando.serie].filter(Boolean).join(" · ") || "—"} · por {revisando.criado_por_nome || "—"}</p>
@@ -709,7 +890,7 @@ export default function MateriaisAdaptadosPage() {
               )}
               <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
                 <div className="bg-amber-50 px-4 py-2 border-b border-amber-100">
-                  <p className="text-xs font-bold text-amber-700 uppercase">Solicitar ajustes (opcional)</p>
+                  <p className="text-xs font-bold text-amber-700 uppercase">{revisando.status === "rascunho" ? "Deixar correção (opcional)" : "Solicitar ajustes (opcional)"}</p>
                 </div>
                 <textarea rows={3} value={obsRevisao} onChange={e => setObsRevisao(e.target.value)}
                   placeholder="Descreva o que precisa ser ajustado..."
@@ -719,11 +900,40 @@ export default function MateriaisAdaptadosPage() {
             <div className="px-5 py-4 border-t border-slate-100 bg-white flex gap-3">
               <button onClick={solicitarAjustes} disabled={processandoRevisao}
                 className="flex-1 h-11 rounded-xl border border-red-200 text-red-600 text-sm font-bold hover:bg-red-50 transition disabled:opacity-50">
-                {processandoRevisao ? "Enviando..." : "⚠️ Solicitar ajustes"}
+                {processandoRevisao ? "Enviando..." : revisando.status === "rascunho" ? "💬 Enviar correção" : "⚠️ Solicitar ajustes"}
               </button>
-              <button onClick={aprovar} disabled={processandoRevisao}
-                className="flex-1 h-11 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50">
-                {processandoRevisao ? "Enviando..." : "✓ Aprovar"}
+              {revisando.status !== "rascunho" && (
+                <button onClick={aprovar} disabled={processandoRevisao}
+                  className="flex-1 h-11 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50">
+                  {processandoRevisao ? "Enviando..." : "✓ Aprovar"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL NOVA CRIANÇA */}
+      {modalCriancaAberto && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+          onClick={e => { if (e.target === e.currentTarget) setModalCriancaAberto(false); }}>
+          <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="bg-blue-900 px-5 py-4 flex items-center justify-between">
+              <h2 className="font-bold text-white text-sm">Nova criança</h2>
+              <button onClick={() => setModalCriancaAberto(false)} className="text-white/70 hover:text-white">✕</button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Nome da criança *</label>
+                <input type="text" value={nomeNovaCrianca} onChange={e => setNomeNovaCrianca(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); salvarNovaCrianca(); } }}
+                  placeholder="Nome completo"
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                <p className="text-[10px] text-slate-400 mt-1.5">Cadastro rápido só com o nome — o restante dos dados (diagnóstico, documentos etc.) é preenchido pelo ADM depois.</p>
+              </div>
+              <button onClick={salvarNovaCrianca} disabled={salvandoCrianca}
+                className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">
+                {salvandoCrianca ? "Cadastrando..." : "Cadastrar"}
               </button>
             </div>
           </div>

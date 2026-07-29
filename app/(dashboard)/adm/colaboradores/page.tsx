@@ -67,6 +67,7 @@ interface Colaborador {
   registro_profissional?: string | null;
   cargo?: string | null;
   data_admissao?: string | null;
+  faz_adaptado?: boolean;
   _tabela: Tabela;
   _categoria: Categoria;
 }
@@ -78,6 +79,7 @@ const FORM_VAZIO = {
   data_demissao: "", motivo_saida: "",
   especialidade: "", registro_profissional: "",
   cargo: CARGOS_APOIO[0], data_admissao: "",
+  faz_adaptado: false,
 };
 
 export default function ColaboradoresPage() {
@@ -185,7 +187,10 @@ export default function ColaboradoresPage() {
     const tabela: Tabela = form.categoria === "apoio" ? "colaboradoras_internas" : "atendentes";
     const payload = form.categoria === "apoio"
       ? { ...camposComuns, cargo: form.cargo, data_admissao: form.data_admissao || null }
-      : { ...camposComuns, especialidade: form.especialidade || null, registro_profissional: form.registro_profissional || null, role: form.categoria };
+      : {
+          ...camposComuns, especialidade: form.especialidade || null, registro_profissional: form.registro_profissional || null, role: form.categoria,
+          ...(form.categoria === "atendente" ? { faz_adaptado: form.faz_adaptado } : {}),
+        };
 
     const { data: novo, error } = await supabase.from(tabela).insert([payload]).select().single();
 
@@ -233,7 +238,10 @@ export default function ColaboradoresPage() {
     };
     const payload = editando._tabela === "colaboradoras_internas"
       ? { ...camposComuns, cargo: editando.cargo, data_admissao: editando.data_admissao || null }
-      : { ...camposComuns, especialidade: editando.especialidade, registro_profissional: editando.registro_profissional };
+      : {
+          ...camposComuns, especialidade: editando.especialidade, registro_profissional: editando.registro_profissional,
+          ...(editando._categoria === "atendente" ? { faz_adaptado: editando.faz_adaptado ?? false } : {}),
+        };
 
     const { error } = await supabase.from(editando._tabela).update(payload).eq("id", editando.id);
 
@@ -436,6 +444,16 @@ export default function ColaboradoresPage() {
                 <input type="text" placeholder="Ex: CRP 06/123456" value={form.registro_profissional} onChange={(e) => setForm({ ...form, registro_profissional: e.target.value })} className={inputClass} />
               </div>
             </div>
+          )}
+
+          {form.categoria === "atendente" && (
+            <label className="flex items-center gap-3 cursor-pointer w-fit">
+              <div onClick={() => setForm({ ...form, faz_adaptado: !form.faz_adaptado })}
+                className={`w-12 h-6 rounded-full transition-colors ${form.faz_adaptado ? "bg-emerald-500" : "bg-slate-300"} relative`}>
+                <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${form.faz_adaptado ? "left-6" : "left-0.5"}`} />
+              </div>
+              <span className="text-sm font-medium text-slate-700">📚 Faz material adaptado</span>
+            </label>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -646,6 +664,16 @@ export default function ColaboradoresPage() {
                       className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                   </div>
                 </div>
+              )}
+
+              {editando._categoria === "atendente" && (
+                <label className="flex items-center gap-3 cursor-pointer w-fit">
+                  <div onClick={() => setEditando({ ...editando, faz_adaptado: !editando.faz_adaptado })}
+                    className={`w-12 h-6 rounded-full transition-colors ${editando.faz_adaptado ? "bg-emerald-500" : "bg-slate-300"} relative`}>
+                    <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${editando.faz_adaptado ? "left-6" : "left-0.5"}`} />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">📚 Faz material adaptado</span>
+                </label>
               )}
 
               <div className="grid grid-cols-2 gap-3">
