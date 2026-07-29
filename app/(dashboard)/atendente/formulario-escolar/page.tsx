@@ -70,6 +70,24 @@ export default function FormularioEscolarPage() {
     inicializar();
   }, []);
 
+  useEffect(() => {
+    if (!atId) return;
+    const canal = supabase
+      .channel(`formulario-escolar-correcao-${atId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "formularios_escolares", filter: `at_id=eq.${atId}` },
+        (payload: { new: any }) => {
+          if (payload.new.correcao_solicitada) setCorrecaoPendente(payload.new);
+          else if (correcaoPendente?.id === payload.new.id) setCorrecaoPendente(null);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(canal); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atId]);
+
   function corrigirAgora() {
     if (!correcaoPendente) return;
     const p = correcaoPendente;

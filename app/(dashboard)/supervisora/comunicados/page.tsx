@@ -300,6 +300,33 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
   const [correcaoTexto, setCorrecaoTexto] = useState("");
   const [correcaoTopicos, setCorrecaoTopicos] = useState<string[]>([]);
   const [solicitandoCorrecao, setSolicitandoCorrecao] = useState(false);
+  const [novoDestaque, setNovoDestaque] = useState<string | null>(null);
+
+  useEffect(() => {
+    const canal = supabase
+      .channel("supervisora-comunicados-diarios")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "formularios_escolares" },
+        (payload: { new: any }) => {
+          setNovoDestaque(payload.new.id);
+          carregar();
+          setTimeout(() => setNovoDestaque(null), 4000);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "formularios_escolares" },
+        (payload: { new: any }) => {
+          carregar();
+          setDetalhe((prev) => prev && prev.id === payload.new.id ? { ...prev, ...payload.new } : prev);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(canal); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function carregar() {
     setLoading(true);
@@ -537,6 +564,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
           {filtrados.map(f => (
             <div key={f.id} onClick={() => { setDetalhe(f); setObs(""); setCorrecaoTexto(""); }}
               className={`bg-white rounded-2xl border shadow-sm p-4 cursor-pointer hover:shadow-md transition border-l-4
+                ${novoDestaque === f.id ? "ring-2 ring-emerald-400 bg-emerald-50" : ""}
                 ${f.enviado_familia ? "border-l-emerald-400" : "border-l-amber-400"} border-slate-200`}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
