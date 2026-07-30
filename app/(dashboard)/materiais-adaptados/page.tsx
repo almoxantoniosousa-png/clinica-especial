@@ -39,12 +39,50 @@ const STATUS_INFO: Record<string, { label: string; icon: string; cor: string }> 
   ajustes_solicitados: { label: "Ajustes solicitados", icon: "⚠️", cor: "bg-red-50 text-red-700 border-red-200" },
 };
 
+function ehImagemUrl(nome: string) {
+  return /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(nome);
+}
+
+function nomeArquivoUrl(url: string) {
+  try {
+    const semQuery = url.split("?")[0];
+    const partes = semQuery.split("/");
+    const bruto = decodeURIComponent(partes[partes.length - 1] || "arquivo");
+    return bruto.replace(/^\d+-\d+-/, "");
+  } catch {
+    return "arquivo";
+  }
+}
+
+function iconeArquivo(nome: string) {
+  const ext = nome.split(".").pop()?.toLowerCase() || "";
+  if (ext === "pdf") return "📕";
+  if (["doc", "docx"].includes(ext)) return "📘";
+  if (["xls", "xlsx"].includes(ext)) return "📗";
+  if (["ppt", "pptx"].includes(ext)) return "📙";
+  return "📎";
+}
+
+function ArquivoChip({ nome, href }: { nome: string; href?: string }) {
+  const conteudo = (
+    <div className="w-20 h-20 rounded-lg border border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-1 px-1 text-center">
+      <span className="text-2xl">{iconeArquivo(nome)}</span>
+      <span className="text-[9px] text-slate-500 leading-tight line-clamp-2 break-all">{nome}</span>
+    </div>
+  );
+  return href ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" title={nome}>{conteudo}</a>
+  ) : conteudo;
+}
+
 function CardFotos({ fotos }: { fotos?: string[] | null }) {
   if (!fotos || fotos.length === 0) return null;
   return (
     <div className="flex gap-2 overflow-x-auto pb-1">
       {fotos.map((url, i) => (
-        <img key={i} src={url} alt="" className="w-20 h-20 object-cover rounded-lg border border-slate-200 shrink-0" />
+        ehImagemUrl(url)
+          ? <img key={i} src={url} alt="" className="w-20 h-20 object-cover rounded-lg border border-slate-200 shrink-0" />
+          : <div key={i} className="shrink-0"><ArquivoChip nome={nomeArquivoUrl(url)} href={url} /></div>
       ))}
     </div>
   );
@@ -72,6 +110,8 @@ export default function MateriaisAdaptadosPage() {
   const [nomeNovaCrianca, setNomeNovaCrianca] = useState("");
   const [salvandoCrianca, setSalvandoCrianca] = useState(false);
   const [baixandoArquivos, setBaixandoArquivos] = useState(false);
+  const [importando, setImportando] = useState(false);
+  const importRef = useRef<HTMLInputElement>(null);
 
   // Modal de criação/edição
   const [modalAberto, setModalAberto] = useState(false);
@@ -273,8 +313,7 @@ export default function MateriaisAdaptadosPage() {
     try {
       const urlsNovas: string[] = [];
       for (const [i, file] of fotosNovas.entries()) {
-        const ext = file.name.split(".").pop() || "jpg";
-        const path = `${meuId}/${Date.now()}-${i}.${ext}`;
+        const path = `${meuId}/${Date.now()}-${i}-${file.name}`;
         const { error: upErr } = await supabase.storage.from("materiais-adaptados").upload(path, file);
         if (upErr) throw upErr;
         const { data: { publicUrl } } = supabase.storage.from("materiais-adaptados").getPublicUrl(path);
@@ -434,10 +473,9 @@ export default function MateriaisAdaptadosPage() {
       for (const [i, url] of urls.entries()) {
         const resp = await fetch(url);
         const blob = await resp.blob();
-        const ext = url.split(".").pop()?.split("?")[0] || "jpg";
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `${criancaSelecionada.nome} - ${i + 1}.${ext}`;
+        a.download = `${criancaSelecionada.nome} - ${i + 1} - ${nomeArquivoUrl(url)}`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -447,6 +485,51 @@ export default function MateriaisAdaptadosPage() {
       mostrarFeedback("erro", "Erro ao baixar um ou mais arquivos.");
     } finally {
       setBaixandoArquivos(false);
+    }
+  }
+
+  async function importarArquivosCrianca(files: FileList | null) {
+    if (!files || files.length === 0 || !criancaSelecionada || !meuId) return;
+    const lista = Array.from(files);
+    if (!confirm(`Importar ${lista.length} arquivo(s) como ${lista.length} material(is) em rascunho para ${criancaSelecionada.nome}? Você pode ajustar título/matéria/nível de cada um depois.`)) return;
+
+    setImportando(true);
+    let sucesso = 0;
+    try {
+      for (const [i, file] of lista.entries()) {
+        const path = `${meuId}/${Date.now()}-${i}-${file.name}`;
+        const { error: upErr } = await supabase.storage.from("materiais-adaptados").upload(path, file);
+        if (upErr) continue;
+        const { data: { publicUrl } } = supabase.storage.from("materiais-adaptados").getPublicUrl(path);
+        const titulo = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || file.name;
+
+        const { data: novo, error: insErr } = await supabase.from("materiais_adaptados").insert({
+          titulo_livro: titulo,
+          crianca_id: criancaSelecionada.id,
+          fotos: [publicUrl],
+          status: "rascunho",
+          criado_por: meuId,
+          criado_por_nome: meuNome,
+        }).select().single();
+        if (insErr) continue;
+
+        sucesso++;
+        await registrarLog(supabase, {
+          usuario_email: meuEmail, usuario_nome: meuNome,
+          acao: "Importou material adaptado", tabela: "materiais_adaptados", registro_id: novo?.id,
+          descricao: titulo,
+        });
+      }
+      if (sucesso === lista.length) {
+        mostrarFeedback("sucesso", `${sucesso} material(is) importado(s) como rascunho — ajuste os dados quando quiser.`);
+      } else if (sucesso > 0) {
+        mostrarFeedback("erro", `${sucesso} de ${lista.length} importado(s); ${lista.length - sucesso} falharam.`);
+      } else {
+        mostrarFeedback("erro", "Não foi possível importar os arquivos.");
+      }
+      carregar();
+    } finally {
+      setImportando(false);
     }
   }
 
@@ -607,7 +690,13 @@ export default function MateriaisAdaptadosPage() {
                       </div>
                       <p className="font-bold text-slate-800 truncate">{criancaSelecionada.nome}</p>
                     </div>
-                    <div className="flex gap-2 print:hidden">
+                    <div className="flex gap-2 print:hidden flex-wrap">
+                      {(meuFazAdaptado || !podeRevisar) && (
+                        <button onClick={() => importRef.current?.click()} disabled={importando}
+                          className="h-9 px-3 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition disabled:opacity-50 flex items-center gap-1.5">
+                          {importando ? "Importando..." : "📥 Importar arquivos prontos"}
+                        </button>
+                      )}
                       <button onClick={baixarArquivosCrianca} disabled={baixandoArquivos || materiaisDaCriancaSelecionada.length === 0}
                         className="h-9 px-3 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition disabled:opacity-50 flex items-center gap-1.5">
                         {baixandoArquivos ? "Baixando..." : "⬇️ Baixar arquivos"}
@@ -618,6 +707,8 @@ export default function MateriaisAdaptadosPage() {
                           🖨️ Imprimir
                         </button>
                       )}
+                      <input ref={importRef} type="file" multiple className="hidden"
+                        onChange={e => { importarArquivosCrianca(e.target.files); e.target.value = ""; }}/>
                     </div>
                   </div>
 
@@ -808,18 +899,42 @@ export default function MateriaisAdaptadosPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Fotos do material</label>
+                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">🤖 Ferramentas de IA</label>
+                <p className="text-[11px] text-slate-400 mb-2">Peça ideias de texto ou imagem pra ajudar na adaptação. Use nomes genéricos na pesquisa — só coloque o nome real da criança aqui no sistema depois de pronto.</p>
+                <div className="flex gap-2">
+                  <a href="https://claude.ai/new" target="_blank" rel="noopener noreferrer"
+                    className="flex-1 h-10 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition flex items-center justify-center gap-1.5">
+                    ✨ Abrir Claude
+                  </a>
+                  <a href="https://chat.openai.com/" target="_blank" rel="noopener noreferrer"
+                    className="flex-1 h-10 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition flex items-center justify-center gap-1.5">
+                    💬 Abrir ChatGPT
+                  </a>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Arquivos do material</label>
+                <p className="text-[11px] text-slate-400 mb-2">Fotos, PDF, Word... anexe o material que já está pronto no seu computador.</p>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {fotosExistentes.map(url => (
-                    <div key={url} className="relative w-20 h-20 shrink-0">
-                      <img src={url} alt="" className="w-full h-full object-cover rounded-lg border border-slate-200"/>
+                    <div key={url} className="relative shrink-0">
+                      {ehImagemUrl(url) ? (
+                        <img src={url} alt="" className="w-20 h-20 object-cover rounded-lg border border-slate-200"/>
+                      ) : (
+                        <ArquivoChip nome={nomeArquivoUrl(url)} href={url} />
+                      )}
                       <button onClick={() => removerFotoExistente(url)}
                         className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center shadow">✕</button>
                     </div>
                   ))}
                   {fotosPreviews.map((url, i) => (
-                    <div key={i} className="relative w-20 h-20 shrink-0">
-                      <img src={url} alt="" className="w-full h-full object-cover rounded-lg border border-slate-200"/>
+                    <div key={i} className="relative shrink-0">
+                      {fotosNovas[i]?.type.startsWith("image/") ? (
+                        <img src={url} alt="" className="w-20 h-20 object-cover rounded-lg border border-slate-200"/>
+                      ) : (
+                        <ArquivoChip nome={fotosNovas[i]?.name || "arquivo"} />
+                      )}
                       <button onClick={() => removerFotoNova(i)}
                         className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center shadow">✕</button>
                     </div>
@@ -832,12 +947,12 @@ export default function MateriaisAdaptadosPage() {
                   </button>
                   <button onClick={() => galeriaRef.current?.click()}
                     className="flex-1 h-10 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition flex items-center justify-center gap-1.5">
-                    🖼️ Galeria
+                    📎 Anexar arquivo
                   </button>
                 </div>
                 <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
                   onChange={e => { adicionarFotos(e.target.files); e.target.value = ""; }}/>
-                <input ref={galeriaRef} type="file" accept="image/*" multiple className="hidden"
+                <input ref={galeriaRef} type="file" multiple className="hidden"
                   onChange={e => { adicionarFotos(e.target.files); e.target.value = ""; }}/>
               </div>
             </div>
