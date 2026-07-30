@@ -201,6 +201,7 @@ export default function AdmCriancasPage() {
       ...formEdit,
       nome: formEdit.nome.trim(),
       escola_id: formEdit.escola_id || null,
+      data_nascimento: formEdit.data_nascimento || null,
       foto_url,
     }).eq("id", editando.id);
 
@@ -217,9 +218,13 @@ export default function AdmCriancasPage() {
     }
 
     setSalvandoEdicao(false);
-    setEditando(null);
-    if (error) mostrarFeedback("erro", "Erro ao editar: " + error.message);
-    else { carregarDados(); mostrarFeedback("sucesso", "Criança atualizada!"); }
+    if (error) {
+      mostrarFeedback("erro", "Erro ao editar: " + error.message);
+    } else {
+      setEditando(null);
+      carregarDados();
+      mostrarFeedback("sucesso", "Criança atualizada!");
+    }
   }
 
   async function excluirCrianca(id: string, nome: string) {
