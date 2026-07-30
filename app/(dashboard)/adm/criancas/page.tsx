@@ -40,6 +40,7 @@ export default function AdmCriancasPage() {
     nome_mae: "", nome_pai: "",
     escola_id: "", serie: "", plano_saude: "", numero_processo: "",
     diagnostico: "", cid: "", alergias: "", medicamentos: "", observacoes: "",
+    livro_adaptado: false,
   });
 
   const [editando, setEditando] = useState<any | null>(null);
@@ -123,6 +124,7 @@ export default function AdmCriancasPage() {
       alergias: form.alergias || null,
       medicamentos: form.medicamentos || null,
       observacoes: form.observacoes || null,
+      livro_adaptado: form.livro_adaptado,
     }]).select().single();
 
     if (error || !nova) {
@@ -151,7 +153,7 @@ export default function AdmCriancasPage() {
       descricao: `Cadastrou a criança: ${form.nome.trim()}`,
     });
 
-    setForm({ nome: "", cpf: "", data_nascimento: "", sexo: "", responsavel: "", telefone_responsavel: "", email_responsavel: "", nome_mae: "", nome_pai: "", escola_id: "", serie: "", plano_saude: "", numero_processo: "", diagnostico: "", cid: "", alergias: "", medicamentos: "", observacoes: "" });
+    setForm({ nome: "", cpf: "", data_nascimento: "", sexo: "", responsavel: "", telefone_responsavel: "", email_responsavel: "", nome_mae: "", nome_pai: "", escola_id: "", serie: "", plano_saude: "", numero_processo: "", diagnostico: "", cid: "", alergias: "", medicamentos: "", observacoes: "", livro_adaptado: false });
     setFotoFile(null); setFotoPreview(null); setDocumentosPendentes([]);
     setUploadingFoto(false);
     carregarDados();
@@ -180,6 +182,7 @@ export default function AdmCriancasPage() {
       medicamentos: crianca.medicamentos || "",
       observacoes: crianca.observacoes || "",
       documentos: crianca.documentos || [],
+      livro_adaptado: crianca.livro_adaptado || false,
     });
     setFotoEditPreview(crianca.foto_url || null);
     setFotoEditFile(null);
@@ -433,6 +436,15 @@ export default function AdmCriancasPage() {
                   <label className={labelClass}>Série escolar</label>
                   <input type="text" placeholder="Ex: 3º ano do Fundamental" value={form.serie} onChange={(e) => setForm({ ...form, serie: e.target.value })} className={inputClass}/>
                 </div>
+                <div className="sm:col-span-2">
+                  <label className="flex items-center gap-3 cursor-pointer w-fit">
+                    <div onClick={() => setForm({ ...form, livro_adaptado: !form.livro_adaptado })}
+                      className={`w-12 h-6 rounded-full transition-colors ${form.livro_adaptado ? "bg-emerald-500" : "bg-slate-300"} relative`}>
+                      <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${form.livro_adaptado ? "left-6" : "left-0.5"}`} />
+                    </div>
+                    <span className="text-sm font-medium text-slate-700">📖 Tem livro/material adaptado</span>
+                  </label>
+                </div>
               </div>
             </div>
           </Secao>
@@ -652,6 +664,15 @@ export default function AdmCriancasPage() {
                   <div>
                     <label className={labelClass}>Série escolar</label>
                     <input type="text" placeholder="Ex: 3º ano do Fundamental" value={formEdit.serie || ""} onChange={(e) => setFormEdit({ ...formEdit, serie: e.target.value })} className={inputClass}/>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="flex items-center gap-3 cursor-pointer w-fit">
+                      <div onClick={() => setFormEdit({ ...formEdit, livro_adaptado: !formEdit.livro_adaptado })}
+                        className={`w-12 h-6 rounded-full transition-colors ${formEdit.livro_adaptado ? "bg-emerald-500" : "bg-slate-300"} relative`}>
+                        <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${formEdit.livro_adaptado ? "left-6" : "left-0.5"}`} />
+                      </div>
+                      <span className="text-sm font-medium text-slate-700">📖 Tem livro/material adaptado</span>
+                    </label>
                   </div>
                 </div>
               </Secao>

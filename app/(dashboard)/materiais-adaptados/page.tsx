@@ -151,7 +151,7 @@ export default function MateriaisAdaptadosPage() {
     setLoading(true);
     const [{ data: mats, error }, { data: cri }] = await Promise.all([
       supabase.from("materiais_adaptados").select("*, criancas(nome)").order("created_at", { ascending: false }),
-      supabase.from("criancas").select("id, nome, foto_url").order("nome"),
+      supabase.from("criancas").select("id, nome, foto_url, livro_adaptado").order("nome"),
     ]);
     if (error) mostrarFeedback("erro", "Erro ao carregar materiais: " + error.message);
     setMateriais(mats || []);
@@ -182,6 +182,7 @@ export default function MateriaisAdaptadosPage() {
   );
 
   const criancasComMaterial = new Set(materiais.filter(m => m.crianca_id).map(m => m.crianca_id));
+  const criancasAdaptado = criancas.filter(c => c.livro_adaptado);
 
   const materiaisDaCriancaSelecionada = criancaSelecionada
     ? materiais.filter(m => m.crianca_id === criancaSelecionada.id)
@@ -409,7 +410,7 @@ export default function MateriaisAdaptadosPage() {
   async function salvarNovaCrianca() {
     if (!nomeNovaCrianca.trim()) { mostrarFeedback("erro", "Informe o nome da criança."); return; }
     setSalvandoCrianca(true);
-    const { data: nova, error } = await supabase.from("criancas").insert({ nome: nomeNovaCrianca.trim() }).select("id, nome, foto_url").single();
+    const { data: nova, error } = await supabase.from("criancas").insert({ nome: nomeNovaCrianca.trim(), livro_adaptado: true }).select("id, nome, foto_url, livro_adaptado").single();
     setSalvandoCrianca(false);
     if (error) { mostrarFeedback("erro", "Erro ao cadastrar criança: " + error.message); return; }
     await registrarLog(supabase, {
@@ -552,7 +553,7 @@ export default function MateriaisAdaptadosPage() {
             <div className="space-y-4">
               {!criancaSelecionada ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {criancas.map(c => {
+                  {criancasAdaptado.map(c => {
                     const qtd = materiais.filter(m => m.crianca_id === c.id).length;
                     return (
                       <button key={c.id} onClick={() => setCriancaSelecionada(c)}
@@ -580,10 +581,10 @@ export default function MateriaisAdaptadosPage() {
                       <p className="text-xs font-semibold text-slate-500">Nova criança</p>
                     </button>
                   )}
-                  {criancas.length === 0 && (
+                  {criancasAdaptado.length === 0 && (
                     <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-slate-200">
                       <span className="text-4xl">👶</span>
-                      <p className="text-sm text-slate-400 mt-2">Nenhuma criança cadastrada ainda.</p>
+                      <p className="text-sm text-slate-400 mt-2">Nenhuma criança com material adaptado ainda.</p>
                     </div>
                   )}
                 </div>
@@ -749,7 +750,7 @@ export default function MateriaisAdaptadosPage() {
                 <select value={criancaId} onChange={e => setCriancaId(e.target.value)}
                   className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                   <option value="">Material geral do acervo</option>
-                  {criancas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  {criancasAdaptado.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
               </div>
 
