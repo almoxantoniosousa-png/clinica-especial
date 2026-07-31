@@ -94,7 +94,7 @@ export default function AtendimentoForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const criancaOk = local === 'clinica' ? (criancaId || criancaTexto.trim()) : criancaId
-    if (!criancaOk || horasTrabalhadas <= 0 || !data || !localDetalhe) {
+    if (!criancaOk || horasTrabalhadas <= 0 || !data || (local !== 'clinica' && !localDetalhe)) {
       setMsg({ type: 'error', text: 'Por favor, preencha todos os campos obrigatórios.' })
       return
     }
@@ -105,7 +105,8 @@ export default function AtendimentoForm() {
     setLoading(true)
     setMsg(null)
 
-    const relatoCompleto = `Acompanhante: ${nomeAtendente} | ${local === 'escola' ? 'Escola' : 'Responsável'}: ${localDetalhe} | Entrada: ${horaEntrada} | Saída: ${horaSaida} | ${ocorrencia}`
+    const detalheLocal = local === 'clinica' ? '' : ` | ${local === 'escola' ? 'Escola' : 'Responsável'}: ${localDetalhe}`
+    const relatoCompleto = `Acompanhante: ${nomeAtendente}${detalheLocal} | Entrada: ${horaEntrada} | Saída: ${horaSaida} | ${ocorrencia}`
 
     const res = await createAtendimento({
       crianca_id: criancaId || null,
@@ -279,6 +280,7 @@ export default function AtendimentoForm() {
         </div>
 
         {/* CAMPO DINÂMICO */}
+        {local !== 'clinica' && (
         <div className="space-y-1.5">
           <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
             <MapPin size={13} />
@@ -294,6 +296,7 @@ export default function AtendimentoForm() {
               focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition"
           />
         </div>
+        )}
 
         {/* HORÁRIOS E DATA */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
