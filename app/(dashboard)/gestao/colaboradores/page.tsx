@@ -8,6 +8,13 @@ const POR_PAGINA = 8;
 
 type Categoria = "especialista" | "atendente" | "supervisora" | "apoio";
 
+// Supervisoras confirmadas que vivem na tabela "usuarios" (login/permissões
+// à parte, não mexidas aqui — só entram na listagem).
+const SUPERVISORAS_USUARIOS_IDS = [
+  "fdbf206f-3dfa-41cb-aa31-0acb40963b80", // Raquel Domingos
+  "7323d537-e397-4a2a-9152-2784ae20a109", // Carolina Borges
+];
+
 const CATEGORIAS: { valor: Categoria; label: string; labelSingular: string; icone: string; badge: string; chip: string }[] = [
   { valor: "especialista", label: "Especialistas", labelSingular: "Especialista", icone: "🩺", badge: "bg-purple-50 text-purple-700", chip: "bg-purple-600 hover:bg-purple-700" },
   { valor: "atendente", label: "Acompanhantes Terapêuticos", labelSingular: "Acompanhante Terapêutico", icone: "👤", badge: "bg-emerald-50 text-emerald-700", chip: "bg-emerald-600 hover:bg-emerald-700" },
@@ -41,9 +48,10 @@ export default function GestaoColaboradoresPage() {
 
   const carregar = async () => {
     setLoading(true); setErro("");
-    const [atendentesRes, internasRes] = await Promise.all([
+    const [atendentesRes, internasRes, supervisorasUsuariosRes] = await Promise.all([
       supabase.from("atendentes").select("*").in("role", ["especialista", "atendente", "supervisora"]).order("nome"),
       supabase.from("colaboradoras_internas").select("*").order("nome"),
+      supabase.from("usuarios").select("*").in("id", SUPERVISORAS_USUARIOS_IDS),
     ]);
     if (atendentesRes.error || internasRes.error) {
       setErro("Erro ao carregar colaboradores: " + (atendentesRes.error?.message || internasRes.error?.message));
@@ -52,7 +60,10 @@ export default function GestaoColaboradoresPage() {
     }
     const doAtendentes: Colaborador[] = (atendentesRes.data ?? []).map((r: any) => ({ ...r, _categoria: r.role as Categoria }));
     const doApoio: Colaborador[] = (internasRes.data ?? []).map((r: any) => ({ ...r, _categoria: "apoio" as Categoria }));
-    setColaboradores([...doAtendentes, ...doApoio].sort((a, b) => a.nome.localeCompare(b.nome)));
+    const doSupervisorasUsuarios: Colaborador[] = (supervisorasUsuariosRes.data ?? []).map((r: any) => ({
+      ...r, whatsapp: r.telefone, _categoria: "supervisora" as Categoria,
+    }));
+    setColaboradores([...doAtendentes, ...doApoio, ...doSupervisorasUsuarios].sort((a, b) => a.nome.localeCompare(b.nome)));
     setLoading(false);
   };
 

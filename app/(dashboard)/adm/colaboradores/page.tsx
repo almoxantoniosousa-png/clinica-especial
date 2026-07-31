@@ -6,7 +6,14 @@ import { registrarLog } from "@/lib/auditoria";
 import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
 
 type Categoria = "especialista" | "atendente" | "supervisora" | "apoio";
-type Tabela = "atendentes" | "colaboradoras_internas";
+type Tabela = "atendentes" | "colaboradoras_internas" | "usuarios";
+
+// Supervisoras confirmadas que vivem na tabela "usuarios" (login/permissões
+// à parte, não mexidas aqui — só entram na listagem/cadastro).
+const SUPERVISORAS_USUARIOS_IDS = [
+  "fdbf206f-3dfa-41cb-aa31-0acb40963b80", // Raquel Domingos
+  "7323d537-e397-4a2a-9152-2784ae20a109", // Carolina Borges
+];
 
 const CARGOS_APOIO = ["Auxiliar Administrativa", "Agente de Limpeza"];
 
@@ -159,9 +166,10 @@ export default function ColaboradoresPage() {
 
   const carregarTodos = async () => {
     setLoadingLista(true);
-    const [atendentesRes, internasRes] = await Promise.all([
+    const [atendentesRes, internasRes, supervisorasUsuariosRes] = await Promise.all([
       supabase.from("atendentes").select("*").in("role", ["especialista", "atendente", "supervisora"]),
       supabase.from("colaboradoras_internas").select("*"),
+      supabase.from("usuarios").select("*").in("id", SUPERVISORAS_USUARIOS_IDS),
     ]);
     const doAtendentes: Colaborador[] = (atendentesRes.data ?? []).map((r: any) => ({
       ...r, _tabela: "atendentes" as Tabela, _categoria: r.role as Categoria,
@@ -169,7 +177,10 @@ export default function ColaboradoresPage() {
     const doApoio: Colaborador[] = (internasRes.data ?? []).map((r: any) => ({
       ...r, _tabela: "colaboradoras_internas" as Tabela, _categoria: "apoio" as Categoria,
     }));
-    setColaboradores([...doAtendentes, ...doApoio].sort((a, b) => a.nome.localeCompare(b.nome)));
+    const doSupervisorasUsuarios: Colaborador[] = (supervisorasUsuariosRes.data ?? []).map((r: any) => ({
+      ...r, whatsapp: r.telefone, _tabela: "usuarios" as Tabela, _categoria: "supervisora" as Categoria,
+    }));
+    setColaboradores([...doAtendentes, ...doApoio, ...doSupervisorasUsuarios].sort((a, b) => a.nome.localeCompare(b.nome)));
     setLoadingLista(false);
   };
 
@@ -235,23 +246,27 @@ export default function ColaboradoresPage() {
     }
     setSalvandoEdicao(true);
 
-    const camposComuns = {
-      nome: editando.nome, email: editando.email, whatsapp: editando.whatsapp,
-      cpf: editando.cpf, rg: editando.rg,
-      data_nascimento: editando.data_nascimento || null,
-      endereco: editando.endereco,
-      cnpj: editando.cnpj || null, razao_social: editando.razao_social || null,
-      data_demissao: editando.data_demissao || null, motivo_saida: editando.motivo_saida || null,
-      ativo: editando.ativo !== false,
-      documentos: editando.documentos || [],
-    };
-    const payload = editando._tabela === "colaboradoras_internas"
-      ? { ...camposComuns, cargo: editando.cargo, data_admissao: editando.data_admissao || null }
-      : {
-          ...camposComuns, especialidade: editando.especialidade, registro_profissional: editando.registro_profissional,
-          cargo: editando.cargo || null,
-          ...(editando._categoria === "atendente" ? { faz_adaptado: editando.faz_adaptado ?? false } : {}),
-        };
+    const payload = editando._tabela === "usuarios"
+      ? { nome: editando.nome, email: editando.email, telefone: editando.whatsapp, cargo: editando.cargo || null, ativo: editando.ativo !== false }
+      : (() => {
+          const camposComuns = {
+            nome: editando.nome, email: editando.email, whatsapp: editando.whatsapp,
+            cpf: editando.cpf, rg: editando.rg,
+            data_nascimento: editando.data_nascimento || null,
+            endereco: editando.endereco,
+            cnpj: editando.cnpj || null, razao_social: editando.razao_social || null,
+            data_demissao: editando.data_demissao || null, motivo_saida: editando.motivo_saida || null,
+            ativo: editando.ativo !== false,
+            documentos: editando.documentos || [],
+          };
+          return editando._tabela === "colaboradoras_internas"
+            ? { ...camposComuns, cargo: editando.cargo, data_admissao: editando.data_admissao || null }
+            : {
+                ...camposComuns, especialidade: editando.especialidade, registro_profissional: editando.registro_profissional,
+                cargo: editando.cargo || null,
+                ...(editando._categoria === "atendente" ? { faz_adaptado: editando.faz_adaptado ?? false } : {}),
+              };
+        })();
 
     const { error } = await supabase.from(editando._tabela).update(payload).eq("id", editando.id);
 
@@ -360,10 +375,12 @@ export default function ColaboradoresPage() {
               className="h-9 px-3 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95 rounded-lg border border-blue-100 transition-all">
               Editar
             </button>
-            <button onClick={() => excluir(col)}
-              className="h-9 px-3 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 rounded-lg border border-red-100 transition-all">
-              Excluir
-            </button>
+            {col._tabela !== "usuarios" && (
+              <button onClick={() => excluir(col)}
+                className="h-9 px-3 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 rounded-lg border border-red-100 transition-all">
+                Excluir
+              </button>
+            )}
           </div>
         </div>
       </li>
@@ -669,7 +686,13 @@ export default function ColaboradoresPage() {
                   className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
               </div>
 
-              {editando._tabela === "colaboradoras_internas" ? (
+              {editando._tabela === "usuarios" ? (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cargo / Função</label>
+                  <input type="text" placeholder="Ex: Supervisora Clínica, Coordenadora Pedagógica..." value={editando.cargo || ""} onChange={(e) => setEditando({ ...editando, cargo: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                </div>
+              ) : editando._tabela === "colaboradoras_internas" ? (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cargo</label>
@@ -714,69 +737,81 @@ export default function ColaboradoresPage() {
                 </label>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CPF</label>
-                  <input type="text" value={editando.cpf || ""} onChange={(e) => setEditando({ ...editando, cpf: mascaraCpf(e.target.value) })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">RG</label>
-                  <input type="text" value={editando.rg || ""} onChange={(e) => setEditando({ ...editando, rg: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Data Nascimento</label>
-                <input type="date" value={editando.data_nascimento || ""} onChange={(e) => setEditando({ ...editando, data_nascimento: e.target.value })}
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Endereço</label>
-                <input type="text" value={editando.endereco || ""} onChange={(e) => setEditando({ ...editando, endereco: e.target.value })}
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CNPJ</label>
-                  <input type="text" value={editando.cnpj || ""} onChange={(e) => setEditando({ ...editando, cnpj: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Razão Social</label>
-                  <input type="text" value={editando.razao_social || ""} onChange={(e) => setEditando({ ...editando, razao_social: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Motivo de Saída</label>
-                  <select value={editando.motivo_saida || ""} onChange={(e) => setEditando({ ...editando, motivo_saida: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-                    <option value="">— Selecione —</option>
-                    {MOTIVOS_SAIDA.map((m) => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                </div>
-                <div className="flex items-end pb-1">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <div onClick={() => {
-                        const novoAtivo = !(editando.ativo !== false);
-                        setEditando(novoAtivo
-                          ? { ...editando, ativo: true, data_demissao: null, motivo_saida: null }
-                          : { ...editando, ativo: false });
-                      }}
-                      className={`w-12 h-6 rounded-full transition-colors ${editando.ativo !== false ? "bg-emerald-500" : "bg-red-400"} relative`}>
-                      <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${editando.ativo !== false ? "left-6" : "left-0.5"}`} />
+              {editando._tabela === "usuarios" ? (
+                <label className="flex items-center gap-3 cursor-pointer w-fit">
+                  <div onClick={() => setEditando({ ...editando, ativo: !(editando.ativo !== false) })}
+                    className={`w-12 h-6 rounded-full transition-colors ${editando.ativo !== false ? "bg-emerald-500" : "bg-red-400"} relative`}>
+                    <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${editando.ativo !== false ? "left-6" : "left-0.5"}`} />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">{editando.ativo !== false ? "Ativo" : "Inativo"}</span>
+                </label>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CPF</label>
+                      <input type="text" value={editando.cpf || ""} onChange={(e) => setEditando({ ...editando, cpf: mascaraCpf(e.target.value) })}
+                        className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                     </div>
-                    <span className="text-sm font-medium text-slate-700">{editando.ativo !== false ? "Ativo" : "Inativo"}</span>
-                  </label>
-                </div>
-              </div>
-              <AnexoDocumentos
-                pastaId={editando.id}
-                documentos={editando.documentos || []}
-                onChange={(docs) => setEditando({ ...editando, documentos: docs })}
-              />
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">RG</label>
+                      <input type="text" value={editando.rg || ""} onChange={(e) => setEditando({ ...editando, rg: e.target.value })}
+                        className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Data Nascimento</label>
+                    <input type="date" value={editando.data_nascimento || ""} onChange={(e) => setEditando({ ...editando, data_nascimento: e.target.value })}
+                      className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Endereço</label>
+                    <input type="text" value={editando.endereco || ""} onChange={(e) => setEditando({ ...editando, endereco: e.target.value })}
+                      className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CNPJ</label>
+                      <input type="text" value={editando.cnpj || ""} onChange={(e) => setEditando({ ...editando, cnpj: e.target.value })}
+                        className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Razão Social</label>
+                      <input type="text" value={editando.razao_social || ""} onChange={(e) => setEditando({ ...editando, razao_social: e.target.value })}
+                        className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Motivo de Saída</label>
+                      <select value={editando.motivo_saida || ""} onChange={(e) => setEditando({ ...editando, motivo_saida: e.target.value })}
+                        className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <option value="">— Selecione —</option>
+                        {MOTIVOS_SAIDA.map((m) => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-end pb-1">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <div onClick={() => {
+                            const novoAtivo = !(editando.ativo !== false);
+                            setEditando(novoAtivo
+                              ? { ...editando, ativo: true, data_demissao: null, motivo_saida: null }
+                              : { ...editando, ativo: false });
+                          }}
+                          className={`w-12 h-6 rounded-full transition-colors ${editando.ativo !== false ? "bg-emerald-500" : "bg-red-400"} relative`}>
+                          <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${editando.ativo !== false ? "left-6" : "left-0.5"}`} />
+                        </div>
+                        <span className="text-sm font-medium text-slate-700">{editando.ativo !== false ? "Ativo" : "Inativo"}</span>
+                      </label>
+                    </div>
+                  </div>
+                  <AnexoDocumentos
+                    pastaId={editando.id}
+                    documentos={editando.documentos || []}
+                    onChange={(docs) => setEditando({ ...editando, documentos: docs })}
+                  />
+                </>
+              )}
             </div>
             {feedback && (
               <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
