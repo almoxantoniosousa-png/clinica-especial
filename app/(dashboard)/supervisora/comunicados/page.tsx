@@ -17,6 +17,7 @@ type FormularioEscolar = {
   enviado_familia?: boolean; obs_supervisora?: string | null;
   correcao_solicitada?: boolean; correcao_texto?: string | null; correcao_topicos?: string[] | null;
   hora_chegada?: string; hora_saida?: string; interacao?: string[]; interacao_obs?: string;
+  autonomia_obs?: string;
   autonomia_nivel?: number; idas_banheiro?: number;
   evacuou?: boolean; periodo_menstrual?: boolean; agua_ingestao?: string;
   socializacao?: string[]; amizades_intervalo?: string; atencao?: string[];
@@ -449,6 +450,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
           { label: "Idas ao banheiro", valor: `${form.idas_banheiro ?? 0} vez${(form.idas_banheiro ?? 0) !== 1 ? "es" : ""}`, tipo: "texto" },
           form.evacuou !== undefined && { label: "Evacuou", valor: form.evacuou ? "Sim" : "Não", tipo: "badge", cor: form.evacuou ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200" },
           form.periodo_menstrual && { label: "Período menstrual", valor: "Sim", tipo: "badge", cor: "bg-pink-100 text-pink-700 border-pink-200" },
+          form.autonomia_obs && { label: "Observações específicas", valor: form.autonomia_obs, tipo: "texto" },
           form.agua_ingestao && { label: "💧 Água", valor: form.agua_ingestao, tipo: "texto" },
         ].filter(Boolean),
       },

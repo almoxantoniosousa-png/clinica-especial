@@ -35,6 +35,7 @@ export default function FormularioEscolarPage() {
   const [periodoMenstrual, setPeriodoMenstrual] = useState(false);
   const [idasBanheiro, setIdasBanheiro] = useState(0);
   const [evacuou, setEvacuou] = useState(false);
+  const [autonomiaObs, setAutonomiaObs] = useState("");
   const [aguaIngestao, setAguaIngestao] = useState("");
   const [socializacao, setSocializacao] = useState<string[]>([]);
   const [amizadesIntervalo, setAmizadesIntervalo] = useState("");
@@ -106,6 +107,7 @@ export default function FormularioEscolarPage() {
     setPeriodoMenstrual(p.periodo_menstrual || false);
     setIdasBanheiro(p.idas_banheiro || 0);
     setEvacuou(p.evacuou || false);
+    setAutonomiaObs(p.autonomia_obs || "");
     setAguaIngestao(p.agua_ingestao || "");
     setSocializacao(p.socializacao || []);
     setAmizadesIntervalo(p.amizades_intervalo || "");
@@ -155,7 +157,7 @@ export default function FormularioEscolarPage() {
       crianca_id: criancaId,
       hora_chegada: horaChegada, hora_saida: horaSaida, interacao, interacao_obs: interacaoObs,
       autonomia_nivel: autonomiaNivel, periodo_menstrual: periodoMenstrual,
-      idas_banheiro: idasBanheiro, evacuou, agua_ingestao: aguaIngestao, socializacao, amizades_intervalo: amizadesIntervalo, atencao,
+      idas_banheiro: idasBanheiro, evacuou, autonomia_obs: autonomiaObs, agua_ingestao: aguaIngestao, socializacao, amizades_intervalo: amizadesIntervalo, atencao,
       lanche, comeu_tudo: comeuTudo, atividades_sala: atividadesSala, interacao_sala: interacaoSala,
       tarefa_casa: tarefaCasa, materiais_pedir: materiaisPedir,
       obs_gerais: obsGerais, eventos_escolares: eventosEscolares,
@@ -392,6 +394,12 @@ export default function FormularioEscolarPage() {
               </div>
             </div>
             <Toggle value={evacuou} onChange={setEvacuou} label="Evacuou" icon="✅"/>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Observações Específicas</label>
+              <textarea rows={2} value={autonomiaObs} onChange={e => setAutonomiaObs(e.target.value)}
+                placeholder="Algo específico sobre autonomia ou higiene hoje?"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
+            </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">💧 Ingestão de Água</label>
               <div className="grid grid-cols-2 gap-2">

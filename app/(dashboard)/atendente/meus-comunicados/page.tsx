@@ -280,6 +280,7 @@ export default function MeusComunicadosPage() {
               <p className="text-sm text-slate-700">Nível de autonomia: {detalhe.autonomia_nivel ?? "—"}</p>
               <p className="text-sm text-slate-700">Idas ao banheiro: {detalhe.idas_banheiro ?? "—"} · Evacuou: {detalhe.evacuou ? "Sim" : "Não"}</p>
               {detalhe.periodo_menstrual && <p className="text-sm text-slate-700">Período menstrual: Sim</p>}
+              {detalhe.autonomia_obs && <p className="text-sm text-slate-700">Observações: {detalhe.autonomia_obs}</p>}
               <p className="text-sm text-slate-700">💧 Ingestão de água: {detalhe.agua_ingestao || "—"}</p>
             </div>
 
