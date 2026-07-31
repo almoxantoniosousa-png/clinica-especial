@@ -246,27 +246,24 @@ export default function ColaboradoresPage() {
     }
     setSalvandoEdicao(true);
 
-    const payload = editando._tabela === "usuarios"
-      ? { nome: editando.nome, email: editando.email, telefone: editando.whatsapp, cargo: editando.cargo || null, ativo: editando.ativo !== false }
-      : (() => {
-          const camposComuns = {
-            nome: editando.nome, email: editando.email, whatsapp: editando.whatsapp,
-            cpf: editando.cpf, rg: editando.rg,
-            data_nascimento: editando.data_nascimento || null,
-            endereco: editando.endereco,
-            cnpj: editando.cnpj || null, razao_social: editando.razao_social || null,
-            data_demissao: editando.data_demissao || null, motivo_saida: editando.motivo_saida || null,
-            ativo: editando.ativo !== false,
-            documentos: editando.documentos || [],
-          };
-          return editando._tabela === "colaboradoras_internas"
-            ? { ...camposComuns, cargo: editando.cargo, data_admissao: editando.data_admissao || null }
-            : {
-                ...camposComuns, especialidade: editando.especialidade, registro_profissional: editando.registro_profissional,
-                cargo: editando.cargo || null,
-                ...(editando._categoria === "atendente" ? { faz_adaptado: editando.faz_adaptado ?? false } : {}),
-              };
-        })();
+    const camposComuns = {
+      nome: editando.nome, email: editando.email,
+      ...(editando._tabela === "usuarios" ? { telefone: editando.whatsapp } : { whatsapp: editando.whatsapp }),
+      cpf: editando.cpf, rg: editando.rg,
+      data_nascimento: editando.data_nascimento || null,
+      endereco: editando.endereco,
+      cnpj: editando.cnpj || null, razao_social: editando.razao_social || null,
+      data_demissao: editando.data_demissao || null, motivo_saida: editando.motivo_saida || null,
+      ativo: editando.ativo !== false,
+      documentos: editando.documentos || [],
+    };
+    const payload = editando._tabela === "colaboradoras_internas"
+      ? { ...camposComuns, cargo: editando.cargo, data_admissao: editando.data_admissao || null }
+      : {
+          ...camposComuns, especialidade: editando.especialidade, registro_profissional: editando.registro_profissional,
+          cargo: editando.cargo || null,
+          ...(editando._categoria === "atendente" ? { faz_adaptado: editando.faz_adaptado ?? false } : {}),
+        };
 
     const { error } = await supabase.from(editando._tabela).update(payload).eq("id", editando.id);
 
@@ -686,13 +683,7 @@ export default function ColaboradoresPage() {
                   className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
               </div>
 
-              {editando._tabela === "usuarios" ? (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cargo / Função</label>
-                  <input type="text" placeholder="Ex: Supervisora Clínica, Coordenadora Pedagógica..." value={editando.cargo || ""} onChange={(e) => setEditando({ ...editando, cargo: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
-                </div>
-              ) : editando._tabela === "colaboradoras_internas" ? (
+              {editando._tabela === "colaboradoras_internas" ? (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cargo</label>
@@ -737,17 +728,7 @@ export default function ColaboradoresPage() {
                 </label>
               )}
 
-              {editando._tabela === "usuarios" ? (
-                <label className="flex items-center gap-3 cursor-pointer w-fit">
-                  <div onClick={() => setEditando({ ...editando, ativo: !(editando.ativo !== false) })}
-                    className={`w-12 h-6 rounded-full transition-colors ${editando.ativo !== false ? "bg-emerald-500" : "bg-red-400"} relative`}>
-                    <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${editando.ativo !== false ? "left-6" : "left-0.5"}`} />
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">{editando.ativo !== false ? "Ativo" : "Inativo"}</span>
-                </label>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">CPF</label>
                       <input type="text" value={editando.cpf || ""} onChange={(e) => setEditando({ ...editando, cpf: mascaraCpf(e.target.value) })}
@@ -810,8 +791,6 @@ export default function ColaboradoresPage() {
                     documentos={editando.documentos || []}
                     onChange={(docs) => setEditando({ ...editando, documentos: docs })}
                   />
-                </>
-              )}
             </div>
             {feedback && (
               <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
