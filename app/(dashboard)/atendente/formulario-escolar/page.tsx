@@ -26,24 +26,26 @@ export default function FormularioEscolarPage() {
   const [correcaoPendente, setCorrecaoPendente] = useState<any | null>(null);
   const [editandoId, setEditandoId] = useState<string | null>(null);
 
+  const [dataForm, setDataForm] = useState(hojeLocal());
   const [horaChegada, setHoraChegada] = useState("");
   const [interacao, setInteracao] = useState<string[]>([]);
+  const [interacaoObs, setInteracaoObs] = useState("");
   const [autonomiaNivel, setAutonomiaNivel] = useState(0);
   const [periodoMenstrual, setPeriodoMenstrual] = useState(false);
   const [idasBanheiro, setIdasBanheiro] = useState(0);
   const [evacuou, setEvacuou] = useState(false);
   const [aguaIngestao, setAguaIngestao] = useState("");
   const [socializacao, setSocializacao] = useState<string[]>([]);
+  const [amizadesIntervalo, setAmizadesIntervalo] = useState("");
   const [atencao, setAtencao] = useState<string[]>([]);
   const [lanche, setLanche] = useState("");
   const [comeuTudo, setComeuTudo] = useState(false);
   const [atividadesSala, setAtividadesSala] = useState("");
+  const [interacaoSala, setInteracaoSala] = useState("");
   const [tarefaCasa, setTarefaCasa] = useState("");
   const [materiaisPedir, setMateriaisPedir] = useState("");
   const [obsGerais, setObsGerais] = useState("");
   const [eventosEscolares, setEventosEscolares] = useState("");
-
-  const hoje = hojeLocal();
 
   useEffect(() => {
     async function inicializar() {
@@ -93,19 +95,23 @@ export default function FormularioEscolarPage() {
     if (!correcaoPendente) return;
     const p = correcaoPendente;
     setEditandoId(p.id);
+    setDataForm(p.data || hojeLocal());
     setCriancaId(p.crianca_id);
     setHoraChegada(p.hora_chegada || "");
     setInteracao(p.interacao || []);
+    setInteracaoObs(p.interacao_obs || "");
     setAutonomiaNivel(p.autonomia_nivel || 0);
     setPeriodoMenstrual(p.periodo_menstrual || false);
     setIdasBanheiro(p.idas_banheiro || 0);
     setEvacuou(p.evacuou || false);
     setAguaIngestao(p.agua_ingestao || "");
     setSocializacao(p.socializacao || []);
+    setAmizadesIntervalo(p.amizades_intervalo || "");
     setAtencao(p.atencao || []);
     setLanche(p.lanche || "");
     setComeuTudo(p.comeu_tudo || false);
     setAtividadesSala(p.atividades_sala || "");
+    setInteracaoSala(p.interacao_sala || "");
     setTarefaCasa(p.tarefa_casa || "");
     setMateriaisPedir(p.materiais_pedir || "");
     setObsGerais(p.obs_gerais || "");
@@ -124,6 +130,10 @@ export default function FormularioEscolarPage() {
   }
 
   function avancar() {
+    if (etapa === 1 && !dataForm) {
+      mostrarFeedback("erro", "Informe a data antes de continuar.");
+      return;
+    }
     if (etapa === 1 && !criancaId) {
       mostrarFeedback("erro", "Selecione a criança antes de continuar.");
       return;
@@ -141,10 +151,10 @@ export default function FormularioEscolarPage() {
 
     const campos = {
       crianca_id: criancaId,
-      hora_chegada: horaChegada, interacao,
+      hora_chegada: horaChegada, interacao, interacao_obs: interacaoObs,
       autonomia_nivel: autonomiaNivel, periodo_menstrual: periodoMenstrual,
-      idas_banheiro: idasBanheiro, evacuou, agua_ingestao: aguaIngestao, socializacao, atencao,
-      lanche, comeu_tudo: comeuTudo, atividades_sala: atividadesSala,
+      idas_banheiro: idasBanheiro, evacuou, agua_ingestao: aguaIngestao, socializacao, amizades_intervalo: amizadesIntervalo, atencao,
+      lanche, comeu_tudo: comeuTudo, atividades_sala: atividadesSala, interacao_sala: interacaoSala,
       tarefa_casa: tarefaCasa, materiais_pedir: materiaisPedir,
       obs_gerais: obsGerais, eventos_escolares: eventosEscolares,
     };
@@ -152,7 +162,7 @@ export default function FormularioEscolarPage() {
     const { error } = editandoId
       ? await supabase.from("formularios_escolares").update({ ...campos, correcao_solicitada: false }).eq("id", editandoId)
       : await supabase.from("formularios_escolares").insert([{
-          ...campos, at_id: atId, data: hoje,
+          ...campos, at_id: atId, data: dataForm,
           enviado_supervisora: true, enviado_familia: false, status: 'aguardando',
         }]);
 
@@ -288,6 +298,13 @@ export default function FormularioEscolarPage() {
           <div className="space-y-5">
             <h2 className="font-bold text-blue-900 text-lg">🏁 Entrada e Interação</h2>
             <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Data *</label>
+              <input type="date" value={dataForm} disabled={!!editandoId}
+                onChange={e => setDataForm(e.target.value)}
+                className="w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:bg-slate-50 disabled:text-slate-400"/>
+              {editandoId && <p className="text-[11px] text-slate-400">A data do comunicado original não muda numa correção.</p>}
+            </div>
+            <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Criança *</label>
               <select value={criancaId} onChange={e => setCriancaId(e.target.value)}
                 className="w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
@@ -316,7 +333,7 @@ export default function FormularioEscolarPage() {
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Interação Inicial</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {["Cumprimenta Pares", "Cumprimenta Adultos", "Interage na Sala", "Abraça/Contato Físico"].map(op => (
+                {["Cumprimenta Pares", "Cumprimenta Adultos", "Interage na Sala", "Abraça/Contato Físico", "Não Interage"].map(op => (
                   <button key={op} type="button" onClick={() => toggleOpcao(interacao, setInteracao, op)}
                     className={"px-4 py-3 rounded-xl text-sm font-medium border-2 transition text-left " +
                       (interacao.includes(op) ? "border-blue-600 bg-blue-50 text-blue-800 font-semibold" : "border-slate-200 text-slate-600 hover:border-slate-300")}>
@@ -324,6 +341,12 @@ export default function FormularioEscolarPage() {
                   </button>
                 ))}
               </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Outras Observações da Interação</label>
+              <textarea rows={2} value={interacaoObs} onChange={e => setInteracaoObs(e.target.value)}
+                placeholder="Algo diferente do que já foi marcado acima?"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
             </div>
           </div>
         )}
@@ -391,6 +414,13 @@ export default function FormularioEscolarPage() {
               </div>
             </div>
             <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Amizades no Intervalo</label>
+              <p className="text-[11px] text-slate-400">Informe como foi o intervalo. Tem amizades com os colegas? Quais?</p>
+              <textarea rows={3} value={amizadesIntervalo} onChange={e => setAmizadesIntervalo(e.target.value)}
+                placeholder="Descreva o intervalo e as amizades..."
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
+            </div>
+            <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Atenção e Foco</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {["Atenção mantida", "Distração frequente", "Necessitou apoio constante", "Foco excelente"].map(op => (
@@ -418,6 +448,13 @@ export default function FormularioEscolarPage() {
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Conteúdo de Sala</label>
               <textarea rows={3} value={atividadesSala} onChange={e => setAtividadesSala(e.target.value)}
                 placeholder="O que foi trabalhado hoje em sala?"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Interação em Sala de Aula</label>
+              <p className="text-[11px] text-slate-400">A criança/adolescente interage com o professor e colegas de turma? Como? Durante a abordagem do conteúdo, o professor se aproxima e orienta o/a estudante?</p>
+              <textarea rows={3} value={interacaoSala} onChange={e => setInteracaoSala(e.target.value)}
+                placeholder="Descreva a interação em sala..."
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
             </div>
             <div className="space-y-2">

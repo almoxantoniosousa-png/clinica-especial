@@ -15,12 +15,12 @@ type Responsavel = {
   id: string; nome: string; email: string; criancas: CriancaInfo;
 };
 type FormDiario = {
-  hora_chegada?: string; interacao?: string[];
+  hora_chegada?: string; interacao?: string[]; interacao_obs?: string;
   autonomia_nivel?: number; idas_banheiro?: number;
   evacuou?: boolean; periodo_menstrual?: boolean;
-  socializacao?: string[]; atencao?: string[];
+  socializacao?: string[]; amizades_intervalo?: string; atencao?: string[];
   lanche?: string; comeu_tudo?: boolean;
-  atividades_sala?: string; tarefa_casa?: string;
+  atividades_sala?: string; interacao_sala?: string; tarefa_casa?: string;
   materiais_pedir?: string; obs_gerais?: string;
   obs_supervisora?: string;
 };
@@ -250,6 +250,7 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
         itens: [
           d.hora_chegada && { label: "Horário", valor: d.hora_chegada },
           d.interacao?.length && { label: "Interação", valor: (d.interacao as string[]).join(" · ") },
+          d.interacao_obs && { label: "Outras observações", valor: d.interacao_obs },
         ].filter(Boolean),
       },
       {
@@ -264,6 +265,7 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
         titulo: "🏀 Recreio",
         itens: [
           d.socializacao?.length && { label: "Socialização", valor: (d.socializacao as string[]).join(" · ") },
+          d.amizades_intervalo && { label: "Amizades no intervalo", valor: d.amizades_intervalo },
           d.atencao?.length && { label: "Atenção", valor: (d.atencao as string[]).join(" · ") },
           d.lanche && { label: "Lanche", valor: `${d.lanche}${d.comeu_tudo ? " (comeu tudo)" : ""}` },
         ].filter(Boolean),
@@ -272,6 +274,7 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
         titulo: "📖 Agenda",
         itens: [
           d.atividades_sala && { label: "Atividades", valor: d.atividades_sala },
+          d.interacao_sala && { label: "Interação em sala", valor: d.interacao_sala },
           d.tarefa_casa && { label: "Tarefa de casa", valor: d.tarefa_casa },
           d.materiais_pedir && { label: "⚠️ Avisos urgentes", valor: d.materiais_pedir, alerta: true },
           d.obs_gerais && { label: "Observações", valor: d.obs_gerais },

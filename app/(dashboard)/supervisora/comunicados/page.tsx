@@ -16,12 +16,12 @@ type FormularioEscolar = {
   id: string; created_at: string; status: string; data: string;
   enviado_familia?: boolean; obs_supervisora?: string | null;
   correcao_solicitada?: boolean; correcao_texto?: string | null; correcao_topicos?: string[] | null;
-  hora_chegada?: string; interacao?: string[];
+  hora_chegada?: string; interacao?: string[]; interacao_obs?: string;
   autonomia_nivel?: number; idas_banheiro?: number;
   evacuou?: boolean; periodo_menstrual?: boolean; agua_ingestao?: string;
-  socializacao?: string[]; atencao?: string[];
+  socializacao?: string[]; amizades_intervalo?: string; atencao?: string[];
   lanche?: string; comeu_tudo?: boolean;
-  atividades_sala?: string; eventos_escolares?: string; tarefa_casa?: string;
+  atividades_sala?: string; interacao_sala?: string; eventos_escolares?: string; tarefa_casa?: string;
   materiais_pedir?: string; obs_gerais?: string;
   criancas?: { nome: string; foto_url?: string | null };
 };
@@ -437,6 +437,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
         itens: [
           form.hora_chegada && { label: "Horário de chegada", valor: form.hora_chegada, tipo: "texto" },
           form.interacao?.length && { label: "Interação inicial", valor: form.interacao, tipo: "tags" },
+          form.interacao_obs && { label: "Outras observações", valor: form.interacao_obs, tipo: "texto" },
         ].filter(Boolean),
       },
       {
@@ -455,6 +456,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
         cor: "border-purple-200 bg-purple-50",
         itens: [
           form.socializacao?.length && { label: "Interação no recreio", valor: form.socializacao, tipo: "tags" },
+          form.amizades_intervalo && { label: "Amizades no intervalo", valor: form.amizades_intervalo, tipo: "texto" },
           form.atencao?.length && { label: "Atenção e foco", valor: form.atencao, tipo: "tags" },
           form.lanche && { label: "Lanche", valor: form.lanche, tipo: "texto" },
           form.comeu_tudo !== undefined && { label: "Comeu tudo", valor: form.comeu_tudo ? "Sim" : "Não", tipo: "badge", cor: form.comeu_tudo ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200" },
@@ -465,6 +467,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
         cor: "border-emerald-200 bg-emerald-50",
         itens: [
           form.atividades_sala && { label: "Conteúdo de sala", valor: form.atividades_sala, tipo: "texto" },
+          form.interacao_sala && { label: "Interação em sala", valor: form.interacao_sala, tipo: "texto" },
           form.eventos_escolares && { label: "🎉 Eventos escolares", valor: form.eventos_escolares, tipo: "texto" },
           form.tarefa_casa && { label: "Tarefa de casa", valor: form.tarefa_casa, tipo: "texto" },
           form.materiais_pedir && { label: "⚠️ Materiais / Avisos urgentes", valor: form.materiais_pedir, tipo: "alerta" },

@@ -272,6 +272,7 @@ export default function MeusComunicadosPage() {
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">🏁 Entrada e Interação</p>
               <p className="text-sm text-slate-700">Chegada: {detalhe.hora_chegada || "—"}</p>
               <p className="text-sm text-slate-700">{(detalhe.interacao || []).join(", ") || "—"}</p>
+              {detalhe.interacao_obs && <p className="text-sm text-slate-700">Outras observações: {detalhe.interacao_obs}</p>}
             </div>
 
             <div className="space-y-1.5 pt-2 border-t border-slate-100">
@@ -285,6 +286,7 @@ export default function MeusComunicadosPage() {
             <div className="space-y-1.5 pt-2 border-t border-slate-100">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">🏀 Recreio e Socialização</p>
               <p className="text-sm text-slate-700">Socialização: {(detalhe.socializacao || []).join(", ") || "—"}</p>
+              {detalhe.amizades_intervalo && <p className="text-sm text-slate-700">Amizades no intervalo: {detalhe.amizades_intervalo}</p>}
               <p className="text-sm text-slate-700">Atenção: {(detalhe.atencao || []).join(", ") || "—"}</p>
             </div>
 
@@ -292,6 +294,7 @@ export default function MeusComunicadosPage() {
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">📖 Agenda e Recados</p>
               <p className="text-sm text-slate-700">Lanche: {detalhe.lanche || "—"} · Comeu tudo: {detalhe.comeu_tudo ? "Sim" : "Não"}</p>
               {detalhe.atividades_sala && <p className="text-sm text-slate-700">Atividades em sala: {detalhe.atividades_sala}</p>}
+              {detalhe.interacao_sala && <p className="text-sm text-slate-700">Interação em sala: {detalhe.interacao_sala}</p>}
               {detalhe.tarefa_casa && <p className="text-sm text-slate-700">Tarefa de casa: {detalhe.tarefa_casa}</p>}
               {detalhe.materiais_pedir && <p className="text-sm text-slate-700">Materiais a pedir: {detalhe.materiais_pedir}</p>}
               {detalhe.eventos_escolares && <p className="text-sm text-slate-700">🎉 Eventos escolares: {detalhe.eventos_escolares}</p>}

@@ -12,9 +12,10 @@ interface RoleSidebarProps {
   userCargo?: string | null;
   userNome?: string | null;
   userContataFamilia?: boolean;
+  userFazAdaptado?: boolean;
 }
 
-export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia = true }: RoleSidebarProps) {
+export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia = true, userFazAdaptado = false }: RoleSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [confirmandoSaida, setConfirmandoSaida] = useState(false);
@@ -132,7 +133,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/atendente/meus-comunicados",   label: "Meus Comunicados",  icon: "📬" },
     { href: "/escala",                       label: "Minha Escala",      icon: "📅" },
     { href: "/brinquedos",                   label: "Brinquedos",        icon: "🧸" },
-    { href: "/materiais-adaptados",          label: "Materiais Adaptados", icon: "📚" },
+    ...(userFazAdaptado ? [{ href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" }] : []),
     { href: "/protocolos",                   label: "Protocolos",        icon: "📜" },
     { href: "/mural",                        label: "Mural",             icon: "📢" },
     { href: "/reuniao",                      label: "Reunião",           icon: "🗒️" },

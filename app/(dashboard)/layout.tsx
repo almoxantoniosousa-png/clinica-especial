@@ -18,6 +18,7 @@ export default async function DashboardLayout({
   let cargoFinal: string | null = null;
   let nomeFinal: string | null = null;
   let contataFamiliaFinal = true;
+  let fazAdaptadoFinal = false;
 
   // 1. Busca na tabela usuarios (familia, gestao, adm, financeiro...)
   const { data: usuario } = await supabase
@@ -35,23 +36,25 @@ export default async function DashboardLayout({
     // 2. Busca na tabela atendentes (ATs e especialistas)
     const { data: porId } = await supabase
       .from("atendentes")
-      .select("role, nome")
+      .select("role, nome, faz_adaptado")
       .eq("id", user.id)
       .maybeSingle();
 
     if (porId) {
       roleFinal = porId.role.toLowerCase();
       nomeFinal = porId.nome || null;
+      fazAdaptadoFinal = !!porId.faz_adaptado;
     } else {
       const { data: porEmail } = await supabase
         .from("atendentes")
-        .select("role, nome")
+        .select("role, nome, faz_adaptado")
         .eq("email", user.email)
         .maybeSingle();
 
       if (porEmail) {
         roleFinal = porEmail.role.toLowerCase();
         nomeFinal = porEmail.nome || null;
+        fazAdaptadoFinal = !!porEmail.faz_adaptado;
       }
     }
   }
@@ -63,7 +66,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="flex flex-col md:flex-row min-h-screen">
-        <RoleSidebar key={user.id} userRole={roleFinal} userCargo={cargoFinal} userNome={nomeFinal} userContataFamilia={contataFamiliaFinal} />
+        <RoleSidebar key={user.id} userRole={roleFinal} userCargo={cargoFinal} userNome={nomeFinal} userContataFamilia={contataFamiliaFinal} userFazAdaptado={fazAdaptadoFinal} />
         <main className="flex-1 min-w-0 min-h-screen overflow-y-auto overflow-x-hidden bg-zinc-100 relative">
           {/* Marca d'água — logo da clínica */}
           <div className="fixed inset-0 pointer-events-none select-none flex items-center justify-center" style={{ zIndex: 0 }}>
