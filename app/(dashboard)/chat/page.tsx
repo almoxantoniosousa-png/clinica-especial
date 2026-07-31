@@ -729,12 +729,13 @@ export default function ChatPage() {
       : (PODE_CONTATAR[eu.role] ?? []);
     if (!roles.length) return;
     (async () => {
-      const [{ data: dp }, { data: da }, { data: du }] = await Promise.all([
-        supabase.from("perfis").select("id, nome, role, email").in("role", roles).neq("id", eu.id),
+      const [{ data: da }, { data: du }] = await Promise.all([
         supabase.from("atendentes").select("id, nome, role, email, logo_url").in("role", roles).neq("id", eu.id),
         supabase.from("usuarios").select("id, nome, role, email, foto_url, contata_familia").in("role", roles).neq("id", eu.id),
       ]);
-      // Prioridade: usuarios > atendentes > perfis (legado); deduplicar por email
+      // Prioridade: usuarios > atendentes; deduplicar por email
+      // (a antiga tabela "perfis" era legado e ficou cheia de contas de
+      // teste/duplicadas — não é mais consultada aqui)
       const vistos = new Set<string>();
       const todos: Perfil[] = [];
       // usuarios têm prioridade (dados mais atualizados)
@@ -748,10 +749,6 @@ export default function ChatPage() {
         if (a.email && vistos.has(a.email)) continue;
         if (a.email) vistos.add(a.email);
         todos.push({ id: a.id, nome: a.nome, role: a.role, foto_url: a.logo_url });
-      }
-      for (const p of (dp || []) as any[]) {
-        if (p.email && vistos.has(p.email)) continue;
-        todos.push({ id: p.id, nome: p.nome, role: p.role });
       }
       todos.sort((a, b) => a.nome.localeCompare(b.nome));
       if (todos.length) setUsuarios(todos);
