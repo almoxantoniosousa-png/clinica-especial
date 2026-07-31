@@ -195,7 +195,7 @@ export default function ColaboradoresPage() {
     setLoading(true);
 
     const camposComuns = {
-      nome: form.nome, email: form.email || null, whatsapp: form.whatsapp || null,
+      nome: form.nome, email: form.email ? form.email.trim().toLowerCase() : null, whatsapp: form.whatsapp || null,
       cpf: form.cpf || null, rg: form.rg || null,
       data_nascimento: form.data_nascimento || null,
       endereco: form.endereco || null,
@@ -247,7 +247,7 @@ export default function ColaboradoresPage() {
     setSalvandoEdicao(true);
 
     const camposComuns = {
-      nome: editando.nome, email: editando.email,
+      nome: editando.nome, email: editando.email ? editando.email.trim().toLowerCase() : editando.email,
       ...(editando._tabela === "usuarios" ? { telefone: editando.whatsapp } : { whatsapp: editando.whatsapp }),
       cpf: editando.cpf, rg: editando.rg,
       data_nascimento: editando.data_nascimento || null,

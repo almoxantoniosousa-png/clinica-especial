@@ -31,11 +31,17 @@ export async function loginWithPassword(
     return { error: "E-mail ou senha incorretos." };
   }
 
+  // Busca por e-mail ignorando maiúscula/minúscula: o login do Supabase
+  // normaliza pra minúsculo, mas o e-mail cadastrado em usuarios/atendentes
+  // pode ter sido digitado com maiúsculas — comparação exata (eq) já deixou
+  // gente de fora ("usuário não encontrado" mesmo com senha certa).
+  const emailBusca = email.trim().toLowerCase().replace(/[%_\\]/g, (c) => "\\" + c);
+
   // 1. Busca na tabela usuarios (familia, gestao, adm, etc)
   const { data: usuario, error: userError } = await supabase
     .from("usuarios")
     .select("*")
-    .eq("email", email)
+    .ilike("email", emailBusca)
     .maybeSingle();
 
   console.log("Usuario encontrado:", usuario);
@@ -69,7 +75,7 @@ export async function loginWithPassword(
   const { data: atendente } = await supabase
     .from("atendentes")
     .select("*")
-    .eq("email", email)
+    .ilike("email", emailBusca)
     .maybeSingle();
 
   if (atendente) {
