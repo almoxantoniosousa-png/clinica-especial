@@ -10,7 +10,7 @@ import {
 // ─── Permissões por role ─────────────────────────────────────────────────────
 
 const PODE_CONTATAR: Record<string, string[]> = {
-  atendente:   ["adm", "supervisora"],
+  atendente:   ["adm", "supervisora", "atendente"],
   especialista:["adm", "supervisora", "gestao"],
   gestao:      ["adm", "supervisora", "especialista", "aux_adm"],
   supervisora: ["adm", "gestao", "especialista", "atendente", "supervisora", "aux_adm", "familia"],
@@ -810,7 +810,7 @@ export default function ChatPage() {
       <div className={`
         ${ativa ? "hidden md:flex" : "flex"}
         w-full md:w-72 lg:w-80 flex-col shrink-0
-        border-r border-slate-200 pt-16 md:pt-0
+        border-r border-slate-200
       `}>
 
         {/* Cabeçalho */}
