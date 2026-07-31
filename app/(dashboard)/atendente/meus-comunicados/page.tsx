@@ -270,7 +270,7 @@ export default function MeusComunicadosPage() {
 
             <div className="space-y-1.5">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">🏁 Entrada e Interação</p>
-              <p className="text-sm text-slate-700">Chegada: {detalhe.hora_chegada || "—"}</p>
+              <p className="text-sm text-slate-700">Chegada: {detalhe.hora_chegada || "—"} · Saída: {detalhe.hora_saida || "—"}</p>
               <p className="text-sm text-slate-700">{(detalhe.interacao || []).join(", ") || "—"}</p>
               {detalhe.interacao_obs && <p className="text-sm text-slate-700">Outras observações: {detalhe.interacao_obs}</p>}
             </div>

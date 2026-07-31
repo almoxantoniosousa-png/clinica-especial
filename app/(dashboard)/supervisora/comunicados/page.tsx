@@ -16,7 +16,7 @@ type FormularioEscolar = {
   id: string; created_at: string; status: string; data: string;
   enviado_familia?: boolean; obs_supervisora?: string | null;
   correcao_solicitada?: boolean; correcao_texto?: string | null; correcao_topicos?: string[] | null;
-  hora_chegada?: string; interacao?: string[]; interacao_obs?: string;
+  hora_chegada?: string; hora_saida?: string; interacao?: string[]; interacao_obs?: string;
   autonomia_nivel?: number; idas_banheiro?: number;
   evacuou?: boolean; periodo_menstrual?: boolean; agua_ingestao?: string;
   socializacao?: string[]; amizades_intervalo?: string; atencao?: string[];
@@ -436,6 +436,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
         cor: "border-blue-200 bg-blue-50",
         itens: [
           form.hora_chegada && { label: "Horário de chegada", valor: form.hora_chegada, tipo: "texto" },
+          form.hora_saida && { label: "Horário de saída", valor: form.hora_saida, tipo: "texto" },
           form.interacao?.length && { label: "Interação inicial", valor: form.interacao, tipo: "tags" },
           form.interacao_obs && { label: "Outras observações", valor: form.interacao_obs, tipo: "texto" },
         ].filter(Boolean),

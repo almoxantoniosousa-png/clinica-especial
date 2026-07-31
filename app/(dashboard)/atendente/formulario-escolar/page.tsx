@@ -28,6 +28,7 @@ export default function FormularioEscolarPage() {
 
   const [dataForm, setDataForm] = useState(hojeLocal());
   const [horaChegada, setHoraChegada] = useState("");
+  const [horaSaida, setHoraSaida] = useState("");
   const [interacao, setInteracao] = useState<string[]>([]);
   const [interacaoObs, setInteracaoObs] = useState("");
   const [autonomiaNivel, setAutonomiaNivel] = useState(0);
@@ -98,6 +99,7 @@ export default function FormularioEscolarPage() {
     setDataForm(p.data || hojeLocal());
     setCriancaId(p.crianca_id);
     setHoraChegada(p.hora_chegada || "");
+    setHoraSaida(p.hora_saida || "");
     setInteracao(p.interacao || []);
     setInteracaoObs(p.interacao_obs || "");
     setAutonomiaNivel(p.autonomia_nivel || 0);
@@ -151,7 +153,7 @@ export default function FormularioEscolarPage() {
 
     const campos = {
       crianca_id: criancaId,
-      hora_chegada: horaChegada, interacao, interacao_obs: interacaoObs,
+      hora_chegada: horaChegada, hora_saida: horaSaida, interacao, interacao_obs: interacaoObs,
       autonomia_nivel: autonomiaNivel, periodo_menstrual: periodoMenstrual,
       idas_banheiro: idasBanheiro, evacuou, agua_ingestao: aguaIngestao, socializacao, amizades_intervalo: amizadesIntervalo, atencao,
       lanche, comeu_tudo: comeuTudo, atividades_sala: atividadesSala, interacao_sala: interacaoSala,
@@ -325,10 +327,17 @@ export default function FormularioEscolarPage() {
                 </div>
               )}
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Horário de Chegada</label>
-              <input type="time" value={horaChegada} onChange={e => setHoraChegada(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Horário de Chegada</label>
+                <input type="time" value={horaChegada} onChange={e => setHoraChegada(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Horário de Saída</label>
+                <input type="time" value={horaSaida} onChange={e => setHoraSaida(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"/>
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Interação Inicial</label>

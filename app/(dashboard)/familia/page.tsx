@@ -15,7 +15,7 @@ type Responsavel = {
   id: string; nome: string; email: string; criancas: CriancaInfo;
 };
 type FormDiario = {
-  hora_chegada?: string; interacao?: string[]; interacao_obs?: string;
+  hora_chegada?: string; hora_saida?: string; interacao?: string[]; interacao_obs?: string;
   autonomia_nivel?: number; idas_banheiro?: number;
   evacuou?: boolean; periodo_menstrual?: boolean;
   socializacao?: string[]; amizades_intervalo?: string; atencao?: string[];
@@ -248,7 +248,8 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
       {
         titulo: "🏁 Chegada",
         itens: [
-          d.hora_chegada && { label: "Horário", valor: d.hora_chegada },
+          d.hora_chegada && { label: "Horário de chegada", valor: d.hora_chegada },
+          d.hora_saida && { label: "Horário de saída", valor: d.hora_saida },
           d.interacao?.length && { label: "Interação", valor: (d.interacao as string[]).join(" · ") },
           d.interacao_obs && { label: "Outras observações", valor: d.interacao_obs },
         ].filter(Boolean),
