@@ -42,7 +42,8 @@ export async function proxy(request: NextRequest) {
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
   const isStaticFile = pathname.includes('_next') ||
                        pathname.includes('favicon') ||
-                       pathname.includes('api/');
+                       pathname.includes('api/') ||
+                       /\.(json|webmanifest|png|jpg|jpeg|svg|ico|webp|txt|xml|pdf)$/i.test(pathname);
 
   if (isPublicPath || isStaticFile) {
     return NextResponse.next();
