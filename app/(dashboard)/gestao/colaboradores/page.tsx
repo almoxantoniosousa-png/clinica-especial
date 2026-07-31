@@ -6,12 +6,13 @@ import { Search } from "lucide-react";
 
 const POR_PAGINA = 8;
 
-type Categoria = "especialista" | "atendente" | "apoio";
+type Categoria = "especialista" | "atendente" | "supervisora" | "apoio";
 
-const CATEGORIAS: { valor: Categoria; label: string; labelSingular: string; icone: string; badge: string }[] = [
-  { valor: "especialista", label: "Especialistas", labelSingular: "Especialista", icone: "🩺", badge: "bg-purple-50 text-purple-700" },
-  { valor: "atendente", label: "Acompanhantes Terapêuticos", labelSingular: "Acompanhante Terapêutico", icone: "👤", badge: "bg-emerald-50 text-emerald-700" },
-  { valor: "apoio", label: "Apoio", labelSingular: "Apoio", icone: "🏠", badge: "bg-blue-50 text-blue-700" },
+const CATEGORIAS: { valor: Categoria; label: string; labelSingular: string; icone: string; badge: string; chip: string }[] = [
+  { valor: "especialista", label: "Especialistas", labelSingular: "Especialista", icone: "🩺", badge: "bg-purple-50 text-purple-700", chip: "bg-purple-600 hover:bg-purple-700" },
+  { valor: "atendente", label: "Acompanhantes Terapêuticos", labelSingular: "Acompanhante Terapêutico", icone: "👤", badge: "bg-emerald-50 text-emerald-700", chip: "bg-emerald-600 hover:bg-emerald-700" },
+  { valor: "supervisora", label: "Supervisoras", labelSingular: "Supervisora", icone: "🧭", badge: "bg-amber-50 text-amber-700", chip: "bg-amber-600 hover:bg-amber-700" },
+  { valor: "apoio", label: "Apoio", labelSingular: "Apoio", icone: "🏠", badge: "bg-blue-50 text-blue-700", chip: "bg-blue-600 hover:bg-blue-700" },
 ];
 
 interface Colaborador {
@@ -35,12 +36,13 @@ export default function GestaoColaboradoresPage() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
   const [busca, setBusca] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState<Categoria | "todos">("todos");
   const [visiveis, setVisiveis] = useState(POR_PAGINA);
 
   const carregar = async () => {
     setLoading(true); setErro("");
     const [atendentesRes, internasRes] = await Promise.all([
-      supabase.from("atendentes").select("*").in("role", ["especialista", "atendente"]).order("nome"),
+      supabase.from("atendentes").select("*").in("role", ["especialista", "atendente", "supervisora"]).order("nome"),
       supabase.from("colaboradoras_internas").select("*").order("nome"),
     ]);
     if (atendentesRes.error || internasRes.error) {
@@ -55,12 +57,13 @@ export default function GestaoColaboradoresPage() {
   };
 
   useEffect(() => { carregar(); }, []);
-  useEffect(() => { setVisiveis(POR_PAGINA); }, [busca]);
+  useEffect(() => { setVisiveis(POR_PAGINA); }, [busca, filtroCategoria]);
 
   const filtrados = colaboradores.filter((c) =>
-    c.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    (filtroCategoria === "todos" || c._categoria === filtroCategoria) &&
+    (c.nome.toLowerCase().includes(busca.toLowerCase()) ||
     (c.especialidade || "").toLowerCase().includes(busca.toLowerCase()) ||
-    (c.cargo || "").toLowerCase().includes(busca.toLowerCase())
+    (c.cargo || "").toLowerCase().includes(busca.toLowerCase()))
   );
   const exibidos = filtrados.slice(0, visiveis);
   const temMais = visiveis < filtrados.length;
@@ -89,7 +92,7 @@ export default function GestaoColaboradoresPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Colaboradores</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Somente leitura — Especialistas, Acompanhantes Terapêuticos e Apoio</p>
+          <p className="text-xs text-slate-400 mt-0.5">Somente leitura — Especialistas, Acompanhantes Terapêuticos, Supervisoras e Apoio</p>
         </div>
         <span className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold px-3 py-1.5 rounded-full">
           <span className="w-2 h-2 rounded-full bg-slate-500"/>
@@ -97,14 +100,33 @@ export default function GestaoColaboradoresPage() {
         </span>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"/>
-          <input type="text" placeholder="Buscar por nome, especialidade ou cargo..." value={busca}
-            onChange={e => setBusca(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"/>
+            <input type="text" placeholder="Buscar por nome, especialidade ou cargo..." value={busca}
+              onChange={e => setBusca(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          {busca && <span className="text-xs text-slate-400">{filtrados.length} resultado{filtrados.length !== 1 ? "s" : ""}</span>}
         </div>
-        {busca && <span className="text-xs text-slate-400">{filtrados.length} resultado{filtrados.length !== 1 ? "s" : ""}</span>}
+        <div className="flex flex-wrap gap-1.5">
+          <button type="button" onClick={() => setFiltroCategoria("todos")}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition
+              ${filtroCategoria === "todos" ? "bg-slate-700 text-white border-transparent" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
+            Todos
+          </button>
+          {CATEGORIAS.map((c) => {
+            const ativo = filtroCategoria === c.valor;
+            return (
+              <button key={c.valor} type="button" onClick={() => setFiltroCategoria(c.valor)}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border transition
+                  ${ativo ? `${c.chip} text-white border-transparent` : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
+                <span>{c.icone}</span> {c.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {loading ? (

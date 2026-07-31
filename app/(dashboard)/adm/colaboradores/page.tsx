@@ -5,7 +5,7 @@ import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClie
 import { registrarLog } from "@/lib/auditoria";
 import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
 
-type Categoria = "especialista" | "atendente" | "apoio";
+type Categoria = "especialista" | "atendente" | "supervisora" | "apoio";
 type Tabela = "atendentes" | "colaboradoras_internas";
 
 const CARGOS_APOIO = ["Auxiliar Administrativa", "Agente de Limpeza"];
@@ -21,6 +21,7 @@ const MOTIVOS_SAIDA = [
 const CATEGORIAS: { valor: Categoria; label: string; labelSingular: string; icone: string; cor: string }[] = [
   { valor: "especialista", label: "Especialistas", labelSingular: "Especialista", icone: "🩺", cor: "purple" },
   { valor: "atendente", label: "Acompanhantes Terapêuticos", labelSingular: "Acompanhante Terapêutico", icone: "👤", cor: "emerald" },
+  { valor: "supervisora", label: "Supervisoras", labelSingular: "Supervisora", icone: "🧭", cor: "amber" },
   { valor: "apoio", label: "Apoio", labelSingular: "Apoio", icone: "🏠", cor: "blue" },
 ];
 
@@ -39,6 +40,12 @@ const CORES: Record<string, { badge: string; btnAtivo: string; btnInativo: strin
     btnAtivo: "bg-emerald-600 hover:bg-emerald-700 text-white",
     btnInativo: "bg-white text-emerald-700 border-emerald-100 hover:bg-emerald-50",
     fileInput: "file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100",
+  },
+  amber: {
+    badge: "bg-amber-50 text-amber-700",
+    btnAtivo: "bg-amber-600 hover:bg-amber-700 text-white",
+    btnInativo: "bg-white text-amber-700 border-amber-100 hover:bg-amber-50",
+    fileInput: "file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100",
   },
   blue: {
     badge: "bg-blue-50 text-blue-700",
@@ -78,7 +85,7 @@ const FORM_VAZIO = {
   data_nascimento: "", endereco: "", cnpj: "", razao_social: "",
   data_demissao: "", motivo_saida: "",
   especialidade: "", registro_profissional: "",
-  cargo: CARGOS_APOIO[0], data_admissao: "",
+  cargo: CARGOS_APOIO[0], cargoLivre: "", data_admissao: "",
   faz_adaptado: false,
 };
 
@@ -89,6 +96,7 @@ export default function ColaboradoresPage() {
   const [loadingLista, setLoadingLista] = useState(true);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [busca, setBusca] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState<Categoria | "todos">("todos");
   const [listaAberta, setListaAberta] = useState(true);
   const [mostrarInativos, setMostrarInativos] = useState(false);
   const [editando, setEditando] = useState<Colaborador | null>(null);
@@ -152,7 +160,7 @@ export default function ColaboradoresPage() {
   const carregarTodos = async () => {
     setLoadingLista(true);
     const [atendentesRes, internasRes] = await Promise.all([
-      supabase.from("atendentes").select("*").in("role", ["especialista", "atendente"]),
+      supabase.from("atendentes").select("*").in("role", ["especialista", "atendente", "supervisora"]),
       supabase.from("colaboradoras_internas").select("*"),
     ]);
     const doAtendentes: Colaborador[] = (atendentesRes.data ?? []).map((r: any) => ({
@@ -188,7 +196,8 @@ export default function ColaboradoresPage() {
     const payload = form.categoria === "apoio"
       ? { ...camposComuns, cargo: form.cargo, data_admissao: form.data_admissao || null }
       : {
-          ...camposComuns, especialidade: form.especialidade || null, registro_profissional: form.registro_profissional || null, role: form.categoria,
+          ...camposComuns, especialidade: form.especialidade || null, registro_profissional: form.registro_profissional || null,
+          cargo: form.cargoLivre || null, role: form.categoria,
           ...(form.categoria === "atendente" ? { faz_adaptado: form.faz_adaptado } : {}),
         };
 
@@ -240,6 +249,7 @@ export default function ColaboradoresPage() {
       ? { ...camposComuns, cargo: editando.cargo, data_admissao: editando.data_admissao || null }
       : {
           ...camposComuns, especialidade: editando.especialidade, registro_profissional: editando.registro_profissional,
+          cargo: editando.cargo || null,
           ...(editando._categoria === "atendente" ? { faz_adaptado: editando.faz_adaptado ?? false } : {}),
         };
 
@@ -301,9 +311,10 @@ export default function ColaboradoresPage() {
   }
 
   const filtrados = colaboradores.filter((c) =>
-    c.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    (filtroCategoria === "todos" || c._categoria === filtroCategoria) &&
+    (c.nome.toLowerCase().includes(busca.toLowerCase()) ||
     (c.especialidade || "").toLowerCase().includes(busca.toLowerCase()) ||
-    (c.cargo || "").toLowerCase().includes(busca.toLowerCase())
+    (c.cargo || "").toLowerCase().includes(busca.toLowerCase()))
   );
   const ativos = filtrados.filter((c) => c.ativo !== false);
   const inativos = filtrados.filter((c) => c.ativo === false);
@@ -366,7 +377,7 @@ export default function ColaboradoresPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Colaboradores</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Especialistas, Acompanhantes Terapêuticos e Apoio — cadastro único.</p>
+          <p className="text-xs text-slate-400 mt-0.5">Especialistas, Acompanhantes Terapêuticos, Supervisoras e Apoio — cadastro único.</p>
         </div>
         <span className="self-start sm:self-auto inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold px-3 py-1.5 rounded-full">
           <span className="w-2 h-2 rounded-full bg-slate-500 inline-block"></span>
@@ -442,6 +453,10 @@ export default function ColaboradoresPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Registro Profissional</label>
                 <input type="text" placeholder="Ex: CRP 06/123456" value={form.registro_profissional} onChange={(e) => setForm({ ...form, registro_profissional: e.target.value })} className={inputClass} />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cargo / Função</label>
+                <input type="text" placeholder="Ex: Supervisora Clínica, Coordenadora Pedagógica..." value={form.cargoLivre} onChange={(e) => setForm({ ...form, cargoLivre: e.target.value })} className={inputClass} />
               </div>
             </div>
           )}
@@ -531,10 +546,28 @@ export default function ColaboradoresPage() {
 
         {listaAberta && (
           <>
-            <div className="px-5 py-3 border-b border-slate-100 bg-slate-50">
+            <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 space-y-3">
               <input type="text" placeholder="Buscar por nome, especialidade ou cargo..." value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 className="w-full sm:w-72 pl-3 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition" />
+              <div className="flex flex-wrap gap-1.5">
+                <button type="button" onClick={() => setFiltroCategoria("todos")}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition
+                    ${filtroCategoria === "todos" ? "bg-slate-700 text-white border-transparent" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
+                  Todos
+                </button>
+                {CATEGORIAS.map((c) => {
+                  const corBtn = CORES[c.cor];
+                  const ativo = filtroCategoria === c.valor;
+                  return (
+                    <button key={c.valor} type="button" onClick={() => setFiltroCategoria(c.valor)}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border transition
+                        ${ativo ? `${corBtn.btnAtivo} border-transparent` : corBtn.btnInativo}`}>
+                      <span>{c.icone}</span> {c.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             {loadingLista ? (
               <div className="flex items-center justify-center py-16"><p className="text-sm text-slate-400">Carregando...</p></div>
@@ -661,6 +694,11 @@ export default function ColaboradoresPage() {
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Registro Profissional</label>
                     <input type="text" value={editando.registro_profissional || ""} onChange={(e) => setEditando({ ...editando, registro_profissional: e.target.value })}
+                      className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                  </div>
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cargo / Função</label>
+                    <input type="text" placeholder="Ex: Supervisora Clínica, Coordenadora Pedagógica..." value={editando.cargo || ""} onChange={(e) => setEditando({ ...editando, cargo: e.target.value })}
                       className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                   </div>
                 </div>
