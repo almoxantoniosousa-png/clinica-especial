@@ -75,8 +75,8 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "🔍", titulo: "Auditoria", mockup: "tabela",
-      texto: "Histórico de tudo que acontece no sistema: quem criou, editou, excluiu, pagou uma conta, fez login etc., com data e hora.\n\nUse a busca e os filtros (ação e período) para investigar uma alteração específica. O \"Resumo por usuário\" mostra quantas ações cada pessoa realizou — clique em um nome para filtrar só as ações dessa pessoa.\n\nTodas as funcionalidades do sistema registram eventos aqui: solicitações de brinquedos, retiradas, devoluções, requisições de compra, atualizações de status e muito mais.",
-      reflexo: "Toda ação relevante feita nas demais telas do sistema (cadastros, edições, exclusões, pagamentos, login, brinquedos, requisições) gera automaticamente um registro aqui."
+      texto: "Histórico de tudo que acontece no sistema: quem criou, editou, excluiu, pagou uma conta, fez login etc., com data e hora.\n\nUse a busca e os filtros (ação e período) para investigar uma alteração específica. O \"Resumo por usuário\" mostra quantas ações cada pessoa realizou — clique em um nome para filtrar só as ações dessa pessoa.\n\nTodas as funcionalidades do sistema registram eventos aqui: requisições de compra, atualizações de status e muito mais.",
+      reflexo: "Toda ação relevante feita nas demais telas do sistema (cadastros, edições, exclusões, pagamentos, login, requisições) gera automaticamente um registro aqui."
     },
     {
       icone: "👥", titulo: "Colaboradores", mockup: "form-lista",
@@ -107,11 +107,6 @@ const ADM: AjudaConteudo = {
       icone: "📋", titulo: "Atendimentos ATs", mockup: "tabela",
       texto: "Mostra, por mês e agrupado por AT, todo atendimento registrado em \"Novo Registro\": criança, local (casa/escola), horas, valor e o relato completo do dia. Atualiza sozinha assim que o AT enviar um novo registro (aparece destacado por alguns segundos).\n\nNo topo, 4 cards somam o total geral (todas as ATs juntas): Total de horas, Valor total, A pagar (pendente + aprovado) e Já pago. Cada AT também mostra o próprio subtotal de horas e valor.",
       reflexo: "Antes só o próprio AT via esse detalhe em \"Meus Atendimentos\" — aqui o ADM e o Financeiro acompanham tudo sem precisar perguntar."
-    },
-    {
-      icone: "🧸", titulo: "Brinquedos", mockup: "abas",
-      texto: "Visão geral do sistema de empréstimo de brinquedos — as mesmas 5 abas da Aux. Adm.\n\n• Solicitações — pedidos da equipe aguardando retirada.\n• Em Posse — brinquedos que estão com as colaboradoras.\n• Histórico — empréstimos encerrados (devolvidos).\n• Catálogo — lista de brinquedos com fotos. Você pode adicionar, editar e registrar retiradas/devoluções.\n• Ranking — gráficos de brinquedos mais usados, colaboradoras e crianças.\n\nTodas as ações (solicitação, retirada, devolução, cadastro no catálogo) ficam registradas na Auditoria.",
-      reflexo: "O catálogo cresce automaticamente quando alguém solicita um brinquedo novo — cada retirada e devolução fica rastreada na Auditoria."
     },
     {
       icone: "🛒", titulo: "Requisições de Compra", mockup: "abas",
@@ -210,11 +205,6 @@ const GESTAO: AjudaConteudo = {
       reflexo: "O que você comenta num rascunho aparece na hora pra AT (é tudo em tempo real). Quando aprovado, o material entra automaticamente no Acervo para toda a equipe consultar."
     },
     {
-      icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
-      texto: "Solicite brinquedos para usar com as crianças nos atendimentos.\n\nClique em \"Nova solicitação\" para abrir o formulário: escolha a criança, o brinquedo (com autocomplete do catálogo) e a urgência. Se o brinquedo não existir no catálogo, ele é adicionado automaticamente.\n\nAcompanhe o histórico das suas solicitações e o status de cada uma: Pendente → Em posse → Devolvido.",
-      reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido. Cada etapa fica registrada na Auditoria."
-    },
-    {
       icone: "🔧", titulo: "Reportar Defeito", mockup: "tabela",
       texto: "Encontrou um equipamento com defeito? Aponte a câmera do celular para o QR Code da etiqueta de tombamento, ou entre aqui e busque o item na lista.\n\nDescreva o problema (e anexe uma foto, se quiser) e clique em \"Enviar para a administração\".",
       reflexo: "O ADM recebe uma notificação na hora e acompanha o conserto na tela Patrimônio — você não precisa avisar por outro canal."
@@ -281,11 +271,6 @@ const SUPERVISORA: AjudaConteudo = {
       reflexo: "Ao aprovar um material, ele vai automaticamente ao Acervo para toda a equipe. Ao solicitar ajustes ou comentar um rascunho, quem criou (ou qualquer AT que colabora no material) recebe o aviso com suas observações na hora."
     },
     {
-      icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
-      texto: "Solicite brinquedos para usar com as crianças nos atendimentos.\n\nClique em \"Nova solicitação\" para abrir o formulário: escolha a criança, o brinquedo (com autocomplete do catálogo) e a urgência. Se o brinquedo não existir no catálogo, ele é adicionado automaticamente.\n\nAcompanhe o histórico das suas solicitações e o status de cada uma: Pendente → Em posse → Devolvido.",
-      reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido. Cada etapa fica registrada na Auditoria."
-    },
-    {
       icone: "🔧", titulo: "Reportar Defeito", mockup: "tabela",
       texto: "Encontrou um equipamento com defeito? Aponte a câmera do celular para o QR Code da etiqueta de tombamento, ou entre aqui e busque o item na lista.\n\nDescreva o problema (e anexe uma foto, se quiser) e clique em \"Enviar para a administração\".",
       reflexo: "O ADM recebe uma notificação na hora e acompanha o conserto na tela Patrimônio."
@@ -331,11 +316,6 @@ const ESPECIALISTA: AjudaConteudo = {
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
       texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo."
-    },
-    {
-      icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
-      texto: "Solicite brinquedos para usar com as crianças nos atendimentos.\n\nClique em \"Nova solicitação\" para abrir o formulário: escolha a criança, o brinquedo (com autocomplete do catálogo) e a urgência. Se o brinquedo não existir no catálogo, ele é adicionado automaticamente.\n\nAcompanhe o histórico das suas solicitações e o status de cada uma: Pendente → Em posse → Devolvido.",
-      reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido."
     },
     {
       icone: "🔧", titulo: "Reportar Defeito", mockup: "tabela",
@@ -413,11 +393,6 @@ const ATENDENTE: AjudaConteudo = {
       reflexo: "O material que você enviar para revisão aparece para a Supervisora e Gestão avaliarem. Quando aprovado, entra automaticamente no Acervo para toda a equipe usar."
     },
     {
-      icone: "🧸", titulo: "Brinquedos", mockup: "tabela",
-      texto: "Solicite brinquedos para usar com as crianças nos atendimentos.\n\nClique em \"Nova solicitação\" para abrir o formulário: escolha a criança, o brinquedo (com autocomplete do catálogo) e a urgência. Se o brinquedo não existir no catálogo, ele é adicionado automaticamente.\n\nAcompanhe o histórico das suas solicitações e o status de cada uma: Pendente → Em posse → Devolvido.",
-      reflexo: "A Aux. Adm recebe sua solicitação, registra a retirada quando você buscar o brinquedo, e dá baixa quando ele for devolvido."
-    },
-    {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
       texto: "Arquivo de atas de reunião, no modelo usado nas supervisões da clínica. Cada ata só aparece pra quem participou daquela reunião específica — se foi só entre ADM e Gestão, só elas veem; se envolveu mais gente, todo mundo que participou vê.\n\nClique em \"+ Nova ata\" pra registrar: título, data, horário e data da próxima reunião; quem participou (escolha as pessoas reais da lista, ou digite o nome em \"+ nome (sem login próprio)\" pra quem usa um login genérico/compartilhado — o acesso à ata segue automaticamente o cargo marcado); pontos discutidos anteriormente; pontos de atenção até a próxima reunião; e um plano de ação com uma linha por assunto (análise de causa, plano de ação, responsável e prazo — \"+ Adicionar item\" pra incluir mais linhas).\n\n📎 Anexos: dentro de uma ata aberta, dá pra anexar imagens ou PDF — por exemplo, a ata já assinada em papel e escaneada. Só quem criou a ata pode excluí-la ou excluir seus anexos — e só antes de alguém assinar. Depois da primeira assinatura, a ata trava e nem quem criou consegue mais excluir (evita perder um registro já confirmado por outra pessoa).",
       reflexo: "Ao registrar uma ata, quem participou recebe um aviso no sino de notificações. ✍️ Assinatura: dentro da ata aberta, cada participante com login próprio pode desenhar a assinatura na tela e clicar em \"Confirmar e assinar\" — na primeira vez desenha, nas próximas só confirma com a assinatura já salva. A impressão sai com a assinatura de quem já confirmou, e linha em branco pra quem ainda não confirmou ou não tem login próprio."
@@ -485,11 +460,6 @@ const AUX_ADM: AjudaConteudo = {
       icone: "🗓️", titulo: "Agenda Simone", mockup: "agenda-semana",
       texto: "Organize a agenda semanal da diretora, dividida em dois grupos:\n\n• 🏥 Agenda da Clínica — Atendimento (escolha o local: Clínica, Casa ou Escola, dentro do formulário), Treinamento, Supervisão.\n\n• 🤍 Agenda Pessoal — Espiritual, Atividade Física, Médico, Salão, Pet, Feriado/Livre.\n\nClique num card pra abrir o formulário de novo compromisso (data, horário e \"com quem/o quê\" — pra reunião, é só escrever no título de qualquer categoria). Abaixo, veja a semana inteira com os compromissos já cadastrados; use \"Editar\"/lixeira pra editar ou excluir. Compromissos marcados como \"não realizados\" aparecem em vermelho com um recado pedindo remarcação.\n\nUse \"Copiar pauta\" para gerar um texto com toda a agenda da semana, pronto para colar no WhatsApp.",
       reflexo: "Os compromissos cadastrados aqui aparecem em \"Minha Agenda\" da Simone (Gestão); quando ela marcar um compromisso como \"Não realizei\", você recebe o recado automaticamente pelo Chat para organizar a remarcação."
-    },
-    {
-      icone: "🧸", titulo: "Brinquedos", mockup: "abas",
-      texto: "Central de gestão de empréstimos de brinquedos da clínica, organizada em 5 abas:\n\n• Solicitações — pedidos recebidos da equipe (Atendentes, Especialistas, Supervisora e Gestão). Clique em \"Registrar Retirada\" quando a colaboradora vier buscar o brinquedo.\n\n• Em Posse — brinquedos que estão com as colaboradoras. Clique em \"Registrar Devolução\" quando o item for devolvido.\n\n• Histórico — todos os empréstimos encerrados (devolvidos).\n\n• Catálogo — lista de brinquedos cadastrados, com foto opcional. Clique em \"Adicionar ao catálogo\" para incluir novos itens. A lista é retrátil: mostra 8 por padrão e expande com \"Ver todos\".\n\n• Ranking — gráficos de brinquedos mais solicitados, colaboradoras que mais solicitam e crianças que mais usam.\n\nTodas as ações ficam registradas na Auditoria.",
-      reflexo: "O catálogo cresce automaticamente quando alguém solicita um brinquedo que ainda não existe — você só precisa confirmar a retirada e a devolução. Cada etapa fica rastreada."
     },
     {
       icone: "💰", titulo: "Faturamento", mockup: "financeiro",
