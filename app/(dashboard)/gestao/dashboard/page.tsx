@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
-import { PainelInformacoes, saudacao } from "@/components/painel-informacoes";
+import { PainelInformacoes, Saudacao } from "@/components/painel-informacoes";
 import { hojeLocal, paraISOLocal } from "@/lib/dataUtils";
 import { Bar, Line, Pie } from "react-chartjs-2";
 import type { ChartData } from "chart.js";
@@ -349,7 +349,7 @@ export default function GestaoDashboardPage() {
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">{saudacao(nome)}</h1>
+          <h1 className="text-xl font-bold text-slate-900"><Saudacao nome={nome} /></h1>
           <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
         </div>
         <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5">

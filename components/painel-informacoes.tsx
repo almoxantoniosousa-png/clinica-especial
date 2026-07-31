@@ -143,6 +143,20 @@ export function saudacao(nome?: string) {
   return `${icone} ${turno}${nome ? `, ${nome.split(" ").slice(0, 2).join(" ")}` : ""}!`;
 }
 
+// Componente separado porque a saudação depende da hora local de quem
+// acessa — calculada no servidor (SSR) ela pega o horário do servidor,
+// não o do visitante, e mostra "Bom dia" errado fora do horário da manhã.
+// Calculando só depois de montar no navegador garante o horário certo.
+export function Saudacao({ nome }: { nome?: string }) {
+  const [texto, setTexto] = useState("");
+
+  useEffect(() => {
+    setTexto(saudacao(nome));
+  }, [nome]);
+
+  return <>{texto}</>;
+}
+
 function formatarData() {
   return new Date().toLocaleDateString("pt-BR", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",

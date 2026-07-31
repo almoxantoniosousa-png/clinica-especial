@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { registrarLog } from "@/lib/auditoria";
 import { hojeLocal } from "@/lib/dataUtils";
-import { saudacao } from "@/components/painel-informacoes";
+import { Saudacao } from "@/components/painel-informacoes";
 
 const TOPICOS_CORRECAO = ["Entrada e Interação", "Autonomia e Higiene", "Recreio e Socialização", "Agenda e Recados"];
 
@@ -90,7 +90,7 @@ export default function SupervisoraPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">{saudacao(meuNome)}</h1>
+          <h1 className="text-xl font-bold text-slate-900"><Saudacao nome={meuNome} /></h1>
           <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
         </div>
         <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5">

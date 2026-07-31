@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { Check, Trash2, Pencil } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
-import { saudacao } from "@/components/painel-informacoes";
+import { Saudacao } from "@/components/painel-informacoes";
 import { hojeLocal, mesAtualLocal } from "@/lib/dataUtils";
 
 type Aba = "contas_pagar" | "contas_receber" | "fluxo" | "emprestimos";
@@ -98,7 +98,7 @@ export default function FinanceiroPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold text-slate-900">{saudacao(nome)}</h1>
+          <h1 className="text-xl font-bold text-slate-900"><Saudacao nome={nome} /></h1>
           <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
         </div>
         <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-1.5 h-10 w-full sm:w-auto">

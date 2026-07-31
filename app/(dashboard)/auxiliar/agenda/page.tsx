@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, Check } from "lucide-react";
-import { saudacao } from "@/components/painel-informacoes";
+import { Saudacao } from "@/components/painel-informacoes";
 import { hojeLocal, paraISOLocal } from "@/lib/dataUtils";
 
 const HORAS = [
@@ -196,7 +196,7 @@ export default function AuxAgendaPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">{saudacao(nome)}</h1>
+          <h1 className="text-xl font-bold text-slate-900"><Saudacao nome={nome} /></h1>
           <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
         </div>
         <button onClick={abrirNovo}

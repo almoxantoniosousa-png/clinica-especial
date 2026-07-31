@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
-import { saudacao } from "@/components/painel-informacoes";
+import { Saudacao } from "@/components/painel-informacoes";
 
 const ATALHOS = [
   { href: "/atendente/novo-registro",      label: "Novo Registro",     icon: "📝", cor: "bg-blue-50 text-blue-700" },
@@ -29,7 +29,7 @@ export default function AtendenteDashboardPage() {
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-8 space-y-5">
 
       <div>
-        <h1 className="text-xl font-bold text-slate-900">{saudacao(nome)}</h1>
+        <h1 className="text-xl font-bold text-slate-900"><Saudacao nome={nome} /></h1>
         <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
       </div>
 

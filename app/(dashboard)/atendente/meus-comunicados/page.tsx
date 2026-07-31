@@ -201,7 +201,7 @@ export default function MeusComunicadosPage() {
             return (
               <div key={c.id} onClick={() => setDetalhe(c)}
                 className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-4 border-l-4 cursor-pointer hover:shadow-md transition ${cfg.borda}`}>
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     {/* Foto criança */}
                     <div className="w-11 h-11 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
@@ -211,7 +211,7 @@ export default function MeusComunicadosPage() {
                             {iniciais(c.criancas?.nome)}
                           </div>}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="font-bold text-slate-800 text-sm truncate">{c.criancas?.nome}</p>
                       <p className="text-xs text-slate-400">
                         {new Date(c.data + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
@@ -220,7 +220,7 @@ export default function MeusComunicadosPage() {
                   </div>
 
                   {/* Badge status */}
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <div className="flex flex-col items-start sm:items-end gap-1 flex-shrink-0 pl-14 sm:pl-0">
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${cfg.color}`}>
                       {cfg.label}
                     </span>
