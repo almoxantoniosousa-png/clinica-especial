@@ -21,7 +21,7 @@ type FormularioEscolar = {
   autonomia_nivel?: number; idas_banheiro?: number;
   evacuou?: boolean; periodo_menstrual?: boolean; agua_ingestao?: string;
   socializacao?: string[]; amizades_intervalo?: string; atencao?: string[];
-  lanche?: string; comeu_tudo?: boolean;
+  lanche?: string; comeu_tudo?: boolean; comeu_tudo_obs?: string;
   atividades_sala?: string; interacao_sala?: string; eventos_escolares?: string; tarefa_casa?: string;
   materiais_pedir?: string; obs_gerais?: string;
   criancas?: { nome: string; foto_url?: string | null };
@@ -465,6 +465,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
           form.atencao?.length && { label: "Atenção e foco", valor: form.atencao, tipo: "tags" },
           form.lanche && { label: "Lanche", valor: form.lanche, tipo: "texto" },
           form.comeu_tudo !== undefined && { label: "Comeu tudo", valor: form.comeu_tudo ? "Sim" : "Não", tipo: "badge", cor: form.comeu_tudo ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200" },
+          form.comeu_tudo_obs && { label: "Sobre o lanche", valor: form.comeu_tudo_obs, tipo: "texto" },
         ].filter(Boolean),
       },
       {

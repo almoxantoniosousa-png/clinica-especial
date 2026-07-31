@@ -20,7 +20,7 @@ type FormDiario = {
   autonomia_nivel?: number; idas_banheiro?: number;
   evacuou?: boolean; periodo_menstrual?: boolean;
   socializacao?: string[]; amizades_intervalo?: string; atencao?: string[];
-  lanche?: string; comeu_tudo?: boolean;
+  lanche?: string; comeu_tudo?: boolean; comeu_tudo_obs?: string;
   atividades_sala?: string; interacao_sala?: string; tarefa_casa?: string;
   materiais_pedir?: string; obs_gerais?: string;
   obs_supervisora?: string;
@@ -273,6 +273,7 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
           d.amizades_intervalo && { label: "Amizades no intervalo", valor: d.amizades_intervalo },
           d.atencao?.length && { label: "Atenção", valor: (d.atencao as string[]).join(" · ") },
           d.lanche && { label: "Lanche", valor: `${d.lanche}${d.comeu_tudo ? " (comeu tudo)" : ""}` },
+          d.comeu_tudo_obs && { label: "Sobre o lanche", valor: d.comeu_tudo_obs },
         ].filter(Boolean),
       },
       {

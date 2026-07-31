@@ -296,6 +296,7 @@ export default function MeusComunicadosPage() {
             <div className="space-y-1.5 pt-2 border-t border-slate-100">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">📖 Agenda e Recados</p>
               <p className="text-sm text-slate-700">Lanche: {detalhe.lanche || "—"} · Comeu tudo: {detalhe.comeu_tudo ? "Sim" : "Não"}</p>
+              {detalhe.comeu_tudo_obs && <p className="text-sm text-slate-700">Sobre o lanche: {detalhe.comeu_tudo_obs}</p>}
               {detalhe.atividades_sala && <p className="text-sm text-slate-700">Atividades em sala: {detalhe.atividades_sala}</p>}
               {detalhe.interacao_sala && <p className="text-sm text-slate-700">Interação em sala: {detalhe.interacao_sala}</p>}
               {detalhe.tarefa_casa && <p className="text-sm text-slate-700">Tarefa de casa: {detalhe.tarefa_casa}</p>}

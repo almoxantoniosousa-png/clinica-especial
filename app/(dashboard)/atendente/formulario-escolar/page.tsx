@@ -44,6 +44,7 @@ export default function FormularioEscolarPage() {
   const [atencao, setAtencao] = useState<string[]>([]);
   const [lanche, setLanche] = useState("");
   const [comeuTudo, setComeuTudo] = useState(false);
+  const [comeuTudoObs, setComeuTudoObs] = useState("");
   const [atividadesSala, setAtividadesSala] = useState("");
   const [interacaoSala, setInteracaoSala] = useState("");
   const [tarefaCasa, setTarefaCasa] = useState("");
@@ -118,6 +119,7 @@ export default function FormularioEscolarPage() {
     setAtencao(p.atencao || []);
     setLanche(p.lanche || "");
     setComeuTudo(p.comeu_tudo || false);
+    setComeuTudoObs(p.comeu_tudo_obs || "");
     setAtividadesSala(p.atividades_sala || "");
     setInteracaoSala(p.interacao_sala || "");
     setTarefaCasa(p.tarefa_casa || "");
@@ -163,7 +165,7 @@ export default function FormularioEscolarPage() {
       autonomia_nivel: autonomiaNivel, periodo_menstrual: periodoMenstrual,
       idas_banheiro: idasBanheiro, banheiro_obs: banheiroObs, evacuou, evacuou_obs: evacuouObs,
       periodo_menstrual_obs: periodoMenstrualObs, agua_ingestao: aguaIngestao, socializacao, amizades_intervalo: amizadesIntervalo, atencao,
-      lanche, comeu_tudo: comeuTudo, atividades_sala: atividadesSala, interacao_sala: interacaoSala,
+      lanche, comeu_tudo: comeuTudo, comeu_tudo_obs: comeuTudoObs, atividades_sala: atividadesSala, interacao_sala: interacaoSala,
       tarefa_casa: tarefaCasa, materiais_pedir: materiaisPedir,
       obs_gerais: obsGerais, eventos_escolares: eventosEscolares,
     };
@@ -470,7 +472,12 @@ export default function FormularioEscolarPage() {
               <input type="text" value={lanche} onChange={e => setLanche(e.target.value)} placeholder="O que comeu no lanche?"
                 className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
             </div>
-            <Toggle value={comeuTudo} onChange={setComeuTudo} label="Comeu tudo" icon="🍽️"/>
+            <div className="space-y-2">
+              <Toggle value={comeuTudo} onChange={setComeuTudo} label="Comeu tudo" icon="🍽️"/>
+              <input type="text" value={comeuTudoObs} onChange={e => setComeuTudoObs(e.target.value)}
+                placeholder="Complemente: o que sobrou, recusou algo específico..."
+                className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
+            </div>
           </div>
         )}
 
