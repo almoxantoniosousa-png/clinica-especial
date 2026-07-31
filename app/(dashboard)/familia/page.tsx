@@ -16,7 +16,7 @@ type Responsavel = {
 };
 type FormDiario = {
   hora_chegada?: string; hora_saida?: string; interacao?: string[]; interacao_obs?: string;
-  autonomia_obs?: string;
+  periodo_menstrual_obs?: string; banheiro_obs?: string; evacuou_obs?: string;
   autonomia_nivel?: number; idas_banheiro?: number;
   evacuou?: boolean; periodo_menstrual?: boolean;
   socializacao?: string[]; amizades_intervalo?: string; atencao?: string[];
@@ -260,8 +260,10 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
         itens: [
           d.autonomia_nivel && { label: "Independência", valor: autonomiaLabel[d.autonomia_nivel] || "" },
           d.idas_banheiro != null && { label: "Banheiro", valor: `${d.idas_banheiro} vez${d.idas_banheiro !== 1 ? "es" : ""}` },
+          d.banheiro_obs && { label: "Sobre o banheiro", valor: d.banheiro_obs },
           d.evacuou != null && { label: "Evacuou", valor: d.evacuou ? "Sim" : "Não" },
-          d.autonomia_obs && { label: "Observações", valor: d.autonomia_obs },
+          d.evacuou_obs && { label: "Sobre evacuar", valor: d.evacuou_obs },
+          d.periodo_menstrual_obs && { label: "Sobre o período", valor: d.periodo_menstrual_obs },
         ].filter(Boolean),
       },
       {

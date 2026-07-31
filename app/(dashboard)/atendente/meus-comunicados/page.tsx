@@ -279,8 +279,10 @@ export default function MeusComunicadosPage() {
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">🛠 Autonomia e Higiene</p>
               <p className="text-sm text-slate-700">Nível de autonomia: {detalhe.autonomia_nivel ?? "—"}</p>
               <p className="text-sm text-slate-700">Idas ao banheiro: {detalhe.idas_banheiro ?? "—"} · Evacuou: {detalhe.evacuou ? "Sim" : "Não"}</p>
+              {detalhe.banheiro_obs && <p className="text-sm text-slate-700">Sobre o banheiro: {detalhe.banheiro_obs}</p>}
+              {detalhe.evacuou_obs && <p className="text-sm text-slate-700">Sobre evacuar: {detalhe.evacuou_obs}</p>}
               {detalhe.periodo_menstrual && <p className="text-sm text-slate-700">Período menstrual: Sim</p>}
-              {detalhe.autonomia_obs && <p className="text-sm text-slate-700">Observações: {detalhe.autonomia_obs}</p>}
+              {detalhe.periodo_menstrual_obs && <p className="text-sm text-slate-700">Sobre o período: {detalhe.periodo_menstrual_obs}</p>}
               <p className="text-sm text-slate-700">💧 Ingestão de água: {detalhe.agua_ingestao || "—"}</p>
             </div>
 

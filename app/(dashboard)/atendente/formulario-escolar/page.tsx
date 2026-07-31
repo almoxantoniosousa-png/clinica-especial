@@ -35,7 +35,9 @@ export default function FormularioEscolarPage() {
   const [periodoMenstrual, setPeriodoMenstrual] = useState(false);
   const [idasBanheiro, setIdasBanheiro] = useState(0);
   const [evacuou, setEvacuou] = useState(false);
-  const [autonomiaObs, setAutonomiaObs] = useState("");
+  const [periodoMenstrualObs, setPeriodoMenstrualObs] = useState("");
+  const [banheiroObs, setBanheiroObs] = useState("");
+  const [evacuouObs, setEvacuouObs] = useState("");
   const [aguaIngestao, setAguaIngestao] = useState("");
   const [socializacao, setSocializacao] = useState<string[]>([]);
   const [amizadesIntervalo, setAmizadesIntervalo] = useState("");
@@ -107,7 +109,9 @@ export default function FormularioEscolarPage() {
     setPeriodoMenstrual(p.periodo_menstrual || false);
     setIdasBanheiro(p.idas_banheiro || 0);
     setEvacuou(p.evacuou || false);
-    setAutonomiaObs(p.autonomia_obs || "");
+    setPeriodoMenstrualObs(p.periodo_menstrual_obs || "");
+    setBanheiroObs(p.banheiro_obs || "");
+    setEvacuouObs(p.evacuou_obs || "");
     setAguaIngestao(p.agua_ingestao || "");
     setSocializacao(p.socializacao || []);
     setAmizadesIntervalo(p.amizades_intervalo || "");
@@ -157,7 +161,8 @@ export default function FormularioEscolarPage() {
       crianca_id: criancaId,
       hora_chegada: horaChegada, hora_saida: horaSaida, interacao, interacao_obs: interacaoObs,
       autonomia_nivel: autonomiaNivel, periodo_menstrual: periodoMenstrual,
-      idas_banheiro: idasBanheiro, evacuou, autonomia_obs: autonomiaObs, agua_ingestao: aguaIngestao, socializacao, amizades_intervalo: amizadesIntervalo, atencao,
+      idas_banheiro: idasBanheiro, banheiro_obs: banheiroObs, evacuou, evacuou_obs: evacuouObs,
+      periodo_menstrual_obs: periodoMenstrualObs, agua_ingestao: aguaIngestao, socializacao, amizades_intervalo: amizadesIntervalo, atencao,
       lanche, comeu_tudo: comeuTudo, atividades_sala: atividadesSala, interacao_sala: interacaoSala,
       tarefa_casa: tarefaCasa, materiais_pedir: materiaisPedir,
       obs_gerais: obsGerais, eventos_escolares: eventosEscolares,
@@ -382,7 +387,14 @@ export default function FormularioEscolarPage() {
                 ))}
               </div>
             </div>
-            <Toggle value={periodoMenstrual} onChange={setPeriodoMenstrual} label="Período Menstrual" icon="🩸"/>
+            <div className="space-y-2">
+              <Toggle value={periodoMenstrual} onChange={setPeriodoMenstrual} label="Período Menstrual" icon="🩸"/>
+              {periodoMenstrual && (
+                <input type="text" value={periodoMenstrualObs} onChange={e => setPeriodoMenstrualObs(e.target.value)}
+                  placeholder="Complemente: fluxo, cólica, precisou de ajuda..."
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
+              )}
+            </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Idas ao Banheiro</label>
               <div className="flex items-center gap-4">
@@ -392,13 +404,17 @@ export default function FormularioEscolarPage() {
                 <button type="button" onClick={() => setIdasBanheiro(idasBanheiro + 1)}
                   className="w-12 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl transition active:scale-95">+</button>
               </div>
+              <input type="text" value={banheiroObs} onChange={e => setBanheiroObs(e.target.value)}
+                placeholder="Complemente: precisou de ajuda, urgência, troca de roupa..."
+                className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
             </div>
-            <Toggle value={evacuou} onChange={setEvacuou} label="Evacuou" icon="✅"/>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Observações Específicas</label>
-              <textarea rows={2} value={autonomiaObs} onChange={e => setAutonomiaObs(e.target.value)}
-                placeholder="Algo específico sobre autonomia ou higiene hoje?"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
+              <Toggle value={evacuou} onChange={setEvacuou} label="Evacuou" icon="✅"/>
+              {evacuou && (
+                <input type="text" value={evacuouObs} onChange={e => setEvacuouObs(e.target.value)}
+                  placeholder="Complemente: consistência, horário, alguma dificuldade..."
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">💧 Ingestão de Água</label>
