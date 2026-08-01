@@ -79,6 +79,11 @@ const ADM: AjudaConteudo = {
       reflexo: "Toda ação relevante feita nas demais telas do sistema (cadastros, edições, exclusões, pagamentos, login, requisições) gera automaticamente um registro aqui."
     },
     {
+      icone: "🎥", titulo: "Record", mockup: "form-lista",
+      texto: "Gravação de reunião ou de uma situação que precise de registro, usando a câmera e o microfone do computador — acesso restrito a ADM e Gestão.\n\nAo entrar, é pedida sua senha de novo (confirmação extra, além do login normal). Clique em \"Record\" para começar — a tela não mostra a imagem ao vivo (só um ponto vermelho piscando com o tempo), pra manter discrição. Clique em \"Stop\" para encerrar, revise o vídeo gravado, escreva uma breve descrição e clique em \"Salvar\" — o vídeo fica guardado num espaço privado, visível só pra ADM e Gestão.",
+      reflexo: "O navegador e o Windows sempre mostram um aviso próprio de câmera/microfone em uso (ícone na aba, ícone na barra de tarefas) — isso é uma proteção do sistema operacional que não é possível nem correto desativar."
+    },
+    {
       icone: "👥", titulo: "Colaboradores", mockup: "form-lista",
       texto: "Cadastro único de todos os colaboradores da clínica — Especialistas, Acompanhantes Terapêuticos (ATs) e Apoio (Auxiliar Administrativa/Agente de Limpeza).\n\nEscolha a categoria no topo do formulário — os campos mudam de acordo: Especialista e Acompanhante pedem área de atuação/especialidade e registro profissional (CRP, CRM, CREFONO etc.); Apoio pede cargo e data de admissão. Os demais campos (nome, e-mail, CPF, RG, nascimento, WhatsApp, endereço, CNPJ/Razão Social se for MEI, documentos opcionais) são comuns às três. O CPF é formatado e validado automaticamente.\n\nA lista abaixo agrupa por categoria (Especialistas, Acompanhantes, Apoio) com contador — use \"Editar\" ou \"Excluir\" em qualquer um. A busca funciona por nome, especialidade ou cargo, e há uma seção separada e retrátil pros inativos.",
       reflexo: "Depois de cadastrado, o colaborador pode fazer login no sistema (conforme a categoria), aparece na lista de Colaboradores da Gestão e — se for Especialista ou Acompanhante — pode ser escalado na tela Escala."
@@ -213,6 +218,11 @@ const GESTAO: AjudaConteudo = {
       icone: "🛒", titulo: "Requisições de Compra", mockup: "tabela",
       texto: "Solicite produtos ao ADM — materiais, equipamentos, itens de escritório, ou qualquer coisa que a clínica precise comprar.\n\nClique em \"Nova requisição\" para preencher: produto, quantidade, descrição (para que serve), link do produto (opcional, ex: Amazon ou Shopee) e urgência (Normal ou Urgente).\n\nAcompanhe o histórico e receba a resposta do ADM com o status atualizado: Pendente → Em análise → Comprado → Entregue.",
       reflexo: "O ADM vê sua requisição, atualiza o status e pode deixar uma observação para você — que aparece direto nesta tela. A ação fica registrada na Auditoria."
+    },
+    {
+      icone: "🎥", titulo: "Record", mockup: "form-lista",
+      texto: "Gravação de reunião ou de uma situação que precise de registro, usando a câmera e o microfone do computador — acesso restrito a ADM e Gestão.\n\nAo entrar, é pedida sua senha de novo (confirmação extra, além do login normal). Clique em \"Record\" para começar — a tela não mostra a imagem ao vivo (só um ponto vermelho piscando com o tempo), pra manter discrição. Clique em \"Stop\" para encerrar, revise o vídeo gravado, escreva uma breve descrição e clique em \"Salvar\" — o vídeo fica guardado num espaço privado, visível só pra ADM e Gestão.",
+      reflexo: "O navegador e o Windows sempre mostram um aviso próprio de câmera/microfone em uso (ícone na aba, ícone na barra de tarefas) — isso é uma proteção do sistema operacional que não é possível nem correto desativar."
     },
   ],
 };

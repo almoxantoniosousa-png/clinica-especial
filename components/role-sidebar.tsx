@@ -93,6 +93,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/chat",             label: "Chat",       icon: "💬" },
     { href: "/escala",           label: "Escala",     icon: "📅" },
     { href: "/adm/auditoria",    label: "Auditoria",  icon: "🔍" },
+    { href: "/gravacoes",        label: "Record",     icon: "🎥" },
     { href: "/ajuda",            label: "Ajuda",     icon: "❓" },
   ];
 
@@ -115,6 +116,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/reuniao",             label: "Reunião",      icon: "🗒️" },
     { href: "/chat",                label: "Chat",         icon: "💬" },
     { href: "/gestao/comunicados",  label: "Família",      icon: "💬" },
+    { href: "/gravacoes",           label: "Record",       icon: "🎥" },
     { href: "/ajuda",               label: "Ajuda",        icon: "❓" },
   ];
 
