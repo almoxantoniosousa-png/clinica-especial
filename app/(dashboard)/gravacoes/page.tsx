@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useGravacao } from "@/contexts/gravacao-context";
 
 type Gravacao = {
   id: string;
@@ -23,21 +24,14 @@ export default function GravacoesPage() {
   const [verificando, setVerificando] = useState(false);
   const [erroSenha, setErroSenha] = useState("");
 
-  const [gravando, setGravando] = useState(false);
-  const [segundos, setSegundos] = useState(0);
-  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const { gravando, segundos, videoBlob, erro, iniciarGravacao, pararGravacao, descartarGravacao, limparErro } = useGravacao();
+
   const [descricao, setDescricao] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
 
   const [gravacoes, setGravacoes] = useState<Gravacao[]>([]);
   const [carregandoLista, setCarregandoLista] = useState(false);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     async function identificar() {
@@ -57,44 +51,7 @@ export default function GravacoesPage() {
       setCarregandoRole(false);
     }
     identificar();
-    return () => {
-      pararCamera();
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Sair da tela (fechar aba, atualizar, ou clicar em outro item do menu)
-  // enquanto está gravando ou com uma gravação ainda não salva perdia tudo
-  // sem avisar. Trava a saída nesses dois casos, pedindo confirmação.
-  useEffect(() => {
-    const temAlgoPraPerder = gravando || !!videoBlob;
-    if (!temAlgoPraPerder) return;
-
-    function avisarFechamento(e: BeforeUnloadEvent) {
-      e.preventDefault();
-      e.returnValue = "";
-    }
-    function avisarNavegacaoInterna(e: MouseEvent) {
-      const link = (e.target as HTMLElement)?.closest?.("a[href]") as HTMLAnchorElement | null;
-      if (!link) return;
-      const mesmaOrigem = link.origin === window.location.origin;
-      const mesmaPagina = link.pathname === window.location.pathname;
-      if (!mesmaOrigem || mesmaPagina) return;
-      const confirmar = window.confirm("Você tem uma gravação em andamento/não salva. Sair agora vai perdê-la. Sair mesmo assim?");
-      if (!confirmar) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-      }
-    }
-
-    window.addEventListener("beforeunload", avisarFechamento);
-    document.addEventListener("click", avisarNavegacaoInterna, true);
-    return () => {
-      window.removeEventListener("beforeunload", avisarFechamento);
-      document.removeEventListener("click", avisarNavegacaoInterna, true);
-    };
-  }, [gravando, videoBlob]);
 
   const podeAcessar = usuarioRole === "adm" || usuarioRole === "admin" || usuarioRole === "gestao";
 
@@ -121,48 +78,10 @@ export default function GravacoesPage() {
     setCarregandoLista(false);
   }
 
-  async function iniciarCamera() {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    streamRef.current = stream;
-    if (videoRef.current) videoRef.current.srcObject = stream;
-  }
-
-  function pararCamera() {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
-  }
-
-  async function iniciarGravacao() {
-    setVideoBlob(null);
-    setDescricao("");
+  async function handleIniciar() {
     setFeedback(null);
-    try {
-      await iniciarCamera();
-    } catch {
-      setFeedback({ tipo: "erro", msg: "Não foi possível acessar a câmera/microfone. Verifique as permissões do navegador." });
-      return;
-    }
-    if (!streamRef.current) return;
-    chunksRef.current = [];
-    const recorder = new MediaRecorder(streamRef.current, { mimeType: "video/webm" });
-    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-    recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: "video/webm" });
-      setVideoBlob(blob);
-    };
-    recorder.start();
-    recorderRef.current = recorder;
-    setGravando(true);
-    setSegundos(0);
-    timerRef.current = setInterval(() => setSegundos((s) => s + 1), 1000);
-  }
-
-  function pararGravacao() {
-    recorderRef.current?.stop();
-    setGravando(false);
-    if (timerRef.current) clearInterval(timerRef.current);
-    pararCamera();
+    setDescricao("");
+    await iniciarGravacao();
   }
 
   async function salvarGravacao() {
@@ -188,8 +107,8 @@ export default function GravacoesPage() {
       return;
     }
     setFeedback({ tipo: "sucesso", msg: "Gravação salva." });
-    setVideoBlob(null);
     setDescricao("");
+    descartarGravacao();
     carregarGravacoes();
   }
 
@@ -253,21 +172,21 @@ export default function GravacoesPage() {
     <div className="space-y-6 pb-10 max-w-2xl">
       <div>
         <h1 className="text-xl font-bold text-slate-900">Record</h1>
-        <p className="text-xs text-slate-400 mt-0.5">Acesso restrito — ADM e Gestão.</p>
+        <p className="text-xs text-slate-400 mt-0.5">Acesso restrito — ADM e Gestão. A gravação continua mesmo se você navegar pra outro menu.</p>
       </div>
 
-      {feedback && (
+      {(feedback || erro) && (
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border
-          ${feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
-          <span>{feedback.tipo === "sucesso" ? "✓" : "✕"}</span>
-          {feedback.msg}
+          ${feedback?.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
+          <span>{feedback?.tipo === "sucesso" ? "✓" : "✕"}</span>
+          {feedback?.msg || erro}
+          {erro && (
+            <button onClick={limparErro} className="ml-auto text-xs underline opacity-70 hover:opacity-100">fechar</button>
+          )}
         </div>
       )}
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
-        {/* A câmera nunca aparece ao vivo na tela — só o status, pra não entregar que tem gravação rolando */}
-        <video ref={videoRef} autoPlay muted playsInline className="hidden" />
-
         {gravando && (
           <div className="flex items-center justify-center gap-2 py-6">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
@@ -276,7 +195,7 @@ export default function GravacoesPage() {
         )}
 
         {!gravando && !videoBlob && (
-          <button onClick={iniciarGravacao}
+          <button onClick={handleIniciar}
             className="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition">
             Record
           </button>
@@ -294,7 +213,7 @@ export default function GravacoesPage() {
             <input type="text" required placeholder="Descrição (ex: Reunião com Fulana — 01/08)" value={descricao} onChange={(e) => setDescricao(e.target.value)}
               className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <div className="flex gap-2">
-              <button onClick={() => { setVideoBlob(null); setDescricao(""); }}
+              <button onClick={() => { descartarGravacao(); setDescricao(""); }}
                 className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
                 Descartar
               </button>

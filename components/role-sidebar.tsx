@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { NotificacoesBell } from "@/components/notificacoes-bell";
+import { useGravacao } from "@/contexts/gravacao-context";
 
 interface RoleSidebarProps {
   userRole: string;
@@ -227,6 +228,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
   const MenuItem = ({ item }: { item: { href: string; label: string; icon: string } }) => {
     const ativo = pathname === item.href;
+    const { gravando } = useGravacao();
     return (
       <Link href={item.href}
         className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all
@@ -235,6 +237,9 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
             : "text-slate-600 hover:bg-blue-50 hover:text-blue-700 font-medium"}`}>
         <span className="text-base leading-none">{item.icon}</span>
         <span>{item.label}</span>
+        {item.href === "/gravacoes" && gravando && (
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse ml-auto" />
+        )}
       </Link>
     );
   };
