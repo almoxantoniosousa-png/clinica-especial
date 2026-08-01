@@ -64,6 +64,38 @@ export default function GravacoesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Sair da tela (fechar aba, atualizar, ou clicar em outro item do menu)
+  // enquanto está gravando ou com uma gravação ainda não salva perdia tudo
+  // sem avisar. Trava a saída nesses dois casos, pedindo confirmação.
+  useEffect(() => {
+    const temAlgoPraPerder = gravando || !!videoBlob;
+    if (!temAlgoPraPerder) return;
+
+    function avisarFechamento(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    function avisarNavegacaoInterna(e: MouseEvent) {
+      const link = (e.target as HTMLElement)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!link) return;
+      const mesmaOrigem = link.origin === window.location.origin;
+      const mesmaPagina = link.pathname === window.location.pathname;
+      if (!mesmaOrigem || mesmaPagina) return;
+      const confirmar = window.confirm("Você tem uma gravação em andamento/não salva. Sair agora vai perdê-la. Sair mesmo assim?");
+      if (!confirmar) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    }
+
+    window.addEventListener("beforeunload", avisarFechamento);
+    document.addEventListener("click", avisarNavegacaoInterna, true);
+    return () => {
+      window.removeEventListener("beforeunload", avisarFechamento);
+      document.removeEventListener("click", avisarNavegacaoInterna, true);
+    };
+  }, [gravando, videoBlob]);
+
   const podeAcessar = usuarioRole === "adm" || usuarioRole === "admin" || usuarioRole === "gestao";
 
   async function confirmarSenha(e: React.FormEvent) {
