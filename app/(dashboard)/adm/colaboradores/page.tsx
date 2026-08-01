@@ -468,8 +468,8 @@ export default function ColaboradoresPage() {
                 <input type="text" placeholder="Ex: CRP 06/123456" value={form.registro_profissional} onChange={(e) => setForm({ ...form, registro_profissional: e.target.value })} className={inputClass} />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cargo / Função</label>
-                <input type="text" placeholder="Ex: Supervisora Clínica, Coordenadora Pedagógica..." value={form.cargoLivre} onChange={(e) => setForm({ ...form, cargoLivre: e.target.value })} className={inputClass} />
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cargo adicional (opcional)</label>
+                <input type="text" placeholder="Ex: Coordenadora de Material Adaptado — deixe em branco se não tiver título além da categoria" value={form.cargoLivre} onChange={(e) => setForm({ ...form, cargoLivre: e.target.value })} className={inputClass} />
               </div>
             </div>
           )}
@@ -710,8 +710,8 @@ export default function ColaboradoresPage() {
                       className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                   </div>
                   <div className="space-y-1.5 col-span-2">
-                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cargo / Função</label>
-                    <input type="text" placeholder="Ex: Supervisora Clínica, Coordenadora Pedagógica..." value={editando.cargo || ""} onChange={(e) => setEditando({ ...editando, cargo: e.target.value })}
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cargo adicional (opcional)</label>
+                    <input type="text" placeholder="Ex: Coordenadora de Material Adaptado — deixe em branco se não tiver título além da categoria" value={editando.cargo || ""} onChange={(e) => setEditando({ ...editando, cargo: e.target.value })}
                       className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                   </div>
                 </div>
