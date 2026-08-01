@@ -11,7 +11,6 @@ type Tabela = "atendentes" | "colaboradoras_internas" | "usuarios";
 // Supervisoras confirmadas que vivem na tabela "usuarios" (login/permissões
 // à parte, não mexidas aqui — só entram na listagem/cadastro).
 const SUPERVISORAS_USUARIOS_IDS = [
-  "fdbf206f-3dfa-41cb-aa31-0acb40963b80", // Raquel Domingos
   "7323d537-e397-4a2a-9152-2784ae20a109", // Carolina Borges
 ];
 
