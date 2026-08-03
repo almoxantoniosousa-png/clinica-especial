@@ -27,7 +27,8 @@ export default function AdmCriancasPage() {
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [uploadingFoto, setUploadingFoto] = useState(false);
-  const [listaAberta, setListaAberta] = useState(true);
+  const [formAberto, setFormAberto] = useState(false);
+  const [listaAberta, setListaAberta] = useState(false);
   const [busca, setBusca] = useState("");
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
   const inputFotoRef = useRef<HTMLInputElement>(null);
@@ -382,14 +383,22 @@ export default function AdmCriancasPage() {
       )}
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="bg-blue-900 px-6 py-4 flex items-center justify-between">
+        <button onClick={() => setFormAberto(!formAberto)}
+          className="w-full bg-blue-900 hover:bg-blue-800 transition px-6 py-4 flex items-center justify-between text-left">
           <div>
             <h2 className="text-white font-bold text-base">Nova Criança — Prontuário</h2>
             <p className="text-blue-200 text-xs mt-0.5">Preencha os dados completos do paciente</p>
           </div>
-          <span className="text-2xl">👶</span>
-        </div>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">👶</span>
+            <svg className={`w-4 h-4 text-blue-200 transition-transform duration-200 ${formAberto ? "rotate-180" : ""}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </button>
 
+        {formAberto && (
         <form onSubmit={salvarCrianca} className="p-6 space-y-8">
           <Secao titulo="Identificação" icone="🪪">
             <div className="flex items-start gap-6">
@@ -535,6 +544,7 @@ export default function AdmCriancasPage() {
             ) : "Cadastrar Criança"}
           </button>
         </form>
+        )}
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
