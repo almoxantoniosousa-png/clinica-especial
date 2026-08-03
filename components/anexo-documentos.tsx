@@ -6,6 +6,17 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 
 export type DocumentoAnexo = { nome: string; url: string };
 
+// O Supabase Storage recusa certos caracteres na chave do arquivo (acento,
+// espaço, símbolo) com erro "Invalid key" — sanitiza só o nome usado no
+// armazenamento; o nome original (com acento) continua aparecendo pro
+// usuário normalmente.
+function sanitizarNomeArquivo(nome: string): string {
+  return nome
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9.\-_]/g, "_");
+}
+
 interface AnexoDocumentosProps {
   pastaId: string; // pasta única no bucket — geralmente o id do cadastro
   documentos: DocumentoAnexo[];
@@ -26,7 +37,7 @@ export function AnexoDocumentos({ pastaId, documentos, onChange, disabled }: Ane
     setErro("");
     const novos: DocumentoAnexo[] = [];
     for (const file of Array.from(files)) {
-      const caminho = `${pastaId}/${Date.now()}-${file.name}`;
+      const caminho = `${pastaId}/${Date.now()}-${sanitizarNomeArquivo(file.name)}`;
       const { error } = await supabase.storage.from("documentos-cadastro").upload(caminho, file);
       if (error) {
         setErro(`Falha ao enviar "${file.name}": ${error.message}`);
