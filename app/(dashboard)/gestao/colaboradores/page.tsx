@@ -11,9 +11,7 @@ type Categoria = "especialista" | "atendente" | "supervisora" | "apoio";
 
 // Supervisoras confirmadas que vivem na tabela "usuarios" (login/permissões
 // à parte, não mexidas aqui — só entram na listagem).
-const SUPERVISORAS_USUARIOS_IDS = [
-  "7323d537-e397-4a2a-9152-2784ae20a109", // Carolina Borges
-];
+const SUPERVISORAS_USUARIOS_IDS: string[] = [];
 
 const CATEGORIAS: { valor: Categoria; label: string; labelSingular: string; icone: string; badge: string; chip: string }[] = [
   { valor: "especialista", label: "Especialistas", labelSingular: "Especialista", icone: "🩺", badge: "bg-purple-50 text-purple-700", chip: "bg-purple-600 hover:bg-purple-700" },
