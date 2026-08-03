@@ -400,20 +400,29 @@ export default function AdmDashboardPage() {
                 const isProximo = p.diff > 0 && p.diff <= 7;
                 const dataFormatada = `${p.data_nascimento.slice(8, 10)}/${p.data_nascimento.slice(5, 7)}`;
                 return (
-                  <div key={i} className={`flex items-center justify-between px-3 py-2.5 rounded-xl border ${
-                    isHoje    ? "bg-pink-50 border-pink-200" :
+                  <div key={i} style={{ animationDelay: `${i * 60}ms` }} className={`relative flex items-center justify-between px-3 py-2.5 rounded-xl border overflow-hidden animate-in fade-in slide-in-from-left-2 fill-mode-backwards ${
+                    isHoje    ? "bg-pink-50 border-pink-200 shadow-sm" :
                     isProximo ? "bg-amber-50 border-amber-100" :
                                 "bg-slate-50 border-slate-100"}`}>
+                    {isHoje && (
+                      <span className="absolute -right-2 -top-2 text-2xl rotate-12 animate-bounce [animation-duration:2s]" aria-hidden>🎈</span>
+                    )}
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                        isHoje    ? "bg-pink-200 text-pink-800" :
-                        isProximo ? "bg-amber-200 text-amber-800" :
-                                    "bg-slate-200 text-slate-600"}`}>
-                        {p.nome.charAt(0).toUpperCase()}
+                      <div className="relative flex-shrink-0">
+                        <span className={`absolute inset-0 rounded-full animate-ping ${
+                          isHoje    ? "bg-pink-400 opacity-60" :
+                          isProximo ? "bg-amber-300 opacity-40 [animation-duration:2s]" :
+                                      "bg-slate-300 opacity-30 [animation-duration:3s]"}`} aria-hidden />
+                        <div className={`relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                          isHoje    ? "bg-pink-300 text-pink-900" :
+                          isProximo ? "bg-amber-200 text-amber-800" :
+                                      "bg-slate-200 text-slate-600"}`}>
+                          {p.nome.charAt(0).toUpperCase()}
+                        </div>
                       </div>
                       <div>
                         <p className={`text-sm font-semibold ${isHoje ? "text-pink-800" : "text-slate-700"}`}>
-                          {p.nome} {isHoje && "🎉"}
+                          {p.nome} <span className="inline-block animate-bounce [animation-duration:1.5s]">{isHoje ? "🎉" : "🎂"}</span>
                         </p>
                         <p className="text-xs text-slate-400">{p.tipo}</p>
                       </div>
@@ -423,7 +432,7 @@ export default function AdmDashboardPage() {
                         {dataFormatada}
                       </p>
                       {(isHoje || isProximo) && (
-                        <p className={`text-xs ${isHoje ? "text-pink-500" : "text-amber-600"}`}>
+                        <p className={`text-xs ${isHoje ? "text-pink-500 font-bold" : "text-amber-600"}`}>
                           {isHoje ? "Hoje!" : `em ${p.diff} dias`}
                         </p>
                       )}
