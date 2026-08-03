@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { registrarLog } from "@/lib/auditoria";
-import { hojeLocal } from "@/lib/dataUtils";
+import { hojeLocal, iniciaisNome } from "@/lib/dataUtils";
 import { Saudacao } from "@/components/painel-informacoes";
 
 const TOPICOS_CORRECAO = ["Entrada e Interação", "Autonomia e Higiene", "Recreio e Socialização", "Agenda e Recados"];
@@ -419,7 +419,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
   const filtrados = formularios;
 
   function iniciais(nome: string) {
-    return nome?.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase() || "?";
+    return nome ? iniciaisNome(nome) : "?";
   }
 
   function renderDetalhe(form: FormularioEscolar) {

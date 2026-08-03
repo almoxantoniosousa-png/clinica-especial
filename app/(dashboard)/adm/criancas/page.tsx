@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition, useRef, useMemo } from "react";
 import { Printer } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
+import { iniciaisNome } from "@/lib/dataUtils";
 import { registrarLog } from "@/lib/auditoria";
 import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
 
@@ -254,7 +255,7 @@ export default function AdmCriancasPage() {
   );
 
   function iniciais(nome: string) {
-    return nome.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
+    return iniciaisNome(nome);
   }
 
   const coresAvatar = ["bg-blue-100 text-blue-700", "bg-purple-100 text-purple-700", "bg-emerald-100 text-emerald-700", "bg-amber-100 text-amber-700", "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700"];

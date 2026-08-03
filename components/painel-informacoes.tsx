@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { primeiroNome } from "@/lib/dataUtils";
 
 type Noticia = { titulo: string; link: string; fonte: string; data: string };
 type WeatherData = {
@@ -140,7 +141,7 @@ export function saudacao(nome?: string) {
   const h = new Date().getHours();
   const turno = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
   const icone = h < 12 ? "☀️" : h < 18 ? "🌤️" : "🌙";
-  return `${icone} ${turno}${nome ? `, ${nome.split(" ").slice(0, 2).join(" ")}` : ""}!`;
+  return `${icone} ${turno}${nome ? `, ${primeiroNome(nome)}` : ""}!`;
 }
 
 // Componente separado porque a saudação depende da hora local de quem

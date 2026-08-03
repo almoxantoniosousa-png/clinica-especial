@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { registrarLog } from "@/lib/auditoria";
+import { iniciaisNome } from "@/lib/dataUtils";
 
 type Material = {
   id: string;
@@ -400,7 +401,7 @@ export default function MateriaisAdaptadosPage() {
 
   // ── Navegação por criança ────────────────────────────────────────────────
   function iniciaisCrianca(nome: string) {
-    return nome.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
+    return iniciaisNome(nome);
   }
   const coresAvatarCrianca = ["bg-blue-100 text-blue-700", "bg-purple-100 text-purple-700", "bg-emerald-100 text-emerald-700", "bg-amber-100 text-amber-700", "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700"];
   function corAvatarCrianca(nome: string) { return coresAvatarCrianca[nome.charCodeAt(0) % coresAvatarCrianca.length]; }

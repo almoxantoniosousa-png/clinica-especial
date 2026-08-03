@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { carregarDadosDashboard } from "@/app/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { PainelInformacoes, Saudacao } from "@/components/painel-informacoes";
+import { primeiroNome } from "@/lib/dataUtils";
 import { Line, Pie, Bar } from "react-chartjs-2";
 import type { ChartData } from "chart.js";
 import {
@@ -246,7 +247,7 @@ export default function AdmDashboardPage() {
 
     setKpisExtra({
       totalCriancas,
-      melhorProfissional: profOrd[0]?.nome.split(" ").slice(0, 2).join(" ") || "—",
+      melhorProfissional: profOrd[0]?.nome ? primeiroNome(profOrd[0].nome) : "—",
       mediaAtend: totalCriancas > 0 ? Math.round((totalAtend / totalCriancas) * 10) / 10 : 0,
     });
 

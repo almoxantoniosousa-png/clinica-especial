@@ -14,6 +14,31 @@ export function paraISOLocal(d: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+// `nome.split(" ").slice(0, 2)` parece inofensivo, mas em nomes com
+// conector no meio ("Maria de Fátima", "João da Silva") corta bem no lugar
+// errado ("Maria de", "João da") — o conector conta como uma das 2
+// "palavras", roubando o segundo nome de verdade. Essas duas funções pulam
+// conectores ao contar.
+const CONECTORES_NOME = new Set(["de", "da", "do", "das", "dos", "e"]);
+
+export function primeiroNome(nomeCompleto: string): string {
+  const partes = nomeCompleto.trim().split(/\s+/);
+  const resultado: string[] = [];
+  let nomesReais = 0;
+  for (const parte of partes) {
+    resultado.push(parte);
+    if (CONECTORES_NOME.has(parte.toLowerCase())) continue;
+    nomesReais++;
+    if (nomesReais >= 2) break;
+  }
+  return resultado.join(" ");
+}
+
+export function iniciaisNome(nomeCompleto: string): string {
+  const partes = nomeCompleto.trim().split(/\s+/).filter((p) => !CONECTORES_NOME.has(p.toLowerCase()));
+  return partes.slice(0, 2).map((p) => p[0]).join("").toUpperCase();
+}
+
 export function mesAtualLocal(): string {
   return hojeLocal().slice(0, 7);
 }

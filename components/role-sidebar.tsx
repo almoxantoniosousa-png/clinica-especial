@@ -7,6 +7,7 @@ import { ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { NotificacoesBell } from "@/components/notificacoes-bell";
 import { useGravacao } from "@/contexts/gravacao-context";
+import { primeiroNome } from "@/lib/dataUtils";
 
 interface RoleSidebarProps {
   userRole: string;
@@ -215,7 +216,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     : isFinanceiro ? "Financeiro"
     : "Acompanhante Terapêutica";
 
-  const nomeExibicao = userNome ? userNome.split(" ").slice(0, 2).join(" ") : "";
+  const nomeExibicao = userNome ? primeiroNome(userNome) : "";
   const identLabel = userNome ? `${nomeExibicao} - ${roleLabel}` : roleLabel;
 
   const Logo = ({ size }: { size: "sm" | "md" }) => {

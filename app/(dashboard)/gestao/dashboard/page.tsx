@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { PainelInformacoes, Saudacao } from "@/components/painel-informacoes";
+import { iniciaisNome } from "@/lib/dataUtils";
 import { hojeLocal, paraISOLocal } from "@/lib/dataUtils";
 import { Bar, Line, Pie } from "react-chartjs-2";
 import type { ChartData } from "chart.js";
@@ -293,7 +294,7 @@ export default function GestaoDashboardPage() {
   };
 
   function iniciais(nome: string) {
-    return nome.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
+    return iniciaisNome(nome);
   }
 
   const totalAtend = Object.values(atendimentosPorModalidade).reduce((a, b) => a + b, 0);

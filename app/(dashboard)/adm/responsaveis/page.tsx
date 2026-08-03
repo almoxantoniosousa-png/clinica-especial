@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { Users, Plus, Pencil, Trash2, X, Check, Mail, Phone, Baby, Power, User, MapPin, CreditCard } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
+import { iniciaisNome } from "@/lib/dataUtils";
 
 export default function ResponsaveisPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -141,7 +142,7 @@ export default function ResponsaveisPage() {
   );
 
   function iniciais(nome: string) {
-    return nome.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
+    return iniciaisNome(nome);
   }
 
   const inputClass = "w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-blue-500 text-slate-800 text-sm focus:outline-none transition placeholder:text-slate-400 bg-white";

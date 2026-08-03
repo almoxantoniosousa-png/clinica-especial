@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { Search } from "lucide-react";
+import { iniciaisNome } from "@/lib/dataUtils";
 
 const POR_PAGINA = 8;
 
@@ -79,7 +80,7 @@ export default function GestaoColaboradoresPage() {
   const temMais = visiveis < filtrados.length;
 
   function iniciais(nome: string) {
-    return nome.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
+    return iniciaisNome(nome);
   }
 
   const coresAvatar = [

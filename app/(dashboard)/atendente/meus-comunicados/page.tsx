@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { iniciaisNome } from "@/lib/dataUtils";
 import Link from "next/link";
 import { Search } from "lucide-react";
 
@@ -66,7 +67,7 @@ export default function MeusComunicadosPage() {
   }, [atId]);
 
   function iniciais(nome: string) {
-    return nome?.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase() || "?";
+    return nome ? iniciaisNome(nome) : "?";
   }
 
   const statusConfig: any = {

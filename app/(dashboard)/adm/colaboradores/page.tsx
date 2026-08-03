@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
 import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
+import { iniciaisNome } from "@/lib/dataUtils";
 
 type Categoria = "especialista" | "atendente" | "supervisora" | "apoio";
 type Tabela = "atendentes" | "colaboradoras_internas" | "usuarios";
@@ -309,7 +310,7 @@ export default function ColaboradoresPage() {
   }
 
   function iniciais(nome: string) {
-    return nome.split(" ").slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
+    return iniciaisNome(nome);
   }
 
   const coresAvatarPadrao = [
