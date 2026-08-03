@@ -90,9 +90,12 @@ export default function AdmDashboardPage() {
       ...(criancas  || []).map((c: { nome: string; data_nascimento: string }) => ({ ...c, tipo: "Criança" })),
     ];
 
+    // data_nascimento vem como "AAAA-MM-DD" — usar new Date(...).getDate() aqui
+    // converte pro fuso local e, no Brasil, joga o dia pra véspera (ex: dia 15
+    // virava 14). Pega o mês/dia direto da string, sem passar por Date.
     setAniversariantes(
-      todos.filter(p => new Date(p.data_nascimento).getMonth() + 1 === mesAtual)
-        .map(p => { const dia = new Date(p.data_nascimento).getDate(); return { ...p, dia, diff: dia - hoje }; })
+      todos.filter(p => Number(p.data_nascimento.slice(5, 7)) === mesAtual)
+        .map(p => { const dia = Number(p.data_nascimento.slice(8, 10)); return { ...p, dia, diff: dia - hoje }; })
         .sort((a, b) => a.dia - b.dia)
     );
   }
@@ -395,6 +398,7 @@ export default function AdmDashboardPage() {
               {aniversariantes.map((p, i) => {
                 const isHoje    = p.diff === 0;
                 const isProximo = p.diff > 0 && p.diff <= 7;
+                const dataFormatada = `${p.data_nascimento.slice(8, 10)}/${p.data_nascimento.slice(5, 7)}`;
                 return (
                   <div key={i} className={`flex items-center justify-between px-3 py-2.5 rounded-xl border ${
                     isHoje    ? "bg-pink-50 border-pink-200" :
@@ -416,8 +420,13 @@ export default function AdmDashboardPage() {
                     </div>
                     <div className="text-right">
                       <p className={`text-sm font-semibold ${isHoje ? "text-pink-600" : isProximo ? "text-amber-600" : "text-slate-500"}`}>
-                        {isHoje ? "Hoje!" : isProximo ? `em ${p.diff} dias` : `dia ${p.dia}`}
+                        {dataFormatada}
                       </p>
+                      {(isHoje || isProximo) && (
+                        <p className={`text-xs ${isHoje ? "text-pink-500" : "text-amber-600"}`}>
+                          {isHoje ? "Hoje!" : `em ${p.diff} dias`}
+                        </p>
+                      )}
                     </div>
                   </div>
                 );
