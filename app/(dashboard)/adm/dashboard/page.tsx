@@ -81,10 +81,13 @@ export default function AdmDashboardPage() {
       .from("atendentes").select("nome, data_nascimento, role").not("data_nascimento", "is", null);
     const { data: internas } = await supabase
       .from("colaboradoras_internas").select("nome, data_nascimento, cargo").not("data_nascimento", "is", null);
+    const { data: criancas } = await supabase
+      .from("criancas").select("nome, data_nascimento").eq("ativo", true).not("data_nascimento", "is", null);
 
     const todos = [
       ...(atendentes || []).map((a: { nome: string; data_nascimento: string; role: string }) => ({ ...a, tipo: a.role === "especialista" ? "Especialista" : "Acompanhante" })),
       ...(internas  || []).map((i: { nome: string; data_nascimento: string; cargo: string }) => ({ ...i, tipo: i.cargo })),
+      ...(criancas  || []).map((c: { nome: string; data_nascimento: string }) => ({ ...c, tipo: "Criança" })),
     ];
 
     setAniversariantes(
