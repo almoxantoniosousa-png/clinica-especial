@@ -102,7 +102,8 @@ export default function ColaboradoresPage() {
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [busca, setBusca] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState<Categoria | "todos">("todos");
-  const [listaAberta, setListaAberta] = useState(true);
+  const [formAberto, setFormAberto] = useState(false);
+  const [listaAberta, setListaAberta] = useState(false);
   const [mostrarInativos, setMostrarInativos] = useState(false);
   const [editando, setEditando] = useState<Colaborador | null>(null);
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
@@ -405,13 +406,22 @@ export default function ColaboradoresPage() {
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 md:p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-slate-800">Novo Colaborador</h2>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${cor.badge}`}>Cadastro rápido</span>
-        </div>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <button onClick={() => setFormAberto(!formAberto)}
+          className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-slate-800">Novo Colaborador</h2>
+            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${cor.badge}`}>Cadastro rápido</span>
+          </div>
+          <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${formAberto ? "rotate-180" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
 
-        <div className="mb-5">
+        {formAberto && (
+        <div className="p-5 md:p-6 pt-0 md:pt-0">
+        <div className="mb-5 mt-5">
           <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 block">Categoria *</label>
           <div className="flex flex-wrap gap-2">
             {CATEGORIAS.map((c) => {
@@ -541,6 +551,8 @@ export default function ColaboradoresPage() {
             {loading ? "Cadastrando..." : enviandoDocumentos ? "Enviando documentos..." : `Cadastrar ${catAtual.labelSingular}`}
           </button>
         </form>
+        </div>
+        )}
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
