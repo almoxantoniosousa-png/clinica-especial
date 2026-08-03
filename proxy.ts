@@ -12,6 +12,7 @@ const PREFIXOS_STAFF: { prefixo: string; roles: string[] }[] = [
   // precisam vir antes da regra geral de "/adm" pra serem checadas primeiro.
   { prefixo: "/adm/financeiro", roles: ["adm", "admin", "financeiro", "aux_adm"] },
   { prefixo: "/adm/patrimonio", roles: ["adm", "admin", "financeiro", "aux_adm"] },
+  { prefixo: "/adm/colaboradores", roles: ["adm", "admin", "financeiro", "aux_adm"] },
   { prefixo: "/adm", roles: ["adm", "admin", "financeiro"] },
   { prefixo: "/especialista", roles: ["especialista"] },
   { prefixo: "/supervisora", roles: ["supervisora"] },
