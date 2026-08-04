@@ -18,6 +18,7 @@ export default function MuralPage() {
   const [destinatario, setDestinatario] = useState("todos");
   const [pessoas, setPessoas] = useState<string[]>([]);
   const [pessoaEscolhida, setPessoaEscolhida] = useState("");
+  const [pessoaLivre, setPessoaLivre] = useState(false);
   const [fixado, setFixado] = useState(false);
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
@@ -113,7 +114,7 @@ export default function MuralPage() {
       mostrarFeedback("erro", "Erro ao publicar: " + error.message);
     } else {
       mostrarFeedback("sucesso", "Comunicado publicado com sucesso!");
-      setTitulo(""); setConteudo(""); setDestinatario("todos"); setPessoaEscolhida(""); setFixado(false);
+      setTitulo(""); setConteudo(""); setDestinatario("todos"); setPessoaEscolhida(""); setPessoaLivre(false); setFixado(false);
       setFotoFile(null); setFotoPreview(null);
       setMostrarForm(false);
       carregar();
@@ -234,16 +235,40 @@ export default function MuralPage() {
               {destinatario === "pessoa" && (
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Qual colaborador?</label>
-                  <select
-                    required
-                    value={pessoaEscolhida}
-                    onChange={(e) => setPessoaEscolhida(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm text-slate-800
-                      bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                  >
-                    <option value="">Selecione o nome...</option>
-                    {pessoas.filter(nome => nome !== autorNome.trim()).map(nome => <option key={nome} value={nome}>{nome}</option>)}
-                  </select>
+                  {pessoaLivre ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        required
+                        autoFocus
+                        placeholder="Digite o nome..."
+                        value={pessoaEscolhida}
+                        onChange={(e) => setPessoaEscolhida(e.target.value)}
+                        className="flex-1 h-12 px-4 rounded-xl border border-slate-200 text-sm text-slate-800
+                          focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"
+                      />
+                      <button type="button"
+                        onClick={() => { setPessoaLivre(false); setPessoaEscolhida(""); }}
+                        className="px-3 text-xs font-semibold text-slate-400 hover:text-slate-600 shrink-0">
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      required
+                      value={pessoaEscolhida}
+                      onChange={(e) => {
+                        if (e.target.value === "__LIVRE__") { setPessoaLivre(true); setPessoaEscolhida(""); }
+                        else setPessoaEscolhida(e.target.value);
+                      }}
+                      className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm text-slate-800
+                        bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    >
+                      <option value="">Selecione o nome...</option>
+                      {pessoas.filter(nome => nome !== autorNome.trim()).map(nome => <option key={nome} value={nome}>{nome}</option>)}
+                      <option value="__LIVRE__">+ Escrever outro nome...</option>
+                    </select>
+                  )}
                 </div>
               )}
 
