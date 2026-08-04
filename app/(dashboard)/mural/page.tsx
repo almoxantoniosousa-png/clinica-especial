@@ -408,13 +408,15 @@ export default function MuralPage() {
           {comunicados.map((c) => (
             <div
               key={c.id}
-              className={`bg-white rounded-2xl border shadow-sm p-5 space-y-3
-                ${c.fixado ? "border-amber-200 border-l-4 border-l-amber-400" : "border-slate-200"}`}
+              className={`rounded-2xl border shadow-sm p-5 space-y-3
+                ${c.aniversario
+                  ? "bg-gradient-to-br from-blue-50 via-white to-amber-50 border-amber-300 border-l-4 border-l-blue-700"
+                  : c.fixado ? "bg-white border-amber-200 border-l-4 border-l-amber-400" : "bg-white border-slate-200"}`}
             >
               {/* Cabeçalho */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2 flex-wrap">
-                  {c.fixado && <span className="text-amber-500 text-sm">📌</span>}
+                  {c.aniversario ? <span className="text-base">🎂</span> : c.fixado && <span className="text-amber-500 text-sm">📌</span>}
                   <h3 className="font-bold text-slate-800 text-base">{c.titulo}</h3>
                   <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border
                     ${badgeDestinatario[c.destinatario]?.color || "bg-slate-50 text-slate-700 border-slate-100"}`}>
@@ -447,7 +449,7 @@ export default function MuralPage() {
               {/* Conteúdo */}
               {c.aniversario && c.foto_url ? (
                 <div className="flex items-center gap-3">
-                  <img src={c.foto_url} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-amber-300 shrink-0" />
+                  <img src={c.foto_url} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-blue-600 ring-2 ring-amber-300 shrink-0" />
                   <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{c.conteudo}</p>
                 </div>
               ) : (
