@@ -117,10 +117,11 @@ export default function MuralPage() {
   }
 
   const badgeDestinatario: any = {
-    todos:     { label: "Para todos",      color: "bg-blue-50 text-blue-700 border-blue-100" },
-    adm:       { label: "Apenas ADM",      color: "bg-purple-50 text-purple-700 border-purple-100" },
-    atendente: { label: "Atendentes",      color: "bg-emerald-50 text-emerald-700 border-emerald-100" },
-    familia:   { label: "Famílias",        color: "bg-rose-50 text-rose-700 border-rose-100" },
+    todos:       { label: "Para todos",      color: "bg-blue-50 text-blue-700 border-blue-100" },
+    adm:         { label: "Apenas ADM",      color: "bg-purple-50 text-purple-700 border-purple-100" },
+    atendente:   { label: "Atendentes",      color: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+    especialista:{ label: "Especialistas",   color: "bg-amber-50 text-amber-700 border-amber-100" },
+    familia:     { label: "Famílias",        color: "bg-rose-50 text-rose-700 border-rose-100" },
   };
 
   return (
@@ -203,6 +204,7 @@ export default function MuralPage() {
                 >
                   <option value="todos">Para todos</option>
                   <option value="atendente">Apenas Atendentes</option>
+                  <option value="especialista">Apenas Especialistas</option>
                   <option value="adm">Apenas ADM</option>
                   <option value="familia">Para as Famílias 👨‍👩‍👧</option>
                 </select>
