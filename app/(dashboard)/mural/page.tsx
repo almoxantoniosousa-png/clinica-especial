@@ -71,8 +71,11 @@ export default function MuralPage() {
       supabase.from("atendentes").select("nome").eq("ativo", true),
       supabase.from("colaboradoras_internas").select("nome").eq("ativo", true),
     ]);
-    const nomes = [...(at || []), ...(internas || [])].map(r => r.nome.trim());
-    setPessoas([...new Set(nomes)].sort((a, b) => a.localeCompare(b, "pt-BR")));
+    const nomes = [...new Set([...(at || []), ...(internas || [])].map(r => r.nome.trim()))];
+    // Descarta nome que é só um apelido/primeiro-nome truncado de outro já
+    // completo na lista (ex.: "Simone" some se já existe "Simone Oliveira Reis").
+    const semTruncados = nomes.filter(n => !nomes.some(o => o !== n && o.startsWith(n + " ")));
+    setPessoas(semTruncados.sort((a, b) => a.localeCompare(b, "pt-BR")));
   }
 
   useEffect(() => { carregar(); carregarPessoas(); }, []);
@@ -239,7 +242,7 @@ export default function MuralPage() {
                       bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   >
                     <option value="">Selecione o nome...</option>
-                    {pessoas.map(nome => <option key={nome} value={nome}>{nome}</option>)}
+                    {pessoas.filter(nome => nome !== autorNome.trim()).map(nome => <option key={nome} value={nome}>{nome}</option>)}
                   </select>
                 </div>
               )}
