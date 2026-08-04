@@ -16,6 +16,8 @@ export default function MuralPage() {
   const [titulo, setTitulo] = useState("");
   const [conteudo, setConteudo] = useState("");
   const [destinatario, setDestinatario] = useState("todos");
+  const [pessoas, setPessoas] = useState<string[]>([]);
+  const [pessoaEscolhida, setPessoaEscolhida] = useState("");
   const [fixado, setFixado] = useState(false);
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
@@ -61,12 +63,27 @@ export default function MuralPage() {
     setLoading(false);
   }
 
-  useEffect(() => { carregar(); }, []);
+  // Lista de nomes pra "Colaborador específico" — mesmas duas tabelas que
+  // compõem o cadastro de Colaboradores (atendentes cobre inclusive
+  // adm/gestão/supervisora/especialista, que também têm linha lá).
+  async function carregarPessoas() {
+    const [{ data: at }, { data: internas }] = await Promise.all([
+      supabase.from("atendentes").select("nome").eq("ativo", true),
+      supabase.from("colaboradoras_internas").select("nome").eq("ativo", true),
+    ]);
+    const nomes = [...(at || []), ...(internas || [])].map(r => r.nome.trim());
+    setPessoas([...new Set(nomes)].sort((a, b) => a.localeCompare(b, "pt-BR")));
+  }
+
+  useEffect(() => { carregar(); carregarPessoas(); }, []);
 
   async function salvarComunicado(e: React.FormEvent) {
     e.preventDefault();
     if (!titulo.trim() || !conteudo.trim()) return;
+    if (destinatario === "pessoa" && !pessoaEscolhida) return;
     setSalvando(true);
+
+    const destinatarioFinal = destinatario === "pessoa" ? pessoaEscolhida : destinatario;
 
     let foto_url: string | null = null;
     if (fotoFile) {
@@ -83,7 +100,7 @@ export default function MuralPage() {
       autor_id: autorId,
       titulo: titulo.trim(),
       conteudo: conteudo.trim(),
-      destinatario,
+      destinatario: destinatarioFinal,
       fixado,
       foto_url,
     }]);
@@ -93,7 +110,7 @@ export default function MuralPage() {
       mostrarFeedback("erro", "Erro ao publicar: " + error.message);
     } else {
       mostrarFeedback("sucesso", "Comunicado publicado com sucesso!");
-      setTitulo(""); setConteudo(""); setDestinatario("todos"); setFixado(false);
+      setTitulo(""); setConteudo(""); setDestinatario("todos"); setPessoaEscolhida(""); setFixado(false);
       setFotoFile(null); setFotoPreview(null);
       setMostrarForm(false);
       carregar();
@@ -207,8 +224,25 @@ export default function MuralPage() {
                   <option value="especialista">Apenas Especialistas</option>
                   <option value="adm">Apenas ADM</option>
                   <option value="familia">Para as Famílias 👨‍👩‍👧</option>
+                  <option value="pessoa">👤 Colaborador específico...</option>
                 </select>
               </div>
+
+              {destinatario === "pessoa" && (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Qual colaborador?</label>
+                  <select
+                    required
+                    value={pessoaEscolhida}
+                    onChange={(e) => setPessoaEscolhida(e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm text-slate-800
+                      bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  >
+                    <option value="">Selecione o nome...</option>
+                    {pessoas.map(nome => <option key={nome} value={nome}>{nome}</option>)}
+                  </select>
+                </div>
+              )}
 
               <div className="flex items-end">
                 <label className="flex items-center gap-3 cursor-pointer select-none h-12 px-4 w-full
@@ -288,8 +322,8 @@ export default function MuralPage() {
                   {c.fixado && <span className="text-amber-500 text-sm">📌</span>}
                   <h3 className="font-bold text-slate-800 text-base">{c.titulo}</h3>
                   <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border
-                    ${badgeDestinatario[c.destinatario]?.color}`}>
-                    {badgeDestinatario[c.destinatario]?.label}
+                    ${badgeDestinatario[c.destinatario]?.color || "bg-slate-50 text-slate-700 border-slate-100"}`}>
+                    {badgeDestinatario[c.destinatario]?.label || `👤 ${c.destinatario}`}
                   </span>
                 </div>
 

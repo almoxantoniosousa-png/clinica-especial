@@ -46,7 +46,7 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
-      texto: "Mural de comunicados internos, visível para a equipe.\n\nClique em \"+ Novo Comunicado\" para publicar um aviso (título, mensagem e destinatário: Para todos / Apenas Atendentes / Apenas Especialistas / Apenas ADM / Para as Famílias). Marque \"📌 Fixar no topo\" para avisos importantes que devem aparecer sempre primeiro.\n\nVocê pode fixar/desafixar e excluir qualquer comunicado.",
+      texto: "Mural de comunicados internos, visível para a equipe.\n\nClique em \"+ Novo Comunicado\" para publicar um aviso (título, mensagem e destinatário: Para todos / Apenas Atendentes / Apenas Especialistas / Apenas ADM / Para as Famílias / Colaborador específico — escolhe uma pessoa da equipe pelo nome, pra avisos que são só pra ela). Marque \"📌 Fixar no topo\" para avisos importantes que devem aparecer sempre primeiro.\n\nVocê pode fixar/desafixar e excluir qualquer comunicado.",
       reflexo: "O comunicado publicado aqui aparece automaticamente no Mural de todos os perfis (Gestão, Supervisora, Especialistas, Atendentes, Financeiro e Aux. Administrativo)."
     },
     {
