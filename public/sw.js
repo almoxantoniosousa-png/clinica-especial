@@ -1,26 +1,31 @@
-const CACHE_NAME = 'clinica-abraco-v2';
-const urlsToCache = [
-  '/',
-  '/login',
-  '/logo.png',
-];
+const CACHE_NAME = 'clinica-abraco-v3';
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
-  );
+// Só cacheia arquivo estático (imagem/css/fonte) — nunca página, API ou
+// payload de navegação. Cachear página por URL causou um bug real: num
+// aparelho compartilhado, um usuário via nome e tela de quem tinha usado
+// o sistema antes ali, porque a resposta cacheada não sabe quem pediu.
+const STATIC_EXT = /\.(?:png|jpg|jpeg|svg|webp|ico|css|woff2?|ttf)$/;
+
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('fetch', event => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  const isStaticAsset = url.origin === self.location.origin && STATIC_EXT.test(url.pathname);
+  if (!isStaticAsset) return; // deixa o navegador tratar normalmente, sempre via rede
+
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-        return response;
-      })
-      .catch(() => caches.match(event.request).then(r => r || caches.match('/')))
+    caches.open(CACHE_NAME).then(async cache => {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (response.ok) cache.put(request, response.clone());
+      return response;
+    })
   );
 });
 
