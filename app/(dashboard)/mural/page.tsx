@@ -3,6 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Trash2 } from "lucide-react";
+import { primeiroNome } from "@/lib/dataUtils";
+
+type Aniversariante = { nome: string; foto: string | null };
 
 export default function MuralPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -22,6 +25,10 @@ export default function MuralPage() {
   const [fixado, setFixado] = useState(false);
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [fotoUrlPronta, setFotoUrlPronta] = useState<string | null>(null);
+  const [aniversario, setAniversario] = useState(false);
+  const [aniversariantes, setAniversariantes] = useState<Aniversariante[]>([]);
+  const [aniversarianteNome, setAniversarianteNome] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [mostrarForm, setMostrarForm] = useState(false);
 
@@ -79,7 +86,38 @@ export default function MuralPage() {
     setPessoas(semTruncados.sort((a, b) => a.localeCompare(b, "pt-BR")));
   }
 
-  useEffect(() => { carregar(); carregarPessoas(); }, []);
+  // Pro card de aniversário — mesma base de "pessoas" + Crianças, já com a
+  // foto de cada um (atendentes.logo_url / colaboradoras_internas.foto_url /
+  // criancas.foto_url) pra preencher o comunicado sem precisar subir nada.
+  async function carregarAniversariantes() {
+    const [{ data: at }, { data: internas }, { data: criancas }] = await Promise.all([
+      supabase.from("atendentes").select("nome, logo_url").eq("ativo", true),
+      supabase.from("colaboradoras_internas").select("nome, foto_url").eq("ativo", true),
+      supabase.from("criancas").select("nome, foto_url").eq("ativo", true),
+    ]);
+    const todos: Aniversariante[] = [
+      ...(at || []).map((r: any) => ({ nome: r.nome.trim(), foto: r.logo_url })),
+      ...(internas || []).map((r: any) => ({ nome: r.nome.trim(), foto: r.foto_url })),
+      ...(criancas || []).map((r: any) => ({ nome: r.nome.trim(), foto: r.foto_url })),
+    ];
+    const nomes = todos.map(p => p.nome);
+    const semTruncados = todos.filter(p => !nomes.some(o => o !== p.nome && o.startsWith(p.nome + " ")));
+    setAniversariantes(semTruncados.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")));
+  }
+
+  useEffect(() => { carregar(); carregarPessoas(); carregarAniversariantes(); }, []);
+
+  function escolherAniversariante(nome: string) {
+    setAniversarianteNome(nome);
+    if (!nome) return;
+    const pessoa = aniversariantes.find(p => p.nome === nome);
+    setTitulo(`🎉 Feliz Aniversário, ${primeiroNome(nome)}!`);
+    setConteudo("Hoje é um dia especial! A equipe da Clínica Abraço deseja muita saúde, alegria e realizações. Parabéns! 🎂💙");
+    setFixado(true);
+    setFotoFile(null);
+    setFotoPreview(pessoa?.foto || null);
+    setFotoUrlPronta(pessoa?.foto || null);
+  }
 
   async function salvarComunicado(e: React.FormEvent) {
     e.preventDefault();
@@ -89,7 +127,9 @@ export default function MuralPage() {
 
     const destinatarioFinal = destinatario === "pessoa" ? pessoaEscolhida : destinatario;
 
-    let foto_url: string | null = null;
+    // Se veio de "🎂 Aniversário" e ela não trocou a foto na mão, usa a foto
+    // já cadastrada da pessoa (fotoUrlPronta) sem precisar subir de novo.
+    let foto_url: string | null = fotoFile ? null : fotoUrlPronta;
     if (fotoFile) {
       const ext = fotoFile.name.split(".").pop() || "jpg";
       const path = `mural/${autorId}/${Date.now()}.${ext}`;
@@ -107,6 +147,7 @@ export default function MuralPage() {
       destinatario: destinatarioFinal,
       fixado,
       foto_url,
+      aniversario: !!aniversarianteNome,
     }]);
 
     setSalvando(false);
@@ -115,7 +156,8 @@ export default function MuralPage() {
     } else {
       mostrarFeedback("sucesso", "Comunicado publicado com sucesso!");
       setTitulo(""); setConteudo(""); setDestinatario("todos"); setPessoaEscolhida(""); setPessoaLivre(false); setFixado(false);
-      setFotoFile(null); setFotoPreview(null);
+      setFotoFile(null); setFotoPreview(null); setFotoUrlPronta(null);
+      setAniversario(false); setAniversarianteNome("");
       setMostrarForm(false);
       carregar();
     }
@@ -187,6 +229,29 @@ export default function MuralPage() {
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
           <h2 className="font-semibold text-slate-800">Novo Comunicado</h2>
           <form onSubmit={salvarComunicado} className="space-y-4">
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+              <button type="button"
+                onClick={() => { const v = !aniversario; setAniversario(v); if (!v) escolherAniversariante(""); }}
+                className={`flex items-center gap-2 text-sm font-semibold ${aniversario ? "text-amber-700" : "text-slate-500"}`}>
+                <span className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 ${aniversario ? "bg-amber-500" : "bg-slate-200"}`}>
+                  <span className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${aniversario ? "translate-x-4" : ""}`}/>
+                </span>
+                🎂 Card de aniversário
+              </button>
+              {aniversario && (
+                <select
+                  required
+                  value={aniversarianteNome}
+                  onChange={(e) => escolherAniversariante(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-amber-200 text-sm text-slate-800
+                    bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
+                >
+                  <option value="">Quem está de aniversário?</option>
+                  {aniversariantes.map(p => <option key={p.nome} value={p.nome}>{p.nome}</option>)}
+                </select>
+              )}
+            </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Título</label>
@@ -288,11 +353,13 @@ export default function MuralPage() {
 
             {/* Upload de foto opcional */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Foto (opcional)</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                Foto {aniversario ? "(preenchida automático — pode trocar)" : "(opcional)"}
+              </label>
               <div className="flex gap-3 items-center">
                 <label className="flex items-center gap-2 h-10 px-4 rounded-xl border border-slate-200
                   bg-slate-50 hover:bg-slate-100 cursor-pointer text-sm text-slate-600 transition">
-                  📷 Adicionar foto
+                  📷 {aniversario ? "Trocar foto" : "Adicionar foto"}
                   <input type="file" accept="image/*" className="hidden"
                     onChange={(e) => {
                       const f = e.target.files?.[0] ?? null;
@@ -302,8 +369,8 @@ export default function MuralPage() {
                 </label>
                 {fotoPreview && (
                   <div className="relative">
-                    <img src={fotoPreview} alt="" className="w-16 h-16 object-cover rounded-lg border border-slate-200" />
-                    <button type="button" onClick={() => { setFotoFile(null); setFotoPreview(null); }}
+                    <img src={fotoPreview} alt="" className={`w-16 h-16 object-cover border border-slate-200 ${aniversario ? "rounded-full" : "rounded-lg"}`} />
+                    <button type="button" onClick={() => { setFotoFile(null); setFotoPreview(null); setFotoUrlPronta(null); }}
                       className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">✕</button>
                   </div>
                 )}
@@ -378,10 +445,17 @@ export default function MuralPage() {
               </div>
 
               {/* Conteúdo */}
-              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{c.conteudo}</p>
+              {c.aniversario && c.foto_url ? (
+                <div className="flex items-center gap-3">
+                  <img src={c.foto_url} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-amber-300 shrink-0" />
+                  <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{c.conteudo}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{c.conteudo}</p>
+              )}
 
-              {/* Foto (opcional) */}
-              {c.foto_url && (
+              {/* Foto (opcional, comunicado comum) */}
+              {!c.aniversario && c.foto_url && (
                 <img src={c.foto_url} alt="Foto do comunicado"
                   className="w-full max-h-64 object-cover rounded-xl border border-slate-200 mt-1" />
               )}

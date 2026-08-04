@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
 import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
@@ -75,6 +75,7 @@ interface Colaborador {
   motivo_saida: string | null;
   ativo: boolean;
   documentos: DocumentoAnexo[] | null;
+  foto_url?: string | null;
   especialidade?: string | null;
   registro_profissional?: string | null;
   cargo?: string | null;
@@ -113,6 +114,13 @@ export default function ColaboradoresPage() {
   const [documentosPendentes, setDocumentosPendentes] = useState<File[]>([]);
   const [enviandoDocumentos, setEnviandoDocumentos] = useState(false);
 
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const inputFotoRef = useRef<HTMLInputElement>(null);
+  const [fotoEditFile, setFotoEditFile] = useState<File | null>(null);
+  const [fotoEditPreview, setFotoEditPreview] = useState<string | null>(null);
+  const inputFotoEditRef = useRef<HTMLInputElement>(null);
+
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
     setTimeout(() => setFeedback(null), 3500);
@@ -147,6 +155,18 @@ export default function ColaboradoresPage() {
     return user;
   }
 
+  // Mesmo bucket que o Chat já usa pra foto de perfil (fotos-perfil). Coluna
+  // varia por tabela: atendentes usa `logo_url` (já é a foto de perfil ali,
+  // apesar do nome), colaboradoras_internas usa `foto_url`.
+  async function uploadFoto(file: File, registroId: string): Promise<string | null> {
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${registroId}/perfil.${ext}`;
+    const { error } = await supabase.storage.from("fotos-perfil").upload(path, file, { upsert: true });
+    if (error) return null;
+    const { data } = supabase.storage.from("fotos-perfil").getPublicUrl(path);
+    return `${data.publicUrl}?t=${Date.now()}`;
+  }
+
   async function enviarDocumentosPendentes(registroId: string): Promise<DocumentoAnexo[]> {
     if (documentosPendentes.length === 0) return [];
     setEnviandoDocumentos(true);
@@ -171,7 +191,7 @@ export default function ColaboradoresPage() {
       supabase.from("usuarios").select("*").in("id", SUPERVISORAS_USUARIOS_IDS),
     ]);
     const doAtendentes: Colaborador[] = (atendentesRes.data ?? []).map((r: any) => ({
-      ...r, _tabela: "atendentes" as Tabela, _categoria: r.role as Categoria,
+      ...r, foto_url: r.logo_url, _tabela: "atendentes" as Tabela, _categoria: r.role as Categoria,
     }));
     const doApoio: Colaborador[] = (internasRes.data ?? []).map((r: any) => ({
       ...r, _tabela: "colaboradoras_internas" as Tabela, _categoria: "apoio" as Categoria,
@@ -220,6 +240,13 @@ export default function ColaboradoresPage() {
         const docs = await enviarDocumentosPendentes(novo.id);
         if (docs.length > 0) await supabase.from(tabela).update({ documentos: docs }).eq("id", novo.id);
       }
+      if (novo?.id && fotoFile) {
+        const url = await uploadFoto(fotoFile, novo.id);
+        if (url) {
+          const coluna = tabela === "atendentes" ? "logo_url" : "foto_url";
+          await supabase.from(tabela).update({ [coluna]: url }).eq("id", novo.id);
+        }
+      }
       const user = await getUsuarioLogado();
       const categoriaInfo = CATEGORIAS.find((c) => c.valor === form.categoria)!;
       await registrarLog(supabase, {
@@ -232,6 +259,7 @@ export default function ColaboradoresPage() {
       mostrarFeedback("sucesso", "Colaborador(a) cadastrado(a) com sucesso!");
       setForm({ ...FORM_VAZIO, categoria: form.categoria });
       setDocumentosPendentes([]);
+      setFotoFile(null); setFotoPreview(null);
       carregarTodos();
     }
     setLoading(false);
@@ -245,6 +273,13 @@ export default function ColaboradoresPage() {
     }
     setSalvandoEdicao(true);
 
+    let fotoUrlNova: string | undefined;
+    if (fotoEditFile) {
+      const url = await uploadFoto(fotoEditFile, editando.id);
+      if (url) fotoUrlNova = url;
+    }
+
+    const coluna = editando._tabela === "atendentes" ? "logo_url" : "foto_url";
     const camposComuns = {
       nome: editando.nome, email: editando.email ? editando.email.trim().toLowerCase() : editando.email,
       ...(editando._tabela === "usuarios" ? { telefone: editando.whatsapp } : { whatsapp: editando.whatsapp }),
@@ -255,6 +290,7 @@ export default function ColaboradoresPage() {
       data_demissao: editando.data_demissao || null, motivo_saida: editando.motivo_saida || null,
       ativo: editando.ativo !== false,
       documentos: editando.documentos || [],
+      ...(fotoUrlNova ? { [coluna]: fotoUrlNova } : {}),
     };
     const payload = editando._tabela === "colaboradoras_internas"
       ? { ...camposComuns, cargo: editando.cargo, data_admissao: editando.data_admissao || null }
@@ -282,6 +318,7 @@ export default function ColaboradoresPage() {
       mostrarFeedback("erro", "Erro ao editar: " + error.message);
     } else {
       setEditando(null);
+      setFotoEditFile(null); setFotoEditPreview(null);
       carregarTodos();
       mostrarFeedback("sucesso", "Colaborador(a) atualizado(a) com sucesso!");
     }
@@ -341,9 +378,13 @@ export default function ColaboradoresPage() {
       <li className="px-5 py-4 hover:bg-slate-50 transition">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm ${corAvatar(col.nome)}`}>
-              {iniciais(col.nome)}
-            </div>
+            {col.foto_url ? (
+              <img src={col.foto_url} alt={col.nome} className="w-11 h-11 flex-shrink-0 rounded-full object-cover" />
+            ) : (
+              <div className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm ${corAvatar(col.nome)}`}>
+                {iniciais(col.nome)}
+              </div>
+            )}
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <p className="font-semibold text-slate-800 text-sm truncate">{col.nome}</p>
@@ -367,7 +408,7 @@ export default function ColaboradoresPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button onClick={() => setEditando({ ...col })}
+            <button onClick={() => { setEditando({ ...col }); setFotoEditFile(null); setFotoEditPreview(col.foto_url || null); }}
               className="h-9 px-3 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95 rounded-lg border border-blue-100 transition-all">
               Editar
             </button>
@@ -440,6 +481,25 @@ export default function ColaboradoresPage() {
         </div>
 
         <form onSubmit={handleCadastrar} className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div onClick={() => inputFotoRef.current?.click()}
+              className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 hover:border-blue-400 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 hover:bg-blue-50 transition shrink-0">
+              {fotoPreview ? (
+                <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl">📷</span>
+              )}
+            </div>
+            <input ref={inputFotoRef} type="file" accept="image/*" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) { setFotoFile(f); setFotoPreview(URL.createObjectURL(f)); } }} />
+            <div>
+              <p className="text-xs font-semibold text-slate-600">Foto (opcional)</p>
+              {fotoPreview
+                ? <button type="button" onClick={() => { setFotoFile(null); setFotoPreview(null); }} className="text-xs text-red-500 hover:text-red-700">Remover</button>
+                : <p className="text-xs text-slate-400">Usada no card de aniversário do Mural</p>}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nome completo *</label>
@@ -675,6 +735,22 @@ export default function ColaboradoresPage() {
               <button onClick={() => setEditando(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition">✕</button>
             </div>
             <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div onClick={() => inputFotoEditRef.current?.click()}
+                  className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 hover:border-blue-400 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 hover:bg-blue-50 transition shrink-0">
+                  {fotoEditPreview ? (
+                    <img src={fotoEditPreview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl">📷</span>
+                  )}
+                </div>
+                <input ref={inputFotoEditRef} type="file" accept="image/*" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) { setFotoEditFile(f); setFotoEditPreview(URL.createObjectURL(f)); } }} />
+                <div>
+                  <p className="text-xs font-semibold text-slate-600">Foto</p>
+                  {fotoEditPreview && <button type="button" onClick={() => { setFotoEditFile(null); setFotoEditPreview(null); }} className="text-xs text-red-500 hover:text-red-700">Remover</button>}
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Nome</label>
