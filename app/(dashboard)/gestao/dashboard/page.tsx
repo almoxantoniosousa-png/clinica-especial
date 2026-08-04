@@ -38,6 +38,7 @@ export default function GestaoDashboardPage() {
   const [valorInadimplente, setValorInadimplente] = useState(0);
   const [liminares, setLiminares] = useState<Liminar[]>([]);
   const [equipe, setEquipe] = useState<Membro[]>([]);
+  const [equipeAberta, setEquipeAberta] = useState(false);
   const [atendimentosPorModalidade, setAtendimentosPorModalidade] = useState<Record<string, number>>({});
   const [ultimosRelatorios, setUltimosRelatorios] = useState<Relatorio[]>([]);
   const [agendaHoje, setAgendaHoje] = useState<AgendaItem[]>([]);
@@ -76,10 +77,13 @@ export default function GestaoDashboardPage() {
         .eq("ativo", true);
       setCriancasAtivas(totalCriancas || 0);
 
-      // Equipe total
-      const { count: totalEquipe } = await supabase
+      // Equipe total (sem a própria Gestão logada)
+      const { data: { user: usuarioLogado } } = await supabase.auth.getUser();
+      let totalEquipeQuery = supabase
         .from("atendentes").select("*", { count: "exact", head: true })
         .eq("ativo", true);
+      if (usuarioLogado?.email) totalEquipeQuery = totalEquipeQuery.neq("email", usuarioLogado.email);
+      const { count: totalEquipe } = await totalEquipeQuery;
       setEquipeTotal(totalEquipe || 0);
 
       // Atendimentos hoje
@@ -132,12 +136,14 @@ export default function GestaoDashboardPage() {
         .order("data_vencimento");
       setLiminares(liminaresDados || []);
 
-      // Equipe por função
-      const { data: equipeDados } = await supabase
+      // Equipe por função (sem a própria Gestão logada na lista)
+      let equipeQuery = supabase
         .from("atendentes")
         .select("nome, role, email")
         .eq("ativo", true)
         .order("nome");
+      if (usuarioLogado?.email) equipeQuery = equipeQuery.neq("email", usuarioLogado.email);
+      const { data: equipeDados } = await equipeQuery;
       setEquipe(equipeDados || []);
 
       // Últimos relatórios (5 mais recentes)
@@ -493,36 +499,43 @@ export default function GestaoDashboardPage() {
 
       {/* EQUIPE */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <button onClick={() => setEquipeAberta(!equipeAberta)}
+          className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left border-b border-slate-100">
           <div>
             <h3 className="text-sm font-semibold text-slate-800">Equipe Ativa</h3>
             <p className="text-xs text-slate-400">{equipe.length} profissionais</p>
           </div>
-        </div>
-        {equipe.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 gap-2">
-            <span className="text-3xl">👥</span>
-            <p className="text-sm text-slate-400">Nenhum profissional cadastrado ainda.</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {equipe.map((p) => (
-              <div key={p.email} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${roleLabel[p.role]?.color || "bg-slate-100 text-slate-700"}`}>
-                    {iniciais(p.nome)}
+          <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${equipeAberta ? "rotate-180" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {equipeAberta && (
+          equipe.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-2">
+              <span className="text-3xl">👥</span>
+              <p className="text-sm text-slate-400">Nenhum profissional cadastrado ainda.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {equipe.map((p) => (
+                <div key={p.email} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${roleLabel[p.role]?.color || "bg-slate-100 text-slate-700"}`}>
+                      {iniciais(p.nome)}
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-800 text-sm">{p.nome}</p>
+                      <p className="text-xs text-slate-400">{p.email}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-slate-800 text-sm">{p.nome}</p>
-                    <p className="text-xs text-slate-400">{p.email}</p>
-                  </div>
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${roleLabel[p.role]?.color || "bg-slate-100 text-slate-600"}`}>
+                    {roleLabel[p.role]?.label || p.role}
+                  </span>
                 </div>
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${roleLabel[p.role]?.color || "bg-slate-100 text-slate-600"}`}>
-                  {roleLabel[p.role]?.label || p.role}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
         )}
       </div>
 
