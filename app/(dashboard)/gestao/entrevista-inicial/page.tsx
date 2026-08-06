@@ -158,9 +158,18 @@ export default function EntrevistaInicialPage() {
     carregar();
   }
 
-  function abrir(item: any) {
+  async function abrir(item: any) {
+    // Busca fresca ao abrir — se a família respondeu depois que essa lista
+    // carregou (ex: aba ficou aberta enquanto testava o link), o item em
+    // memória ainda mostraria "aguardando" mesmo já tendo sido respondido.
     setSelecionada(item);
     setObsRascunho(item.observacoes_simone || "");
+    const { data } = await supabase.from("entrevistas_iniciais").select("*").eq("id", item.id).maybeSingle();
+    if (data) {
+      setSelecionada(data);
+      setObsRascunho(data.observacoes_simone || "");
+      if (data.status !== item.status) carregar(); // atualiza o selo na lista também
+    }
   }
 
   return (
