@@ -48,25 +48,51 @@ export default function MuralPage() {
   async function carregar() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
+    let meuNome = "";
+    let meuRole = "";
     if (user) {
       setAutorId(user.id);
-      const { data: perfil } = await supabase
+      const { data: perfilAt } = await supabase
         .from("atendentes")
         .select("nome, role")
         .eq("email", user.email)
         .maybeSingle();
-      if (perfil) {
-        setAutorNome(perfil.nome);
-        setPodePublicar(["adm", "gestao", "supervisora"].includes(perfil.role));
+      if (perfilAt) {
+        meuNome = perfilAt.nome;
+        meuRole = perfilAt.role;
+      } else {
+        // adm/gestao/financeiro/aux_adm sem linha em atendentes vivem em usuarios
+        const { data: perfilUs } = await supabase
+          .from("usuarios")
+          .select("nome, role")
+          .eq("email", user.email)
+          .maybeSingle();
+        if (perfilUs) { meuNome = perfilUs.nome; meuRole = perfilUs.role; }
       }
+      setAutorNome(meuNome);
+      setPodePublicar(["adm", "gestao", "supervisora"].includes(meuRole));
     }
 
-    const { data } = await supabase
+    // ADM/Gestão/Supervisora enxergam tudo (moderação). Os demais só veem o
+    // que é "todos", o que é pro próprio papel, ou o que foi endereçado a
+    // eles por nome (destinatário "Colaborador específico").
+    const roleNorm = meuRole === "at" ? "atendente" : meuRole === "admin" ? "adm" : meuRole;
+    const podeVerTudo = ["adm", "gestao", "supervisora"].includes(roleNorm);
+
+    let query = supabase
       .from("mural")
       .select("*, atendentes(nome)")
       .order("fixado", { ascending: false })
       .order("created_at", { ascending: false });
 
+    if (!podeVerTudo) {
+      const alvos = ["todos"];
+      if (roleNorm) alvos.push(roleNorm);
+      if (meuNome.trim()) alvos.push(meuNome.trim());
+      query = query.in("destinatario", alvos);
+    }
+
+    const { data } = await query;
     setComunicados(data || []);
     setLoading(false);
   }
@@ -180,11 +206,15 @@ export default function MuralPage() {
   }
 
   const badgeDestinatario: any = {
-    todos:       { label: "Para todos",      color: "bg-blue-50 text-blue-700 border-blue-100" },
-    adm:         { label: "Apenas ADM",      color: "bg-purple-50 text-purple-700 border-purple-100" },
-    atendente:   { label: "Atendentes",      color: "bg-emerald-50 text-emerald-700 border-emerald-100" },
-    especialista:{ label: "Especialistas",   color: "bg-amber-50 text-amber-700 border-amber-100" },
-    familia:     { label: "Famílias",        color: "bg-rose-50 text-rose-700 border-rose-100" },
+    todos:        { label: "Para todos",      color: "bg-blue-50 text-blue-700 border-blue-100" },
+    adm:          { label: "Apenas ADM",      color: "bg-purple-50 text-purple-700 border-purple-100" },
+    gestao:       { label: "Apenas Gestão",   color: "bg-indigo-50 text-indigo-700 border-indigo-100" },
+    supervisora:  { label: "Supervisoras",    color: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100" },
+    atendente:    { label: "Atendentes",      color: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+    especialista: { label: "Especialistas",   color: "bg-amber-50 text-amber-700 border-amber-100" },
+    aux_adm:      { label: "Auxiliar Adm.",   color: "bg-cyan-50 text-cyan-700 border-cyan-100" },
+    financeiro:   { label: "Financeiro",      color: "bg-lime-50 text-lime-700 border-lime-100" },
+    familia:      { label: "Famílias",        color: "bg-rose-50 text-rose-700 border-rose-100" },
   };
 
   return (
@@ -289,9 +319,13 @@ export default function MuralPage() {
                     bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                 >
                   <option value="todos">Para todos</option>
+                  <option value="adm">Apenas ADM</option>
+                  <option value="gestao">Apenas Gestão</option>
+                  <option value="supervisora">Apenas Supervisoras</option>
                   <option value="atendente">Apenas Atendentes</option>
                   <option value="especialista">Apenas Especialistas</option>
-                  <option value="adm">Apenas ADM</option>
+                  <option value="aux_adm">Apenas Auxiliar Administrativa</option>
+                  <option value="financeiro">Apenas Financeiro</option>
                   <option value="familia">Para as Famílias 👨‍👩‍👧</option>
                   <option value="pessoa">👤 Colaborador específico...</option>
                 </select>

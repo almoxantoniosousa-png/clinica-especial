@@ -46,8 +46,8 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
-      texto: "Mural de comunicados internos, visível para a equipe.\n\nClique em \"+ Novo Comunicado\" para publicar um aviso (título, mensagem e destinatário: Para todos / Apenas Atendentes / Apenas Especialistas / Apenas ADM / Para as Famílias / Colaborador específico — escolhe uma pessoa da equipe pelo nome, pra avisos que são só pra ela). Marque \"📌 Fixar no topo\" para avisos importantes que devem aparecer sempre primeiro.\n\nO botão \"🎂 Card de aniversário\" já preenche a mensagem padrão de parabéns e a foto de quem está fazendo aniversário (foto vem do cadastro em Colaboradores ou Crianças) — dá pra editar o texto ou trocar a foto antes de publicar.\n\nVocê pode fixar/desafixar e excluir qualquer comunicado.",
-      reflexo: "O comunicado publicado aqui aparece automaticamente no Mural de todos os perfis (Gestão, Supervisora, Especialistas, Atendentes, Financeiro e Aux. Administrativo)."
+      texto: "Mural de comunicados internos. ADM, Gestão e Supervisora podem publicar — os outros perfis só leem.\n\nClique em \"+ Novo Comunicado\" para publicar um aviso (título, mensagem e destinatário: Para todos / Apenas ADM / Apenas Gestão / Apenas Supervisoras / Apenas Atendentes / Apenas Especialistas / Apenas Auxiliar Administrativa / Apenas Financeiro / Para as Famílias / Colaborador específico — escolhe uma pessoa da equipe pelo nome). O destinatário realmente restringe quem vê — quem não é o público escolhido não enxerga o comunicado na lista. ADM, Gestão e Supervisora sempre veem tudo, mesmo o que não é destinado a elas, pra poder moderar. Marque \"📌 Fixar no topo\" para avisos importantes que devem aparecer sempre primeiro.\n\nO botão \"🎂 Card de aniversário\" já preenche a mensagem padrão de parabéns e a foto de quem está fazendo aniversário (foto vem do cadastro em Colaboradores ou Crianças) — dá pra editar o texto ou trocar a foto antes de publicar.\n\nVocê pode fixar/desafixar e excluir qualquer comunicado.",
+      reflexo: "O comunicado publicado aqui aparece só pra quem foi escolhido como destinatário (mais ADM/Gestão/Supervisora, que veem tudo) — não é mais visível pra todo mundo por padrão."
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
@@ -264,7 +264,7 @@ const SUPERVISORA: AjudaConteudo = {
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
-      texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo."
+      texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo. Como Supervisora, você vê todos os comunicados publicados, mesmo os endereçados a outro perfil — é assim de propósito, pra você acompanhar a comunicação da equipe toda."
     },
     {
       icone: "🗒️", titulo: "Reunião", mockup: "tabela",
@@ -325,7 +325,7 @@ const ESPECIALISTA: AjudaConteudo = {
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
-      texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo."
+      texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo. Você só vê os avisos \"Para todos\" e os endereçados especificamente ao seu perfil ou a você por nome."
     },
     {
       icone: "🔧", titulo: "Reportar Defeito", mockup: "tabela",
@@ -395,7 +395,7 @@ const ATENDENTE: AjudaConteudo = {
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
-      texto: "Mural de avisos da equipe. Os avisos fixados (📌) aparecem sempre no topo. Tela de consulta."
+      texto: "Mural de avisos da equipe. Os avisos fixados (📌) aparecem sempre no topo. Tela de consulta — você só vê os avisos \"Para todos\" e os endereçados especificamente a você (pelo seu perfil ou pelo seu nome)."
     },
     {
       icone: "📚", titulo: "Materiais Adaptados", mockup: "abas",
@@ -488,7 +488,7 @@ const AUX_ADM: AjudaConteudo = {
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
-      texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo."
+      texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo. Você só vê os avisos \"Para todos\" e os endereçados especificamente ao seu perfil ou a você por nome."
     },
     {
       icone: "📓", titulo: "Ocorrência Diária", mockup: "lista-cards",
