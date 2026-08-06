@@ -468,7 +468,7 @@ export default function FormularioEscolarPage() {
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Independência no Lanche</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {["Independente durante o lanche", "Dependência parcial (abrir garrafa, colocar líquido em copo, vasilhas, usar talher - come sem ajuda)", "Dependente total", "Joga itens descartáveis no lixo"].map(op => (
+                {["Independente durante o lanche", "Abre garrafa sozinho(a)", "Coloca líquido no copo sozinho(a)", "Usa vasilhas sozinho(a)", "Usa talher sozinho(a) (come sem ajuda)", "Dependente total", "Joga itens descartáveis no lixo"].map(op => (
                   <button key={op} type="button" onClick={() => toggleOpcao(lancheIndependencia, setLancheIndependencia, op)}
                     className={"px-4 py-3 rounded-xl text-sm font-medium border-2 transition text-left " +
                       (lancheIndependencia.includes(op) ? "border-blue-600 bg-blue-50 text-blue-800 font-semibold" : "border-slate-200 text-slate-600 hover:border-slate-300")}>
