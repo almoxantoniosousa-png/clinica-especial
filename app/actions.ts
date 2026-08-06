@@ -300,6 +300,31 @@ export async function createCrianca(input: { nome: string }) {
   return { success: true };
 }
 
+// ============================
+// ACESSO DE COLABORADOR (ativo/desligado)
+// ============================
+// Precisa da service role key (só existe no servidor) pra banir/reativar
+// o login de verdade no Supabase Auth — não basta marcar `ativo=false` no
+// cadastro, porque o login continuava funcionando mesmo assim. O id do
+// colaborador (atendentes/colaboradoras_internas) é o mesmo id da conta
+// de login, por isso dá pra usar direto sem precisar buscar por e-mail.
+export async function definirAcessoColaborador(id: string, ativo: boolean) {
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  const { error } = await admin.auth.admin.updateUserById(id, {
+    ban_duration: ativo ? "none" : "876000h", // ~100 anos = banido até reativar
+  });
+  // Sem conta de login (ex: colaboradoras_internas de Apoio) não é erro —
+  // só não tinha o que banir.
+  if (error && !error.message.toLowerCase().includes("not found")) {
+    return { success: false, error: error.message };
+  }
+  return { success: true };
+}
+
 export async function logout() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();

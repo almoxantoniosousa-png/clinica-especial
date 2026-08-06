@@ -102,6 +102,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const menuGestao = [
     { href: "/gestao/dashboard",    label: "Dashboard",    icon: "📊" },
     { href: "/gestao/minha-agenda", label: "Minha Agenda", icon: "🗓️" },
+    { href: "/gestao/entrevista-inicial", label: "Entrevista Inicial", icon: "📋" },
     { href: "/gestao/criancas",     label: "Crianças",     icon: "👶" },
     { href: "/gestao/escolas",      label: "Escolas",      icon: "🏫" },
     { href: "/gestao/agenda",       label: "Agenda Clínica", icon: "📅" },

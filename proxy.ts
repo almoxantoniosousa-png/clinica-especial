@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabaseServer"; // Certifique-se que o caminho está correto
 
-const PUBLIC_PATHS = ["/login"];
+// /entrevista-inicial: link público mandado pra família preencher, sem
+// login (o token na URL já funciona como senha de acesso só à própria linha).
+const PUBLIC_PATHS = ["/login", "/entrevista-inicial"];
 
 // Prefixos de telas da equipe e quais roles podem abrir cada um — fecha a
 // navegação direta por URL entre portais diferentes (ex.: atendente abrindo

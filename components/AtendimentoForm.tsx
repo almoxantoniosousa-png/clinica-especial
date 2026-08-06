@@ -31,6 +31,14 @@ export default function AtendimentoForm() {
 
   const VALOR_HORA = 30.00
 
+  // AT é CNPJ — o valor diário é só uma soma automática ainda não revisada
+  // pelo financeiro, então só mostra a partir dos últimos 3 dias do mês
+  // (perto do fechamento). Horas continuam visíveis sempre — é só o que
+  // ela mesma lançou. Pedido da Solange/Simone.
+  const hoje = new Date()
+  const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate()
+  const mostrarValorAReceber = ultimoDiaMes - hoje.getDate() < 3
+
   useEffect(() => {
     async function inicializarDados() {
       const { data: list } = await supabase.from('criancas').select('*').order('nome')
@@ -153,13 +161,20 @@ export default function AtendimentoForm() {
         </div>
 
         <div className="bg-blue-900 rounded-2xl p-4 text-white flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide">A receber</p>
-            <p className="text-2xl font-black text-emerald-400 mt-0.5">
-              R$ {totalValorAcumulado.toFixed(2)}
-            </p>
-            <p className="text-xs text-blue-300 mt-0.5">Aguardando financeiro</p>
-          </div>
+          {mostrarValorAReceber ? (
+            <div>
+              <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide">A receber</p>
+              <p className="text-2xl font-black text-emerald-400 mt-0.5">
+                R$ {totalValorAcumulado.toFixed(2)}
+              </p>
+              <p className="text-xs text-blue-300 mt-0.5">Aguardando financeiro</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide">A receber</p>
+              <p className="text-sm font-semibold text-blue-200 mt-1.5">Disponível no fechamento do mês</p>
+            </div>
+          )}
           <div className="bg-blue-800 p-2.5 rounded-xl">
             <DollarSign size={20} className="text-emerald-400" />
           </div>

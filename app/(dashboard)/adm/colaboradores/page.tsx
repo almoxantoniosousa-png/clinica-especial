@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
+import { definirAcessoColaborador } from "@/app/actions";
 import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
 import { iniciaisNome } from "@/lib/dataUtils";
 
@@ -303,6 +304,9 @@ export default function ColaboradoresPage() {
     const { error } = await supabase.from(editando._tabela).update(payload).eq("id", editando.id);
 
     if (!error) {
+      // Desligar/reativar aqui já bane ou libera o login de verdade no
+      // Supabase Auth — marcar "ativo=false" sozinho não bloqueava acesso.
+      await definirAcessoColaborador(editando.id, editando.ativo !== false);
       const user = await getUsuarioLogado();
       await registrarLog(supabase, {
         usuario_email: user?.email || "desconhecido",

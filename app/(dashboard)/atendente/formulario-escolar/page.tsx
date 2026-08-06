@@ -45,6 +45,9 @@ export default function FormularioEscolarPage() {
   const [lanche, setLanche] = useState("");
   const [comeuTudo, setComeuTudo] = useState(false);
   const [comeuTudoObs, setComeuTudoObs] = useState("");
+  const [lancheIndependencia, setLancheIndependencia] = useState<string[]>([]);
+  const [lancheResultado, setLancheResultado] = useState<string[]>([]);
+  const [lancheComportamento, setLancheComportamento] = useState<string[]>([]);
   const [atividadesSala, setAtividadesSala] = useState("");
   const [interacaoSala, setInteracaoSala] = useState("");
   const [tarefaCasa, setTarefaCasa] = useState("");
@@ -71,7 +74,7 @@ export default function FormularioEscolarPage() {
           .maybeSingle();
         if (pendencia) setCorrecaoPendente(pendencia);
       }
-      const { data } = await supabase.from("criancas").select("id, nome, foto_url").order("nome");
+      const { data } = await supabase.from("criancas").select("id, nome, foto_url, sexo").order("nome");
       setCriancas(data || []);
       setVerificandoPendencia(false);
     }
@@ -120,6 +123,9 @@ export default function FormularioEscolarPage() {
     setLanche(p.lanche || "");
     setComeuTudo(p.comeu_tudo || false);
     setComeuTudoObs(p.comeu_tudo_obs || "");
+    setLancheIndependencia(p.lanche_independencia || []);
+    setLancheResultado(p.lanche_resultado || []);
+    setLancheComportamento(p.lanche_comportamento || []);
     setAtividadesSala(p.atividades_sala || "");
     setInteracaoSala(p.interacao_sala || "");
     setTarefaCasa(p.tarefa_casa || "");
@@ -165,7 +171,9 @@ export default function FormularioEscolarPage() {
       autonomia_nivel: autonomiaNivel, periodo_menstrual: periodoMenstrual,
       idas_banheiro: idasBanheiro, banheiro_obs: banheiroObs, evacuou, evacuou_obs: evacuouObs,
       periodo_menstrual_obs: periodoMenstrualObs, agua_ingestao: aguaIngestao, socializacao, amizades_intervalo: amizadesIntervalo, atencao,
-      lanche, comeu_tudo: comeuTudo, comeu_tudo_obs: comeuTudoObs, atividades_sala: atividadesSala, interacao_sala: interacaoSala,
+      lanche, comeu_tudo: comeuTudo, comeu_tudo_obs: comeuTudoObs,
+      lanche_independencia: lancheIndependencia, lanche_resultado: lancheResultado, lanche_comportamento: lancheComportamento,
+      atividades_sala: atividadesSala, interacao_sala: interacaoSala,
       tarefa_casa: tarefaCasa, materiais_pedir: materiaisPedir,
       obs_gerais: obsGerais, eventos_escolares: eventosEscolares,
     };
@@ -254,7 +262,7 @@ export default function FormularioEscolarPage() {
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-5">
 
       <div>
-        <h1 className="text-xl font-bold text-slate-900">{editandoId ? "Corrigindo Comunicado" : "Comunicado Diário"}</h1>
+        <h1 className="text-xl font-bold text-slate-900">{editandoId ? "Corrigindo Comunicado" : "Comunicado Diário - Pais"}</h1>
         <p className="text-xs text-slate-400 mt-0.5">
           {atNome || "Acompanhante"} · {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
         </p>
@@ -336,6 +344,16 @@ export default function FormularioEscolarPage() {
                 </div>
               )}
             </div>
+            {criancaSelecionada?.sexo === "F" && (
+              <div className="space-y-2">
+                <Toggle value={periodoMenstrual} onChange={setPeriodoMenstrual} label="Período Menstrual" icon="🩸"/>
+                {periodoMenstrual && (
+                  <input type="text" value={periodoMenstrualObs} onChange={e => setPeriodoMenstrualObs(e.target.value)}
+                    placeholder="Complemente: fluxo, cólica, precisou de ajuda..."
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
+                )}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Horário de Chegada</label>
@@ -351,7 +369,7 @@ export default function FormularioEscolarPage() {
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Interação Inicial</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {["Cumprimenta Pares", "Cumprimenta Adultos", "Interage na Sala", "Abraça/Contato Físico", "Não Interage"].map(op => (
+                {["Cumprimenta Pares", "Cumprimenta Adultos", "Não Interage"].map(op => (
                   <button key={op} type="button" onClick={() => toggleOpcao(interacao, setInteracao, op)}
                     className={"px-4 py-3 rounded-xl text-sm font-medium border-2 transition text-left " +
                       (interacao.includes(op) ? "border-blue-600 bg-blue-50 text-blue-800 font-semibold" : "border-slate-200 text-slate-600 hover:border-slate-300")}>
@@ -361,9 +379,9 @@ export default function FormularioEscolarPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Outras Observações da Interação</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Outras Observações da Interação Social</label>
               <textarea rows={2} value={interacaoObs} onChange={e => setInteracaoObs(e.target.value)}
-                placeholder="Algo diferente do que já foi marcado acima?"
+                placeholder="Como ocorreu? Algum comportamento diferente? Quais?"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
             </div>
           </div>
@@ -388,14 +406,6 @@ export default function FormularioEscolarPage() {
                   </button>
                 ))}
               </div>
-            </div>
-            <div className="space-y-2">
-              <Toggle value={periodoMenstrual} onChange={setPeriodoMenstrual} label="Período Menstrual" icon="🩸"/>
-              {periodoMenstrual && (
-                <input type="text" value={periodoMenstrualObs} onChange={e => setPeriodoMenstrualObs(e.target.value)}
-                  placeholder="Complemente: fluxo, cólica, precisou de ajuda..."
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
-              )}
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Idas ao Banheiro</label>
@@ -439,7 +449,7 @@ export default function FormularioEscolarPage() {
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Interação no Recreio</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {["Brinca com pares", "Brinca sozinho", "Apenas observa", "Recusa interação"].map(op => (
+                {["Brinca com pares", "Brinca sozinho", "Apenas observa", "Recusa interação", "Preferência por brincar com a AT", "Fica ao lado da AT sem brincar"].map(op => (
                   <button key={op} type="button" onClick={() => toggleOpcao(socializacao, setSocializacao, op)}
                     className={"px-4 py-3 rounded-xl text-sm font-medium border-2 transition text-left " +
                       (socializacao.includes(op) ? "border-blue-600 bg-blue-50 text-blue-800 font-semibold" : "border-slate-200 text-slate-600 hover:border-slate-300")}>
@@ -449,34 +459,47 @@ export default function FormularioEscolarPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Amizades no Intervalo</label>
-              <p className="text-[11px] text-slate-400">Informe como foi o intervalo. Tem amizades com os colegas? Quais?</p>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Observação</label>
+              <p className="text-[11px] text-slate-400">Ocorrências durante o intervalo e nome dos colegas que interagiu.</p>
               <textarea rows={3} value={amizadesIntervalo} onChange={e => setAmizadesIntervalo(e.target.value)}
                 placeholder="Descreva o intervalo e as amizades..."
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Atenção e Foco</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Independência no Lanche</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {["Atenção mantida", "Distração frequente", "Necessitou apoio constante", "Foco excelente"].map(op => (
-                  <button key={op} type="button" onClick={() => toggleOpcao(atencao, setAtencao, op)}
+                {["Independente durante o lanche", "Dependência parcial (abrir garrafa, colocar líquido em copo, vasilhas, usar talher - come sem ajuda)", "Dependente total", "Joga itens descartáveis no lixo"].map(op => (
+                  <button key={op} type="button" onClick={() => toggleOpcao(lancheIndependencia, setLancheIndependencia, op)}
                     className={"px-4 py-3 rounded-xl text-sm font-medium border-2 transition text-left " +
-                      (atencao.includes(op) ? "border-purple-600 bg-purple-50 text-purple-800 font-semibold" : "border-slate-200 text-slate-600 hover:border-slate-300")}>
-                    {atencao.includes(op) ? "✓ " : ""}{op}
+                      (lancheIndependencia.includes(op) ? "border-blue-600 bg-blue-50 text-blue-800 font-semibold" : "border-slate-200 text-slate-600 hover:border-slate-300")}>
+                    {lancheIndependencia.includes(op) ? "✓ " : ""}{op}
                   </button>
                 ))}
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Lanche</label>
-              <input type="text" value={lanche} onChange={e => setLanche(e.target.value)} placeholder="O que comeu no lanche?"
-                className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Resultado do Lanche</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {["Comeu tudo", "Deixou parte do lanche", "Recusou o lanche", "Pegou lanche do colega", "Pediu lanche do colega", "Não oferece lanche"].map(op => (
+                  <button key={op} type="button" onClick={() => toggleOpcao(lancheResultado, setLancheResultado, op)}
+                    className={"px-4 py-3 rounded-xl text-sm font-medium border-2 transition text-left " +
+                      (lancheResultado.includes(op) ? "border-blue-600 bg-blue-50 text-blue-800 font-semibold" : "border-slate-200 text-slate-600 hover:border-slate-300")}>
+                    {lancheResultado.includes(op) ? "✓ " : ""}{op}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="space-y-2">
-              <Toggle value={comeuTudo} onChange={setComeuTudo} label="Comeu tudo" icon="🍽️"/>
-              <input type="text" value={comeuTudoObs} onChange={e => setComeuTudoObs(e.target.value)}
-                placeholder="Complemente: o que sobrou, recusou algo específico..."
-                className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Comportamento Durante o Lanche</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {["Lancha sozinho(a)", "Lancha com os colegas", "Anda durante a alimentação", "Permanece sentado(a) durante o lanche", "Se alimenta conversando", "Se alimenta calado(a)"].map(op => (
+                  <button key={op} type="button" onClick={() => toggleOpcao(lancheComportamento, setLancheComportamento, op)}
+                    className={"px-4 py-3 rounded-xl text-sm font-medium border-2 transition text-left " +
+                      (lancheComportamento.includes(op) ? "border-blue-600 bg-blue-50 text-blue-800 font-semibold" : "border-slate-200 text-slate-600 hover:border-slate-300")}>
+                    {lancheComportamento.includes(op) ? "✓ " : ""}{op}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -492,7 +515,7 @@ export default function FormularioEscolarPage() {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Interação em Sala de Aula</label>
-              <p className="text-[11px] text-slate-400">A criança/adolescente interage com o professor e colegas de turma? Como? Durante a abordagem do conteúdo, o professor se aproxima e orienta o/a estudante?</p>
+              <p className="text-[11px] text-slate-400">Como é a interação do aluno(a) com os professores? Quais professores passam atividade, quais se afastam do aluno? O aluno fez atividade em quais aulas? Quando não passa atividade para o aluno, o que ele faz em sala?</p>
               <textarea rows={3} value={interacaoSala} onChange={e => setInteracaoSala(e.target.value)}
                 placeholder="Descreva a interação em sala..."
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
@@ -505,20 +528,16 @@ export default function FormularioEscolarPage() {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide text-red-600">⚠️ Materiais / Avisos Urgentes</label>
+              <p className="text-[11px] text-slate-400">Eventos, materiais solicitados e outras solicitações.</p>
               <textarea rows={2} value={materiaisPedir} onChange={e => setMateriaisPedir(e.target.value)}
                 placeholder="Recados importantes para os pais..."
                 className="w-full px-4 py-3 rounded-xl border-2 border-red-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-400 transition placeholder:text-slate-400 resize-none bg-red-50"/>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">🎉 Eventos Escolares</label>
+              <p className="text-[11px] text-slate-400">Descreva como foi a interação do aluno(a) durante o evento e com quem interagiu.</p>
               <textarea rows={2} value={eventosEscolares} onChange={e => setEventosEscolares(e.target.value)}
                 placeholder="Aconteceu algum evento na escola? Como o aluno participou?"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Observações Gerais</label>
-              <textarea rows={3} value={obsGerais} onChange={e => setObsGerais(e.target.value)}
-                placeholder="Outras observações do dia..."
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
             </div>
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2">

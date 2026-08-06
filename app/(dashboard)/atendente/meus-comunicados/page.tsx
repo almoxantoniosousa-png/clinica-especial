@@ -13,7 +13,6 @@ export default function MeusComunicadosPage() {
   const [loading, setLoading] = useState(true);
   const [atId, setAtId] = useState("");
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
-  const [detalhe, setDetalhe] = useState<any | null>(null);
   const [busca, setBusca] = useState("");
   const [filtroData, setFiltroData] = useState("");
   const [visiveis, setVisiveis] = useState(POR_PAGINA);
@@ -25,9 +24,12 @@ export default function MeusComunicadosPage() {
 
   async function carregar(id: string) {
     setLoading(true);
+    // Só metadado (contagem/status) chega até a AT — o conteúdo do que ela
+    // preencheu não fica acessível de volta depois de enviado, por pedido
+    // da Solange/Simone. Por isso o select nem traz os campos de resposta.
     const { data } = await supabase
       .from("formularios_escolares")
-      .select("*, criancas(nome, foto_url)")
+      .select("id, data, status, enviado_familia, correcao_solicitada, correcao_topicos, correcao_texto, crianca_id, criancas(nome, foto_url)")
       .eq("at_id", id)
       .order("created_at", { ascending: false });
     setComunicados(data || []);
@@ -96,7 +98,7 @@ export default function MeusComunicadosPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Meus Comunicados</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Histórico e status de aprovação</p>
+          <p className="text-xs text-slate-400 mt-0.5">Quantidade e status de aprovação — o conteúdo enviado não fica disponível aqui</p>
         </div>
       </div>
 
@@ -200,8 +202,8 @@ export default function MeusComunicadosPage() {
           {exibidos.map(c => {
             const cfg = statusConfig[c.status] || statusConfig.aguardando;
             return (
-              <div key={c.id} onClick={() => setDetalhe(c)}
-                className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-4 border-l-4 cursor-pointer hover:shadow-md transition ${cfg.borda}`}>
+              <div key={c.id}
+                className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-4 border-l-4 ${cfg.borda}`}>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     {/* Foto criança */}
@@ -232,15 +234,6 @@ export default function MeusComunicadosPage() {
                     )}
                   </div>
                 </div>
-
-                {/* Observação da supervisora */}
-                {c.obs_supervisora && (
-                  <div className="mt-3 bg-blue-50 border border-blue-100 rounded-xl p-3">
-                    <p className="text-xs font-bold text-blue-600">Observação da supervisora:</p>
-                    <p className="text-sm text-slate-700 mt-0.5">{c.obs_supervisora}</p>
-                  </div>
-                )}
-
               </div>
             );
           })}
@@ -255,80 +248,6 @@ export default function MeusComunicadosPage() {
         </div>
       )}
 
-      {detalhe && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
-          onClick={(e) => { if (e.target === e.currentTarget) setDetalhe(null); }}>
-          <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-slate-800 text-base">{detalhe.criancas?.nome}</h3>
-                <p className="text-xs text-slate-400">
-                  {new Date(detalhe.data + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
-                </p>
-              </div>
-              <button onClick={() => setDetalhe(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition">✕</button>
-            </div>
-
-            <div className="space-y-1.5">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">🏁 Entrada e Interação</p>
-              <p className="text-sm text-slate-700">Chegada: {detalhe.hora_chegada || "—"} · Saída: {detalhe.hora_saida || "—"}</p>
-              <p className="text-sm text-slate-700">{(detalhe.interacao || []).join(", ") || "—"}</p>
-              {detalhe.interacao_obs && <p className="text-sm text-slate-700">Outras observações: {detalhe.interacao_obs}</p>}
-            </div>
-
-            <div className="space-y-1.5 pt-2 border-t border-slate-100">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">🛠 Autonomia e Higiene</p>
-              <p className="text-sm text-slate-700">Nível de autonomia: {detalhe.autonomia_nivel ?? "—"}</p>
-              <p className="text-sm text-slate-700">Idas ao banheiro: {detalhe.idas_banheiro ?? "—"} · Evacuou: {detalhe.evacuou ? "Sim" : "Não"}</p>
-              {detalhe.banheiro_obs && <p className="text-sm text-slate-700">Sobre o banheiro: {detalhe.banheiro_obs}</p>}
-              {detalhe.evacuou_obs && <p className="text-sm text-slate-700">Sobre evacuar: {detalhe.evacuou_obs}</p>}
-              {detalhe.periodo_menstrual && <p className="text-sm text-slate-700">Período menstrual: Sim</p>}
-              {detalhe.periodo_menstrual_obs && <p className="text-sm text-slate-700">Sobre o período: {detalhe.periodo_menstrual_obs}</p>}
-              <p className="text-sm text-slate-700">💧 Ingestão de água: {detalhe.agua_ingestao || "—"}</p>
-            </div>
-
-            <div className="space-y-1.5 pt-2 border-t border-slate-100">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">🏀 Recreio e Socialização</p>
-              <p className="text-sm text-slate-700">Socialização: {(detalhe.socializacao || []).join(", ") || "—"}</p>
-              {detalhe.amizades_intervalo && <p className="text-sm text-slate-700">Amizades no intervalo: {detalhe.amizades_intervalo}</p>}
-              <p className="text-sm text-slate-700">Atenção: {(detalhe.atencao || []).join(", ") || "—"}</p>
-            </div>
-
-            <div className="space-y-1.5 pt-2 border-t border-slate-100">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">📖 Agenda e Recados</p>
-              <p className="text-sm text-slate-700">Lanche: {detalhe.lanche || "—"} · Comeu tudo: {detalhe.comeu_tudo ? "Sim" : "Não"}</p>
-              {detalhe.comeu_tudo_obs && <p className="text-sm text-slate-700">Sobre o lanche: {detalhe.comeu_tudo_obs}</p>}
-              {detalhe.atividades_sala && <p className="text-sm text-slate-700">Atividades em sala: {detalhe.atividades_sala}</p>}
-              {detalhe.interacao_sala && <p className="text-sm text-slate-700">Interação em sala: {detalhe.interacao_sala}</p>}
-              {detalhe.tarefa_casa && <p className="text-sm text-slate-700">Tarefa de casa: {detalhe.tarefa_casa}</p>}
-              {detalhe.materiais_pedir && <p className="text-sm text-slate-700">Materiais a pedir: {detalhe.materiais_pedir}</p>}
-              {detalhe.eventos_escolares && <p className="text-sm text-slate-700">🎉 Eventos escolares: {detalhe.eventos_escolares}</p>}
-              {detalhe.obs_gerais && <p className="text-sm text-slate-700">Observações: {detalhe.obs_gerais}</p>}
-            </div>
-
-            {detalhe.obs_supervisora && (
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
-                <p className="text-xs font-bold text-blue-600">Observação da supervisora:</p>
-                <p className="text-sm text-slate-700 mt-0.5">{detalhe.obs_supervisora}</p>
-              </div>
-            )}
-
-            {detalhe.correcao_solicitada && (
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 space-y-1.5">
-                <p className="text-xs font-bold text-orange-700">🔁 Correção pendente</p>
-                {!!detalhe.correcao_topicos?.length && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {detalhe.correcao_topicos.map((t: string) => (
-                      <span key={t} className="text-[11px] font-semibold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{t}</span>
-                    ))}
-                  </div>
-                )}
-                <p className="text-sm text-slate-700">{detalhe.correcao_texto}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

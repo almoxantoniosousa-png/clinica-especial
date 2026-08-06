@@ -233,6 +233,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [ehAdmin, setEhAdmin] = useState(false);
   const [meuAtendenteId, setMeuAtendenteId] = useState<string | null>(null);
   const [somenteMeus, setSomenteMeus] = useState(false);
+  const [souAtendente, setSouAtendente] = useState(false);
   const [servicoLivre, setServicoLivre] = useState(false);
   const [profissionalLivre, setProfissionalLivre] = useState(false);
   const [categoriaNovoAvulso, setCategoriaNovoAvulso] = useState<"especialista" | "atendente" | "">("");
@@ -305,13 +306,17 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       return;
     }
     const { data: a } = await supabase.from("atendentes").select("id, role, nome").eq("email", user.email).maybeSingle();
+    const roleAtendente = (a?.role || "").toString().trim().toLowerCase();
     setUsuarioNome(a?.nome || "");
-    setPodeEditar((a?.role || "").toString().trim().toLowerCase() === "supervisora");
+    setPodeEditar(roleAtendente === "supervisora");
     // AT/Especialista logando direto (sem estar em `usuarios`) começa vendo
-    // só os próprios atendimentos — a equipe inteira fica um clique além.
+    // só os próprios atendimentos — a equipe inteira fica um clique além,
+    // exceto pra AT, que fica travada só na própria escala (pedido da
+    // Gestão — não vê nome de especialista nem de outra AT).
     if (a?.id) {
       setMeuAtendenteId(a.id);
       setSomenteMeus(true);
+      if (roleAtendente === "atendente" || roleAtendente === "at") setSouAtendente(true);
     }
   }
 
@@ -1091,7 +1096,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         )}
       </div>
 
-      {meuAtendenteId && (
+      {meuAtendenteId && !souAtendente && (
         <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">
           {([{ v: true, label: "Meus atendimentos" }, { v: false, label: "Toda a equipe" }] as const).map((o) => (
             <button key={String(o.v)} onClick={() => setSomenteMeus(o.v)}
