@@ -32,6 +32,7 @@ interface Colaborador {
   registro_profissional?: string | null;
   cargo?: string | null;
   data_admissao?: string | null;
+  foto_url?: string | null;
   _categoria: Categoria;
 }
 
@@ -56,7 +57,7 @@ export default function GestaoColaboradoresPage() {
       setLoading(false);
       return;
     }
-    const doAtendentes: Colaborador[] = (atendentesRes.data ?? []).map((r: any) => ({ ...r, _categoria: r.role as Categoria }));
+    const doAtendentes: Colaborador[] = (atendentesRes.data ?? []).map((r: any) => ({ ...r, foto_url: r.logo_url, _categoria: r.role as Categoria }));
     const doApoio: Colaborador[] = (internasRes.data ?? []).map((r: any) => ({ ...r, _categoria: "apoio" as Categoria }));
     const doSupervisorasUsuarios: Colaborador[] = (supervisorasUsuariosRes.data ?? []).map((r: any) => ({
       ...r, whatsapp: r.telefone, _categoria: "supervisora" as Categoria,
@@ -162,9 +163,13 @@ export default function GestaoColaboradoresPage() {
               return (
                 <div key={col.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
                   <div className="flex items-start gap-3">
-                    <div className={`w-11 h-11 shrink-0 flex items-center justify-center rounded-full font-bold text-sm ${corAvatar(col.nome)}`}>
-                      {iniciais(col.nome)}
-                    </div>
+                    {col.foto_url ? (
+                      <img src={col.foto_url} alt={col.nome} className="w-11 h-11 shrink-0 rounded-full object-cover" />
+                    ) : (
+                      <div className={`w-11 h-11 shrink-0 flex items-center justify-center rounded-full font-bold text-sm ${corAvatar(col.nome)}`}>
+                        {iniciais(col.nome)}
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="font-semibold text-slate-800 text-sm">{col.nome}</p>

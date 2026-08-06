@@ -139,9 +139,13 @@ export default function GestaoCriancasPage() {
             {filtradas.map(c => (
               <div key={c.id} className={`bg-white border rounded-2xl p-4 shadow-sm space-y-3 ${c.ativo === false ? "opacity-60" : ""}`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700 shrink-0">
-                    {c.nome?.charAt(0).toUpperCase()}
-                  </div>
+                  {c.foto_url ? (
+                    <img src={c.foto_url} alt={c.nome} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700 shrink-0">
+                      {c.nome?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-slate-800 text-sm truncate">{c.nome}</p>
                     <div className="flex items-center gap-2 mt-0.5">

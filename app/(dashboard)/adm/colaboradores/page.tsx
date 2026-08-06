@@ -378,37 +378,67 @@ export default function ColaboradoresPage() {
   function CardColaborador({ col }: { col: Colaborador }) {
     const catInfo = CATEGORIAS.find((c) => c.valor === col._categoria)!;
     const corCat = CORES[catInfo.cor];
+    // Linha "meta" secundária (registro, CPF, nascimento) — texto corrido com
+    // separador em vez de pílula colorida pra cada uma: reduz a "parede de
+    // badges" e deixa só o que é destaque (especialidade/cargo/whatsapp) com
+    // cor de verdade.
+    const meta = [
+      col.registro_profissional,
+      col.cpf && `CPF ${col.cpf}`,
+      col.data_nascimento && `Nasc. ${new Date(col.data_nascimento).toLocaleDateString("pt-BR")}`,
+    ].filter(Boolean);
+
+    // Dados administrativos (CNPJ/razão social/admissão) agrupados numa única
+    // linha discreta no rodapé, em vez de 3 linhas empilhadas com ícone cada.
+    const rodape = [
+      col.data_admissao && `Admissão ${new Date(col.data_admissao).toLocaleDateString("pt-BR")}`,
+      col.cnpj && `CNPJ ${col.cnpj}`,
+      col.razao_social,
+    ].filter(Boolean);
+
     return (
-      <li className="px-5 py-4 hover:bg-slate-50 transition">
+      <li className="px-5 py-5 hover:bg-slate-50 transition">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-start gap-3 min-w-0">
             {col.foto_url ? (
-              <img src={col.foto_url} alt={col.nome} className="w-11 h-11 flex-shrink-0 rounded-full object-cover" />
+              <img src={col.foto_url} alt={col.nome} className="w-11 h-11 flex-shrink-0 rounded-full object-cover mt-0.5" />
             ) : (
-              <div className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm ${corAvatar(col.nome)}`}>
+              <div className={`w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm mt-0.5 ${corAvatar(col.nome)}`}>
                 {iniciais(col.nome)}
               </div>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 space-y-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <p className="font-semibold text-slate-800 text-sm truncate">{col.nome}</p>
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${corCat.badge}`}>{catInfo.icone} {catInfo.labelSingular}</span>
               </div>
               {col.email && <p className="text-xs text-slate-500 truncate">{col.email}</p>}
-              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                {col.especialidade && <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">{col.especialidade}</span>}
-                {col.registro_profissional && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">{col.registro_profissional}</span>}
-                {col.cargo && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">{col.cargo}</span>}
-                {col.cpf && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">CPF: {col.cpf}</span>}
-                {col.data_nascimento && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">Nasc: {new Date(col.data_nascimento).toLocaleDateString("pt-BR")}</span>}
-                {col.whatsapp && <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">{col.whatsapp}</span>}
-              </div>
-              {col.endereco && <p className="text-xs text-slate-400 mt-1 truncate">📍 {col.endereco}</p>}
-              {col.data_admissao && <p className="text-xs text-slate-400 mt-1">📅 Admissão: {new Date(col.data_admissao).toLocaleDateString("pt-BR")}</p>}
-              {col.cnpj && <p className="text-xs text-slate-400 mt-1">🏢 CNPJ: {col.cnpj}</p>}
-              {col.razao_social && <p className="text-xs text-slate-400 truncate">📋 {col.razao_social}</p>}
-              {col.data_demissao && <p className="text-xs text-red-400 mt-1">📅 Demissão: {new Date(col.data_demissao).toLocaleDateString("pt-BR")}</p>}
-              {col.motivo_saida && <p className="text-xs text-red-400">⚠️ {col.motivo_saida}</p>}
+
+              {(col.especialidade || col.cargo || col.whatsapp) && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {col.especialidade && <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">{col.especialidade}</span>}
+                  {col.cargo && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">{col.cargo}</span>}
+                  {col.whatsapp && <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">{col.whatsapp}</span>}
+                </div>
+              )}
+
+              {meta.length > 0 && (
+                <p className="text-xs text-slate-400">{meta.join("  ·  ")}</p>
+              )}
+
+              {col.endereco && <p className="text-xs text-slate-400 truncate">📍 {col.endereco}</p>}
+
+              {rodape.length > 0 && (
+                <p className="text-[11px] text-slate-300 pt-1 truncate">{rodape.join("  ·  ")}</p>
+              )}
+
+              {(col.data_demissao || col.motivo_saida) && (
+                <p className="text-xs text-red-400 pt-0.5">
+                  ⚠️ {col.data_demissao && `Demissão ${new Date(col.data_demissao).toLocaleDateString("pt-BR")}`}
+                  {col.data_demissao && col.motivo_saida && " · "}
+                  {col.motivo_saida}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
