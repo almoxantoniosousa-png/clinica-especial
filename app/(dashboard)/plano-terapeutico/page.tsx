@@ -64,10 +64,15 @@ export default function PlanoTerapeuticoPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.email) { setCarregandoAcesso(false); return; }
       const { data: u } = await supabase.from("usuarios").select("id, nome, role").eq("email", user.email).maybeSingle();
-      const r = (u?.role || "").toString().trim().toLowerCase();
+      let dados = u;
+      if (!dados) {
+        const { data: a } = await supabase.from("atendentes").select("id, nome, role").eq("email", user.email).maybeSingle();
+        dados = a;
+      }
+      const r = (dados?.role || "").toString().trim().toLowerCase();
       setRole(r);
-      setNome(u?.nome || "");
-      setUserId(u?.id || "");
+      setNome(dados?.nome || "");
+      setUserId(dados?.id || "");
       setAcessoLiberado(r === "gestao" || r === "supervisora" || r === "especialista");
       setCarregandoAcesso(false);
 
