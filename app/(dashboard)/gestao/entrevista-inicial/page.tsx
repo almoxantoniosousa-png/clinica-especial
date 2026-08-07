@@ -186,6 +186,13 @@ export default function EntrevistaInicialPage() {
     carregar();
   }
 
+  async function excluirEntrevista(id: string, nome: string) {
+    if (!confirm(`Excluir o registro de "${nome}"? Essa ação não pode ser desfeita.`)) return;
+    await supabase.from("entrevistas_iniciais").delete().eq("id", id);
+    setSelecionada(null);
+    carregar();
+  }
+
   function extrairLigacao(item: any): Record<string, string> {
     const out: Record<string, string> = {};
     for (const c of CAMPOS_LIGACAO) out[c.chave] = item[c.chave] || "";
@@ -401,6 +408,11 @@ export default function EntrevistaInicialPage() {
                 </div>
               </div>
             )}
+
+            <button onClick={() => excluirEntrevista(selecionada.id, selecionada.nome_crianca || selecionada.nome_crianca_preenchido)}
+              className="w-full text-center text-xs text-slate-400 hover:text-red-600 transition pt-2">
+              🗑️ Excluir este registro
+            </button>
           </div>
         </div>
       )}
