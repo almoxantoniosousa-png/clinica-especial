@@ -181,6 +181,7 @@ export default function ChatPage() {
   // Modal nova conversa
   const [modal, setModal] = useState(false);
   const [usuarios, setUsuarios] = useState<Perfil[]>([]);
+  const [carregandoUsuarios, setCarregandoUsuarios] = useState(false);
   const [buscaUsuario, setBuscaUsuario] = useState("");
   const [criando, setCriando] = useState(false);
 
@@ -249,10 +250,13 @@ export default function ChatPage() {
 
   const resolverPerfis = useCallback(async (ids: string[]): Promise<Record<string, Perfil>> => {
     if (!ids.length) return {};
-    const [{ data: dp }, { data: da }, { data: du }] = await Promise.all([
+    // "perfis" é legado (consultado à parte); atendentes/usuarios passam por
+    // uma função SECURITY DEFINER porque RLS só deixa cada um ler o próprio
+    // registro — sem isso, o nome de quem está do outro lado da conversa
+    // (ex: uma especialista vendo o adm) aparecia em branco.
+    const [{ data: dp }, { data: dr }] = await Promise.all([
       supabase.from("perfis").select("id, nome, role").in("id", ids),
-      supabase.from("atendentes").select("id, nome, role, logo_url").in("id", ids),
-      supabase.from("usuarios").select("id, nome, role, foto_url").in("id", ids),
+      supabase.rpc("perfis_chat_por_ids", { ids }),
     ]);
     const map: Record<string, Perfil> = {};
     const aplicar = (rows: { id: string; nome: string; role: string; foto_url?: string | null }[] | null) => {
@@ -266,8 +270,7 @@ export default function ChatPage() {
       });
     };
     aplicar((dp || []).map((p: any) => ({ id: p.id, nome: p.nome, role: p.role })));
-    aplicar((da || []).map((a: any) => ({ id: a.id, nome: a.nome, role: a.role, foto_url: a.logo_url })));
-    aplicar((du || []).map((u: any) => ({ id: u.id, nome: u.nome, role: u.role, foto_url: u.foto_url })));
+    aplicar((dr || []) as any[]);
     return map;
   }, []);
 
@@ -728,30 +731,31 @@ export default function ChatPage() {
       ? (PODE_CONTATAR[eu.role] ?? []).filter(r => r !== "familia")
       : (PODE_CONTATAR[eu.role] ?? []);
     if (!roles.length) return;
+    setCarregandoUsuarios(true);
     (async () => {
-      const [{ data: da }, { data: du }] = await Promise.all([
-        supabase.from("atendentes").select("id, nome, role, email, logo_url").in("role", roles).neq("id", eu.id),
-        supabase.from("usuarios").select("id, nome, role, email, foto_url, contata_familia").in("role", roles).neq("id", eu.id),
-      ]);
+      // Usa uma função no banco (SECURITY DEFINER) em vez de consultar
+      // atendentes/usuarios direto: RLS dessas tabelas só deixa cada um ver
+      // o próprio registro, então especialista/atendente nunca enxergavam
+      // adm/gestao/supervisora pra iniciar conversa. A função expõe só os
+      // campos necessários (nome, role, foto), sem abrir CPF/PIX/endereço.
+      const { data: contatos, error } = await supabase.rpc("contatos_chat_disponiveis", { roles_permitidos: roles });
+      if (error) console.error("Erro ao carregar contatos:", error.message);
       // Prioridade: usuarios > atendentes; deduplicar por email
-      // (a antiga tabela "perfis" era legado e ficou cheia de contas de
-      // teste/duplicadas — não é mais consultada aqui)
       const vistos = new Set<string>();
       const todos: Perfil[] = [];
-      // usuarios têm prioridade (dados mais atualizados)
-      for (const u of (du || []) as any[]) {
+      for (const u of (contatos || []) as any[]) {
+        if (u.id === eu.id) continue;
         // Família não pode iniciar conversa com uma supervisora que não atende famílias (ex: Sala API)
         if (eu.role === "familia" && u.role === "supervisora" && u.contata_familia === false) continue;
-        if (u.email) vistos.add(u.email);
+        if (u.email) {
+          if (vistos.has(u.email)) continue;
+          vistos.add(u.email);
+        }
         todos.push({ id: u.id, nome: u.nome, role: u.role, foto_url: u.foto_url });
       }
-      for (const a of (da || []) as any[]) {
-        if (a.email && vistos.has(a.email)) continue;
-        if (a.email) vistos.add(a.email);
-        todos.push({ id: a.id, nome: a.nome, role: a.role, foto_url: a.logo_url });
-      }
       todos.sort((a, b) => a.nome.localeCompare(b.nome));
-      if (todos.length) setUsuarios(todos);
+      setUsuarios(todos);
+      setCarregandoUsuarios(false);
     })();
   }, [modal, eu]);
 
@@ -1398,7 +1402,9 @@ export default function ChatPage() {
             <div className="flex-1 overflow-y-auto py-1">
               {usuarios.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-28 text-center px-4">
-                  <p className="text-sm text-slate-400">Carregando usuários…</p>
+                  <p className="text-sm text-slate-400">
+                    {carregandoUsuarios ? "Carregando usuários…" : "Nenhum contato disponível."}
+                  </p>
                 </div>
               )}
 
