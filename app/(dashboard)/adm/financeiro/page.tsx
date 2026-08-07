@@ -1283,8 +1283,8 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                 <div className="space-y-3 sm:space-y-2">
                   <div className="hidden sm:grid grid-cols-12 gap-1 text-xs text-slate-400 px-1">
                     <span className="col-span-4">Especialidade</span>
-                    <span className="col-span-1 text-center">Qtd</span>
-                    <span className="col-span-3">Unidade</span>
+                    <span className="col-span-2 text-center">Qtd</span>
+                    <span className="col-span-2">Unidade</span>
                     <span className="col-span-3">Valor (R$)</span>
                   </div>
                   {especialidades.map((e, i) => (
@@ -1307,14 +1307,14 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                           <option value="Terapia Ocupacional">Terapia Ocupacional</option>
                         </select>
                       </div>
-                      <div className="col-span-1 sm:col-span-1">
+                      <div className="col-span-1 sm:col-span-2">
                         <label className="text-[10px] text-slate-400 sm:hidden">Qtd</label>
                         <input type="number" min="0" value={e.qtd}
                           onChange={ev => updateEspecialidade(i, "qtd", ev.target.value)}
                           placeholder="0"
-                          className="w-full h-9 px-1 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"/>
+                          className="w-full h-9 px-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"/>
                       </div>
-                      <div className="col-span-1 sm:col-span-3">
+                      <div className="col-span-1 sm:col-span-2">
                         <label className="text-[10px] text-slate-400 sm:hidden">Unidade</label>
                         <select value={e.unidade || "sessao"}
                           onChange={ev => updateEspecialidade(i, "unidade", ev.target.value)}
