@@ -1284,8 +1284,8 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                   <div className="hidden sm:grid grid-cols-12 gap-1 text-xs text-slate-400 px-1">
                     <span className="col-span-4">Especialidade</span>
                     <span className="col-span-2 text-center">Qtd</span>
-                    <span className="col-span-2">Unidade</span>
-                    <span className="col-span-3">Valor (R$)</span>
+                    <span className="col-span-3">Unidade</span>
+                    <span className="col-span-2">Valor (R$)</span>
                   </div>
                   {especialidades.map((e, i) => (
                     <div key={i} className="grid grid-cols-2 sm:grid-cols-12 gap-2 sm:gap-1 sm:items-center border border-slate-100 sm:border-0 rounded-xl sm:rounded-none p-2 sm:p-0">
@@ -1314,16 +1314,16 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                           placeholder="0"
                           className="w-full h-9 px-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"/>
                       </div>
-                      <div className="col-span-1 sm:col-span-2">
+                      <div className="col-span-1 sm:col-span-3">
                         <label className="text-[10px] text-slate-400 sm:hidden">Unidade</label>
                         <select value={e.unidade || "sessao"}
                           onChange={ev => updateEspecialidade(i, "unidade", ev.target.value)}
-                          className="w-full h-9 px-1 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          className="w-full h-9 px-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                           <option value="sessao">Sessão</option>
                           <option value="credito">Crédito</option>
                         </select>
                       </div>
-                      <div className="col-span-1 sm:col-span-3">
+                      <div className="col-span-1 sm:col-span-2">
                         <label className="text-[10px] text-slate-400 sm:hidden">Valor (R$)</label>
                         <input type="number" min="0" value={e.valor_sessao}
                           onChange={ev => updateEspecialidade(i, "valor_sessao", ev.target.value)}
