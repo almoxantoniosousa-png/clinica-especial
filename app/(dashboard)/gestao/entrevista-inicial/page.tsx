@@ -267,7 +267,7 @@ export default function EntrevistaInicialPage() {
       {mostrarNovo && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
           onClick={(e) => { if (e.target === e.currentTarget) fecharNovo(); }}>
-          <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+          <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-slate-800 text-base">Gerar link de Entrevista</h3>
               <button onClick={fecharNovo} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400">✕</button>
@@ -293,7 +293,7 @@ export default function EntrevistaInicialPage() {
 
                 {!mostrarLigacaoNovo ? (
                   <button type="button" onClick={() => setMostrarLigacaoNovo(true)}
-                    className="text-xs font-semibold text-blue-800">
+                    className="text-xs font-semibold text-blue-800 underline decoration-blue-300 decoration-2 underline-offset-2 hover:text-blue-900 hover:decoration-blue-600 transition cursor-pointer">
                     + Já tenho agendamento, convênio ou laudo dessa ligação
                   </button>
                 ) : (
