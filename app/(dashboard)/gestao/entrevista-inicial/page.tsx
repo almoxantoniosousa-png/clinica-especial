@@ -83,6 +83,24 @@ const CAMPOS_DETALHE: { secao: string; campos: { chave: string; label: string }[
   ]},
 ];
 
+// Campos preenchidos pela Simone na ligação (não vêm do link da família) — ficam
+// editáveis a qualquer momento no detalhe, pois muitas vezes só se completam
+// num 2º contato (ex: convênio confirmado depois).
+const CAMPOS_LIGACAO: { chave: string; label: string; tipo: "date" | "text"; placeholder?: string }[] = [
+  { chave: "agendamento_data", label: "Data da entrevista/consulta", tipo: "date" },
+  { chave: "agendamento_horario", label: "Horário", tipo: "text", placeholder: "Ex: 14h" },
+  { chave: "cid", label: "CID", tipo: "text" },
+  { chave: "medico_nome", label: "Médico", tipo: "text" },
+  { chave: "medico_crm", label: "CRM", tipo: "text" },
+  { chave: "convenio_nome", label: "Nome do convênio", tipo: "text" },
+  { chave: "convenio_titular", label: "Titular do convênio", tipo: "text" },
+  { chave: "convenio_cpf", label: "CPF do titular", tipo: "text" },
+  { chave: "convenio_contato", label: "Contato do convênio", tipo: "text" },
+  { chave: "convenio_setor", label: "Setor", tipo: "text" },
+  { chave: "convenio_endereco", label: "Endereço do convênio", tipo: "text" },
+];
+const CAMPOS_LIGACAO_VAZIO = Object.fromEntries(CAMPOS_LIGACAO.map(c => [c.chave, ""]));
+
 export default function EntrevistaInicialPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [lista, setLista] = useState<any[]>([]);
@@ -94,6 +112,8 @@ export default function EntrevistaInicialPage() {
   const [novoNome, setNovoNome] = useState("");
   const [novoTelefone, setNovoTelefone] = useState("");
   const [novoEmail, setNovoEmail] = useState("");
+  const [mostrarLigacaoNovo, setMostrarLigacaoNovo] = useState(false);
+  const [novaLigacao, setNovaLigacao] = useState<Record<string, string>>(CAMPOS_LIGACAO_VAZIO);
   const [criando, setCriando] = useState(false);
   const [linkGerado, setLinkGerado] = useState("");
   const [copiado, setCopiado] = useState(false);
@@ -101,6 +121,9 @@ export default function EntrevistaInicialPage() {
   const [selecionada, setSelecionada] = useState<any | null>(null);
   const [obsRascunho, setObsRascunho] = useState("");
   const [salvandoStatus, setSalvandoStatus] = useState(false);
+  const [dadosLigacao, setDadosLigacao] = useState<Record<string, string>>(CAMPOS_LIGACAO_VAZIO);
+  const [salvandoLigacao, setSalvandoLigacao] = useState(false);
+  const [ligacaoSalva, setLigacaoSalva] = useState(false);
 
   async function carregar() {
     setLoading(true);
@@ -126,12 +149,16 @@ export default function EntrevistaInicialPage() {
     e.preventDefault();
     if (!novoNome.trim() || !novoTelefone.trim()) return;
     setCriando(true);
+    const extras = Object.fromEntries(
+      Object.entries(novaLigacao).filter(([, v]) => v.trim() !== "").map(([k, v]) => [k, v.trim()])
+    );
     const { data, error } = await supabase.from("entrevistas_iniciais").insert([{
       nome_crianca_preenchido: novoNome.trim(),
       contato_telefone: novoTelefone.trim(),
       contato_email: novoEmail.trim() || null,
       criado_por_email: usuarioEmail,
       criado_por_nome: usuarioNome,
+      ...extras,
     }]).select("token").single();
     setCriando(false);
     if (error || !data) return;
@@ -142,6 +169,7 @@ export default function EntrevistaInicialPage() {
   function fecharNovo() {
     setMostrarNovo(false);
     setNovoNome(""); setNovoTelefone(""); setNovoEmail(""); setLinkGerado(""); setCopiado(false);
+    setMostrarLigacaoNovo(false); setNovaLigacao(CAMPOS_LIGACAO_VAZIO);
   }
 
   function copiarLink(link: string) {
@@ -158,18 +186,41 @@ export default function EntrevistaInicialPage() {
     carregar();
   }
 
+  function extrairLigacao(item: any): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const c of CAMPOS_LIGACAO) out[c.chave] = item[c.chave] || "";
+    return out;
+  }
+
   async function abrir(item: any) {
     // Busca fresca ao abrir — se a família respondeu depois que essa lista
     // carregou (ex: aba ficou aberta enquanto testava o link), o item em
     // memória ainda mostraria "aguardando" mesmo já tendo sido respondido.
     setSelecionada(item);
     setObsRascunho(item.observacoes_simone || "");
+    setDadosLigacao(extrairLigacao(item));
     const { data } = await supabase.from("entrevistas_iniciais").select("*").eq("id", item.id).maybeSingle();
     if (data) {
       setSelecionada(data);
       setObsRascunho(data.observacoes_simone || "");
+      setDadosLigacao(extrairLigacao(data));
       if (data.status !== item.status) carregar(); // atualiza o selo na lista também
     }
+  }
+
+  async function salvarLigacao() {
+    if (!selecionada) return;
+    setSalvandoLigacao(true);
+    const payload: Record<string, string | null> = {};
+    for (const c of CAMPOS_LIGACAO) {
+      const v = dadosLigacao[c.chave]?.trim() || "";
+      payload[c.chave] = v === "" ? null : v;
+    }
+    await supabase.from("entrevistas_iniciais").update(payload).eq("id", selecionada.id);
+    setSalvandoLigacao(false);
+    setLigacaoSalva(true);
+    setTimeout(() => setLigacaoSalva(false), 2000);
+    carregar();
   }
 
   return (
@@ -239,6 +290,26 @@ export default function EntrevistaInicialPage() {
                   <input type="email" value={novoEmail} onChange={e => setNovoEmail(e.target.value)}
                     className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
+
+                {!mostrarLigacaoNovo ? (
+                  <button type="button" onClick={() => setMostrarLigacaoNovo(true)}
+                    className="text-xs font-semibold text-blue-800">
+                    + Já tenho agendamento, convênio ou laudo dessa ligação
+                  </button>
+                ) : (
+                  <div className="space-y-3 pt-2 border-t border-slate-100">
+                    <p className="text-xs text-slate-400">Opcional — preencha o que já souber, dá pra completar depois.</p>
+                    {CAMPOS_LIGACAO.map(c => (
+                      <div key={c.chave} className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{c.label}</label>
+                        <input type={c.tipo} placeholder={c.placeholder} value={novaLigacao[c.chave]}
+                          onChange={e => setNovaLigacao(prev => ({ ...prev, [c.chave]: e.target.value }))}
+                          className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <button type="submit" disabled={criando}
                   className="w-full h-11 bg-blue-900 hover:bg-blue-800 text-white font-semibold text-sm rounded-xl transition disabled:opacity-50">
                   {criando ? "Gerando..." : "Gerar link"}
@@ -267,6 +338,23 @@ export default function EntrevistaInicialPage() {
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-slate-800 text-base">{selecionada.nome_crianca || selecionada.nome_crianca_preenchido}</h3>
               <button onClick={() => setSelecionada(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400">✕</button>
+            </div>
+
+            <div className="space-y-3 pb-2 border-b border-slate-100">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">📞 Dados da ligação</p>
+              <p className="text-xs text-slate-400 -mt-2">Preenchido por você — pode completar a qualquer momento, inclusive num 2º contato.</p>
+              {CAMPOS_LIGACAO.map(c => (
+                <div key={c.chave} className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{c.label}</label>
+                  <input type={c.tipo} placeholder={c.placeholder} value={dadosLigacao[c.chave]}
+                    onChange={e => setDadosLigacao(prev => ({ ...prev, [c.chave]: e.target.value }))}
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              ))}
+              <button onClick={salvarLigacao} disabled={salvandoLigacao}
+                className="w-full h-10 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-xl transition disabled:opacity-50">
+                {salvandoLigacao ? "Salvando..." : ligacaoSalva ? "✓ Salvo!" : "Salvar dados da ligação"}
+              </button>
             </div>
 
             {selecionada.status === "aguardando" ? (
