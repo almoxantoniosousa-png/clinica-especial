@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
-import { ShoppingCart, Link, AlertCircle, ChevronDown, X } from "lucide-react";
+import { ShoppingCart, Link, AlertCircle, ChevronDown, X, Plus } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 
 type Requisicao = {
@@ -58,18 +58,65 @@ export default function RequisicoesPaginaAdm() {
   const [obsAdm, setObsAdm] = useState("");
   const [salvando, setSalvando] = useState(false);
 
+  // Nova requisição (o próprio ADM também pode solicitar material)
+  const [eu, setEu] = useState<{ id: string; nome: string; role: string; email: string } | null>(null);
+  const [modalNova, setModalNova] = useState(false);
+  const [produto, setProduto] = useState("");
+  const [quantidade, setQuantidade] = useState("1");
+  const [descricao, setDescricao] = useState("");
+  const [linkCompra, setLinkCompra] = useState("");
+  const [urgencia, setUrgencia] = useState<"normal" | "urgente">("normal");
+  const [enviandoNova, setEnviandoNova] = useState(false);
+
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg }); setTimeout(() => setFeedback(null), 3500);
   }
 
+  function limparFormNova() {
+    setProduto(""); setQuantidade("1"); setDescricao(""); setLinkCompra(""); setUrgencia("normal");
+  }
+
   async function carregar() {
     setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: u } = await supabase.from("usuarios").select("nome, role").eq("id", user.id).maybeSingle();
+      setEu({ id: user.id, nome: u?.nome || "", role: u?.role || "adm", email: user.email || "" });
+    }
     const { data } = await supabase.from("requisicoes_compra").select("*").order("created_at", { ascending: false });
     setRequisicoes(data || []);
     setLoading(false);
   }
 
   useEffect(() => { carregar(); }, []);
+
+  async function enviarNova() {
+    if (!eu || !produto.trim()) { mostrarFeedback("erro", "Informe o nome do produto."); return; }
+    setEnviandoNova(true);
+    const { error } = await supabase.from("requisicoes_compra").insert({
+      solicitante_id:   eu.id,
+      solicitante_nome: eu.nome,
+      solicitante_role: eu.role,
+      produto:          produto.trim(),
+      quantidade:       parseInt(quantidade) || 1,
+      descricao:        descricao.trim() || null,
+      link_compra:      linkCompra.trim() || null,
+      urgencia,
+    });
+    setEnviandoNova(false);
+    if (error) { mostrarFeedback("erro", "Erro ao enviar requisição."); return; }
+
+    await registrarLog(supabase, {
+      usuario_email: eu.email,
+      usuario_nome: eu.nome,
+      acao: "Criou requisição de compra",
+      tabela: "requisicoes_compra",
+      descricao: `Produto: ${produto.trim()} | Qtd: ${quantidade} | Urgência: ${urgencia}`,
+    });
+
+    mostrarFeedback("sucesso", `Requisição de "${produto.trim()}" registrada!`);
+    limparFormNova(); setModalNova(false); carregar();
+  }
 
   function abrirModal(r: Requisicao) {
     setModalReq(r); setNovoStatus(r.status); setObsAdm(r.obs_adm || "");
@@ -118,9 +165,15 @@ export default function RequisicoesPaginaAdm() {
   return (
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-6">
 
-      <div>
-        <h1 className="text-xl font-bold text-slate-900">Requisições de Compra</h1>
-        <p className="text-xs text-slate-400 mt-0.5">Pedidos de produtos da equipe</p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Requisições de Compra</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Pedidos de produtos da equipe</p>
+        </div>
+        <button onClick={() => setModalNova(true)}
+          className="flex items-center gap-2 h-10 px-4 rounded-xl bg-gradient-to-r from-blue-900 to-blue-700 text-white text-sm font-bold hover:opacity-90 transition shadow-lg flex-shrink-0">
+          <Plus className="h-4 w-4" /> Nova requisição
+        </button>
       </div>
 
       {feedback && (
@@ -282,6 +335,73 @@ export default function RequisicoesPaginaAdm() {
               <button onClick={salvarAtualizacao} disabled={salvando}
                 className="flex-1 h-11 rounded-xl bg-gradient-to-r from-blue-900 to-blue-700 text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg">
                 {salvando ? "Salvando..." : "Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL NOVA REQUISIÇÃO (do próprio ADM) */}
+      {modalNova && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900">Nova requisição</h2>
+              <button onClick={() => { setModalNova(false); limparFormNova(); }} className="p-1.5 hover:bg-slate-100 rounded-lg transition">✕</button>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                <ShoppingCart className="h-3.5 w-3.5" /> Produto *
+              </label>
+              <input value={produto} onChange={e => setProduto(e.target.value)}
+                placeholder="Ex: Massa de modelar, Tesoura sem ponta..."
+                className={inputClass} />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Quantidade</label>
+              <input type="number" min="1" value={quantidade} onChange={e => setQuantidade(e.target.value)}
+                className={inputClass} />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Descrição / Para que serve (opcional)</label>
+              <textarea value={descricao} onChange={e => setDescricao(e.target.value)}
+                placeholder="Ex: Para atividade de coordenação motora fina com crianças de 5 anos..."
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 text-slate-800 text-sm focus:outline-none transition placeholder:text-slate-400 bg-white resize-none" />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                <Link className="h-3.5 w-3.5" /> Link do produto (opcional)
+              </label>
+              <input value={linkCompra} onChange={e => setLinkCompra(e.target.value)}
+                placeholder="https://..."
+                className={inputClass} />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Urgência</label>
+              <div className="relative">
+                <select value={urgencia} onChange={e => setUrgencia(e.target.value as "normal" | "urgente")}
+                  className={inputClass + " appearance-none pr-10"}>
+                  <option value="normal">Normal</option>
+                  <option value="urgente">🔴 Urgente</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-3 h-5 w-5 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => { setModalNova(false); limparFormNova(); }}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                Cancelar
+              </button>
+              <button onClick={enviarNova} disabled={enviandoNova || !produto.trim()}
+                className="flex-1 h-11 rounded-xl bg-gradient-to-r from-blue-900 to-blue-700 text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg">
+                {enviandoNova ? "Enviando..." : "Registrar"}
               </button>
             </div>
           </div>

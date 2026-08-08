@@ -115,7 +115,7 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "🛒", titulo: "Requisições de Compra", mockup: "abas",
-      texto: "Central de pedidos de produtos da equipe (Supervisora, Gestão e Especialistas).\n\nOrganizado em 6 abas: Pendentes (com contador laranja), Em análise, Comprados, Entregues, Recusados e Todos.\n\nResumo no topo mostra quantos pedidos estão pendentes e em análise. Clique em \"Atualizar\" para mudar o status e adicionar uma observação visível ao solicitante.\n\nDica: monitore a aba Pendentes diariamente — cada mudança de status fica registrada na Auditoria.",
+      texto: "Central de pedidos de produtos da equipe (Supervisora, Gestão e Especialistas).\n\nOrganizado em 6 abas: Pendentes (com contador laranja), Em análise, Comprados, Entregues, Recusados e Todos.\n\nResumo no topo mostra quantos pedidos estão pendentes e em análise. Clique em \"Atualizar\" para mudar o status e adicionar uma observação visível ao solicitante.\n\nVocê também pode fazer sua própria requisição: clique em \"+ Nova requisição\" no topo da tela, preencha produto, quantidade e, se quiser, link de compra e urgência.\n\nDica: monitore a aba Pendentes diariamente — cada mudança de status fica registrada na Auditoria.",
       reflexo: "Quando você altera o status ou adiciona uma observação, o solicitante vê a resposta direto na tela de Requisições dele. A ação fica registrada na Auditoria."
     },
     {
