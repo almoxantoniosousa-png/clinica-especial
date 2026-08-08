@@ -69,12 +69,12 @@ export default async function DashboardLayout({
       <div className="min-h-screen bg-slate-50">
         <div className="flex flex-col md:flex-row min-h-screen">
           <RoleSidebar key={user.id} userRole={roleFinal} userCargo={cargoFinal} userNome={nomeFinal} userContataFamilia={contataFamiliaFinal} userFazAdaptado={fazAdaptadoFinal} />
-          <main className="flex-1 min-w-0 min-h-screen overflow-y-auto overflow-x-hidden bg-zinc-100 relative">
+          <main className="flex-1 min-w-0 min-h-screen overflow-y-auto overflow-x-hidden bg-zinc-200 relative">
             {/* Marca d'água — logo da clínica */}
             <div className="fixed inset-0 pointer-events-none select-none flex items-center justify-center" style={{ zIndex: 0 }}>
               <img src="/logo.png" alt="" aria-hidden="true"
                 className="w-64 h-64 object-contain"
-                style={{ opacity: 0.045, filter: "grayscale(100%)" }}
+                style={{ opacity: 0.08, filter: "grayscale(100%)" }}
               />
             </div>
             <div className="relative z-10 max-w-5xl mx-auto p-4 md:p-8 h-full">
