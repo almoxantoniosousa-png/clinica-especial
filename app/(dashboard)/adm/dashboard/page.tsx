@@ -333,14 +333,18 @@ export default function AdmDashboardPage() {
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-8 space-y-5">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900"><Saudacao nome={nome} /></h1>
-          <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
-          Ao vivo
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 px-6 py-6 md:px-8 md:py-7 shadow-lg shadow-blue-900/20">
+        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/5" aria-hidden />
+        <div className="absolute -right-4 bottom-0 w-24 h-24 rounded-full bg-white/5" aria-hidden />
+        <div className="relative flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-white"><Saudacao nome={nome} /></h1>
+            <p className="text-xs md:text-sm text-blue-200 mt-1 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-white bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 flex-shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
+            Ao vivo
+          </div>
         </div>
       </div>
 
@@ -348,9 +352,9 @@ export default function AdmDashboardPage() {
       <PainelInformacoes />
 
       {/* DIVISOR */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-slate-200"/>
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Painel Operacional</span>
+      <div className="flex items-center gap-2.5 pt-1">
+        <div className="w-1.5 h-1.5 rounded-full bg-blue-600"/>
+        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Painel Operacional</span>
         <div className="flex-1 h-px bg-slate-200"/>
       </div>
 
@@ -362,18 +366,18 @@ export default function AdmDashboardPage() {
           { label: "Custo acumulado",      valor: null,                sufixo: "",    cor: "text-red-600",     bg: "bg-red-50",     icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z", icor: "text-red-500" },
           { label: "Atendimentos pagos",   valor: metricas.pagos,      sufixo: "",    cor: "text-emerald-600", bg: "bg-emerald-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", icor: "text-emerald-500" },
         ].map((kpi, i) => (
-          <div key={i} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <div key={i} className="group bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-medium text-slate-500">{kpi.label}</p>
-              <div className={`w-8 h-8 rounded-lg ${kpi.bg} flex items-center justify-center`}>
+              <div className={`w-9 h-9 rounded-xl ${kpi.bg} flex items-center justify-center group-hover:scale-110 transition-transform duration-200`}>
                 <svg className={`w-4 h-4 ${kpi.icor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={kpi.icon}/>
                 </svg>
               </div>
             </div>
             {i === 2
-              ? <p className={`text-xl font-bold ${kpi.cor}`}>R$ {metricas.receitaMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-              : <p className={`text-3xl font-bold ${kpi.cor}`}>{kpi.valor}</p>
+              ? <p className={`text-xl font-bold ${kpi.cor} tracking-tight`}>R$ {metricas.receitaMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              : <p className={`text-3xl font-bold ${kpi.cor} tracking-tight`}>{kpi.valor}</p>
             }
           </div>
         ))}

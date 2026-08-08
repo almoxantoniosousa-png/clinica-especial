@@ -329,16 +329,16 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   return (
     <>
       {!isMobile && (
-        <aside className="print:hidden w-56 bg-white border-r border-slate-200 min-h-screen flex flex-col justify-between flex-shrink-0">
+        <aside className="print:hidden w-56 bg-blue-50/40 border-r border-slate-200 min-h-screen flex flex-col justify-between flex-shrink-0">
           <div>
-            <div className="px-4 py-4 border-b border-slate-100">
+            <div className="px-4 py-4 bg-gradient-to-br from-blue-700 to-blue-500">
               <div className="flex items-center justify-between mb-2">
                 <Logo size="md" />
                 <NotificacoesBell userRole={role} align="left" />
               </div>
               <div>
-                <p className="font-bold text-slate-800 text-sm leading-tight">Clínica Abraço</p>
-                <p title={identLabel} className="text-[10px] font-medium text-slate-400 leading-snug uppercase tracking-wider truncate">{identLabel}</p>
+                <p className="font-bold text-white text-sm leading-tight">Clínica Abraço</p>
+                <p title={identLabel} className="text-[10px] font-medium text-blue-200 leading-snug uppercase tracking-wider truncate">{identLabel}</p>
               </div>
             </div>
             {renderMenu()}
