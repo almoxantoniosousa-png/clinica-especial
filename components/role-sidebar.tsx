@@ -234,10 +234,10 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     const { gravando } = useGravacao();
     return (
       <Link href={item.href}
-        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all
+        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all duration-200
           ${ativo
-            ? "bg-blue-600 text-white font-semibold"
-            : "text-slate-600 hover:bg-blue-50 hover:text-blue-700 font-medium"}`}>
+            ? "bg-blue-600 text-white font-semibold shadow-sm shadow-blue-600/30"
+            : "text-slate-600 hover:bg-blue-100/70 hover:text-blue-700 hover:translate-x-0.5 font-medium"}`}>
         <span className="text-base leading-none">{item.icon}</span>
         <span>{item.label}</span>
         {item.href === "/gravacoes" && gravando && (
@@ -256,20 +256,20 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     return (
       <div>
         <button onClick={onToggle}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all
-            ${isAtivo ? "bg-blue-600 text-white font-semibold" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"}`}>
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200
+            ${isAtivo ? "bg-blue-600 text-white font-semibold shadow-sm shadow-blue-600/30" : "text-slate-600 hover:bg-blue-100/70 hover:text-blue-700"}`}>
           <span className="text-base leading-none">{icon}</span>
           <span className="flex-1 text-left">{label}</span>
           <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${aberto ? "rotate-180" : ""} opacity-60`} />
         </button>
         {aberto && (
-          <div className="ml-3 mt-0.5 space-y-0.5 border-l border-slate-200 pl-3">
+          <div className="ml-3 mt-0.5 space-y-0.5 border-l border-blue-200 pl-3">
             {subItems.map((item) => {
               const ativo = pathname === item.href;
               return (
                 <Link key={item.href} href={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-sm transition-all
-                    ${ativo ? "bg-blue-600 text-white font-semibold" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700 font-medium"}`}>
+                  className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-sm transition-all duration-200
+                    ${ativo ? "bg-blue-600 text-white font-semibold shadow-sm shadow-blue-600/30" : "text-slate-600 hover:bg-blue-100/70 hover:text-blue-700 hover:translate-x-0.5 font-medium"}`}>
                   <span className="text-sm leading-none">{item.icon}</span>
                   <span>{item.label}</span>
                 </Link>
@@ -288,7 +288,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
           <MenuItem item={(isAdmin ? menuAdmin : menuGestao)[0]} />
 
           <div className="pt-3 pb-0.5">
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-3 pb-1">Pessoas</p>
+            <p className="text-[10px] font-bold text-blue-400/80 uppercase tracking-widest px-3 pb-1">Pessoas</p>
           </div>
 
           {(isAdmin ? subMenuColaboradoresAdm : subMenuColaboradoresGestao).map((item) => (
@@ -298,7 +298,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
           {isAdmin && (
             <>
               <div className="pt-3 pb-0.5">
-                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-3 pb-1">Financeiro</p>
+                <p className="text-[10px] font-bold text-blue-400/80 uppercase tracking-widest px-3 pb-1">Financeiro</p>
               </div>
               <Accordion
                 label="Financeiro" icon="💰"
@@ -310,7 +310,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
           )}
 
           <div className="pt-3 pb-0.5">
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-3 pb-1">Geral</p>
+            <p className="text-[10px] font-bold text-blue-400/80 uppercase tracking-widest px-3 pb-1">Geral</p>
           </div>
 
           <Accordion
