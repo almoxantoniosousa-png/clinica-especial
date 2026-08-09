@@ -177,6 +177,7 @@ function tempoRelativo(pubDate: string) {
 
 export function PainelInformacoes() {
   const [hora, setHora] = useState("");
+  const [agora, setAgora] = useState<Date | null>(null);
   const [data, setData] = useState("");
   const [clima, setClima] = useState<WeatherData | null>(null);
   const [climaErro, setClimaErro] = useState(false);
@@ -191,8 +192,9 @@ export function PainelInformacoes() {
   // Relógio
   useEffect(() => {
     function tick() {
-      const agora = new Date();
-      setHora(agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+      const d = new Date();
+      setAgora(d);
+      setHora(d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
       setData(formatarData());
     }
     tick();
@@ -249,6 +251,13 @@ export function PainelInformacoes() {
   const lat  = area ? parseFloat(area.latitude)  : null;
   const lon  = area ? parseFloat(area.longitude) : null;
 
+  const segundos = agora?.getSeconds() ?? 0;
+  const minutos = agora?.getMinutes() ?? 0;
+  const horas12 = (agora?.getHours() ?? 0) % 12;
+  const degSeg = segundos * 6;
+  const degMin = (minutos + segundos / 60) * 6;
+  const degHor = (horas12 + minutos / 60) * 30;
+
   const abas = [
     { key: "brasil",   label: "🇧🇷 Brasil" },
     { key: "mundo",    label: "🌍 Mundo" },
@@ -260,30 +269,54 @@ export function PainelInformacoes() {
 
       {/* Cabeçalho: saudação + relógio + data */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <p className="text-4xl font-black text-white tracking-tight font-mono">{hora}</p>
-            <p className="text-blue-100 text-xs mt-1 capitalize">{data}</p>
+        <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+
+          {/* Relógio analógico */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="relative w-24 h-24 rounded-full bg-white border-2 border-blue-200 shadow-lg flex-shrink-0">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="absolute inset-0" style={{ transform: `rotate(${i * 30}deg)` }}>
+                  <span className="absolute left-1/2 top-1.5 -translate-x-1/2 text-[9px] font-bold text-blue-900"
+                    style={{ transform: `rotate(${-i * 30}deg)`, transformOrigin: "center" }}>
+                    {i === 0 ? 12 : i}
+                  </span>
+                </div>
+              ))}
+              {agora && (
+                <>
+                  <div className="absolute bottom-1/2 left-1/2 w-1 h-5 bg-slate-800 rounded-full"
+                    style={{ transform: `translateX(-50%) rotate(${degHor}deg)`, transformOrigin: "bottom center" }} />
+                  <div className="absolute bottom-1/2 left-1/2 w-0.5 h-7 bg-blue-600 rounded-full"
+                    style={{ transform: `translateX(-50%) rotate(${degMin}deg)`, transformOrigin: "bottom center" }} />
+                </>
+              )}
+              <div className="absolute left-1/2 top-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 rounded-full ring-2 ring-white" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-white tracking-tight font-mono leading-none">{hora}</p>
+              <p className="text-blue-100 text-[11px] mt-1 capitalize leading-tight max-w-[130px]">{data}</p>
+            </div>
           </div>
 
           {/* Clima */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 min-w-[240px] space-y-3">
-            {/* Busca de cidade */}
-            <form onSubmit={e => { e.preventDefault(); if (cidadeInput.trim()) { buscarClima(cidadeInput.trim()); setCidadeInput(""); } }}
-              className="flex gap-2">
-              <input
-                value={cidadeInput}
-                onChange={e => setCidadeInput(e.target.value)}
-                placeholder="Buscar cidade..."
-                className="flex-1 min-w-0 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 text-xs px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40"
-              />
-              <button type="submit"
-                className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition">
-                🔍
-              </button>
-            </form>
+          <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <form onSubmit={e => { e.preventDefault(); if (cidadeInput.trim()) { buscarClima(cidadeInput.trim()); setCidadeInput(""); } }}
+                className="flex gap-1.5 flex-1 min-w-0 max-w-[220px]">
+                <input
+                  value={cidadeInput}
+                  onChange={e => setCidadeInput(e.target.value)}
+                  placeholder="Buscar cidade..."
+                  className="flex-1 min-w-0 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 text-xs px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-white/40"
+                />
+                <button type="submit"
+                  className="px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-medium transition flex-shrink-0">
+                  🔍
+                </button>
+              </form>
+            </div>
 
-            {/* Dados do clima */}
+            {/* Dados do clima — tudo numa linha só, quebra se precisar */}
             {loadingClima ? (
               <div className="flex gap-2 items-center">
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
@@ -292,37 +325,26 @@ export function PainelInformacoes() {
             ) : climaErro ? (
               <p className="text-red-100 text-xs">Cidade não encontrada.</p>
             ) : cc ? (
-              <div className="space-y-2.5">
-                {/* Temperatura principal */}
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{weatherEmoji(code)}</span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl leading-none">{weatherEmoji(code)}</span>
                   <div>
-                    <p className="text-white font-bold text-2xl leading-none">{cc.temp_C}°C</p>
-                    <p className="text-blue-100 text-xs mt-0.5">{descClima(code, cc.weatherDesc[0]?.value)}</p>
+                    <p className="text-white font-bold text-lg leading-none">{cc.temp_C}°C</p>
+                    <p className="text-blue-100 text-[10px] mt-0.5">{descClima(code, cc.weatherDesc[0]?.value)}</p>
                   </div>
                 </div>
-                {/* Grade de detalhes */}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <p className="text-blue-100 text-xs">🌡️ Sensação: <span className="text-white">{cc.FeelsLikeC}°C</span></p>
-                  <p className="text-blue-100 text-xs">↑{wt?.maxtempC}° ↓{wt?.mintempC}°</p>
-                  <p className="text-blue-100 text-xs">💧 Umidade: <span className="text-white">{cc.humidity}%</span></p>
-                  <p className="text-blue-100 text-xs">💨 {cc.windspeedKmph} km/h</p>
-                  <p className="text-blue-100 text-xs col-span-2">
-                    🧭 Vento: <span className="text-white">{WIND_PT[cc.winddir16Point] ?? cc.winddir16Point}</span>
+                <p className="text-blue-100 text-xs">🌡️ <span className="text-white">{cc.FeelsLikeC}°C</span> <span className="text-blue-200">↑{wt?.maxtempC}° ↓{wt?.mintempC}°</span></p>
+                <p className="text-blue-100 text-xs">💧 <span className="text-white">{cc.humidity}%</span></p>
+                <p className="text-blue-100 text-xs">💨 <span className="text-white">{cc.windspeedKmph} km/h</span> {WIND_PT[cc.winddir16Point] ?? cc.winddir16Point}</p>
+                {aqiInfo && (
+                  <p className="text-blue-100 text-xs">🌿 <span className={`font-semibold ${aqiInfo.cor}`}>{aqiInfo.label}</span></p>
+                )}
+                {lat !== null && lon !== null && (
+                  <p className="text-blue-200 text-[10px] basis-full">
+                    📍 {cidadeAtual} · {posicaoCardinal(lat, lon)}
+                    {regiaooBrasil(lat, lon) !== "Sudeste" || lat < -5 ? ` · ${regiaooBrasil(lat, lon)}` : ""}
                   </p>
-                  {aqiInfo && (
-                    <p className="text-blue-100 text-xs col-span-2">
-                      🌿 Ar: <span className={`font-semibold ${aqiInfo.cor}`}>{aqiInfo.label}</span>
-                      <span className="text-blue-200 ml-1">(IQA {aqi})</span>
-                    </p>
-                  )}
-                  {lat !== null && lon !== null && (
-                    <p className="text-blue-200 text-[10px] col-span-2 mt-0.5">
-                      📍 {cidadeAtual} · {posicaoCardinal(lat, lon)}
-                      {regiaooBrasil(lat, lon) !== "Sudeste" || lat < -5 ? ` · ${regiaooBrasil(lat, lon)}` : ""}
-                    </p>
-                  )}
-                </div>
+                )}
               </div>
             ) : null}
           </div>
