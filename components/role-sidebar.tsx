@@ -357,21 +357,21 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
       {isMobile && (
         <>
-          <div className="print:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
+          <div className="print:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-blue-700 to-blue-500 px-4 py-3 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2.5">
               <Logo size="sm" />
-              <span className="font-bold text-blue-900 text-sm">Clínica Abraço</span>
+              <span className="font-bold text-white text-sm">Clínica Abraço</span>
             </div>
             <div className="flex items-center gap-1">
               <NotificacoesBell userRole={role} />
               <button onClick={() => setMenuAberto(!menuAberto)}
-                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 transition">
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 transition">
                 {menuAberto ? (
-                  <svg className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 )}
@@ -386,19 +386,19 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
         <>
           <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMenuAberto(false)} />
           <div className="fixed top-0 left-0 h-full w-72 z-50 bg-white shadow-xl flex flex-col">
-            <div className="flex items-start justify-between px-4 py-4 border-b border-slate-100">
+            <div className="flex items-start justify-between px-4 py-4 bg-gradient-to-br from-blue-700 to-blue-500">
               <div>
                 <Logo size="md" />
-                <p className="font-bold text-slate-800 text-sm mt-2">Clínica Abraço</p>
-                <p title={identLabel} className="text-[10px] font-medium text-slate-400 leading-snug uppercase tracking-wider truncate max-w-[13rem]">{identLabel}</p>
+                <p className="font-bold text-white text-sm mt-2">Clínica Abraço</p>
+                <p title={identLabel} className="text-[10px] font-medium text-blue-200 leading-snug uppercase tracking-wider truncate max-w-[13rem]">{identLabel}</p>
               </div>
-              <button onClick={() => setMenuAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition">
-                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <button onClick={() => setMenuAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-blue-50/40">
               {renderMenu()}
             </div>
             <div className="px-2 pb-5 border-t border-slate-100 pt-3">
