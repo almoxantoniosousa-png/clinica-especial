@@ -158,6 +158,9 @@ export default function RequisicoesPaginaAdm() {
   const contagem = {
     pendentes: requisicoes.filter(r => r.status === "pendente").length,
     em_analise: requisicoes.filter(r => r.status === "em_analise").length,
+    comprado: requisicoes.filter(r => r.status === "comprado").length,
+    entregue: requisicoes.filter(r => r.status === "entregue").length,
+    recusado: requisicoes.filter(r => r.status === "recusado").length,
   };
 
   const inputClass = "w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-blue-500 text-slate-800 text-sm focus:outline-none transition placeholder:text-slate-400 bg-white";
@@ -186,7 +189,7 @@ export default function RequisicoesPaginaAdm() {
 
       {/* RESUMO */}
       {!loading && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center shadow-sm">
             <p className="text-2xl font-black text-amber-600">{contagem.pendentes}</p>
             <p className="text-xs text-amber-500 mt-0.5">Pendentes</p>
@@ -195,9 +198,17 @@ export default function RequisicoesPaginaAdm() {
             <p className="text-2xl font-black text-blue-600">{contagem.em_analise}</p>
             <p className="text-xs text-blue-500 mt-0.5">Em análise</p>
           </div>
+          <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4 text-center shadow-sm">
+            <p className="text-2xl font-black text-violet-600">{contagem.comprado}</p>
+            <p className="text-xs text-violet-500 mt-0.5">Comprados</p>
+          </div>
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center shadow-sm">
-            <p className="text-2xl font-black text-emerald-600">{requisicoes.filter(r => r.status === "entregue").length}</p>
+            <p className="text-2xl font-black text-emerald-600">{contagem.entregue}</p>
             <p className="text-xs text-emerald-500 mt-0.5">Entregues</p>
+          </div>
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center shadow-sm">
+            <p className="text-2xl font-black text-red-600">{contagem.recusado}</p>
+            <p className="text-xs text-red-500 mt-0.5">Recusados</p>
           </div>
         </div>
       )}

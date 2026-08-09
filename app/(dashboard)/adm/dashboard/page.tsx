@@ -20,7 +20,7 @@ import {
   Filler
 } from "chart.js";
 
-type Aniversariante = { nome: string; data_nascimento: string; tipo: string; dia: number; diff: number };
+type Aniversariante = { nome: string; data_nascimento: string; tipo: string; dia: number; diff: number; foto_url?: string | null };
 
 ChartJS.register(
   LineElement, CategoryScale, LinearScale, PointElement,
@@ -78,16 +78,16 @@ export default function AdmDashboardPage() {
     const hoje = new Date().getDate();
 
     const { data: atendentes } = await supabase
-      .from("atendentes").select("nome, data_nascimento, role").not("data_nascimento", "is", null);
+      .from("atendentes").select("nome, data_nascimento, role, logo_url").not("data_nascimento", "is", null);
     const { data: internas } = await supabase
-      .from("colaboradoras_internas").select("nome, data_nascimento, cargo").not("data_nascimento", "is", null);
+      .from("colaboradoras_internas").select("nome, data_nascimento, cargo, foto_url").not("data_nascimento", "is", null);
     const { data: criancas } = await supabase
-      .from("criancas").select("nome, data_nascimento").eq("ativo", true).not("data_nascimento", "is", null);
+      .from("criancas").select("nome, data_nascimento, foto_url").eq("ativo", true).not("data_nascimento", "is", null);
 
     const todos = [
-      ...(atendentes || []).map((a: { nome: string; data_nascimento: string; role: string }) => ({ ...a, tipo: a.role === "especialista" ? "Especialista" : "Acompanhante" })),
-      ...(internas  || []).map((i: { nome: string; data_nascimento: string; cargo: string }) => ({ ...i, tipo: i.cargo })),
-      ...(criancas  || []).map((c: { nome: string; data_nascimento: string }) => ({ ...c, tipo: "Criança" })),
+      ...(atendentes || []).map((a: { nome: string; data_nascimento: string; role: string; logo_url?: string | null }) => ({ ...a, tipo: a.role === "especialista" ? "Especialista" : "Acompanhante", foto_url: a.logo_url })),
+      ...(internas  || []).map((i: { nome: string; data_nascimento: string; cargo: string; foto_url?: string | null }) => ({ ...i, tipo: i.cargo })),
+      ...(criancas  || []).map((c: { nome: string; data_nascimento: string; foto_url?: string | null }) => ({ ...c, tipo: "Criança" })),
     ];
 
     // data_nascimento vem como "AAAA-MM-DD" — usar new Date(...).getDate() aqui
@@ -417,11 +417,13 @@ export default function AdmDashboardPage() {
                           isHoje    ? "bg-pink-400 opacity-60" :
                           isProximo ? "bg-amber-300 opacity-40 [animation-duration:2s]" :
                                       "bg-slate-300 opacity-30 [animation-duration:3s]"}`} aria-hidden />
-                        <div className={`relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                        <div className={`relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden ${
                           isHoje    ? "bg-pink-300 text-pink-900" :
                           isProximo ? "bg-amber-200 text-amber-800" :
                                       "bg-slate-200 text-slate-600"}`}>
-                          {p.nome.charAt(0).toUpperCase()}
+                          {p.foto_url
+                            ? <img src={p.foto_url} alt={p.nome} className="w-full h-full object-cover" />
+                            : p.nome.charAt(0).toUpperCase()}
                         </div>
                       </div>
                       <div>
