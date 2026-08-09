@@ -18,7 +18,7 @@ export default function MuralPage() {
   // Form
   const [titulo, setTitulo] = useState("");
   const [conteudo, setConteudo] = useState("");
-  const [destinatario, setDestinatario] = useState("todos");
+  const [destinatarios, setDestinatarios] = useState<string[]>(["todos"]);
   const [pessoas, setPessoas] = useState<string[]>([]);
   const [pessoaEscolhida, setPessoaEscolhida] = useState("");
   const [pessoaLivre, setPessoaLivre] = useState(false);
@@ -81,7 +81,11 @@ export default function MuralPage() {
 
     let query = supabase
       .from("mural")
-      .select("*, atendentes(nome)")
+      // "*" só — sem embed de atendentes(nome): a FK que sustentava esse
+      // join foi removida (autor podia ser alguém que só vive em usuarios,
+      // ex: supervisora/gestão sem linha em atendentes). Nome do autor é
+      // resolvido à parte, abaixo, via função que busca nas duas tabelas.
+      .select("*")
       .order("fixado", { ascending: false })
       .order("created_at", { ascending: false });
 
@@ -93,7 +97,15 @@ export default function MuralPage() {
     }
 
     const { data } = await query;
-    setComunicados(data || []);
+    const lista: any[] = data || [];
+    const autorIds = [...new Set(lista.map((c: any) => c.autor_id).filter(Boolean))];
+    if (autorIds.length) {
+      const { data: autores } = await supabase.rpc("mural_autores_por_ids", { ids: autorIds });
+      const nomesPorId: Record<string, string> = {};
+      (autores || []).forEach((a: { id: string; nome: string }) => { nomesPorId[a.id] = a.nome; });
+      lista.forEach((c: any) => { c.autor_nome = nomesPorId[c.autor_id] || null; });
+    }
+    setComunicados(lista);
     setLoading(false);
   }
 
@@ -145,13 +157,32 @@ export default function MuralPage() {
     setFotoUrlPronta(pessoa?.foto || null);
   }
 
+  // "todos" e "pessoa" são modos exclusivos (não combinam com mais nada);
+  // os cargos (especialista, atendente, etc.) podem ser marcados juntos.
+  function alternarDestinatario(valor: string) {
+    if (valor === "todos" || valor === "pessoa") {
+      setDestinatarios([valor]);
+      return;
+    }
+    setDestinatarios(prev => {
+      const semExclusivos = prev.filter(v => v !== "todos" && v !== "pessoa");
+      return semExclusivos.includes(valor)
+        ? semExclusivos.filter(v => v !== valor)
+        : [...semExclusivos, valor];
+    });
+  }
+
   async function salvarComunicado(e: React.FormEvent) {
     e.preventDefault();
     if (!titulo.trim() || !conteudo.trim()) return;
-    if (destinatario === "pessoa" && !pessoaEscolhida) return;
+    if (destinatarios.length === 0) return;
+    if (destinatarios.includes("pessoa") && !pessoaEscolhida) return;
     setSalvando(true);
 
-    const destinatarioFinal = destinatario === "pessoa" ? pessoaEscolhida : destinatario;
+    // "pessoa" usa o nome escolhido como destinatário; os demais cargos vão
+    // um por linha, pra cada público continuar filtrando pelo próprio valor
+    // (ex: escolher Especialista + Atendente cria 2 registros, um pra cada).
+    const listaFinal = destinatarios.includes("pessoa") ? [pessoaEscolhida] : destinatarios;
 
     // Se veio de "🎂 Aniversário" e ela não trocou a foto na mão, usa a foto
     // já cadastrada da pessoa (fotoUrlPronta) sem precisar subir de novo.
@@ -166,22 +197,24 @@ export default function MuralPage() {
       }
     }
 
-    const { error } = await supabase.from("mural").insert([{
-      autor_id: autorId,
-      titulo: titulo.trim(),
-      conteudo: conteudo.trim(),
-      destinatario: destinatarioFinal,
-      fixado,
-      foto_url,
-      aniversario: !!aniversarianteNome,
-    }]);
+    const { error } = await supabase.from("mural").insert(
+      listaFinal.map(destinatarioFinal => ({
+        autor_id: autorId,
+        titulo: titulo.trim(),
+        conteudo: conteudo.trim(),
+        destinatario: destinatarioFinal,
+        fixado,
+        foto_url,
+        aniversario: !!aniversarianteNome,
+      }))
+    );
 
     setSalvando(false);
     if (error) {
       mostrarFeedback("erro", "Erro ao publicar: " + error.message);
     } else {
       mostrarFeedback("sucesso", "Comunicado publicado com sucesso!");
-      setTitulo(""); setConteudo(""); setDestinatario("todos"); setPessoaEscolhida(""); setPessoaLivre(false); setFixado(false);
+      setTitulo(""); setConteudo(""); setDestinatarios(["todos"]); setPessoaEscolhida(""); setPessoaLivre(false); setFixado(false);
       setFotoFile(null); setFotoPreview(null); setFotoUrlPronta(null);
       setAniversario(false); setAniversarianteNome("");
       setMostrarForm(false);
@@ -310,28 +343,38 @@ export default function MuralPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Destinatário</label>
-                <select
-                  value={destinatario}
-                  onChange={(e) => setDestinatario(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm text-slate-800
-                    bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                >
-                  <option value="todos">Para todos</option>
-                  <option value="adm">Apenas ADM</option>
-                  <option value="gestao">Apenas Gestão</option>
-                  <option value="supervisora">Apenas Supervisoras</option>
-                  <option value="atendente">Apenas Atendentes</option>
-                  <option value="especialista">Apenas Especialistas</option>
-                  <option value="aux_adm">Apenas Auxiliar Administrativa</option>
-                  <option value="financeiro">Apenas Financeiro</option>
-                  <option value="familia">Para as Famílias 👨‍👩‍👧</option>
-                  <option value="pessoa">👤 Colaborador específico...</option>
-                </select>
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Destinatário <span className="normal-case font-normal text-slate-400">(pode marcar mais de um)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: "todos", label: "Para todos" },
+                    { value: "adm", label: "ADM" },
+                    { value: "gestao", label: "Gestão" },
+                    { value: "supervisora", label: "Supervisoras" },
+                    { value: "atendente", label: "Atendentes" },
+                    { value: "especialista", label: "Especialistas" },
+                    { value: "aux_adm", label: "Auxiliar Administrativa" },
+                    { value: "financeiro", label: "Financeiro" },
+                    { value: "familia", label: "Famílias 👨‍👩‍👧" },
+                    { value: "pessoa", label: "👤 Colaborador específico..." },
+                  ].map(opt => {
+                    const marcado = destinatarios.includes(opt.value);
+                    return (
+                      <button key={opt.value} type="button" onClick={() => alternarDestinatario(opt.value)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                          marcado
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"}`}>
+                        {marcado ? "✓ " : ""}{opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              {destinatario === "pessoa" && (
+              {destinatarios.includes("pessoa") && (
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Qual colaborador?</label>
                   {pessoaLivre ? (
@@ -500,10 +543,10 @@ export default function MuralPage() {
               <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
                   bg-blue-100 text-blue-700`}>
-                  {c.atendentes?.nome?.charAt(0).toUpperCase() || "?"}
+                  {c.autor_nome?.charAt(0).toUpperCase() || "?"}
                 </div>
                 <p className="text-xs text-slate-400">
-                  <span className="font-medium text-slate-500">{c.atendentes?.nome || "Desconhecido"}</span>
+                  <span className="font-medium text-slate-500">{c.autor_nome || "Desconhecido"}</span>
                   {" · "}
                   {new Date(c.created_at).toLocaleDateString("pt-BR", {
                     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
