@@ -354,14 +354,18 @@ export default function GestaoDashboardPage() {
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-8 space-y-5">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900"><Saudacao nome={nome} /></h1>
-          <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
-          Ao vivo
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 px-6 py-6 md:px-8 md:py-7 shadow-lg shadow-blue-900/20">
+        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/5" aria-hidden />
+        <div className="absolute -right-4 bottom-0 w-24 h-24 rounded-full bg-white/5" aria-hidden />
+        <div className="relative flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-white"><Saudacao nome={nome} /></h1>
+            <p className="text-xs md:text-sm text-blue-200 mt-1 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-white bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 flex-shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
+            Ao vivo
+          </div>
         </div>
       </div>
 
@@ -369,9 +373,9 @@ export default function GestaoDashboardPage() {
       <PainelInformacoes />
 
       {/* DIVISOR */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-slate-200"/>
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Painel Operacional</span>
+      <div className="flex items-center gap-2.5 pt-1">
+        <div className="w-1.5 h-1.5 rounded-full bg-blue-600"/>
+        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Painel Operacional</span>
         <div className="flex-1 h-px bg-slate-200"/>
       </div>
 
@@ -401,12 +405,12 @@ export default function GestaoDashboardPage() {
           { label: "Atendimentos hoje",    valor: atendimentosHoje,    sub: "registrados hoje",         icon: "📅", bg: "bg-amber-50",   cor: "text-amber-600" },
           { label: "Atendimentos no mês",  valor: atendimentosMes,     sub: `R$ ${receitaMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: "📋", bg: "bg-emerald-50", cor: "text-emerald-600" },
         ].map((kpi, i) => (
-          <div key={i} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <div key={i} className="group bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-medium text-slate-500">{kpi.label}</p>
-              <div className={`w-8 h-8 rounded-lg ${kpi.bg} flex items-center justify-center text-base`}>{kpi.icon}</div>
+              <div className={`w-9 h-9 rounded-xl ${kpi.bg} flex items-center justify-center text-base group-hover:scale-110 transition-transform duration-200`}>{kpi.icon}</div>
             </div>
-            <p className={`text-3xl font-bold ${kpi.cor}`}>{kpi.valor}</p>
+            <p className={`text-3xl font-bold ${kpi.cor} tracking-tight`}>{kpi.valor}</p>
             <p className="text-xs text-slate-400 mt-1">{kpi.sub}</p>
           </div>
         ))}
@@ -609,9 +613,9 @@ export default function GestaoDashboardPage() {
       </div>
 
       {/* ANALYTICS */}
-      <div className="flex items-center gap-3 pt-2">
-        <div className="flex-1 h-px bg-slate-200"/>
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analytics</span>
+      <div className="flex items-center gap-2.5 pt-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-blue-600"/>
+        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Analytics</span>
         <div className="flex-1 h-px bg-slate-200"/>
       </div>
 
@@ -627,24 +631,24 @@ export default function GestaoDashboardPage() {
         <>
           {/* KPIs Analytics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div className="group bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200">
               <p className="text-xs font-medium text-slate-500 mb-3">Crescimento</p>
               <p className={`text-3xl font-bold ${kpiAnalytics.crescimento >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                 {kpiAnalytics.crescimento >= 0 ? "+" : ""}{kpiAnalytics.crescimento}%
               </p>
               <p className="text-xs text-slate-400 mt-1">vs mês anterior</p>
             </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div className="group bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200">
               <p className="text-xs font-medium text-slate-500 mb-3">Média diária</p>
               <p className="text-3xl font-bold text-indigo-600">{kpiAnalytics.mediaDiaria}</p>
               <p className="text-xs text-slate-400 mt-1">atendimentos/dia</p>
             </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div className="group bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200">
               <p className="text-xs font-medium text-slate-500 mb-3">Relatórios enviados</p>
               <p className="text-3xl font-bold text-violet-600">{kpiAnalytics.totalRelatorios}</p>
               <p className="text-xs text-slate-400 mt-1">total no sistema</p>
             </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div className="group bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200">
               <p className="text-xs font-medium text-slate-500 mb-3">Mais ativo no mês</p>
               <p className="text-xl font-bold text-fuchsia-600 truncate">{kpiAnalytics.melhorProfissional}</p>
               <p className="text-xs text-slate-400 mt-1">maior volume de atend.</p>
