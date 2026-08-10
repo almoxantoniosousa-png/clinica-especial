@@ -13,23 +13,17 @@ const ETAPAS = [
   "Objetivos e Envio",
 ];
 
-type Medicacao = { medicacao: string; dosagem: string; razao: string; frequencia: string };
-
 const FORM_VAZIO = {
   nome_crianca: "", idade: "", data_nascimento: "", local: "", nome_pais: "",
   endereco: "", telefone: "", email: "", como_soube: "", como_soube_outro: "",
   alergia: "", alergia_obs: "",
   diagnostico: "", gestacao: "", parto: "", primeiros_meses: "", acompanhamento_atual: "",
-  terapias_anteriores: "",
+  terapias_anteriores: "", medicacoes_texto: "",
   queixa: "", relato_escola: "", aprendizado_academico: "", leitura: "",
   motora_fina: "", motora_ampla: "", atencao: "", habilidade_social: "",
   escola_nome: "", escola_telefone: "", escola_professora: "", escola_local: "",
   escola_obs: "", dias_semana_escola: "", horas_dia_escola: "",
-  outros_servicos: "", contatos_outros_prestadores: "",
   pessoas_casa: "", pais_separados: "", guarda: "", frequencia_outro_pai: "",
-  qtd_amigos: "", horas_amigos_fora_escola: "", atividade_extracurricular: "",
-  como_comunica: "", facilidade_comunicacao: "", necessidade_sensorial: "",
-  brinca_independente: "", comportamento_social_adequado: "",
   capaz_brincar_fisicamente: "", capaz_atividades_dia_a_dia: "", usa_banheiro_sozinho: "",
   habilidade_comer: "", habilidades_seguranca: "",
   problemas_comportamento: "", duracao_comportamento: "", pontos_fortes: "", pontos_fracos: "",
@@ -56,8 +50,6 @@ export default function EntrevistaInicialPage() {
   const [etapa, setEtapa] = useState(0);
   const [form, setForm] = useState(FORM_VAZIO);
   const [servicos, setServicos] = useState<string[]>([]);
-  const [medicacoes, setMedicacoes] = useState<Medicacao[]>([]);
-  const [medForm, setMedForm] = useState<Medicacao>({ medicacao: "", dosagem: "", razao: "", frequencia: "" });
 
   useEffect(() => {
     async function carregar() {
@@ -76,16 +68,6 @@ export default function EntrevistaInicialPage() {
 
   function toggleServico(s: string) {
     setServicos(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
-  }
-
-  function adicionarMedicacao() {
-    if (!medForm.medicacao.trim()) return;
-    setMedicacoes(prev => [...prev, medForm]);
-    setMedForm({ medicacao: "", dosagem: "", razao: "", frequencia: "" });
-  }
-
-  function removerMedicacao(i: number) {
-    setMedicacoes(prev => prev.filter((_, idx) => idx !== i));
   }
 
   function avancar() {
@@ -119,7 +101,6 @@ export default function EntrevistaInicialPage() {
         ...form,
         data_nascimento: form.data_nascimento || null, // "" quebra coluna date
         servicos_recebidos: servicos,
-        medicacoes,
         status: "respondido",
         respondido_em: new Date().toISOString(),
       })
@@ -275,8 +256,8 @@ export default function EntrevistaInicialPage() {
                 <textarea rows={2} className={taClass} value={form.parto} onChange={e => set("parto", e.target.value)} placeholder="Tipo de parto, idade gestacional, peso..." />
               </div>
               <div className="space-y-2">
-                <label className={labelClass}>Primeiros meses / marcos de desenvolvimento</label>
-                <textarea rows={3} className={taClass} value={form.primeiros_meses} onChange={e => set("primeiros_meses", e.target.value)} placeholder="Quando sentou, andou, falou as primeiras palavras..." />
+                <label className={labelClass}>Desenvolvimento nos primeiros 12 meses</label>
+                <textarea rows={3} className={taClass} value={form.primeiros_meses} onChange={e => set("primeiros_meses", e.target.value)} placeholder="Quando sentou, engatinhou, andou, balbuciou, falou as primeiras palavras..." />
               </div>
               <div className="space-y-2">
                 <label className={labelClass}>Acompanhamento médico atual</label>
@@ -288,19 +269,7 @@ export default function EntrevistaInicialPage() {
               </div>
               <div className="space-y-2">
                 <label className={labelClass}>Medicações em uso</label>
-                {medicacoes.map((m, i) => (
-                  <div key={i} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm">
-                    <span>{m.medicacao} · {m.dosagem} · {m.frequencia}</span>
-                    <button type="button" onClick={() => removerMedicacao(i)} className="text-red-500 text-xs font-semibold">Remover</button>
-                  </div>
-                ))}
-                <div className="grid grid-cols-2 gap-2">
-                  <input className={inputClass} placeholder="Medicação" value={medForm.medicacao} onChange={e => setMedForm({ ...medForm, medicacao: e.target.value })} />
-                  <input className={inputClass} placeholder="Dosagem" value={medForm.dosagem} onChange={e => setMedForm({ ...medForm, dosagem: e.target.value })} />
-                  <input className={inputClass} placeholder="Razão" value={medForm.razao} onChange={e => setMedForm({ ...medForm, razao: e.target.value })} />
-                  <input className={inputClass} placeholder="Frequência" value={medForm.frequencia} onChange={e => setMedForm({ ...medForm, frequencia: e.target.value })} />
-                </div>
-                <button type="button" onClick={adicionarMedicacao} className="text-sm font-semibold text-blue-700">+ Adicionar medicação</button>
+                <textarea rows={2} className={taClass} value={form.medicacoes_texto} onChange={e => set("medicacoes_texto", e.target.value)} placeholder="Nome, dosagem e frequência de cada medicação" />
               </div>
             </>
           )}
@@ -314,15 +283,15 @@ export default function EntrevistaInicialPage() {
               </div>
               <div className="space-y-2">
                 <label className={labelClass}>Como ela se comporta na escola?</label>
-                <textarea rows={2} className={taClass} value={form.relato_escola} onChange={e => set("relato_escola", e.target.value)} />
+                <textarea rows={2} className={taClass} value={form.relato_escola} onChange={e => set("relato_escola", e.target.value)} placeholder="Comportamento-problema apresentado na escola, se houver" />
               </div>
               <div className="space-y-2">
                 <label className={labelClass}>Aprendizado acadêmico</label>
-                <textarea rows={2} className={taClass} value={form.aprendizado_academico} onChange={e => set("aprendizado_academico", e.target.value)} />
+                <textarea rows={2} className={taClass} value={form.aprendizado_academico} onChange={e => set("aprendizado_academico", e.target.value)} placeholder="Série, turma, nome do professor, colegas com quem interage, queixas dos professores" />
               </div>
               <div className="space-y-2">
-                <label className={labelClass}>Leitura</label>
-                <textarea rows={2} className={taClass} value={form.leitura} onChange={e => set("leitura", e.target.value)} />
+                <label className={labelClass}>Leitura, escrita e matemática</label>
+                <textarea rows={2} className={taClass} value={form.leitura} onChange={e => set("leitura", e.target.value)} placeholder="Quais as potencialidades e dificuldades" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
@@ -339,8 +308,15 @@ export default function EntrevistaInicialPage() {
                 <textarea rows={2} className={taClass} value={form.atencao} onChange={e => set("atencao", e.target.value)} />
               </div>
               <div className="space-y-2">
-                <label className={labelClass}>Habilidade social</label>
-                <textarea rows={2} className={taClass} value={form.habilidade_social} onChange={e => set("habilidade_social", e.target.value)} />
+                <label className={labelClass}>Brinca com pares durante o recreio?</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {["sim", "nao"].map(op => (
+                    <button key={op} type="button" onClick={() => set("habilidade_social", op)}
+                      className={`px-3 py-2.5 rounded-xl text-sm font-medium border-2 transition ${form.habilidade_social === op ? "border-blue-600 bg-blue-50 text-blue-800" : "border-slate-200 text-slate-600"}`}>
+                      {op === "sim" ? "Sim" : "Não"}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="pt-2 border-t border-slate-100 space-y-2">
                 <p className="text-xs font-bold text-slate-600 uppercase">Dados da escola</p>
@@ -370,14 +346,6 @@ export default function EntrevistaInicialPage() {
                   ))}
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className={labelClass}>Outros serviços (tipo, frequência, onde, com quem)</label>
-                <textarea rows={2} className={taClass} value={form.outros_servicos} onChange={e => set("outros_servicos", e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <label className={labelClass}>Contato de outros profissionais que já atendem a criança</label>
-                <textarea rows={2} className={taClass} value={form.contatos_outros_prestadores} onChange={e => set("contatos_outros_prestadores", e.target.value)} />
-              </div>
             </>
           )}
 
@@ -404,40 +372,6 @@ export default function EntrevistaInicialPage() {
                     <input className={inputClass} placeholder="Frequência que o outro vê" value={form.frequencia_outro_pai} onChange={e => set("frequencia_outro_pai", e.target.value)} />
                   </div>
                 )}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className={labelClass}>Quantos amigos próximos?</label>
-                  <input className={inputClass} value={form.qtd_amigos} onChange={e => set("qtd_amigos", e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <label className={labelClass}>Horas/semana com amigos fora da escola</label>
-                  <input className={inputClass} value={form.horas_amigos_fora_escola} onChange={e => set("horas_amigos_fora_escola", e.target.value)} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className={labelClass}>Participa de atividade extracurricular?</label>
-                <textarea rows={2} className={taClass} value={form.atividade_extracurricular} onChange={e => set("atividade_extracurricular", e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <label className={labelClass}>Como a criança se comunica? (fala, sinais, figuras, gestos)</label>
-                <textarea rows={2} className={taClass} value={form.como_comunica} onChange={e => set("como_comunica", e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <label className={labelClass}>É fácil pra ela conseguir o que quer pela comunicação?</label>
-                <textarea rows={2} className={taClass} value={form.facilidade_comunicacao} onChange={e => set("facilidade_comunicacao", e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <label className={labelClass}>Alguma dificuldade ou necessidade sensorial?</label>
-                <textarea rows={2} className={taClass} value={form.necessidade_sensorial} onChange={e => set("necessidade_sensorial", e.target.value)} placeholder="Busca ou evita algum estímulo (som, luz, textura)?" />
-              </div>
-              <div className="space-y-2">
-                <label className={labelClass}>Ela brinca de forma independente e apropriada?</label>
-                <textarea rows={2} className={taClass} value={form.brinca_independente} onChange={e => set("brinca_independente", e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <label className={labelClass}>Tem comportamento social adequado, entende regras sociais?</label>
-                <textarea rows={2} className={taClass} value={form.comportamento_social_adequado} onChange={e => set("comportamento_social_adequado", e.target.value)} />
               </div>
             </>
           )}
