@@ -87,7 +87,7 @@ export const CAMPOS_DETALHE: { secao: string; campos: { chave: string; label: st
 // Campos que a Simone formaliza ao marcar a entrevista inicial (não vêm do
 // link da família) — ficam editáveis a qualquer momento no detalhe, pois
 // muitas vezes só se completam depois (ex: convênio confirmado num retorno).
-const CAMPOS_LIGACAO: { chave: string; label: string; tipo: "date" | "text"; placeholder?: string }[] = [
+export const CAMPOS_LIGACAO: { chave: string; label: string; tipo: "date" | "text"; placeholder?: string }[] = [
   { chave: "agendamento_data", label: "Data da entrevista/consulta", tipo: "date" },
   { chave: "agendamento_horario", label: "Horário", tipo: "text", placeholder: "Ex: 14h" },
   { chave: "cid", label: "CID", tipo: "text" },
@@ -280,12 +280,13 @@ export default function EntrevistaInicialPage() {
           {lista.map(item => {
             const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.aguardando;
             return (
-              <button key={item.id} onClick={() => abrir(item)}
+              <button key={item.id} onClick={() => item.crianca_id ? router.push(`/gestao/criancas/${item.crianca_id}`) : abrir(item)}
                 className="w-full text-left bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-semibold text-slate-800 text-sm truncate">{item.nome_crianca || item.nome_crianca_preenchido}</p>
                   <p className="text-xs text-slate-400 mt-0.5">
                     {item.contato_telefone} · {new Date(item.created_at).toLocaleDateString("pt-BR")}
+                    {item.crianca_id ? " · já tem card →" : ""}
                   </p>
                 </div>
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full border shrink-0 ${cfg.color}`}>{cfg.label}</span>

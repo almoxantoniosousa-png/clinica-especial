@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
 import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
-import { CAMPOS_DETALHE } from "../../entrevista-inicial/page";
+import { CAMPOS_DETALHE, CAMPOS_LIGACAO } from "../../entrevista-inicial/page";
 
 const inputClass = "w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 bg-white";
 const labelClass = "block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1";
@@ -57,6 +57,10 @@ export default function CardCriancaPage() {
   const [fotoEditPreview, setFotoEditPreview] = useState<string | null>(null);
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
 
+  const [dadosLigacao, setDadosLigacao] = useState<Record<string, string>>({});
+  const [salvandoLigacao, setSalvandoLigacao] = useState(false);
+  const [ligacaoSalva, setLigacaoSalva] = useState(false);
+
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
     setTimeout(() => setFeedback(null), 3500);
@@ -86,6 +90,11 @@ export default function CardCriancaPage() {
     setCrianca(c || null);
     setEscolas(escolasData || []);
     setEntrevista(e || null);
+    if (e) {
+      const lig: Record<string, string> = {};
+      for (const campo of CAMPOS_LIGACAO) lig[campo.chave] = e[campo.chave] || "";
+      setDadosLigacao(lig);
+    }
     setProntuarios(p || []);
     setEvolucao(ev || []);
     setPlanos(pl || []);
@@ -169,6 +178,21 @@ export default function CardCriancaPage() {
       carregar();
       mostrarFeedback("sucesso", "Card atualizado!");
     }
+  }
+
+  async function salvarLigacao() {
+    if (!entrevista) return;
+    setSalvandoLigacao(true);
+    const payload: Record<string, string | null> = {};
+    for (const campo of CAMPOS_LIGACAO) {
+      const v = dadosLigacao[campo.chave]?.trim() || "";
+      payload[campo.chave] = v === "" ? null : v;
+    }
+    await supabase.from("entrevistas_iniciais").update(payload).eq("id", entrevista.id);
+    setSalvandoLigacao(false);
+    setLigacaoSalva(true);
+    setTimeout(() => setLigacaoSalva(false), 2000);
+    carregar();
   }
 
   function calcularIdade(dataNasc: string | null) {
@@ -259,6 +283,25 @@ export default function CardCriancaPage() {
       {entrevista && (
         <Secao titulo="Entrevista Inicial" icone="📋">
           <p className="text-xs text-slate-400 -mt-2">Respondida pela família em {entrevista.respondido_em ? formatarData(entrevista.respondido_em) : "—"}.</p>
+
+          <div className="space-y-3 pb-3 border-b border-slate-100">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">📅 Agendamento e Convênio</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {CAMPOS_LIGACAO.map(c => (
+                <div key={c.chave} className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{c.label}</label>
+                  <input type={c.tipo} placeholder={c.placeholder} value={dadosLigacao[c.chave] || ""}
+                    onChange={e => setDadosLigacao(prev => ({ ...prev, [c.chave]: e.target.value }))}
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              ))}
+            </div>
+            <button onClick={salvarLigacao} disabled={salvandoLigacao}
+              className="h-10 px-4 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-xl transition disabled:opacity-50">
+              {salvandoLigacao ? "Salvando..." : ligacaoSalva ? "✓ Salvo!" : "Salvar agendamento e convênio"}
+            </button>
+          </div>
+
           {CAMPOS_DETALHE.map(sec => {
             const preenchidos = sec.campos.filter(c => entrevista[c.chave]);
             if (preenchidos.length === 0) return null;
@@ -271,10 +314,6 @@ export default function CardCriancaPage() {
               </div>
             );
           })}
-          <button onClick={() => router.push("/gestao/entrevista-inicial")}
-            className="text-xs text-blue-700 font-semibold hover:underline pt-1">
-            Editar agendamento e convênio →
-          </button>
         </Secao>
       )}
 
