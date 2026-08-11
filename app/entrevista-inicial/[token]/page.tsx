@@ -36,6 +36,57 @@ const SERVICOS_OPCOES = [
   "Plano de Ensino Individualizado", "Fonoaudióloga", "Terapia Ocupacional", "Educador Físico",
 ];
 
+const labelClass = "text-xs font-semibold text-slate-500 uppercase tracking-wide";
+function botaoOpcao(ativo: boolean) {
+  return `px-3 py-2.5 rounded-xl text-sm font-medium border-2 transition ${ativo ? "border-blue-600 bg-blue-50 text-blue-800" : "border-slate-200 text-slate-600"}`;
+}
+
+type FormState = typeof FORM_VAZIO;
+type SetCampo = <K extends keyof FormState>(campo: K, valor: FormState[K]) => void;
+
+// Pergunta sim/não — usada em quase todo o formulário pra manter rápido e
+// objetivo pros pais responderem; a Simone explora cada item com calma
+// durante a entrevista presencial.
+// Definido FORA do componente da página: se ficasse dentro, o React recria
+// a função a cada digitação (o form muda de estado a cada letra), tratando
+// como um componente novo e tirando o foco do campo de texto a cada tecla.
+function CampoSimNao({ label, campo, form, set, sub }: {
+  label: string; campo: keyof FormState; form: FormState; set: SetCampo; sub?: React.ReactNode;
+}) {
+  const valor = form[campo];
+  return (
+    <div className="space-y-2">
+      <label className={labelClass}>{label}</label>
+      <div className="grid grid-cols-2 gap-2">
+        {["sim", "nao"].map(op => (
+          <button key={op} type="button" onClick={() => set(campo, op as never)} className={botaoOpcao(valor === op)}>
+            {op === "sim" ? "Sim" : "Não"}
+          </button>
+        ))}
+      </div>
+      {sub && valor === "sim" && sub}
+    </div>
+  );
+}
+
+// Pergunta de múltipla escolha (uma opção só) — mesma razão acima pra ficar fora.
+function CampoOpcoes({ label, campo, form, set, opcoes }: {
+  label: string; campo: keyof FormState; form: FormState; set: SetCampo; opcoes: string[];
+}) {
+  return (
+    <div className="space-y-2">
+      <label className={labelClass}>{label}</label>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {opcoes.map(op => (
+          <button key={op} type="button" onClick={() => set(campo, op as never)} className={botaoOpcao(form[campo] === op)}>
+            {op}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function EntrevistaInicialPage() {
   const { token } = useParams<{ token: string }>();
   const supabase = createSupabaseBrowserClient();
@@ -52,6 +103,9 @@ export default function EntrevistaInicialPage() {
   const [servicos, setServicos] = useState<string[]>([]);
   const [queixaAreas, setQueixaAreas] = useState<string[]>([]);
   const [marcosDesenvolvimento, setMarcosDesenvolvimento] = useState<string[]>([]);
+  const [objetivosAreas, setObjetivosAreas] = useState<string[]>([]);
+  const [reforcadoresAreas, setReforcadoresAreas] = useState<string[]>([]);
+  const [disponibilidadeTurnos, setDisponibilidadeTurnos] = useState<string[]>([]);
 
   useEffect(() => {
     async function carregar() {
@@ -78,6 +132,10 @@ export default function EntrevistaInicialPage() {
 
   function toggleMarco(s: string) {
     setMarcosDesenvolvimento(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  }
+
+  function toggleLista(setter: React.Dispatch<React.SetStateAction<string[]>>, s: string) {
+    setter(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   }
 
   function avancar() {
@@ -111,6 +169,9 @@ export default function EntrevistaInicialPage() {
         ...form,
         queixa: queixaAreas.join(", "),
         primeiros_meses: marcosDesenvolvimento.join(", "),
+        objetivos_aba: objetivosAreas.join(", "),
+        reforcadores: reforcadoresAreas.join(", "),
+        disponibilidade_familia: disponibilidadeTurnos.join(", "),
         data_nascimento: form.data_nascimento || null, // "" quebra coluna date
         servicos_recebidos: servicos,
         status: "respondido",
@@ -124,45 +185,6 @@ export default function EntrevistaInicialPage() {
 
   const inputClass = "w-full h-12 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400";
   const taClass = "w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none";
-  const labelClass = "text-xs font-semibold text-slate-500 uppercase tracking-wide";
-  const botaoOpcao = (ativo: boolean) =>
-    `px-3 py-2.5 rounded-xl text-sm font-medium border-2 transition ${ativo ? "border-blue-600 bg-blue-50 text-blue-800" : "border-slate-200 text-slate-600"}`;
-
-  // Pergunta sim/não — usada em quase todo o formulário pra manter rápido e
-  // objetivo pros pais responderem; a Simone explora cada item com calma
-  // durante a entrevista presencial.
-  function CampoSimNao({ label, campo, sub }: { label: string; campo: keyof typeof FORM_VAZIO; sub?: React.ReactNode }) {
-    const valor = form[campo];
-    return (
-      <div className="space-y-2">
-        <label className={labelClass}>{label}</label>
-        <div className="grid grid-cols-2 gap-2">
-          {["sim", "nao"].map(op => (
-            <button key={op} type="button" onClick={() => set(campo, op as never)} className={botaoOpcao(valor === op)}>
-              {op === "sim" ? "Sim" : "Não"}
-            </button>
-          ))}
-        </div>
-        {sub && valor === "sim" && sub}
-      </div>
-    );
-  }
-
-  // Pergunta de múltipla escolha (uma opção só)
-  function CampoOpcoes({ label, campo, opcoes }: { label: string; campo: keyof typeof FORM_VAZIO; opcoes: string[] }) {
-    return (
-      <div className="space-y-2">
-        <label className={labelClass}>{label}</label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {opcoes.map(op => (
-            <button key={op} type="button" onClick={() => set(campo, op as never)} className={botaoOpcao(form[campo] === op)}>
-              {op}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   if (carregando) {
     return <div className="min-h-screen flex items-center justify-center text-slate-400 text-sm">Carregando...</div>;
@@ -294,14 +316,14 @@ export default function EntrevistaInicialPage() {
             <>
               <p className="text-xs text-slate-400">Histórico de saúde e desenvolvimento da criança. Marque as opções — a equipe aprofunda cada item na entrevista.</p>
 
-              <CampoSimNao label="Já tem diagnóstico?" campo="tem_diagnostico" sub={
+              <CampoSimNao form={form} set={set} label="Já tem diagnóstico?" campo="tem_diagnostico" sub={
                 <input className={inputClass + " mt-2"} value={form.diagnostico} onChange={e => set("diagnostico", e.target.value)} placeholder="Qual?" />
               } />
 
-              <CampoSimNao label="A gestação foi planejada?" campo="gestacao" />
-              <CampoSimNao label="Teve algum risco ou intercorrência na gestação?" campo="gestacao_intercorrencia" />
+              <CampoSimNao form={form} set={set} label="A gestação foi planejada?" campo="gestacao" />
+              <CampoSimNao form={form} set={set} label="Teve algum risco ou intercorrência na gestação?" campo="gestacao_intercorrencia" />
 
-              <CampoOpcoes label="Tipo de parto" campo="parto" opcoes={["Normal", "Cesárea", "Fórceps ou outro"]} />
+              <CampoOpcoes form={form} set={set} label="Tipo de parto" campo="parto" opcoes={["Normal", "Cesárea", "Fórceps ou outro"]} />
 
               <div className="space-y-2">
                 <label className={labelClass}>Nos primeiros 12 meses, aconteceu no tempo esperado:</label>
@@ -315,13 +337,13 @@ export default function EntrevistaInicialPage() {
                 </div>
               </div>
 
-              <CampoSimNao label="Tem acompanhamento médico atualmente?" campo="acompanhamento_atual" />
-              <CampoSimNao label="Já fez terapia antes?" campo="terapias_anteriores" />
+              <CampoSimNao form={form} set={set} label="Tem acompanhamento médico atualmente?" campo="acompanhamento_atual" />
+              <CampoSimNao form={form} set={set} label="Já fez terapia antes?" campo="terapias_anteriores" />
               {form.terapias_anteriores === "sim" && (
-                <CampoOpcoes label="Sentiu melhora?" campo="terapias_anteriores_melhora" opcoes={["Sim", "Não", "Não sei"]} />
+                <CampoOpcoes form={form} set={set} label="Sentiu melhora?" campo="terapias_anteriores_melhora" opcoes={["Sim", "Não", "Não sei"]} />
               )}
 
-              <CampoSimNao label="Toma alguma medicação?" campo="tem_medicacao" sub={
+              <CampoSimNao form={form} set={set} label="Toma alguma medicação?" campo="tem_medicacao" sub={
                 <input className={inputClass + " mt-2"} value={form.medicacoes_texto} onChange={e => set("medicacoes_texto", e.target.value)} placeholder="Qual(is)?" />
               } />
             </>
@@ -342,13 +364,13 @@ export default function EntrevistaInicialPage() {
                 </div>
               </div>
 
-              <CampoSimNao label="Apresenta comportamento-problema na escola?" campo="relato_escola" />
-              <CampoSimNao label="Tem dificuldade de aprendizado acadêmico?" campo="aprendizado_academico" />
-              <CampoSimNao label="Tem dificuldade em leitura, escrita ou matemática?" campo="leitura" />
-              <CampoSimNao label="Tem dificuldade de coordenação motora fina (segurar lápis, abotoar)?" campo="motora_fina" />
-              <CampoSimNao label="Tem dificuldade de coordenação motora ampla (correr, pular, escalar)?" campo="motora_ampla" />
-              <CampoSimNao label="Tem dificuldade de atenção/concentração?" campo="atencao" />
-              <CampoSimNao label="Brinca com pares durante o recreio?" campo="habilidade_social" />
+              <CampoSimNao form={form} set={set} label="Apresenta comportamento-problema na escola?" campo="relato_escola" />
+              <CampoSimNao form={form} set={set} label="Tem dificuldade de aprendizado acadêmico?" campo="aprendizado_academico" />
+              <CampoSimNao form={form} set={set} label="Tem dificuldade em leitura, escrita ou matemática?" campo="leitura" />
+              <CampoSimNao form={form} set={set} label="Tem dificuldade de coordenação motora fina (segurar lápis, abotoar)?" campo="motora_fina" />
+              <CampoSimNao form={form} set={set} label="Tem dificuldade de coordenação motora ampla (correr, pular, escalar)?" campo="motora_ampla" />
+              <CampoSimNao form={form} set={set} label="Tem dificuldade de atenção/concentração?" campo="atencao" />
+              <CampoSimNao form={form} set={set} label="Brinca com pares durante o recreio?" campo="habilidade_social" />
               <div className="pt-2 border-t border-slate-100 space-y-2">
                 <p className="text-xs font-bold text-slate-600 uppercase">Dados da escola</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -410,12 +432,12 @@ export default function EntrevistaInicialPage() {
           {etapa === 4 && (
             <>
               <p className="text-xs text-slate-400">Habilidades do dia a dia e comportamentos que precisam de atenção.</p>
-              <CampoSimNao label="Consegue brincar fisicamente (correr, escalar, amarrar sapato)?" campo="capaz_brincar_fisicamente" />
-              <CampoSimNao label="Consegue fazer atividades do dia a dia sozinha (vestir-se, tomar banho)?" campo="capaz_atividades_dia_a_dia" />
-              <CampoSimNao label="Usa o banheiro sozinha?" campo="usa_banheiro_sozinho" />
-              <CampoOpcoes label="Habilidade de comer" campo="habilidade_comer" opcoes={["Come sozinha", "Precisa de ajuda parcial", "Precisa de ajuda total"]} />
-              <CampoSimNao label="Tem noção de segurança (rua, estranhos, cozinha)?" campo="habilidades_seguranca" />
-              <CampoSimNao label="Tem problemas de comportamento (agressão, destruir objetos, seletividade alimentar)?" campo="problemas_comportamento" />
+              <CampoSimNao form={form} set={set} label="Consegue brincar fisicamente (correr, escalar, amarrar sapato)?" campo="capaz_brincar_fisicamente" />
+              <CampoSimNao form={form} set={set} label="Consegue fazer atividades do dia a dia sozinha (vestir-se, tomar banho)?" campo="capaz_atividades_dia_a_dia" />
+              <CampoSimNao form={form} set={set} label="Usa o banheiro sozinha?" campo="usa_banheiro_sozinho" />
+              <CampoOpcoes form={form} set={set} label="Habilidade de comer" campo="habilidade_comer" opcoes={["Come sozinha", "Precisa de ajuda parcial", "Precisa de ajuda total"]} />
+              <CampoSimNao form={form} set={set} label="Tem noção de segurança (rua, estranhos, cozinha)?" campo="habilidades_seguranca" />
+              <CampoSimNao form={form} set={set} label="Tem problemas de comportamento (agressão, destruir objetos, seletividade alimentar)?" campo="problemas_comportamento" />
               <div className="space-y-2">
                 <label className={labelClass}>Pontos fortes da criança (2-3 palavras)</label>
                 <input className={inputClass} value={form.pontos_fortes} onChange={e => set("pontos_fortes", e.target.value)} placeholder="Ex: carinhosa, curiosa, persistente" />
@@ -429,22 +451,44 @@ export default function EntrevistaInicialPage() {
 
           {etapa === 5 && (
             <>
-              <p className="text-xs text-slate-400">Últimas informações antes de enviar.</p>
+              <p className="text-xs text-slate-400">Últimas informações antes de enviar. Marque as opções — a equipe aprofunda cada item na entrevista.</p>
+
               <div className="space-y-2">
-                <label className={labelClass}>O que você gostaria que ela aprendesse ou mudasse com a Terapia ABA?</label>
-                <textarea rows={3} className={taClass} value={form.objetivos_aba} onChange={e => set("objetivos_aba", e.target.value)} />
+                <label className={labelClass}>O que você gostaria que ela aprendesse ou melhorasse com a Terapia ABA? (marque quantos quiser)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {["Comunicação/Fala", "Comportamento", "Independência/Autonomia", "Interação social", "Aprendizado escolar", "Outro"].map(op => (
+                    <button key={op} type="button" onClick={() => toggleLista(setObjetivosAreas, op)}
+                      className={`px-3 py-2.5 rounded-xl text-sm font-medium border-2 transition text-left ${objetivosAreas.includes(op) ? "border-blue-600 bg-blue-50 text-blue-800" : "border-slate-200 text-slate-600"}`}>
+                      {objetivosAreas.includes(op) ? "✓ " : ""}{op}
+                    </button>
+                  ))}
+                </div>
               </div>
+
               <div className="space-y-2">
-                <label className={labelClass}>Do que ela mais gosta? (comida, brinquedo, atividade, música, tela)</label>
-                <textarea rows={2} className={taClass} value={form.reforcadores} onChange={e => set("reforcadores", e.target.value)} placeholder="Isso nos ajuda a motivar ela desde o primeiro dia" />
+                <label className={labelClass}>Do que ela mais gosta? (marque quantos quiser — isso ajuda a motivar ela desde o primeiro dia)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {["Comida", "Brinquedo", "Atividade física", "Música", "Tela/eletrônicos", "Personagem/desenho"].map(op => (
+                    <button key={op} type="button" onClick={() => toggleLista(setReforcadoresAreas, op)}
+                      className={`px-3 py-2.5 rounded-xl text-sm font-medium border-2 transition text-left ${reforcadoresAreas.includes(op) ? "border-blue-600 bg-blue-50 text-blue-800" : "border-slate-200 text-slate-600"}`}>
+                      {reforcadoresAreas.includes(op) ? "✓ " : ""}{op}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <CampoSimNao form={form} set={set} label="Tem dificuldade para dormir ou rotina de sono irregular?" campo="rotina_sono" />
+
               <div className="space-y-2">
-                <label className={labelClass}>Como é a rotina de sono?</label>
-                <textarea rows={2} className={taClass} value={form.rotina_sono} onChange={e => set("rotina_sono", e.target.value)} placeholder="Horário de dormir/acordar, qualidade do sono" />
-              </div>
-              <div className="space-y-2">
-                <label className={labelClass}>Quais dias/horários a família tem disponível pra atendimento?</label>
-                <textarea rows={2} className={taClass} value={form.disponibilidade_familia} onChange={e => set("disponibilidade_familia", e.target.value)} />
+                <label className={labelClass}>Quais turnos a família tem disponível pra atendimento?</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {["Manhã", "Tarde", "Noite"].map(op => (
+                    <button key={op} type="button" onClick={() => toggleLista(setDisponibilidadeTurnos, op)}
+                      className={`px-3 py-2.5 rounded-xl text-sm font-medium border-2 transition ${disponibilidadeTurnos.includes(op) ? "border-blue-600 bg-blue-50 text-blue-800" : "border-slate-200 text-slate-600"}`}>
+                      {disponibilidadeTurnos.includes(op) ? "✓ " : ""}{op}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="pt-2 border-t border-slate-100 space-y-3">
