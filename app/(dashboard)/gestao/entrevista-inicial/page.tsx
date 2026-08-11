@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -10,7 +11,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   nao_seguiu: { label: "📁 Não seguiu adiante", color: "bg-slate-100 text-slate-600 border-slate-200" },
 };
 
-const CAMPOS_DETALHE: { secao: string; campos: { chave: string; label: string }[] }[] = [
+export const CAMPOS_DETALHE: { secao: string; campos: { chave: string; label: string }[] }[] = [
   { secao: "🪪 Identificação", campos: [
     { chave: "nome_crianca", label: "Nome da criança" },
     { chave: "idade", label: "Idade" },
@@ -103,6 +104,7 @@ const CAMPOS_LIGACAO_VAZIO = Object.fromEntries(CAMPOS_LIGACAO.map(c => [c.chave
 
 export default function EntrevistaInicialPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const router = useRouter();
   const [lista, setLista] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [usuarioNome, setUsuarioNome] = useState("");
@@ -171,12 +173,42 @@ export default function EntrevistaInicialPage() {
     setTimeout(() => setCopiado(false), 2000);
   }
 
+  async function criarCriancaAPartirDaEntrevista(item: any): Promise<string | null> {
+    const alergias = [item.alergia, item.alergia_obs].filter(Boolean).join(" — ") || null;
+    const idadeNum = item.idade ? parseInt(item.idade, 10) : NaN;
+    const { data, error } = await supabase.from("criancas").insert([{
+      nome: item.nome_crianca || item.nome_crianca_preenchido,
+      data_nascimento: item.data_nascimento || null,
+      idade: Number.isFinite(idadeNum) ? idadeNum : null,
+      responsavel: item.nome_pais || null,
+      telefone_responsavel: item.telefone || item.contato_telefone || null,
+      email_responsavel: item.email || item.contato_email || null,
+      diagnostico: item.diagnostico || null,
+      cid: item.cid || null,
+      plano_saude: item.convenio_nome || null,
+      alergias,
+      medicamentos: item.medicacoes_texto || null,
+      ativo: true,
+    }]).select("id").single();
+    if (error || !data) return null;
+    return data.id;
+  }
+
   async function mudarStatus(id: string, status: string) {
     setSalvandoStatus(true);
-    await supabase.from("entrevistas_iniciais").update({ status, observacoes_simone: obsRascunho }).eq("id", id);
+    const payload: Record<string, string | null> = { status, observacoes_simone: obsRascunho };
+
+    let criancaId: string | null = selecionada?.crianca_id || null;
+    if (status === "paciente" && selecionada && !criancaId) {
+      criancaId = await criarCriancaAPartirDaEntrevista(selecionada);
+      if (criancaId) payload.crianca_id = criancaId;
+    }
+
+    await supabase.from("entrevistas_iniciais").update(payload).eq("id", id);
     setSalvandoStatus(false);
     setSelecionada(null);
     carregar();
+    if (status === "paciente" && criancaId) router.push(`/gestao/criancas/${criancaId}`);
   }
 
   async function excluirEntrevista(id: string, nome: string) {

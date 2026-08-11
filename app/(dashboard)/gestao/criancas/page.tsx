@@ -14,6 +14,21 @@ export default function GestaoCriancasPage() {
   const [erro, setErro] = useState("");
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>("ativo");
+  const [mostrarNova, setMostrarNova] = useState(false);
+  const [novoNome, setNovoNome] = useState("");
+  const [criando, setCriando] = useState(false);
+
+  async function criarCrianca(e: React.FormEvent) {
+    e.preventDefault();
+    if (!novoNome.trim()) return;
+    setCriando(true);
+    const { data, error } = await supabase.from("criancas").insert([{ nome: novoNome.trim(), ativo: true }]).select("id").single();
+    setCriando(false);
+    if (error || !data) return;
+    setMostrarNova(false);
+    setNovoNome("");
+    router.push(`/gestao/criancas/${data.id}`);
+  }
 
   async function carregar() {
     setLoading(true);
@@ -85,10 +100,14 @@ export default function GestaoCriancasPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
           </svg>
         </button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-bold text-slate-900">Crianças</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Visão geral dos pacientes</p>
+          <p className="text-xs text-slate-400 mt-0.5">Visão geral dos pacientes — clique em uma criança pra ver o card completo</p>
         </div>
+        <button onClick={() => setMostrarNova(true)}
+          className="h-10 px-4 bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition active:scale-95 shrink-0">
+          + Nova criança
+        </button>
       </div>
 
       {/* Filtros */}
@@ -137,7 +156,8 @@ export default function GestaoCriancasPage() {
           <p className="text-xs text-slate-400">{filtradas.length} criança{filtradas.length !== 1 ? "s" : ""} encontrada{filtradas.length !== 1 ? "s" : ""}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtradas.map(c => (
-              <div key={c.id} className={`bg-white border rounded-2xl p-4 shadow-sm space-y-3 ${c.ativo === false ? "opacity-60" : ""}`}>
+              <div key={c.id} onClick={() => router.push(`/gestao/criancas/${c.id}`)}
+                className={`bg-white border rounded-2xl p-4 shadow-sm space-y-3 cursor-pointer hover:shadow-md hover:border-blue-200 transition ${c.ativo === false ? "opacity-60" : ""}`}>
                 <div className="flex items-center gap-3">
                   {c.foto_url ? (
                     <img src={c.foto_url} alt={c.nome} className="w-10 h-10 rounded-full object-cover shrink-0" />
@@ -167,7 +187,7 @@ export default function GestaoCriancasPage() {
                   {c.modalidade && <p>Modalidade: <span className="font-medium text-slate-700">{c.modalidade}</span></p>}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   {c.telefone_responsavel ? (
                     <button onClick={() => abrirWhatsApp(c.telefone_responsavel, c.nome)}
                       className="flex-1 h-9 flex items-center justify-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-200 transition active:scale-95">
@@ -206,6 +226,30 @@ export default function GestaoCriancasPage() {
             ))}
           </div>
         </>
+      )}
+
+      {mostrarNova && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+          onClick={(e) => { if (e.target === e.currentTarget) setMostrarNova(false); }}>
+          <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-slate-800 text-base">Nova criança</h3>
+              <button onClick={() => setMostrarNova(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400">✕</button>
+            </div>
+            <p className="text-xs text-slate-400 -mt-2">Cadastre só o nome pra já abrir o card completo — o resto você preenche lá dentro.</p>
+            <form onSubmit={criarCrianca} className="space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nome da criança *</label>
+                <input required autoFocus value={novoNome} onChange={e => setNovoNome(e.target.value)}
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <button type="submit" disabled={criando}
+                className="w-full h-11 bg-blue-900 hover:bg-blue-800 text-white font-semibold text-sm rounded-xl transition disabled:opacity-50">
+                {criando ? "Criando..." : "Criar e abrir card"}
+              </button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
