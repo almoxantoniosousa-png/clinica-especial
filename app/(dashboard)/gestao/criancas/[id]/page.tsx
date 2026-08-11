@@ -47,7 +47,6 @@ export default function CardCriancaPage() {
   const [evolucao, setEvolucao] = useState<any[]>([]);
   const [planos, setPlanos] = useState<any[]>([]);
   const [materiais, setMateriais] = useState<any[]>([]);
-  const [responsaveis, setResponsaveis] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
 
@@ -76,7 +75,6 @@ export default function CardCriancaPage() {
       { data: ev },
       { data: pl },
       { data: ma },
-      { data: r },
     ] = await Promise.all([
       supabase.from("criancas").select("*, escolas(nome)").eq("id", id).maybeSingle(),
       supabaseClient.from("escolas").select("id, nome").order("nome"),
@@ -85,7 +83,6 @@ export default function CardCriancaPage() {
       supabase.from("portal_evolucao").select("*").eq("crianca_id", id).order("created_at", { ascending: false }),
       supabase.from("planos_terapeuticos").select("*").eq("crianca_id", id).order("created_at", { ascending: false }),
       supabase.from("materiais_adaptados").select("*").eq("crianca_id", id).order("created_at", { ascending: false }),
-      supabase.from("responsaveis").select("*").eq("crianca_id", id).order("created_at", { ascending: false }),
     ]);
     setCrianca(c || null);
     setEscolas(escolasData || []);
@@ -99,7 +96,6 @@ export default function CardCriancaPage() {
     setEvolucao(ev || []);
     setPlanos(pl || []);
     setMateriais(ma || []);
-    setResponsaveis(r || []);
     setLoading(false);
   }
 
@@ -380,26 +376,6 @@ export default function CardCriancaPage() {
               <span key={m.id} className="text-xs bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5 text-slate-700">
                 {m.titulo_livro} {m.materia ? `· ${m.materia}` : ""} {m.status === "revisao" ? "(em revisão)" : ""}
               </span>
-            ))}
-          </div>
-        )}
-      </Secao>
-
-      <Secao titulo="Responsáveis com acesso ao Portal" icone="👨‍👩‍👧">
-        {responsaveis.length === 0 ? (
-          <p className="text-sm text-slate-400">Nenhum responsável cadastrado no Portal da Família ainda.</p>
-        ) : (
-          <div className="space-y-2">
-            {responsaveis.map(r => (
-              <div key={r.id} className="flex items-center justify-between border border-slate-100 rounded-xl p-3">
-                <div>
-                  <p className="text-sm font-medium text-slate-800">{r.nome}</p>
-                  <p className="text-xs text-slate-400">{r.email} {r.telefone ? `· ${r.telefone}` : ""}</p>
-                </div>
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${r.ativo === false ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}>
-                  {r.ativo === false ? "Inativo" : "Ativo"}
-                </span>
-              </div>
             ))}
           </div>
         )}
