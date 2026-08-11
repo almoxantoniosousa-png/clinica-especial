@@ -126,12 +126,22 @@ export default function RelatorioSupervisoraPage() {
   const [periodoAberto, setPeriodoAberto] = useState<number | null>(null);
   const [observacoesGerais, setObservacoesGerais] = useState("");
 
+  // Supervisora pode viver em usuarios OU atendentes, dependendo de como foi
+  // cadastrada — tenta as duas antes de desistir.
+  async function resolverEu(): Promise<{ id: string; nome: string } | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) return null;
+    const { data: u } = await supabase.from("usuarios").select("id, nome").eq("email", user.email).maybeSingle();
+    if (u) return { id: u.id, nome: u.nome || "" };
+    const { data: a } = await supabase.from("atendentes").select("id, nome").eq("email", user.email).maybeSingle();
+    if (a) return { id: a.id, nome: a.nome || "" };
+    return null;
+  }
+
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) return;
-      const { data: u } = await supabase.from("usuarios").select("id, nome").eq("email", user.email).maybeSingle();
-      if (u) { setAutorId(u.id); setAutorNome(u.nome || ""); }
+      const eu = await resolverEu();
+      if (eu) { setAutorId(eu.id); setAutorNome(eu.nome); }
 
       const { data: cr } = await supabase.from("criancas").select("id, nome").eq("ativo", true).order("nome");
       setCriancas(cr || []);
@@ -141,16 +151,14 @@ export default function RelatorioSupervisoraPage() {
 
   async function carregar() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user?.email) { setLoading(false); return; }
-    const { data: u } = await supabase.from("usuarios").select("id").eq("email", user.email).maybeSingle();
-    if (!u) { setLoading(false); return; }
+    const eu = await resolverEu();
+    if (!eu) { setLoading(false); return; }
 
     const { data } = await supabase
       .from("prontuarios")
       .select("id, crianca_id, titulo, conteudo, created_at, feedback_gestao, feedback_por, feedback_em, criancas(nome)")
       .eq("tipo", "relatorio_supervisora")
-      .eq("autor_id", u.id)
+      .eq("autor_id", eu.id)
       .order("created_at", { ascending: false });
     setRelatorios((data ?? []) as unknown as Relatorio[]);
     setLoading(false);
@@ -366,8 +374,9 @@ export default function RelatorioSupervisoraPage() {
             const aberto = periodoAberto === idx;
             return (
               <div key={idx} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                <button onClick={() => setPeriodoAberto(aberto ? null : idx)}
-                  className="w-full flex items-center gap-3 px-4 py-3 bg-slate-50 hover:bg-slate-100 transition text-left">
+                <div role="button" tabIndex={0} onClick={() => setPeriodoAberto(aberto ? null : idx)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setPeriodoAberto(aberto ? null : idx); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-slate-50 hover:bg-slate-100 transition text-left cursor-pointer">
                   <div className="w-7 h-7 rounded-lg bg-blue-900 text-white text-xs font-bold flex items-center justify-center shrink-0">{idx + 1}</div>
                   <input type="text" value={p.nome} onClick={(e) => e.stopPropagation()}
                     onChange={(e) => atualizarPeriodo(idx, { nome: e.target.value })}
@@ -378,7 +387,7 @@ export default function RelatorioSupervisoraPage() {
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                   {aberto ? <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />}
-                </button>
+                </div>
 
                 {aberto && (
                   <div className="p-4 space-y-4">
