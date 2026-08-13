@@ -332,7 +332,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   return (
     <>
       {!isMobile && (
-        <aside className="print:hidden w-56 bg-blue-50/40 border-r border-slate-200 min-h-screen flex flex-col justify-between flex-shrink-0">
+        <aside className="print:hidden w-56 bg-blue-50/40 border-r border-slate-200 h-screen sticky top-0 flex flex-col justify-between flex-shrink-0 overflow-y-auto">
           <div>
             <div className="px-4 py-4 bg-gradient-to-br from-blue-700 to-blue-500">
               <div className="flex items-center justify-between mb-2">
