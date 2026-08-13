@@ -6,6 +6,7 @@ import { Check, Trash2, Pencil } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 import { Saudacao } from "@/components/painel-informacoes";
 import { hojeLocal, mesAtualLocal } from "@/lib/dataUtils";
+import { gerarDespesasRecorrentesPendentes } from "@/lib/despesasRecorrentes";
 
 type Aba = "contas_pagar" | "contas_receber" | "fluxo" | "emprestimos";
 type SupabaseClient = ReturnType<typeof createSupabaseBrowserClient>;
@@ -22,8 +23,14 @@ type ContaPagar = {
   valor: number; vencimento: string; status: string;
   observacao?: string | null; pago_em?: string | null;
   pagamentos?: PagamentoConta[];
+  recorrente_id?: string | null;
 };
 type ModeloPagar = { id: string; descricao: string; categoria: string; valor: number; observacao?: string | null };
+type DespesaRecorrente = {
+  id: string; descricao: string; categoria: string; valor: number;
+  dia_vencimento: number; dias_antecedencia: number; ativo: boolean;
+  ultima_geracao?: string | null; observacao?: string | null;
+};
 type ContaReceber = {
   id: string; crianca_id: string; mes_referencia: string;
   valor_total: number; valor_liquido?: number | null; valor_iss?: number | null;
@@ -36,7 +43,7 @@ type ContaReceber = {
   criancas?: { nome: string };
 };
 type CriancaSimples = { id: string; nome: string; plano_saude?: string | null };
-type AbaProps = { supabase: SupabaseClient; mesAno: string; mostrarFeedback: (tipo: "sucesso" | "erro", msg: string) => void };
+type AbaProps = { supabase: SupabaseClient; mesAno: string; mostrarFeedback: (tipo: "sucesso" | "erro", msg: string) => void; role?: string };
 type AbaFluxoProps = { supabase: SupabaseClient; mesAno: string };
 type AbaSemMesProps = { supabase: SupabaseClient; mostrarFeedback: (tipo: "sucesso" | "erro", msg: string) => void };
 type Pagamento = { data: string; valor: number; numero_parcela?: number; comprovante_url?: string | null };
@@ -130,7 +137,7 @@ export default function FinanceiroPage() {
       </div>
 
       {/* CONTEUDO */}
-      {aba === "contas_pagar"   && <AbaContasPagar   supabase={supabase} mesAno={mesAno} mostrarFeedback={mostrarFeedback}/>}
+      {aba === "contas_pagar"   && <AbaContasPagar   supabase={supabase} mesAno={mesAno} mostrarFeedback={mostrarFeedback} role={role}/>}
       {aba === "contas_receber" && <AbaContasReceber supabase={supabase} mesAno={mesAno} mostrarFeedback={mostrarFeedback}/>}
       {aba === "fluxo"          && <AbaFluxo         supabase={supabase} mesAno={mesAno}/>}
       {aba === "emprestimos"    && <AbaEmprestimos   supabase={supabase} mostrarFeedback={mostrarFeedback}/>}
@@ -141,8 +148,11 @@ export default function FinanceiroPage() {
 // =============================================
 // ABA CONTAS A PAGAR
 // =============================================
-function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
+function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
   const hoje = hojeLocal();
+  // Despesas Recorrentes é decisão exclusiva da ADM — Financeiro/Aux. Adm
+  // continuam vendo a conta já gerada normalmente em "Contas do mês".
+  const isAdm = role === "adm" || role === "admin";
 
   const [contas, setContas] = useState<ContaPagar[]>([]);
   const [modelos, setModelos] = useState<ModeloPagar[]>([]);
@@ -150,6 +160,17 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [filtro, setFiltro] = useState("todas");
+
+  const [subaba, setSubaba] = useState<"contas" | "recorrentes">("contas");
+  const [recorrentes, setRecorrentes] = useState<DespesaRecorrente[]>([]);
+  const [modalRecorrenteAberto, setModalRecorrenteAberto] = useState(false);
+  const [editandoRecorrenteId, setEditandoRecorrenteId] = useState<string | null>(null);
+  const [descRecorrente, setDescRecorrente] = useState("");
+  const [catRecorrente, setCatRecorrente] = useState("salario");
+  const [valorRecorrente, setValorRecorrente] = useState("");
+  const [diaRecorrente, setDiaRecorrente] = useState("5");
+  const [antecedenciaRecorrente, setAntecedenciaRecorrente] = useState("5");
+  const [salvandoRecorrente, setSalvandoRecorrente] = useState(false);
 
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [descricao, setDescricao] = useState("");
@@ -186,10 +207,73 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     setContas(data || []);
     const { data: mods } = await supabase.from("contas_pagar_modelos").select("*").order("descricao");
     setModelos(mods || []);
+    const { data: recs } = await supabase.from("despesas_recorrentes").select("*").order("descricao");
+    setRecorrentes(recs || []);
     setLoading(false);
   };
 
-  useEffect(() => { carregar(); }, [mesAno]);
+  // Confere se alguma despesa recorrente está na hora de virar Conta a Pagar
+  // deste ciclo — roda uma vez ao abrir a tela, antes de carregar a lista.
+  useEffect(() => {
+    (async () => {
+      const geradas = await gerarDespesasRecorrentesPendentes(supabase);
+      if (geradas > 0) mostrarFeedback("sucesso", `${geradas} despesa${geradas > 1 ? "s" : ""} recorrente${geradas > 1 ? "s" : ""} gerada${geradas > 1 ? "s" : ""} automaticamente.`);
+      carregar();
+    })();
+  }, [mesAno]);
+
+  function fecharModalRecorrente() {
+    setModalRecorrenteAberto(false);
+    setEditandoRecorrenteId(null);
+    setDescRecorrente(""); setCatRecorrente("salario"); setValorRecorrente("");
+    setDiaRecorrente("5"); setAntecedenciaRecorrente("5");
+  }
+
+  function abrirEditarRecorrente(r: DespesaRecorrente) {
+    setEditandoRecorrenteId(r.id);
+    setDescRecorrente(r.descricao); setCatRecorrente(r.categoria);
+    setValorRecorrente(String(r.valor)); setDiaRecorrente(String(r.dia_vencimento));
+    setAntecedenciaRecorrente(String(r.dias_antecedencia));
+    setModalRecorrenteAberto(true);
+  }
+
+  async function salvarRecorrente() {
+    if (!descRecorrente || !valorRecorrente || !diaRecorrente) {
+      mostrarFeedback("erro", "Preencha descrição, valor e dia do vencimento.");
+      return;
+    }
+    setSalvandoRecorrente(true);
+    const payload = {
+      descricao: descRecorrente, categoria: catRecorrente, valor: Number(valorRecorrente),
+      dia_vencimento: Number(diaRecorrente), dias_antecedencia: Number(antecedenciaRecorrente) || 5,
+    };
+    if (editandoRecorrenteId) {
+      const { error } = await supabase.from("despesas_recorrentes").update(payload).eq("id", editandoRecorrenteId);
+      setSalvandoRecorrente(false);
+      if (error) { mostrarFeedback("erro", "Erro ao salvar: " + error.message); return; }
+      mostrarFeedback("sucesso", "Despesa recorrente atualizada!");
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from("despesas_recorrentes").insert([{ ...payload, ativo: true, criado_por_nome: user?.email || null }]);
+      setSalvandoRecorrente(false);
+      if (error) { mostrarFeedback("erro", "Erro ao salvar: " + error.message); return; }
+      mostrarFeedback("sucesso", "Despesa recorrente cadastrada! Ela vai virar conta automaticamente perto do vencimento.");
+    }
+    fecharModalRecorrente();
+    carregar();
+  }
+
+  async function alternarAtivoRecorrente(r: DespesaRecorrente) {
+    await supabase.from("despesas_recorrentes").update({ ativo: !r.ativo }).eq("id", r.id);
+    carregar();
+  }
+
+  async function excluirRecorrente(id: string) {
+    if (!confirm("Excluir essa despesa recorrente? As contas já geradas por ela não serão apagadas.")) return;
+    await supabase.from("despesas_recorrentes").delete().eq("id", id);
+    mostrarFeedback("sucesso", "Despesa recorrente removida.");
+    carregar();
+  }
 
   function diasVenc(c: ContaPagar): number {
     return Math.ceil(
@@ -503,12 +587,75 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-slate-700">Contas a Pagar</h2>
-        <button onClick={() => { setEditandoId(null); setVencimento(vencimentoDefault()); setModalAberto(true); }}
-          className="h-9 px-4 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition">
-          + Nova Conta
-        </button>
+        {subaba === "contas" ? (
+          <button onClick={() => { setEditandoId(null); setVencimento(vencimentoDefault()); setModalAberto(true); }}
+            className="h-9 px-4 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition">
+            + Nova Conta
+          </button>
+        ) : (
+          <button onClick={() => setModalRecorrenteAberto(true)}
+            className="h-9 px-4 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition">
+            + Nova Recorrente
+          </button>
+        )}
       </div>
 
+      {/* Sub-abas: Contas do mês x Despesas Recorrentes — Recorrentes é exclusivo da ADM */}
+      {isAdm && (
+        <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
+          <button onClick={() => setSubaba("contas")}
+            className={`h-8 px-3 rounded-lg text-xs font-semibold transition ${subaba === "contas" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}>
+            Contas do mês
+          </button>
+          <button onClick={() => setSubaba("recorrentes")}
+            className={`h-8 px-3 rounded-lg text-xs font-semibold transition ${subaba === "recorrentes" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}>
+            🔁 Recorrentes {recorrentes.length > 0 && <span className="opacity-60">({recorrentes.length})</span>}
+          </button>
+        </div>
+      )}
+
+      {isAdm && subaba === "recorrentes" ? (
+        <div className="space-y-3">
+          <p className="text-xs text-slate-400 -mt-2">Cadastre uma vez (salário de Aux. Administrativo, Agente de Limpeza, honorários de Advogado/Contadora etc.) e o sistema mesmo cria a Conta a Pagar de cada mês sozinho, avisando no sino perto do vencimento.</p>
+          {recorrentes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 bg-white rounded-2xl border border-slate-200 gap-2">
+              <span className="text-4xl">🔁</span>
+              <p className="text-sm text-slate-400">Nenhuma despesa recorrente cadastrada ainda.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {recorrentes.map(r => (
+                <div key={r.id} className={`border rounded-2xl p-4 flex items-center gap-3 ${r.ativo ? "border-slate-200 bg-white" : "border-slate-100 bg-slate-50 opacity-60"}`}>
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0 ${corCategoria(r.categoria)}`}>{r.categoria}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-800 text-sm truncate">{r.descricao}</p>
+                    <p className="text-xs text-slate-400">
+                      Vence todo dia {r.dia_vencimento} · gera com {r.dias_antecedencia} dias de antecedência
+                      {r.ultima_geracao && ` · última gerada: ${new Date(r.ultima_geracao + "T12:00:00").toLocaleDateString("pt-BR")}`}
+                    </p>
+                  </div>
+                  <p className="font-bold text-slate-800 text-sm flex-shrink-0">R$ {Number(r.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button onClick={() => alternarAtivoRecorrente(r)} title={r.ativo ? "Pausar" : "Reativar"}
+                      className={`h-8 px-2.5 text-xs font-semibold rounded-lg transition ${r.ativo ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                      {r.ativo ? "Ativa" : "Pausada"}
+                    </button>
+                    <button onClick={() => abrirEditarRecorrente(r)} title="Editar"
+                      className="h-8 w-8 flex items-center justify-center text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => excluirRecorrente(r.id)} title="Excluir"
+                      className="h-8 w-8 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition text-xl leading-none">
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+      <>
       {/* Cards resumo */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
@@ -587,6 +734,9 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-slate-800 text-sm truncate">{c.descricao}</p>
+                    {c.recorrente_id && (
+                      <span className="text-[10px] font-bold text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full flex-shrink-0">🔁 automática</span>
+                    )}
                     {badgeVenc(c)}
                   </div>
                   <p className="text-xs text-slate-400">Vencimento: {new Date(c.vencimento + "T12:00:00").toLocaleDateString("pt-BR")}</p>
@@ -680,6 +830,8 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
             </div>
           ))}
         </div>
+      )}
+      </>
       )}
 
       {/* Modal registrar pagamento */}
@@ -829,6 +981,63 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback }: AbaProps) {
               <button onClick={salvar} disabled={salvando}
                 className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
                 {salvando ? "Salvando..." : "Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal nova/editar despesa recorrente */}
+      {modalRecorrenteAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 text-lg">{editandoRecorrenteId ? "Editar recorrente" : "Nova despesa recorrente"}</h3>
+              <button onClick={fecharModalRecorrente} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400">✕</button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Descrição</label>
+                <input value={descRecorrente} onChange={e => setDescRecorrente(e.target.value)}
+                  placeholder="Ex: Salário — Aux. Administrativo"
+                  className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Categoria</label>
+                  <select value={catRecorrente} onChange={e => setCatRecorrente(e.target.value)}
+                    className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Valor (R$)</label>
+                  <input type="number" min="0.01" step="0.01" value={valorRecorrente} onChange={e => setValorRecorrente(e.target.value)}
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Dia do vencimento</label>
+                  <input type="number" min="1" max="31" value={diaRecorrente} onChange={e => setDiaRecorrente(e.target.value)}
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Gerar quantos dias antes</label>
+                  <input type="number" min="0" max="30" value={antecedenciaRecorrente} onChange={e => setAntecedenciaRecorrente(e.target.value)}
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400">Cadastra uma vez só — a Conta a Pagar de cada mês nasce sozinha, avisando no sino.</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={fecharModalRecorrente}
+                className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                Cancelar
+              </button>
+              <button onClick={salvarRecorrente} disabled={salvandoRecorrente}
+                className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
+                {salvandoRecorrente ? "Salvando..." : "Salvar"}
               </button>
             </div>
           </div>
