@@ -188,6 +188,8 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
   const menuAuxAdm = [
     { href: "/auxiliar/pauta",       label: "Agenda Simone", icon: "🗓️" },
+    { href: "/adm/criancas",         label: "Crianças",      icon: "👶" },
+    { href: "/adm/escolas",          label: "Escolas",       icon: "🏫" },
     { href: "/adm/colaboradores",    label: "Colaboradores", icon: "👥" },
     { href: "/adm/financeiro",       label: "Faturamento",   icon: "💰" },
     { href: "/adm/patrimonio",       label: "Patrimônio",    icon: "📦" },

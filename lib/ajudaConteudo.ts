@@ -483,6 +483,16 @@ const AUX_ADM: AjudaConteudo = {
       reflexo: "Os compromissos cadastrados aqui aparecem em \"Minha Agenda\" da Simone (Gestão); quando ela marcar um compromisso como \"Não realizei\", você recebe o recado automaticamente pelo Chat para organizar a remarcação."
     },
     {
+      icone: "👶", titulo: "Crianças", mockup: "lista-cards",
+      texto: "Cadastro completo das crianças atendidas pela clínica: dados pessoais, filiação (nome da mãe e do pai), responsável, escola, série escolar, plano de saúde, diagnóstico/CID, alergias, medicações e documentos anexados (opcional). Clique em \"Nova Criança — Prontuário\" pra cadastrar uma nova, ou no lápis de uma já existente pra editar.",
+      reflexo: "A criança cadastrada aqui passa a aparecer também pro ADM, pra Gestão e pros Atendentes/Especialistas, que podem selecioná-la ao registrar atendimentos, comunicados e prontuários."
+    },
+    {
+      icone: "🏫", titulo: "Escolas", mockup: "form-lista",
+      texto: "Cadastro das escolas parceiras onde as crianças são atendidas. Clique em \"Nova escola\" para cadastrar (nome, coordenação, telefone e endereço). Use o lápis para editar e a lixeira para excluir (com confirmação). O campo de busca ajuda a encontrar uma escola rapidamente.",
+      reflexo: "A escola cadastrada aqui fica disponível pra vincular no cadastro de cada Criança."
+    },
+    {
       icone: "💰", titulo: "Faturamento", mockup: "financeiro",
       texto: "Controle de Contas a Pagar e Contas a Receber da clínica. Lance uma nova conta (descrição, categoria, valor, vencimento) e marque como \"Pago\"/\"Recebido\" quando o pagamento acontecer — uma janela abre pra escolher a data real do pagamento (vem com hoje preenchido, mas pode trocar). Tudo fica registrado na Auditoria.\n\n💳 Em Contas a Pagar, o botão \"Pagar\" registra cada pagamento com seu próprio valor e data — não precisa ser o valor cheio de uma vez. O card mostra o Valor do serviço (o que o prestador cobrou), o Valor pago (soma de tudo já pago, com as datas de cada pagamento) e o Valor restante. A conta só fecha como \"Pago\" quando o restante chega a zero. Errou o valor ou a data de um pagamento já registrado? Na lista de pagamentos do card, clique no ícone de lápis pra corrigir ou na lixeira pra remover.\n\nErrou algo em uma fatura de Contas a Receber? Clique em \"Editar\" no card dela — funciona mesmo já recebida, sem precisar excluir e lançar de novo.",
       reflexo: "Fluxo de Caixa e Empréstimos (dado salarial da equipe) não aparecem aqui — ficam restritos ao ADM, Gestão e Financeiro."

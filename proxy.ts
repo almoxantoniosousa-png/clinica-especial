@@ -15,6 +15,8 @@ const PREFIXOS_STAFF: { prefixo: string; roles: string[] }[] = [
   { prefixo: "/adm/financeiro", roles: ["adm", "admin", "financeiro", "aux_adm"] },
   { prefixo: "/adm/patrimonio", roles: ["adm", "admin", "financeiro", "aux_adm"] },
   { prefixo: "/adm/colaboradores", roles: ["adm", "admin", "financeiro", "aux_adm"] },
+  { prefixo: "/adm/criancas", roles: ["adm", "admin", "aux_adm"] },
+  { prefixo: "/adm/escolas", roles: ["adm", "admin", "aux_adm"] },
   { prefixo: "/adm", roles: ["adm", "admin", "financeiro"] },
   { prefixo: "/especialista", roles: ["especialista"] },
   { prefixo: "/supervisora", roles: ["supervisora"] },
