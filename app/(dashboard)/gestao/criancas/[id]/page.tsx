@@ -346,7 +346,7 @@ export default function CardCriancaPage() {
 
           <div className="pt-3 border-t border-slate-100 space-y-4">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">📝 Entrevista Inicial Presencial</p>
+              <p className="text-base font-extrabold text-blue-700">📝 Entrevista Inicial Presencial</p>
               <p className="text-xs text-slate-400 mt-0.5">
                 {entrevista.entrevista_presencial_em
                   ? `Registrada em ${formatarData(entrevista.entrevista_presencial_em)} por ${entrevista.entrevista_presencial_por || "—"}.`
