@@ -29,8 +29,16 @@ type ModeloPagar = { id: string; descricao: string; categoria: string; valor: nu
 type DespesaRecorrente = {
   id: string; descricao: string; categoria: string; valor: number;
   dia_vencimento: number; dias_antecedencia: number; ativo: boolean;
+  frequencia_meses: number;
   ultima_geracao?: string | null; observacao?: string | null;
 };
+const FREQUENCIAS_RECORRENTE = [
+  { valor: 1, label: "Mensal" },
+  { valor: 2, label: "Bimestral" },
+  { valor: 3, label: "Trimestral" },
+  { valor: 6, label: "Semestral" },
+  { valor: 12, label: "Anual" },
+];
 type ContaReceber = {
   id: string; crianca_id: string; mes_referencia: string;
   valor_total: number; valor_liquido?: number | null; valor_iss?: number | null;
@@ -160,6 +168,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
   const [modalAberto, setModalAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [filtro, setFiltro] = useState("todas");
+  const [situacaoAberta, setSituacaoAberta] = useState(true);
 
   const [subaba, setSubaba] = useState<"contas" | "recorrentes">("contas");
   const [recorrentes, setRecorrentes] = useState<DespesaRecorrente[]>([]);
@@ -168,6 +177,17 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
   const [descRecorrente, setDescRecorrente] = useState("");
   const [catRecorrente, setCatRecorrente] = useState("salario");
   const [valorRecorrente, setValorRecorrente] = useState("");
+  const [freqRecorrente, setFreqRecorrente] = useState("1");
+  const [historicoRecorrente, setHistoricoRecorrente] = useState<DespesaRecorrente | null>(null);
+  const [historicoLista, setHistoricoLista] = useState<ContaPagar[]>([]);
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false);
+  const [pagandoHistoricoId, setPagandoHistoricoId] = useState<string | null>(null);
+  const [valorPagHistorico, setValorPagHistorico] = useState("");
+  const [dataPagHistorico, setDataPagHistorico] = useState("");
+  const [erroPagHistorico, setErroPagHistorico] = useState("");
+  const [processandoHistorico, setProcessandoHistorico] = useState(false);
+  const [editandoObsId, setEditandoObsId] = useState<string | null>(null);
+  const [obsTextoHistorico, setObsTextoHistorico] = useState("");
   const [diaRecorrente, setDiaRecorrente] = useState("5");
   const [antecedenciaRecorrente, setAntecedenciaRecorrente] = useState("5");
   const [salvandoRecorrente, setSalvandoRecorrente] = useState(false);
@@ -226,13 +246,79 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
     setModalRecorrenteAberto(false);
     setEditandoRecorrenteId(null);
     setDescRecorrente(""); setCatRecorrente("salario"); setValorRecorrente("");
-    setDiaRecorrente("5"); setAntecedenciaRecorrente("5");
+    setFreqRecorrente("1"); setDiaRecorrente("5"); setAntecedenciaRecorrente("5");
+  }
+
+  async function abrirHistoricoRecorrente(r: DespesaRecorrente) {
+    setHistoricoRecorrente(r);
+    setCarregandoHistorico(true);
+    const { data } = await supabase.from("contas_pagar").select("*").eq("recorrente_id", r.id).order("vencimento", { ascending: false });
+    setHistoricoLista(data || []);
+    setCarregandoHistorico(false);
+  }
+
+  // Pagar direto de dentro do histórico de uma recorrente — o mês pode não
+  // ser o mesmo que está selecionado na tela principal, então tem seu
+  // próprio estado (não dá pra reaproveitar o modal de pagamento normal,
+  // que só enxerga as contas do mês atual).
+  function abrirPagamentoHistorico(c: ContaPagar) {
+    setPagandoHistoricoId(c.id);
+    setValorPagHistorico(restante(c).toFixed(2));
+    setDataPagHistorico(hoje);
+    setErroPagHistorico("");
+  }
+  function fecharPagamentoHistorico() {
+    setPagandoHistoricoId(null); setValorPagHistorico(""); setDataPagHistorico(""); setErroPagHistorico("");
+  }
+  async function confirmarPagamentoHistorico(c: ContaPagar) {
+    const valorAgora = Number(valorPagHistorico.replace(",", "."));
+    const falta = restante(c);
+    if (!valorAgora || valorAgora <= 0) { setErroPagHistorico("Informe um valor válido."); return; }
+    if (!dataPagHistorico) { setErroPagHistorico("Informe a data do pagamento."); return; }
+    if (valorAgora > falta + 0.01) {
+      setErroPagHistorico(`O valor não pode passar do restante (R$ ${falta.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}).`);
+      return;
+    }
+    setProcessandoHistorico(true);
+    const novosPagamentos = [...(c.pagamentos || []), { data: dataPagHistorico, valor: valorAgora }];
+    const novoRestante = Number(c.valor) - novosPagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
+    const quitado = novoRestante <= 0.01;
+    await supabase.from("contas_pagar").update({
+      pagamentos: novosPagamentos,
+      status: quitado ? "pago" : "pendente",
+      pago_em: quitado ? dataPagHistorico : null,
+    }).eq("id", c.id);
+    mostrarFeedback("sucesso", quitado ? "Marcado como pago!" : "Pagamento registrado!");
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: quitado ? "Pagou" : "Registrou pagamento",
+      tabela: "contas_pagar",
+      registro_id: c.id,
+      descricao: `${quitado ? "Pagou" : "Registrou pagamento em"} conta: ${c.descricao} — R$ ${valorAgora.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} em ${new Date(dataPagHistorico + "T12:00:00").toLocaleDateString("pt-BR")}${!quitado ? ` (restam R$ ${novoRestante.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})` : ""}`,
+    });
+    setProcessandoHistorico(false);
+    fecharPagamentoHistorico();
+    if (historicoRecorrente) await abrirHistoricoRecorrente(historicoRecorrente);
+    carregar();
+  }
+
+  function abrirNotaHistorico(c: ContaPagar) {
+    setEditandoObsId(c.id);
+    setObsTextoHistorico(c.observacao || "");
+  }
+  async function salvarNotaHistorico(c: ContaPagar) {
+    await supabase.from("contas_pagar").update({ observacao: obsTextoHistorico.trim() || null }).eq("id", c.id);
+    setEditandoObsId(null);
+    if (historicoRecorrente) await abrirHistoricoRecorrente(historicoRecorrente);
+    carregar();
   }
 
   function abrirEditarRecorrente(r: DespesaRecorrente) {
     setEditandoRecorrenteId(r.id);
     setDescRecorrente(r.descricao); setCatRecorrente(r.categoria);
     setValorRecorrente(String(r.valor)); setDiaRecorrente(String(r.dia_vencimento));
+    setFreqRecorrente(String(r.frequencia_meses || 1));
     setAntecedenciaRecorrente(String(r.dias_antecedencia));
     setModalRecorrenteAberto(true);
   }
@@ -246,6 +332,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
     const payload = {
       descricao: descRecorrente, categoria: catRecorrente, valor: Number(valorRecorrente),
       dia_vencimento: Number(diaRecorrente), dias_antecedencia: Number(antecedenciaRecorrente) || 5,
+      frequencia_meses: Number(freqRecorrente) || 1,
     };
     if (editandoRecorrenteId) {
       const { error } = await supabase.from("despesas_recorrentes").update(payload).eq("id", editandoRecorrenteId);
@@ -551,6 +638,60 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
     ).sort((a, b) => b[1] - a[1]),
   [contas]);
 
+  // pra colorir o card de cada recorrente pelo status da conta deste mês —
+  // ela bate o olho e já sabe a situação, sem precisar abrir o histórico
+  const contaAtualPorRecorrente = useMemo(() => {
+    const map: Record<string, ContaPagar> = {};
+    for (const c of contas) { if (c.recorrente_id) map[c.recorrente_id] = c; }
+    return map;
+  }, [contas]);
+  function corCardRecorrente(recorrenteId: string) {
+    const c = contaAtualPorRecorrente[recorrenteId];
+    if (!c) return "border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm";
+    const sv = statusVenc(c);
+    if (sv === "pago") return "border-emerald-300 bg-emerald-50/50 hover:shadow-sm";
+    if (sv === "vencida") return "border-red-300 bg-red-50/60 hover:shadow-sm";
+    if (sv === "vence_hoje" || sv === "em_breve") return "border-orange-300 bg-orange-50/50 hover:shadow-sm";
+    return "border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm";
+  }
+
+  // "Situação do mês" — igual à planilha que a ADM já usava: só as despesas
+  // FIXAS mensais (vindas de uma Despesa Recorrente), agrupadas por
+  // categoria, com o status Agendado/Pago à vista — contas avulsas (não
+  // recorrentes) não entram aqui, ficam só na lista normal abaixo.
+  const porCategoriaCompleto = useMemo(() => {
+    const grupos: Record<string, ContaPagar[]> = {};
+    for (const c of contas) { if (c.recorrente_id) (grupos[c.categoria] ||= []).push(c); }
+    return Object.entries(grupos)
+      .map(([cat, lista]): [string, ContaPagar[], number] => [cat, lista, lista.reduce((s, c) => s + Number(c.valor), 0)])
+      .sort((a, b) => b[2] - a[2]);
+  }, [contas]);
+
+  // pra mostrar "🔁 Mensal"/"🔁 Trimestral" etc. em vez de um selo genérico
+  const frequenciaPorRecorrente = useMemo(() =>
+    Object.fromEntries(recorrentes.map(r => [r.id, r.frequencia_meses])),
+  [recorrentes]);
+  function labelFrequencia(freqMeses?: number) {
+    return FREQUENCIAS_RECORRENTE.find(f => f.valor === freqMeses)?.label || "automática";
+  }
+  function iconeCategoria(cat: string) {
+    const i: Record<string, string> = {
+      aluguel: "🏠", energia: "⚡", agua: "💧", internet: "🌐",
+      fornecedor: "📦", salario: "💵", imposto: "🧾", outro: "📌",
+    };
+    return i[cat] || "📌";
+  }
+  function corFrequencia(freqMeses?: number) {
+    const c: Record<number, string> = {
+      1: "bg-violet-50 text-violet-600 border-violet-200",
+      2: "bg-cyan-50 text-cyan-600 border-cyan-200",
+      3: "bg-orange-50 text-orange-600 border-orange-200",
+      6: "bg-teal-50 text-teal-600 border-teal-200",
+      12: "bg-pink-50 text-pink-600 border-pink-200",
+    };
+    return c[freqMeses || 1] || c[1];
+  }
+
   function corCategoria(cat: string) {
     const c: Record<string, string> = {
       aluguel: "bg-purple-100 text-purple-700", energia: "bg-yellow-100 text-yellow-700",
@@ -623,29 +764,26 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
               <p className="text-sm text-slate-400">Nenhuma despesa recorrente cadastrada ainda.</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
               {recorrentes.map(r => (
-                <div key={r.id} className={`border rounded-2xl p-4 flex items-center gap-3 ${r.ativo ? "border-slate-200 bg-white" : "border-slate-100 bg-slate-50 opacity-60"}`}>
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0 ${corCategoria(r.categoria)}`}>{r.categoria}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-800 text-sm truncate">{r.descricao}</p>
-                    <p className="text-xs text-slate-400">
-                      Vence todo dia {r.dia_vencimento} · gera com {r.dias_antecedencia} dias de antecedência
-                      {r.ultima_geracao && ` · última gerada: ${new Date(r.ultima_geracao + "T12:00:00").toLocaleDateString("pt-BR")}`}
-                    </p>
-                  </div>
-                  <p className="font-bold text-slate-800 text-sm flex-shrink-0">R$ {Number(r.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                <div key={r.id} className={`border rounded-xl p-3 transition ${r.ativo ? corCardRecorrente(r.id) : "border-slate-100 bg-slate-50 opacity-60"}`}>
+                  <button onClick={() => abrirHistoricoRecorrente(r)} className="w-full text-left" title="Ver histórico completo">
+                    <span className="text-base">{iconeCategoria(r.categoria)}</span>
+                    <p className="font-semibold text-slate-800 text-[13px] truncate mt-1">{r.descricao}</p>
+                    <p className="text-sm font-bold text-slate-700 mt-0.5">R$ {Number(r.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                    <span className={`inline-block mt-1 text-[9.5px] font-bold px-1.5 py-px rounded-full border ${corFrequencia(r.frequencia_meses)}`}>{labelFrequencia(r.frequencia_meses)} · dia {r.dia_vencimento}</span>
+                  </button>
+                  <div className="flex items-center gap-1 mt-2 pt-2 border-t border-slate-100">
                     <button onClick={() => alternarAtivoRecorrente(r)} title={r.ativo ? "Pausar" : "Reativar"}
-                      className={`h-8 px-2.5 text-xs font-semibold rounded-lg transition ${r.ativo ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                      className={`flex-1 h-6 text-[10px] font-semibold rounded-md transition ${r.ativo ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
                       {r.ativo ? "Ativa" : "Pausada"}
                     </button>
                     <button onClick={() => abrirEditarRecorrente(r)} title="Editar"
-                      className="h-8 w-8 flex items-center justify-center text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
-                      <Pencil className="h-4 w-4" />
+                      className="h-6 w-6 flex items-center justify-center text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-md transition flex-shrink-0">
+                      <Pencil className="h-3 w-3" />
                     </button>
                     <button onClick={() => excluirRecorrente(r.id)} title="Excluir"
-                      className="h-8 w-8 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition text-xl leading-none">
+                      className="h-6 w-6 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition text-base leading-none flex-shrink-0">
                       ×
                     </button>
                   </div>
@@ -692,6 +830,55 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
         </div>
       )}
 
+      {/* Situação do mês — só despesas fixas (recorrentes), agrupadas por categoria, igual à planilha */}
+      {!loading && porCategoriaCompleto.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <button onClick={() => setSituacaoAberta(v => !v)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50/60 transition">
+            <div className="text-left">
+              <p className="text-sm font-bold text-slate-800 flex items-center gap-1.5">🔁 Despesas Fixas do Mês</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">O que já foi pago e o que ainda falta, por categoria</p>
+            </div>
+            <span className="text-xs font-semibold text-blue-700 flex-shrink-0">{situacaoAberta ? "Recolher ▲" : "Expandir ▼"}</span>
+          </button>
+          {situacaoAberta && (
+            <div className="px-5 pb-5 space-y-5">
+              {porCategoriaCompleto.map(([cat, lista, total]) => (
+                <div key={cat}>
+                  <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+                    <span className="text-[13px] font-semibold text-slate-600 flex items-center gap-1.5 capitalize">
+                      <span className="text-sm">{iconeCategoria(cat)}</span>{cat}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium tabular-nums">R$ {total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} no mês</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {lista.map(c => {
+                      const pago = c.status === "pago";
+                      const dataRef = pago && c.pago_em ? c.pago_em : c.vencimento;
+                      const freq = frequenciaPorRecorrente[c.recorrente_id!];
+                      return (
+                        <div key={c.id} className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white border border-slate-100 hover:border-slate-200 transition">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-semibold text-slate-800 truncate">{c.descricao}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className={`text-[9.5px] font-bold px-1.5 py-px rounded-full border ${corFrequencia(freq)}`}>{labelFrequencia(freq)}</span>
+                              <span className="text-[11px] text-slate-400">{pago ? "pago em" : "vence"} {new Date(dataRef + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                            </div>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase flex-shrink-0 ${pago ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-200"}`}>
+                            {pago ? "Pago" : "Agendado"}
+                          </span>
+                          <span className="text-[13px] font-bold text-slate-700 flex-shrink-0 w-24 text-right tabular-nums">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Filtros */}
       {!loading && contas.length > 0 && (
         <div className="flex gap-1.5 flex-wrap">
@@ -735,7 +922,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-slate-800 text-sm truncate">{c.descricao}</p>
                     {c.recorrente_id && (
-                      <span className="text-[10px] font-bold text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full flex-shrink-0">🔁 automática</span>
+                      <span className="text-[10px] font-bold text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full flex-shrink-0">🔁 {labelFrequencia(frequenciaPorRecorrente[c.recorrente_id])}</span>
                     )}
                     {badgeVenc(c)}
                   </div>
@@ -1018,10 +1205,19 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Frequência</label>
+                  <select value={freqRecorrente} onChange={e => setFreqRecorrente(e.target.value)}
+                    className="w-full h-11 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    {FREQUENCIAS_RECORRENTE.map(f => <option key={f.valor} value={f.valor}>{f.label}</option>)}
+                  </select>
+                </div>
+                <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Dia do vencimento</label>
                   <input type="number" min="1" max="31" value={diaRecorrente} onChange={e => setDiaRecorrente(e.target.value)}
                     className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Gerar quantos dias antes</label>
                   <input type="number" min="0" max="30" value={antecedenciaRecorrente} onChange={e => setAntecedenciaRecorrente(e.target.value)}
@@ -1039,6 +1235,95 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                 className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
                 {salvandoRecorrente ? "Salvando..." : "Salvar"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal histórico completo de uma despesa recorrente — igual ao card da criança: tudo daquela despesa, num lugar só */}
+      {historicoRecorrente && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setHistoricoRecorrente(null); }}>
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl max-h-[85vh] overflow-y-auto">
+            <div className="bg-blue-900 px-6 py-4 flex items-center justify-between sticky top-0 rounded-t-2xl">
+              <div className="min-w-0">
+                <h3 className="text-white font-bold truncate">{historicoRecorrente.descricao}</h3>
+                <p className="text-blue-200 text-xs mt-0.5">
+                  {iconeCategoria(historicoRecorrente.categoria)} {historicoRecorrente.categoria} · {labelFrequencia(historicoRecorrente.frequencia_meses)} · vence dia {historicoRecorrente.dia_vencimento}
+                </p>
+              </div>
+              <button onClick={() => setHistoricoRecorrente(null)} className="text-blue-200 hover:text-white transition text-xl flex-shrink-0 ml-3">✕</button>
+            </div>
+            <div className="p-5 space-y-2">
+              {carregandoHistorico ? (
+                <p className="text-sm text-slate-400 text-center py-8">Carregando...</p>
+              ) : historicoLista.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-8">Nenhuma conta gerada ainda por essa recorrente.</p>
+              ) : (
+                historicoLista.map(c => {
+                  const pago = c.status === "pago";
+                  const mesAno = new Date(c.vencimento + "T12:00:00").toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+                  return (
+                    <div key={c.id} className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 capitalize">{mesAno}</p>
+                          <p className="text-xs text-slate-400">
+                            {pago ? `pago em ${c.pago_em ? new Date(c.pago_em + "T12:00:00").toLocaleDateString("pt-BR") : "—"}` : `vence em ${new Date(c.vencimento + "T12:00:00").toLocaleDateString("pt-BR")}`}
+                          </p>
+                        </div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase flex-shrink-0 ${pago ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-200"}`}>
+                          {pago ? "Pago" : "Agendado"}
+                        </span>
+                        <span className="text-sm font-bold text-slate-700 flex-shrink-0 w-24 text-right tabular-nums">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                      </div>
+
+                      {editandoObsId === c.id ? (
+                        <div className="flex gap-1.5">
+                          <input value={obsTextoHistorico} onChange={e => setObsTextoHistorico(e.target.value)} autoFocus
+                            placeholder="Ex: precisou ir na agência resolver..."
+                            className="flex-1 h-8 px-2.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                          <button onClick={() => salvarNotaHistorico(c)} className="h-8 px-2.5 text-xs font-semibold bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition">Salvar</button>
+                          <button onClick={() => setEditandoObsId(null)} className="h-8 px-2 text-xs font-semibold text-slate-400 hover:text-slate-600">Cancelar</button>
+                        </div>
+                      ) : c.observacao ? (
+                        <button onClick={() => abrirNotaHistorico(c)} className="w-full text-left text-xs text-slate-500 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 hover:border-blue-200 transition">
+                          📝 {c.observacao}
+                        </button>
+                      ) : (
+                        <button onClick={() => abrirNotaHistorico(c)} className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition">+ nota</button>
+                      )}
+
+                      {!pago && (
+                        pagandoHistoricoId === c.id ? (
+                          <div className="flex flex-wrap items-center gap-1.5 bg-white rounded-lg p-2 border border-slate-200">
+                            <input type="number" min="0.01" step="0.01" value={valorPagHistorico}
+                              onChange={e => { setValorPagHistorico(e.target.value); setErroPagHistorico(""); }}
+                              className="h-8 w-24 px-2 rounded-md border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            <input type="date" value={dataPagHistorico}
+                              onChange={e => { setDataPagHistorico(e.target.value); setErroPagHistorico(""); }}
+                              className="h-8 px-2 rounded-md border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            <button onClick={() => confirmarPagamentoHistorico(c)} disabled={processandoHistorico}
+                              className="h-8 px-2.5 text-xs font-semibold bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition disabled:opacity-50">
+                              Confirmar
+                            </button>
+                            <button onClick={fecharPagamentoHistorico} disabled={processandoHistorico}
+                              className="h-8 px-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-md transition">
+                              Cancelar
+                            </button>
+                            {erroPagHistorico && <p className="w-full text-[10px] text-red-500 font-semibold">{erroPagHistorico}</p>}
+                          </div>
+                        ) : (
+                          <button onClick={() => abrirPagamentoHistorico(c)}
+                            className="h-8 px-3 text-xs font-bold bg-blue-900 hover:bg-blue-800 text-white rounded-lg transition">
+                            Pagar
+                          </button>
+                        )
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

@@ -7,19 +7,22 @@ function ocorrenciaDoMes(diaVencimento: number, referencia: string): string {
   return `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
 }
 
-function proximaOcorrencia(diaVencimento: number, apartirDe: string): string {
+// avança "frequenciaMeses" meses a partir de uma referência (1 = mensal,
+// 3 = trimestral, 6 = semestral, 12 = anual)
+function proximaOcorrencia(diaVencimento: number, apartirDe: string, frequenciaMeses: number): string {
   const [ano, mes] = apartirDe.split("-").map(Number);
-  let proxAno = ano, proxMes = mes + 1;
-  if (proxMes > 12) { proxMes = 1; proxAno++; }
+  let total = (mes - 1) + frequenciaMeses;
+  const proxAno = ano + Math.floor(total / 12);
+  const proxMes = (total % 12) + 1;
   return ocorrenciaDoMes(diaVencimento, `${proxAno}-${String(proxMes).padStart(2, "0")}-01`);
 }
 
-// Primeira geração de uma recorrente nova: usa a ocorrência deste mês se
+// Primeira geração de uma recorrente nova: usa a ocorrência deste ciclo se
 // ainda não passou, senão já pula pra próxima — evita nascer uma conta
-// "vencida" só porque a recorrente foi cadastrada depois do dia do mês.
-function primeiraOcorrencia(diaVencimento: number, hoje: string): string {
-  const doMes = ocorrenciaDoMes(diaVencimento, hoje);
-  return doMes >= hoje ? doMes : proximaOcorrencia(diaVencimento, hoje);
+// "vencida" só porque a recorrente foi cadastrada depois do dia do vencimento.
+function primeiraOcorrencia(diaVencimento: number, hoje: string, frequenciaMeses: number): string {
+  const doCiclo = ocorrenciaDoMes(diaVencimento, hoje);
+  return doCiclo >= hoje ? doCiclo : proximaOcorrencia(diaVencimento, hoje, frequenciaMeses);
 }
 
 // Roda no carregamento da tela de Contas a Pagar: gera a próxima Conta a
@@ -34,9 +37,10 @@ export async function gerarDespesasRecorrentesPendentes(supabase: any): Promise<
   let geradas = 0;
 
   for (const r of recorrentes) {
+    const frequenciaMeses = r.frequencia_meses || 1;
     const proximoVencimento = r.ultima_geracao
-      ? proximaOcorrencia(r.dia_vencimento, r.ultima_geracao)
-      : primeiraOcorrencia(r.dia_vencimento, hoje);
+      ? proximaOcorrencia(r.dia_vencimento, r.ultima_geracao, frequenciaMeses)
+      : primeiraOcorrencia(r.dia_vencimento, hoje, frequenciaMeses);
 
     const diasParaVencer = Math.ceil(
       (new Date(proximoVencimento + "T12:00:00").getTime() - new Date(hoje + "T12:00:00").getTime()) / 86400000

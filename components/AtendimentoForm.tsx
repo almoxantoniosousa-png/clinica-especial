@@ -23,8 +23,10 @@ export default function AtendimentoForm() {
   const [criancaLivre, setCriancaLivre] = useState(false)
   const [criancaSelecao, setCriancaSelecao] = useState('')
   const [ocorrencia, setOcorrencia] = useState('')
+  const [atendenteId, setAtendenteId] = useState('')
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [duplicata, setDuplicata] = useState<{ local: string; horas: number; created_at: string } | null>(null)
   const [totalHorasAcumuladas, setTotalHorasAcumuladas] = useState(0)
   const [totalValorAcumulado, setTotalValorAcumulado] = useState(0)
   const router = useRouter()
@@ -63,6 +65,7 @@ export default function AtendimentoForm() {
           }
         }
         if (perfil?.nome) setNomeAtendente(perfil.nome)
+        if (perfil?.id) setAtendenteId(perfil.id)
 
         // Acumulado pendente
         if (perfil?.id) {
@@ -99,19 +102,10 @@ export default function AtendimentoForm() {
   const valorHoraEfetivo = local === 'clinica' ? (Number(valorHoraClinica) || 0) : VALOR_HORA
   const valorTotalCalculado = horasTrabalhadas * valorHoraEfetivo
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const criancaOk = local === 'clinica' ? (criancaId || criancaTexto.trim()) : criancaId
-    if (!criancaOk || horasTrabalhadas <= 0 || !data || (local !== 'clinica' && !localDetalhe)) {
-      setMsg({ type: 'error', text: 'Por favor, preencha todos os campos obrigatórios.' })
-      return
-    }
-    if (local === 'clinica' && valorHoraEfetivo <= 0) {
-      setMsg({ type: 'error', text: 'Informe o valor por hora do atendimento na clínica.' })
-      return
-    }
+  async function enviarRegistro() {
     setLoading(true)
     setMsg(null)
+    setDuplicata(null)
 
     const detalheLocal = local === 'clinica' ? '' : ` | ${local === 'escola' ? 'Escola' : 'Responsável'}: ${localDetalhe}`
     const relatoCompleto = `Acompanhante: ${nomeAtendente}${detalheLocal} | Entrada: ${horaEntrada} | Saída: ${horaSaida} | ${ocorrencia}`
@@ -142,6 +136,38 @@ export default function AtendimentoForm() {
       setNomeCrianca('')
       setTimeout(() => router.push('/atendente/meus-atendimentos'), 1500)
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const criancaOk = local === 'clinica' ? (criancaId || criancaTexto.trim()) : criancaId
+    if (!criancaOk || horasTrabalhadas <= 0 || !data || (local !== 'clinica' && !localDetalhe)) {
+      setMsg({ type: 'error', text: 'Por favor, preencha todos os campos obrigatórios.' })
+      return
+    }
+    if (local === 'clinica' && valorHoraEfetivo <= 0) {
+      setMsg({ type: 'error', text: 'Informe o valor por hora do atendimento na clínica.' })
+      return
+    }
+    setMsg(null)
+
+    // Checa se já existe registro pra essa mesma criança, nesse mesmo dia,
+    // com esse mesmo acompanhante — não bloqueia (pode ser legítimo, ex:
+    // escola de manhã e casa à tarde), só avisa antes de duplicar à toa.
+    if (atendenteId) {
+      let query = supabase.from('atendimentos')
+        .select('id, local, horas, created_at')
+        .eq('atendente_id', atendenteId)
+        .eq('data', data)
+      query = criancaId ? query.eq('crianca_id', criancaId) : query.eq('crianca_texto', criancaTexto.trim())
+      const { data: existentes } = await query.limit(1)
+      if (existentes && existentes.length > 0) {
+        setDuplicata(existentes[0] as { local: string; horas: number; created_at: string })
+        return
+      }
+    }
+
+    await enviarRegistro()
   }
 
   return (
@@ -447,10 +473,35 @@ export default function AtendimentoForm() {
           </div>
         )}
 
+        {/* AVISO DE DUPLICIDADE */}
+        {duplicata && (
+          <div className="border border-amber-200 bg-amber-50 rounded-xl p-4 flex gap-3">
+            <div className="text-xl leading-none">⚠️</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-slate-800">
+                Você já tem um registro pra {nomeCrianca || (criancaId ? 'essa criança' : criancaTexto)} hoje
+              </p>
+              <p className="mt-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
+                📍 {duplicata.local === 'casa' ? 'Casa' : duplicata.local === 'escola' ? 'Escola' : 'Clínica'} · {duplicata.horas}h · registrado às {new Date(duplicata.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button type="button" onClick={() => setDuplicata(null)}
+                  className="flex-1 h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                  Cancelar, era engano
+                </button>
+                <button type="button" onClick={enviarRegistro} disabled={loading}
+                  className="flex-1 h-9 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition disabled:opacity-50">
+                  Salvar mesmo assim
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* BOTÃO ENVIAR */}
         <button
           type="submit"
-          disabled={loading || horasTrabalhadas <= 0}
+          disabled={loading || horasTrabalhadas <= 0 || !!duplicata}
           className="w-full h-12 bg-blue-900 hover:bg-blue-800 active:scale-95 text-white font-bold
             text-sm rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
