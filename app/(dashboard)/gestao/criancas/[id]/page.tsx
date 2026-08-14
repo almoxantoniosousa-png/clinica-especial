@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
 import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
-import { CAMPOS_DETALHE, CAMPOS_LIGACAO } from "../../entrevista-inicial/page";
+import { CAMPOS_DETALHE, CAMPOS_LIGACAO, CAMPOS_PRESENCIAL } from "../../entrevista-inicial/page";
 
 const inputClass = "w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 bg-white";
 const labelClass = "block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1";
@@ -59,6 +59,9 @@ export default function CardCriancaPage() {
   const [dadosLigacao, setDadosLigacao] = useState<Record<string, string>>({});
   const [salvandoLigacao, setSalvandoLigacao] = useState(false);
   const [ligacaoSalva, setLigacaoSalva] = useState(false);
+  const [dadosPresencial, setDadosPresencial] = useState<Record<string, string>>({});
+  const [salvandoPresencial, setSalvandoPresencial] = useState(false);
+  const [presencialSalvo, setPresencialSalvo] = useState(false);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -91,6 +94,12 @@ export default function CardCriancaPage() {
       const lig: Record<string, string> = {};
       for (const campo of CAMPOS_LIGACAO) lig[campo.chave] = e[campo.chave] || "";
       setDadosLigacao(lig);
+      const pres: Record<string, string> = {};
+      for (const campo of CAMPOS_PRESENCIAL.flatMap(sec => sec.campos)) {
+        const v = e[campo.chave];
+        pres[campo.chave] = Array.isArray(v) ? v.join(", ") : (v || "");
+      }
+      setDadosPresencial(pres);
     }
     setProntuarios(p || []);
     setEvolucao(ev || []);
@@ -188,6 +197,30 @@ export default function CardCriancaPage() {
     setSalvandoLigacao(false);
     setLigacaoSalva(true);
     setTimeout(() => setLigacaoSalva(false), 2000);
+    carregar();
+  }
+
+  async function salvarPresencial() {
+    if (!entrevista) return;
+    setSalvandoPresencial(true);
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    let nome = user?.email || "";
+    if (user?.email) {
+      const { data: a } = await supabase.from("atendentes").select("nome").eq("email", user.email).maybeSingle();
+      if (a?.nome) nome = a.nome;
+    }
+    const payload: Record<string, string | null> = {
+      entrevista_presencial_em: new Date().toISOString(),
+      entrevista_presencial_por: nome,
+    };
+    for (const campo of CAMPOS_PRESENCIAL.flatMap(sec => sec.campos)) {
+      const v = dadosPresencial[campo.chave]?.trim() || "";
+      payload[campo.chave] = v === "" ? null : v;
+    }
+    await supabase.from("entrevistas_iniciais").update(payload).eq("id", entrevista.id);
+    setSalvandoPresencial(false);
+    setPresencialSalvo(true);
+    setTimeout(() => setPresencialSalvo(false), 2000);
     carregar();
   }
 
@@ -310,6 +343,40 @@ export default function CardCriancaPage() {
               </div>
             );
           })}
+
+          <div className="pt-3 border-t border-slate-100 space-y-4">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">📝 Entrevista Inicial Presencial</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {entrevista.entrevista_presencial_em
+                  ? `Registrada em ${formatarData(entrevista.entrevista_presencial_em)} por ${entrevista.entrevista_presencial_por || "—"}.`
+                  : "O que a Simone aprofunda pessoalmente na conversa com a família — vai além do que eles já responderam pelo link."}
+              </p>
+            </div>
+            {CAMPOS_PRESENCIAL.map(sec => (
+              <div key={sec.secao} className="space-y-2.5">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">{sec.secao} — aprofundamento</p>
+                {sec.campos.map(c => (
+                  <div key={c.chave} className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{c.label}</label>
+                    {c.area ? (
+                      <textarea rows={2} value={dadosPresencial[c.chave] || ""}
+                        onChange={e => setDadosPresencial(prev => ({ ...prev, [c.chave]: e.target.value }))}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                    ) : (
+                      <input value={dadosPresencial[c.chave] || ""}
+                        onChange={e => setDadosPresencial(prev => ({ ...prev, [c.chave]: e.target.value }))}
+                        className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+            <button onClick={salvarPresencial} disabled={salvandoPresencial}
+              className="h-10 px-4 bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition disabled:opacity-50">
+              {salvandoPresencial ? "Salvando..." : presencialSalvo ? "✓ Salvo!" : "Salvar entrevista presencial"}
+            </button>
+          </div>
         </Secao>
       )}
 

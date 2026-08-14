@@ -102,6 +102,43 @@ export const CAMPOS_LIGACAO: { chave: string; label: string; tipo: "date" | "tex
 ];
 const CAMPOS_LIGACAO_VAZIO = Object.fromEntries(CAMPOS_LIGACAO.map(c => [c.chave, ""]));
 
+// Aprofundamento que a Simone registra na entrevista presencial — a família
+// só marca Sim/Não remoto, aqui ela escreve o que descobriu conversando.
+// Cada seção corresponde à mesma seção de CAMPOS_DETALHE; Histórico Médico e
+// Objetivos não tinham nenhum campo reservado antes, por isso são só deles.
+export const CAMPOS_PRESENCIAL: { secao: string; campos: { chave: string; label: string; area?: boolean }[] }[] = [
+  { secao: "🩺 Histórico Médico", campos: [
+    { chave: "diagnostico_detalhado", label: "Detalhes do diagnóstico", area: true },
+    { chave: "terapias_anteriores_detalhe", label: "O que já foi feito antes (terapias, tempo, resultado)", area: true },
+    { chave: "medicacao_detalhe", label: "Detalhe das medicações em uso", area: true },
+    { chave: "desenvolvimento_detalhe", label: "Observações sobre gestação/parto/desenvolvimento", area: true },
+  ]},
+  { secao: "🏫 Escola e Comportamento", campos: [
+    { chave: "outros_servicos", label: "Outros serviços/atendimentos (fora os já listados)", area: true },
+    { chave: "contatos_outros_prestadores", label: "Contatos de outros profissionais", area: true },
+  ]},
+  { secao: "🏠 Casa e Comunicação", campos: [
+    { chave: "qtd_amigos", label: "Quantidade de amigos" },
+    { chave: "horas_amigos_fora_escola", label: "Tempo com amigos fora da escola" },
+    { chave: "atividade_extracurricular", label: "Atividade extracurricular" },
+    { chave: "comportamento_social_adequado", label: "Comportamento social adequado?" },
+    { chave: "como_comunica", label: "Como a criança se comunica", area: true },
+    { chave: "facilidade_comunicacao", label: "Facilidade de comunicação" },
+    { chave: "necessidade_sensorial", label: "Necessidades sensoriais", area: true },
+    { chave: "brinca_independente", label: "Brinca de forma independente?" },
+  ]},
+  { secao: "🧩 Habilidades", campos: [
+    { chave: "duracao_comportamento", label: "Duração dos comportamentos-alvo", area: true },
+  ]},
+  { secao: "🎯 Objetivos", campos: [
+    { chave: "prioridade_familia", label: "O que a família quer resolver primeiro", area: true },
+    { chave: "expectativas_tratamento", label: "Expectativas da família sobre o tratamento", area: true },
+  ]},
+];
+const CAMPOS_PRESENCIAL_VAZIO = Object.fromEntries(
+  CAMPOS_PRESENCIAL.flatMap(sec => sec.campos).map(c => [c.chave, ""])
+);
+
 export default function EntrevistaInicialPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
@@ -124,6 +161,9 @@ export default function EntrevistaInicialPage() {
   const [dadosLigacao, setDadosLigacao] = useState<Record<string, string>>(CAMPOS_LIGACAO_VAZIO);
   const [salvandoLigacao, setSalvandoLigacao] = useState(false);
   const [ligacaoSalva, setLigacaoSalva] = useState(false);
+  const [dadosPresencial, setDadosPresencial] = useState<Record<string, string>>(CAMPOS_PRESENCIAL_VAZIO);
+  const [salvandoPresencial, setSalvandoPresencial] = useState(false);
+  const [presencialSalvo, setPresencialSalvo] = useState(false);
 
   async function carregar() {
     setLoading(true);
@@ -224,6 +264,15 @@ export default function EntrevistaInicialPage() {
     return out;
   }
 
+  function extrairPresencial(item: any): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const c of CAMPOS_PRESENCIAL.flatMap(sec => sec.campos)) {
+      const v = item[c.chave];
+      out[c.chave] = Array.isArray(v) ? v.join(", ") : (v || "");
+    }
+    return out;
+  }
+
   async function abrir(item: any) {
     // Busca fresca ao abrir — se a família respondeu depois que essa lista
     // carregou (ex: aba ficou aberta enquanto testava o link), o item em
@@ -231,11 +280,13 @@ export default function EntrevistaInicialPage() {
     setSelecionada(item);
     setObsRascunho(item.observacoes_simone || "");
     setDadosLigacao(extrairLigacao(item));
+    setDadosPresencial(extrairPresencial(item));
     const { data } = await supabase.from("entrevistas_iniciais").select("*").eq("id", item.id).maybeSingle();
     if (data) {
       setSelecionada(data);
       setObsRascunho(data.observacoes_simone || "");
       setDadosLigacao(extrairLigacao(data));
+      setDadosPresencial(extrairPresencial(data));
       if (data.status !== item.status) carregar(); // atualiza o selo na lista também
     }
   }
@@ -252,6 +303,25 @@ export default function EntrevistaInicialPage() {
     setSalvandoLigacao(false);
     setLigacaoSalva(true);
     setTimeout(() => setLigacaoSalva(false), 2000);
+    carregar();
+  }
+
+  async function salvarPresencial() {
+    if (!selecionada) return;
+    setSalvandoPresencial(true);
+    const payload: Record<string, string | null> = {
+      entrevista_presencial_em: new Date().toISOString(),
+      entrevista_presencial_por: usuarioNome || usuarioEmail,
+    };
+    for (const c of CAMPOS_PRESENCIAL.flatMap(sec => sec.campos)) {
+      const v = dadosPresencial[c.chave]?.trim() || "";
+      payload[c.chave] = v === "" ? null : v;
+    }
+    await supabase.from("entrevistas_iniciais").update(payload).eq("id", selecionada.id);
+    setSalvandoPresencial(false);
+    setPresencialSalvo(true);
+    setTimeout(() => setPresencialSalvo(false), 2000);
+    setSelecionada((prev: any) => prev ? { ...prev, entrevista_presencial_em: payload.entrevista_presencial_em, entrevista_presencial_por: payload.entrevista_presencial_por } : prev);
     carregar();
   }
 
@@ -288,6 +358,13 @@ export default function EntrevistaInicialPage() {
                     {item.contato_telefone} · {new Date(item.created_at).toLocaleDateString("pt-BR")}
                     {item.crianca_id ? " · já tem card →" : ""}
                   </p>
+                  {item.status !== "aguardando" && (
+                    <p className={`text-[11px] font-semibold mt-1 ${item.entrevista_presencial_em ? "text-emerald-600" : "text-amber-600"}`}>
+                      {item.entrevista_presencial_em
+                        ? `📝 Presencial registrada em ${new Date(item.entrevista_presencial_em).toLocaleDateString("pt-BR")}`
+                        : "📝 Presencial ainda não registrada"}
+                    </p>
+                  )}
                 </div>
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full border shrink-0 ${cfg.color}`}>{cfg.label}</span>
               </button>
@@ -396,6 +473,40 @@ export default function EntrevistaInicialPage() {
                     </div>
                   );
                 })}
+
+                <div className="pt-3 border-t border-slate-100 space-y-4">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">📝 Entrevista Inicial Presencial</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {selecionada.entrevista_presencial_em
+                        ? `Registrada em ${new Date(selecionada.entrevista_presencial_em).toLocaleDateString("pt-BR")} por ${selecionada.entrevista_presencial_por || "você"}.`
+                        : "O que você aprofunda pessoalmente na conversa com a família — vai além do que eles já responderam pelo link."}
+                    </p>
+                  </div>
+                  {CAMPOS_PRESENCIAL.map(sec => (
+                    <div key={sec.secao} className="space-y-2.5">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">{sec.secao} — aprofundamento</p>
+                      {sec.campos.map(c => (
+                        <div key={c.chave} className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{c.label}</label>
+                          {c.area ? (
+                            <textarea rows={2} value={dadosPresencial[c.chave] || ""}
+                              onChange={e => setDadosPresencial(prev => ({ ...prev, [c.chave]: e.target.value }))}
+                              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                          ) : (
+                            <input value={dadosPresencial[c.chave] || ""}
+                              onChange={e => setDadosPresencial(prev => ({ ...prev, [c.chave]: e.target.value }))}
+                              className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                  <button onClick={salvarPresencial} disabled={salvandoPresencial}
+                    className="w-full h-10 bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold rounded-xl transition disabled:opacity-50">
+                    {salvandoPresencial ? "Salvando..." : presencialSalvo ? "✓ Salvo!" : "Salvar entrevista presencial"}
+                  </button>
+                </div>
 
                 <div className="pt-2 border-t border-slate-100 space-y-1.5">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Sua anotação (interna)</label>
