@@ -442,6 +442,8 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
           descricao: `Editou conta a pagar: ${descricao}`,
         });
         fecharModal(); carregar();
+        // se veio do histórico de uma recorrente, atualiza a lista de lá também
+        if (historicoRecorrente) await abrirHistoricoRecorrente(historicoRecorrente);
       }
       return;
     }
@@ -1087,7 +1089,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
 
       {/* Modal nova conta */}
       {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
           onClick={e => { if (e.target === e.currentTarget) fecharModal(); }}>
           <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-slate-800">{editandoId ? "Editar Conta a Pagar" : "Nova Conta a Pagar"}</h3>
@@ -1297,31 +1299,37 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                         <button onClick={() => abrirNotaHistorico(c)} className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition">+ nota</button>
                       )}
 
-                      {!pago && (
-                        pagandoHistoricoId === c.id ? (
-                          <div className="flex flex-wrap items-center gap-1.5 bg-white rounded-lg p-2 border border-slate-200">
-                            <input type="number" min="0.01" step="0.01" value={valorPagHistorico}
-                              onChange={e => { setValorPagHistorico(e.target.value); setErroPagHistorico(""); }}
-                              className="h-8 w-24 px-2 rounded-md border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                            <input type="date" value={dataPagHistorico}
-                              onChange={e => { setDataPagHistorico(e.target.value); setErroPagHistorico(""); }}
-                              className="h-8 px-2 rounded-md border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                            <button onClick={() => confirmarPagamentoHistorico(c)} disabled={processandoHistorico}
-                              className="h-8 px-2.5 text-xs font-semibold bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition disabled:opacity-50">
-                              Confirmar
-                            </button>
-                            <button onClick={fecharPagamentoHistorico} disabled={processandoHistorico}
-                              className="h-8 px-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-md transition">
-                              Cancelar
-                            </button>
-                            {erroPagHistorico && <p className="w-full text-[10px] text-red-500 font-semibold">{erroPagHistorico}</p>}
-                          </div>
-                        ) : (
-                          <button onClick={() => abrirPagamentoHistorico(c)}
-                            className="h-8 px-3 text-xs font-bold bg-blue-900 hover:bg-blue-800 text-white rounded-lg transition">
-                            Pagar
+                      {pagandoHistoricoId === c.id ? (
+                        <div className="flex flex-wrap items-center gap-1.5 bg-white rounded-lg p-2 border border-slate-200">
+                          <input type="number" min="0.01" step="0.01" value={valorPagHistorico}
+                            onChange={e => { setValorPagHistorico(e.target.value); setErroPagHistorico(""); }}
+                            className="h-8 w-24 px-2 rounded-md border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                          <input type="date" value={dataPagHistorico}
+                            onChange={e => { setDataPagHistorico(e.target.value); setErroPagHistorico(""); }}
+                            className="h-8 px-2 rounded-md border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                          <button onClick={() => confirmarPagamentoHistorico(c)} disabled={processandoHistorico}
+                            className="h-8 px-2.5 text-xs font-semibold bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition disabled:opacity-50">
+                            Confirmar
                           </button>
-                        )
+                          <button onClick={fecharPagamentoHistorico} disabled={processandoHistorico}
+                            className="h-8 px-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-md transition">
+                            Cancelar
+                          </button>
+                          {erroPagHistorico && <p className="w-full text-[10px] text-red-500 font-semibold">{erroPagHistorico}</p>}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          {!pago && (
+                            <button onClick={() => abrirPagamentoHistorico(c)}
+                              className="h-8 px-3 text-xs font-bold bg-blue-900 hover:bg-blue-800 text-white rounded-lg transition">
+                              Pagar
+                            </button>
+                          )}
+                          <button onClick={() => abrirEditar(c)}
+                            className="h-8 px-3 text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 rounded-lg transition">
+                            ✎ Editar valor/data
+                          </button>
+                        </div>
                       )}
                     </div>
                   );
