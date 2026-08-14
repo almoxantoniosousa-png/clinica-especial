@@ -647,12 +647,15 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
   }, [contas]);
   function corCardRecorrente(recorrenteId: string) {
     const c = contaAtualPorRecorrente[recorrenteId];
-    if (!c) return "border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm";
+    if (!c) return "border border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm";
     const sv = statusVenc(c);
-    if (sv === "pago") return "border-emerald-300 bg-emerald-50/50 hover:shadow-sm";
-    if (sv === "vencida") return "border-red-300 bg-red-50/60 hover:shadow-sm";
-    if (sv === "vence_hoje" || sv === "em_breve") return "border-orange-300 bg-orange-50/50 hover:shadow-sm";
-    return "border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm";
+    if (sv === "pago") return "border border-emerald-300 bg-emerald-50/50 hover:shadow-sm";
+    // atrasada precisa saltar aos olhos de longe — borda grossa e escura,
+    // bem diferente do laranja fino de "perto de vencer" (fica parecido
+    // demais numa olhada rápida se for só um tom mais claro de vermelho)
+    if (sv === "vencida") return "border-2 border-red-600 bg-red-100 hover:shadow-sm";
+    if (sv === "vence_hoje" || sv === "em_breve") return "border border-orange-300 bg-orange-50/50 hover:shadow-sm";
+    return "border border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm";
   }
 
   // "Situação do mês" — igual à planilha que a ADM já usava: só as despesas
@@ -766,7 +769,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
               {recorrentes.map(r => (
-                <div key={r.id} className={`border rounded-xl p-3 transition ${r.ativo ? corCardRecorrente(r.id) : "border-slate-100 bg-slate-50 opacity-60"}`}>
+                <div key={r.id} className={`rounded-xl p-3 transition ${r.ativo ? corCardRecorrente(r.id) : "border border-slate-100 bg-slate-50 opacity-60"}`}>
                   <button onClick={() => abrirHistoricoRecorrente(r)} className="w-full text-left" title="Ver histórico completo">
                     <span className="text-base">{iconeCategoria(r.categoria)}</span>
                     <p className="font-semibold text-slate-800 text-[13px] truncate mt-1">{r.descricao}</p>
