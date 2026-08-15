@@ -105,7 +105,6 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/gestao/entrevista-inicial", label: "Entrevista Inicial", icon: "📋" },
     { href: "/gestao/criancas",     label: "Crianças",     icon: "👶" },
     { href: "/gestao/escolas",      label: "Escolas",      icon: "🏫" },
-    { href: "/gestao/agenda",       label: "Agenda Clínica", icon: "📅" },
     { href: "/escala",              label: "Escala",         icon: "📅" },
     { href: "/mural",               label: "Mural",        icon: "📢" },
     { href: "/ocorrencias",         label: "Ocorrência Diária", icon: "📓" },

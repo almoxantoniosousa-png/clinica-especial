@@ -155,10 +155,6 @@ const GESTAO: AjudaConteudo = {
       texto: "Lista de escolas parceiras, com nome, coordenação e endereço (apenas consulta).\n\nUse a busca para filtrar por nome, coordenação ou bairro. Clique no endereço para abrir no Google Maps, no telefone para ligar, ou em \"WA\" para abrir o WhatsApp da escola."
     },
     {
-      icone: "📅", titulo: "Agenda Clínica", mockup: "agenda-semana",
-      texto: "Agenda geral de todos os atendimentos da clínica, organizada por semana e dia.\n\nNavegue entre semanas com as setas; cada dia mostra quantos atendimentos tem marcados. Clique em um dia para ver a lista detalhada (horário, criança, profissional, serviço e observações). Use \"Ir para hoje\" para voltar à data atual."
-    },
-    {
       icone: "📅", titulo: "Escala", mockup: "escala",
       texto: "Escala semanal de atendimentos — especialistas e ATs juntos na mesma tela, organizada por dia e horário — só para consulta (quem cadastra e edita é a Supervisora).\n\nUse os filtros de criança e tipo de serviço. Alterne entre \"Calendário\" (navega por qualquer data, passada ou futura), \"Semana inteira\" e \"Escala anterior\" (essa última mostra uma foto completa da escala em outra data — use as setas ‹ › ou o calendário \"Ir para uma data\" pra pular direto pro mês que quiser). Cada atendimento mostra a marcação de presença (P/F/FJ) quando houver, o horário do lanche do dia (🍎) e o motivo de uma troca/ausência aparece direto no card.\n\n🕓 Histórico: o botão no topo mostra tudo que foi editado/excluído, com quem mudou e quando.\n\n📥 Escala completa (PDF) / Escala de impressão (PDF): a completa traz tudo (nomes por extenso, local, lanche, assinatura), já em PDF pronto pra abrir; a de impressão é a versão enxuta de uma página só, pronta pra imprimir.",
       reflexo: "Quem monta essa escala é a Supervisora. Você acompanha aqui em tempo real, inclusive o motivo de trocas/ausências."

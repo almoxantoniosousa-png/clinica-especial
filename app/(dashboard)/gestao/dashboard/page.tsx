@@ -16,7 +16,16 @@ import {
 type Liminar    = { id: string; crianca_id?: string; criancas?: { nome: string }; status?: string; data_vencimento: string; numero_processo?: string; vara?: string };
 type Membro     = { nome: string; role: string; email?: string; logo_url?: string };
 type Relatorio  = { id: string; created_at: string; titulo?: string; autor_nome?: string; criancas?: { nome: string }; tipo?: string };
-type AgendaItem = { id: string; hora?: string; hora_inicio?: string; servico?: string; profissional_nome?: string; criancas?: { nome: string }; atendentes?: { nome: string }; status?: string };
+type AgendaItem = { id: string; horario: string; crianca: string; servico?: string; profissional_nome?: string };
+
+const DIAS_SEMANA = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+function diaSemanaDeHoje(): string {
+  return DIAS_SEMANA[(new Date().getDay() + 6) % 7];
+}
+function minutosDeHorario(horario: string): number {
+  const m = horario.match(/(\d{1,2}):(\d{2})/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : 99999;
+}
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement,
@@ -155,13 +164,38 @@ export default function GestaoDashboardPage() {
         .limit(5);
       setUltimosRelatorios((relatoriosDados || []).map(r => ({ ...r, criancas: Array.isArray(r.criancas) ? r.criancas[0] : r.criancas })) as Relatorio[]);
 
-      // Agenda de hoje
-      const { data: agendaDados } = await supabase
-        .from("agenda")
-        .select("id, hora, servico, profissional_nome, criancas(nome)")
-        .eq("data", hoje)
-        .order("hora");
-      setAgendaHoje((agendaDados || []).map(a => ({ ...a, criancas: Array.isArray(a.criancas) ? a.criancas[0] : a.criancas })) as AgendaItem[]);
+      // Agenda de hoje — vem da Escala (molde semanal) com as trocas/
+      // cancelamentos daquela data aplicados por cima, igual a tela "Escala".
+      const diaHoje = diaSemanaDeHoje();
+      const [{ data: slotsHoje }, { data: excecoesHoje }] = await Promise.all([
+        supabase.from("escala").select("id, horario, crianca, servico, profissional_nome").eq("dia", diaHoje),
+        supabase.from("escala_excecoes").select("*").eq("data", hoje),
+      ]);
+      const excecaoPorEscalaId: Record<string, any> = {};
+      const excecoesAdhoc: any[] = [];
+      (excecoesHoje || []).forEach((e: any) => {
+        if (e.escala_id) excecaoPorEscalaId[e.escala_id] = e;
+        else excecoesAdhoc.push(e);
+      });
+      const itensHoje: AgendaItem[] = [
+        ...(slotsHoje || [])
+          .filter((s: any) => !excecaoPorEscalaId[s.id]?.cancelado)
+          .map((s: any) => {
+            const exc = excecaoPorEscalaId[s.id];
+            return {
+              id: s.id,
+              horario: exc?.horario ?? s.horario,
+              crianca: exc?.crianca ?? s.crianca,
+              servico: exc?.servico ?? s.servico,
+              profissional_nome: exc?.profissional_nome ?? s.profissional_nome,
+            };
+          }),
+        ...excecoesAdhoc.map((e: any) => ({
+          id: e.id, horario: e.horario || "", crianca: e.crianca || "",
+          servico: e.servico, profissional_nome: e.profissional_nome,
+        })),
+      ].sort((a, b) => minutosDeHorario(a.horario) - minutosDeHorario(b.horario));
+      setAgendaHoje(itensHoje);
 
       setLoading(false);
     }
@@ -552,7 +586,7 @@ export default function GestaoDashboardPage() {
               <h3 className="text-sm font-semibold text-slate-800">Agenda de Hoje</h3>
               <p className="text-xs text-slate-400">{agendaHoje.length} atendimento(s)</p>
             </div>
-            <Link href="/gestao/agenda" className="text-xs text-blue-600 hover:text-blue-700 font-medium">Ver tudo</Link>
+            <Link href="/escala" className="text-xs text-blue-600 hover:text-blue-700 font-medium">Ver tudo</Link>
           </div>
           {agendaHoje.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 gap-2 text-slate-400">
@@ -563,9 +597,9 @@ export default function GestaoDashboardPage() {
             <div className="divide-y divide-slate-100">
               {agendaHoje.slice(0, 5).map(ag => (
                 <div key={ag.id} className="flex items-center gap-3 px-5 py-3">
-                  <span className="text-xs font-bold text-blue-600 min-w-[3rem]">{ag.hora?.slice(0, 5) || "--:--"}</span>
+                  <span className="text-xs font-bold text-blue-600 min-w-[3rem]">{ag.horario || "--:--"}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-800 truncate">{ag.criancas?.nome || "—"}</p>
+                    <p className="text-xs font-semibold text-slate-800 truncate">{ag.crianca || "—"}</p>
                     {ag.profissional_nome && <p className="text-[10px] text-slate-400 truncate">{ag.profissional_nome}</p>}
                   </div>
                   {ag.servico && (
@@ -715,7 +749,7 @@ export default function GestaoDashboardPage() {
         {[
           { label: "Mural",      icon: "📢", href: "/gestao/mural",      color: "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" },
           { label: "Crianças",   icon: "👶", href: "/gestao/criancas",   color: "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100" },
-          { label: "Agenda",     icon: "📅", href: "/gestao/agenda",     color: "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100" },
+          { label: "Escala",     icon: "📅", href: "/escala",     color: "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100" },
           { label: "Relatórios", icon: "📊", href: "/gestao/relatorios", color: "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100" },
         ].map((a) => (
           <Link key={a.href} href={a.href}
