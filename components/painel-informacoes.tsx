@@ -153,6 +153,8 @@ export function Saudacao({ nome }: { nome?: string }) {
 
   useEffect(() => {
     setTexto(saudacao(nome));
+    const id = setInterval(() => setTexto(saudacao(nome)), 60_000);
+    return () => clearInterval(id);
   }, [nome]);
 
   return <>{texto}</>;
