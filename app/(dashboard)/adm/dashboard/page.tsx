@@ -361,10 +361,10 @@ export default function AdmDashboardPage() {
       {/* KPIs OPERACIONAIS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Atendimentos hoje",    valor: metricas.totalDia,   sufixo: "",    cor: "text-blue-600",    bg: "bg-blue-50",    icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",  icor: "text-blue-500" },
-          { label: "Aguardando pagamento", valor: metricas.pendentes,  sufixo: "",    cor: "text-amber-600",   bg: "bg-amber-50",   icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z", icor: "text-amber-500" },
-          { label: "Custo acumulado",      valor: null,                sufixo: "",    cor: "text-red-600",     bg: "bg-red-50",     icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z", icor: "text-red-500" },
-          { label: "Atendimentos pagos",   valor: metricas.pagos,      sufixo: "",    cor: "text-emerald-600", bg: "bg-emerald-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", icor: "text-emerald-500" },
+          { label: "Atendimentos hoje",    sub: "sessões de AT registradas hoje",              valor: metricas.totalDia,   sufixo: "",    cor: "text-blue-600",    bg: "bg-blue-50",    icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",  icor: "text-blue-500" },
+          { label: "Aguardando pagamento", sub: "sessões deste mês ainda não pagas ao profissional", valor: metricas.pendentes,  sufixo: "",    cor: "text-amber-600",   bg: "bg-amber-50",   icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z", icor: "text-amber-500" },
+          { label: "Custo acumulado",      sub: "já pago a AT/especialistas este mês",            valor: null,                sufixo: "",    cor: "text-red-600",     bg: "bg-red-50",     icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z", icor: "text-red-500" },
+          { label: "Atendimentos pagos",   sub: "sessões deste mês já pagas",                    valor: metricas.pagos,      sufixo: "",    cor: "text-emerald-600", bg: "bg-emerald-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", icor: "text-emerald-500" },
         ].map((kpi, i) => (
           <div key={i} className="group bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
@@ -379,6 +379,7 @@ export default function AdmDashboardPage() {
               ? <p className={`text-xl font-bold ${kpi.cor} tracking-tight`}>R$ {metricas.receitaMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
               : <p className={`text-3xl font-bold ${kpi.cor} tracking-tight`}>{kpi.valor}</p>
             }
+            <p className="text-xs text-slate-400 mt-1">{kpi.sub}</p>
           </div>
         ))}
       </div>

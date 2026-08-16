@@ -208,14 +208,17 @@ export async function carregarDadosDashboard() {
   try {
     const supabase = await createSupabaseServerClient();
 
+    const hojeStr = hojeBrasil();
+    const mesAtual = hojeStr.slice(0, 7);
+
     const { data: atendimentos, error } = await supabase
       .from("atendimentos")
       .select("status, data, valor_total")
+      .gte("data", `${mesAtual}-01`)
+      .lte("data", `${mesAtual}-31`)
       .order("data", { ascending: true });
 
     if (error) throw error;
-
-    const hojeStr = hojeBrasil();
 
     let totalDia = 0;
     let pendentes = 0;
