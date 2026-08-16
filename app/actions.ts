@@ -210,6 +210,10 @@ export async function carregarDadosDashboard() {
 
     const hojeStr = hojeBrasil();
     const mesAtual = hojeStr.slice(0, 7);
+    const mesAtualLabel = new Date(`${mesAtual}-02T00:00:00`).toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric",
+    });
 
     const { data: atendimentos, error } = await supabase
       .from("atendimentos")
@@ -260,6 +264,7 @@ export async function carregarDadosDashboard() {
 
     return {
       success: true,
+      mesAtualLabel,
       metricas: { totalDia, pendentes, receitaMes: despesaTotalPaga, pagos },
       graficoLinha: {
         labels: labelsLinha.length > 0 ? labelsLinha.map(l => l.split("-").reverse().slice(0, 2).join("/")) : ["Sem pagamentos"],

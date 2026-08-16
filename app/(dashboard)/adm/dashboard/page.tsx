@@ -35,6 +35,7 @@ export default function AdmDashboardPage() {
   const [graficoLinha, setGraficoLinha] = useState<ChartData<"line"> | null>(null);
   const [graficoPizza, setGraficoPizza] = useState<ChartData<"pie"> | null>(null);
   const [graficoBarras, setGraficoBarras] = useState<ChartData<"bar"> | null>(null);
+  const [mesAtualLabel, setMesAtualLabel] = useState("");
   const [loading, setLoading] = useState(true);
   const [aniversariantes, setAniversariantes] = useState<Aniversariante[]>([]);
   const [aniversariantesAbertos, setAniversariantesAbertos] = useState(true);
@@ -66,6 +67,7 @@ export default function AdmDashboardPage() {
         setGraficoLinha(res.graficoLinha);
         setGraficoPizza(res.graficoPizza);
         setGraficoBarras(res.graficoBarras);
+        setMesAtualLabel(res.mesAtualLabel || "");
       }
       await Promise.all([carregarAniversariantes(), carregarAnalytics()]);
       setLoading(false);
@@ -478,7 +480,9 @@ export default function AdmDashboardPage() {
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100">
             <h2 className="text-sm font-semibold text-slate-800">Atendimentos por semana</h2>
-            <p className="text-xs text-slate-400">Volume semanal no mês atual</p>
+            <p className="text-xs text-slate-400">
+              Volume semanal {mesAtualLabel ? `em ${mesAtualLabel}` : "no mês atual"}
+            </p>
           </div>
           <div className="p-5 h-52">
             {graficoBarras
