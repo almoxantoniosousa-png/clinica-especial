@@ -738,22 +738,6 @@ export default function GestaoDashboardPage() {
         </>
       )}
 
-      {/* ATALHOS */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: "Mural",      icon: "📢", href: "/gestao/mural",      color: "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" },
-          { label: "Crianças",   icon: "👶", href: "/gestao/criancas",   color: "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100" },
-          { label: "Escala",     icon: "📅", href: "/escala",     color: "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100" },
-          { label: "Relatórios", icon: "📊", href: "/gestao/relatorios", color: "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100" },
-        ].map((a) => (
-          <Link key={a.href} href={a.href}
-            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border font-semibold text-sm transition active:scale-95 ${a.color}`}>
-            <span className="text-2xl">{a.icon}</span>
-            <span>{a.label}</span>
-          </Link>
-        ))}
-      </div>
-
     </div>
   );
 }
