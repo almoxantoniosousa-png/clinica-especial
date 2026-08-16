@@ -163,6 +163,7 @@ export default function AgendaPessoalPage() {
     if (error) { mostrarFeedback("erro", error.message); return; }
     mostrarFeedback("sucesso", editando ? "Compromisso atualizado!" : "Compromisso adicionado!");
     setModalAberto(false);
+    carregarPendentesAntigos();
     carregar();
   }
 
@@ -174,6 +175,7 @@ export default function AgendaPessoalPage() {
     if (error) { mostrarFeedback("erro", "Não foi possível remover."); return; }
     setDeletandoId(null);
     carregar();
+    carregarPendentesAntigos();
   }
 
   async function alternarConcluido(c: Compromisso) {
@@ -233,6 +235,10 @@ export default function AgendaPessoalPage() {
                     <button onClick={() => irParaCompromisso(c)} className="flex-1 min-w-0 text-left">
                       <span className="text-sm font-semibold text-[#2c2a27]">{c.titulo}</span>
                       <span className="text-xs text-[#98938b] ml-2">{fmtDataCurta(c.data)}</span>
+                    </button>
+                    <button onClick={() => abrirEditar(c)} title="Remarcar para outra data"
+                      className="text-xs font-semibold flex-shrink-0 hover:underline" style={{ color: "#c48a92" }}>
+                      🔁 Remarcar
                     </button>
                   </div>
                 ))}
