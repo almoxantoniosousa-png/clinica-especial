@@ -224,6 +224,13 @@ export async function carregarDadosDashboard() {
 
     if (error) throw error;
 
+    const { data: atendimentosEspecialista } = await supabase
+      .from("atendimentos_especialista")
+      .select("data, status")
+      .eq("status", "P")
+      .gte("data", `${mesAtual}-01`)
+      .lte("data", `${mesAtual}-31`);
+
     let totalDia = 0;
     let pendentes = 0;
     let pagos = 0;
@@ -257,10 +264,22 @@ export async function carregarDadosDashboard() {
       });
     }
 
+    const especialistaPorSemana: Record<string, number> = {
+      "Semana 1": 0, "Semana 2": 0, "Semana 3": 0, "Semana 4": 0, "Semana 5": 0,
+    };
+    (atendimentosEspecialista || []).forEach((a) => {
+      const dataFormatada = a.data ? String(a.data).split("T")[0] : null;
+      if (!dataFormatada) return;
+      const diaDoMes = new Date(dataFormatada + "T12:00:00").getDate();
+      const semana = Math.min(5, Math.ceil(diaDoMes / 7));
+      especialistaPorSemana[`Semana ${semana}`]++;
+    });
+
     const labelsLinha = Object.keys(despesaPorDia).sort();
     const valoresLinha = labelsLinha.map((d) => despesaPorDia[d]);
     const labelsBarras = Object.keys(atendimentosPorSemana);
     const valoresBarras = labelsBarras.map((s) => atendimentosPorSemana[s]);
+    const valoresBarrasEspecialista = labelsBarras.map((s) => especialistaPorSemana[s]);
 
     return {
       success: true,
@@ -287,11 +306,18 @@ export async function carregarDadosDashboard() {
       },
       graficoBarras: {
         labels: labelsBarras,
-        datasets: [{
-          label: "Quantidade de Atendimentos",
-          data: valoresBarras,
-          backgroundColor: "rgba(59, 130, 246, 0.6)",
-        }],
+        datasets: [
+          {
+            label: "AT",
+            data: valoresBarras,
+            backgroundColor: "rgba(59, 130, 246, 0.6)",
+          },
+          {
+            label: "Especialista",
+            data: valoresBarrasEspecialista,
+            backgroundColor: "rgba(15,148,136,0.75)",
+          },
+        ],
       },
     };
   } catch (err: any) {

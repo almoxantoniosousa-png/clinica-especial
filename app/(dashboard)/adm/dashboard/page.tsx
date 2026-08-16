@@ -79,7 +79,9 @@ export default function AdmDashboardPage() {
         setGraficoPizza(res.graficoPizza);
         setGraficoBarras(res.graficoBarras ? {
           ...res.graficoBarras,
-          datasets: res.graficoBarras.datasets.map((d) => ({ ...d, backgroundColor: gradienteAzulMarca })),
+          datasets: res.graficoBarras.datasets.map((d) =>
+            d.label === "AT" ? { ...d, backgroundColor: gradienteAzulMarca } : d
+          ),
         } : null);
         setMesAtualLabel(res.mesAtualLabel || "");
       }
@@ -495,7 +497,7 @@ export default function AdmDashboardPage() {
           <div className="px-5 py-4 border-b border-slate-100">
             <h2 className="text-sm font-semibold text-slate-800">Atendimentos por semana</h2>
             <p className="text-xs text-slate-400">
-              Volume semanal {mesAtualLabel ? `em ${mesAtualLabel}` : "no mês atual"}
+              AT + Especialista · {mesAtualLabel ? `em ${mesAtualLabel}` : "no mês atual"}
             </p>
           </div>
           <div className="p-5 h-52">
