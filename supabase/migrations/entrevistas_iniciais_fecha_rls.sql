@@ -17,10 +17,12 @@ drop policy if exists "publico_responde_enquanto_aguardando" on public.entrevist
 
 -- "equipe_acesso_total" também estava com qual/with_check = true pra
 -- qualquer "authenticated" — isso inclui contas de família, que não
--- deveriam ver entrevista de ninguém. Restrito à equipe de verdade.
+-- deveriam ver entrevista de ninguém. A pedido, restrito só à Gestão
+-- (é quem de fato usa essa tela — /gestao/entrevista-inicial).
 drop policy if exists "equipe_acesso_total" on public.entrevistas_iniciais;
-create policy "equipe_acesso_total"
+drop policy if exists "gestao_acesso_total" on public.entrevistas_iniciais;
+create policy "gestao_acesso_total"
   on public.entrevistas_iniciais
   for all
-  using (meu_role() <> 'familia' and meu_role() <> '')
-  with check (meu_role() <> 'familia' and meu_role() <> '');
+  using (meu_role() = 'gestao')
+  with check (meu_role() = 'gestao');
