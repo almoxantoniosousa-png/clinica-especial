@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Bell } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { tocarSomNotificacao } from "@/lib/somNotificacao";
@@ -19,7 +20,10 @@ interface Notificacao {
 export function NotificacoesBell({ userRole, align = "right" }: { userRole: string; align?: "left" | "right" }) {
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [aberto, setAberto] = useState(false);
+  const [posicao, setPosicao] = useState<{ top: number; left?: number; right?: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const botaoRef = useRef<HTMLButtonElement>(null);
+  const painelRef = useRef<HTMLDivElement>(null);
 
   const naoLidas = notificacoes.filter(n => !n.lida).length;
 
@@ -61,7 +65,10 @@ export function NotificacoesBell({ userRole, align = "right" }: { userRole: stri
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setAberto(false);
+      const alvo = e.target as Node;
+      const dentroDoBotao = ref.current?.contains(alvo);
+      const dentroDoPainel = painelRef.current?.contains(alvo);
+      if (!dentroDoBotao && !dentroDoPainel) setAberto(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -92,7 +99,24 @@ export function NotificacoesBell({ userRole, align = "right" }: { userRole: stri
   return (
     <div ref={ref} className="relative">
       <button
+        ref={botaoRef}
         onClick={() => {
+          // Painel é fixed e posicionado via JS (em vez de sm:absolute) pra
+          // escapar do overflow-y-auto da barra lateral, que senão corta o
+          // painel — mesmo com z-index alto, overflow:hidden/auto de um
+          // ancestral recorta qualquer descendente absolute, só não recorta
+          // fixed (cujo containing block é a viewport, não a barra lateral).
+          if (!aberto && botaoRef.current) {
+            const r = botaoRef.current.getBoundingClientRect();
+            const mobile = window.innerWidth < 640;
+            setPosicao(
+              mobile
+                ? { top: r.bottom + 8, left: 12, right: 12 }
+                : align === "left"
+                ? { top: r.bottom + 8, left: r.left }
+                : { top: r.bottom + 8, right: window.innerWidth - r.right }
+            );
+          }
           setAberto(v => !v);
           if (!aberto) marcarTodasLidas();
         }}
@@ -106,8 +130,12 @@ export function NotificacoesBell({ userRole, align = "right" }: { userRole: stri
         )}
       </button>
 
-      {aberto && (
-        <div className={`fixed left-3 right-3 top-16 sm:absolute sm:top-11 sm:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden ${align === "left" ? "sm:left-0 sm:right-auto" : "sm:left-auto sm:right-0"}`}>
+      {aberto && createPortal(
+        <div
+          ref={painelRef}
+          className="fixed w-80 max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden"
+          style={posicao ? { top: posicao.top, left: posicao.left, right: posicao.right } : { top: 64, right: 12 }}
+        >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
             <p className="font-semibold text-slate-800 text-sm">Notificações</p>
             {naoLidas > 0 && (
@@ -158,7 +186,8 @@ export function NotificacoesBell({ userRole, align = "right" }: { userRole: stri
               ))
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
