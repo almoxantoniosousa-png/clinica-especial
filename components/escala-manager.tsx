@@ -92,13 +92,6 @@ function intervaloSemanaAtual(): string {
 
 const LOCAIS = ["Escola", "Casa", "Clínica"];
 
-type Presenca = "P" | "F" | "FJ";
-const PRESENCAS: { valor: Presenca; label: string; cor: string }[] = [
-  { valor: "P",  label: "Presença",         cor: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  { valor: "F",  label: "Falta",            cor: "bg-red-100 text-red-700 border-red-200" },
-  { valor: "FJ", label: "Falta justificada", cor: "bg-amber-100 text-amber-700 border-amber-200" },
-];
-
 type Slot = {
   id: string;
   dia: string;
@@ -108,7 +101,6 @@ type Slot = {
   profissional_nome: string | null;
   profissional_id: string | null;
   local: string | null;
-  presenca: Presenca | null;
   motivo: string | null;
   atualizado_por_nome: string | null;
   atualizado_em: string | null;
@@ -123,7 +115,6 @@ type HistoricoItem = {
   servico: string | null;
   profissional_nome: string | null;
   local: string | null;
-  presenca: Presenca | null;
   motivo: string | null;
   editado_por_nome: string | null;
   editado_por_email: string;
@@ -333,7 +324,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
     const slotsRes = await supabase
       .from("escala")
-      .select("id, dia, horario, crianca, servico, profissional_nome, profissional_id, local, presenca, motivo, atualizado_por_nome, atualizado_em")
+      .select("id, dia, horario, crianca, servico, profissional_nome, profissional_id, local, motivo, atualizado_por_nome, atualizado_em")
       .order("horario");
 
     const slotsFiltrados = (slotsRes.data ?? []).filter(
@@ -544,7 +535,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       profissional_id: slot.profissional_id,
       profissional_nome: slot.profissional_nome,
       local: slot.local,
-      presenca: slot.presenca,
       motivo: slot.motivo,
       editado_por_email: usuarioEmail,
       editado_por_nome: usuarioNome || null,
@@ -642,29 +632,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     await tirarSnapshot();
     fecharModal();
     carregarTudo();
-  }
-
-  async function marcarPresenca(slot: Slot, presenca: Presenca) {
-    const novo = slot.presenca === presenca ? null : presenca;
-    await arquivar(slot, "edicao");
-    setSlots((prev) => prev.map((s) => s.id === slot.id ? { ...s, presenca: novo } : s));
-    const { error } = await supabase.from("escala").update({
-      presenca: novo,
-      atualizado_por_email: usuarioEmail,
-      atualizado_por_nome: usuarioNome || null,
-      atualizado_em: new Date().toISOString(),
-    }).eq("id", slot.id);
-    if (error) {
-      setSlots((prev) => prev.map((s) => s.id === slot.id ? { ...s, presenca: slot.presenca } : s));
-      return;
-    }
-    await registrarLog(supabase, {
-      usuario_email: usuarioEmail, usuario_nome: usuarioNome,
-      acao: novo ? `Marcou presença (${novo})` : "Removeu marcação de presença",
-      tabela: "escala", registro_id: slot.id,
-      descricao: `${slot.crianca} · ${slot.servico} (${slot.dia}, ${slot.horario})`,
-    });
-    await tirarSnapshot();
   }
 
   async function excluir() {
@@ -812,7 +779,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         profissional_id: e.profissional_id,
         profissional_nome: e.profissional_nome,
         local: e.local,
-        presenca: null,
         motivo: e.motivo,
         atualizado_por_nome: null,
         atualizado_em: null,
@@ -1298,7 +1264,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                               className={`text-left px-1.5 py-1 rounded border ${getCorServico(s.servico, corMap)} ${podeEditar ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}>
                               <strong>👶 {s.crianca}</strong> · {s.servico}
                               {s.profissional_nome && <div className="opacity-70">👤 {s.profissional_nome}</div>}
-                              {s.presenca && <span className="ml-1 font-bold">[{s.presenca}]</span>}
                             </button>
                           ))}
                         </div>
@@ -1388,22 +1353,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                         <span className="text-[10px] mt-1 font-semibold opacity-70">
                           {item.escalaIdOrigem ? "✎ ajustado só nesta data" : "＋ adicionado só nesta data"}
                         </span>
-                      )}
-                      {!item.cancelado && item.escalaIdOrigem && (
-                        <div className="flex items-center gap-1 mt-1">
-                          {PRESENCAS.map((p) => (
-                            <button
-                              key={p.valor}
-                              onClick={() => marcarPresenca({ ...item.slot, id: item.escalaIdOrigem! } as Slot, p.valor)}
-                              title={p.label}
-                              className={`w-6 h-5 rounded text-[10px] font-bold border transition-colors ${
-                                item.slot.presenca === p.valor ? p.cor : "bg-white/60 text-current border-current/20 opacity-50 hover:opacity-100"
-                              }`}
-                            >
-                              {p.valor}
-                            </button>
-                          ))}
-                        </div>
                       )}
                     </div>
                   ))}
@@ -1778,7 +1727,6 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                         <p className="font-semibold text-slate-800 mt-1.5">{h.crianca} · {h.servico}</p>
                         <p className="text-xs text-slate-500">{h.dia}, {h.horario}</p>
                         {h.profissional_nome && <p className="text-xs text-slate-500">👤 {h.profissional_nome}</p>}
-                        {h.presenca && <p className="text-xs text-slate-500">Presença: {h.presenca}</p>}
                         {h.motivo && <p className="text-xs text-slate-500 mt-1 bg-slate-50 rounded px-2 py-1">⚠️ {h.motivo}</p>}
                         <p className="text-[11px] text-slate-400 mt-1.5 border-t border-slate-100 pt-1.5">
                           Versão anterior por <strong>{h.editado_por_nome || h.editado_por_email}</strong>
