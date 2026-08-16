@@ -37,6 +37,7 @@ export default function AdmDashboardPage() {
   const [graficoBarras, setGraficoBarras] = useState<ChartData<"bar"> | null>(null);
   const [loading, setLoading] = useState(true);
   const [aniversariantes, setAniversariantes] = useState<Aniversariante[]>([]);
+  const [aniversariantesAbertos, setAniversariantesAbertos] = useState(true);
   const [nome, setNome] = useState<string | undefined>(undefined);
 
   // ── estado analytics ─────────────────────────────────────────
@@ -127,7 +128,7 @@ export default function AdmDashboardPage() {
       { data: criancasData },
       { data: atendMesData },
       { data: agendaMesData },
-      { data: perfisData },
+      { data: acompanhantesData },
       { data: especialistasData },
     ] = await Promise.all([
       supabase.from("contas_receber").select("mes_referencia,valor_liquido,valor_total")
@@ -137,13 +138,13 @@ export default function AdmDashboardPage() {
       supabase.from("folha_pagamento").select("mes,ano,valor_final")
         .eq("status", "pago").gte("ano", Number(anoIni)),
       supabase.from("criancas").select("plano_saude"),
-      // acompanhantes: atendimentos.atendente_id → perfis.id
+      // acompanhantes: atendimentos.atendente_id → atendentes.id
       supabase.from("atendimentos").select("atendente_id")
         .gte("data", `${mesAtual}-01`).lte("data", dataFim),
       // especialistas: agenda.especialista_id → atendentes.id
       supabase.from("agenda").select("especialista_id")
         .gte("data", `${mesAtual}-01`).lte("data", dataFim),
-      supabase.from("perfis").select("id,nome").eq("role", "atendente"),
+      supabase.from("atendentes").select("id,nome").eq("role", "atendente"),
       supabase.from("atendentes").select("id,nome").eq("role", "especialista"),
     ]);
 
@@ -207,9 +208,8 @@ export default function AdmDashboardPage() {
     });
 
     // ── top profissionais (acompanhantes + especialistas) ──
-    // acompanhantes: atendimentos.atendente_id → perfis.id
     const nomesAcomp: Record<string, string> = {};
-    (perfisData || []).forEach((p: { id: string; nome: string }) => { nomesAcomp[p.id] = p.nome; });
+    (acompanhantesData || []).forEach((p: { id: string; nome: string }) => { nomesAcomp[p.id] = p.nome; });
 
     // especialistas: agenda.especialista_id → atendentes.id
     const nomesEsp: Record<string, string> = {};
@@ -385,16 +385,24 @@ export default function AdmDashboardPage() {
 
       {/* ANIVERSARIANTES */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <button onClick={() => setAniversariantesAbertos(v => !v)}
+          className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition text-left">
           <div>
             <h2 className="text-sm font-semibold text-slate-800">Aniversariantes</h2>
             <p className="text-xs text-slate-400">{mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}</p>
           </div>
-          <span className="text-xs bg-pink-50 text-pink-600 border border-pink-100 px-2.5 py-1 rounded-full font-medium">
-            {aniversariantes.length} este mês
-          </span>
-        </div>
-        <div className="p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs bg-pink-50 text-pink-600 border border-pink-100 px-2.5 py-1 rounded-full font-medium">
+              {aniversariantes.length} este mês
+            </span>
+            <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${aniversariantesAbertos ? "rotate-180" : ""}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </button>
+        {aniversariantesAbertos && (
+        <div className="p-4 border-t border-slate-100">
           {aniversariantes.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-6">Nenhum aniversariante este mês.</p>
           ) : (
@@ -449,6 +457,7 @@ export default function AdmDashboardPage() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* GRÁFICOS OPERACIONAIS */}
