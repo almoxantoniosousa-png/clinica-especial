@@ -6,7 +6,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { PainelInformacoes, Saudacao } from "@/components/painel-informacoes";
 import { primeiroNome } from "@/lib/dataUtils";
 import { Line, Pie, Bar } from "react-chartjs-2";
-import type { ChartData } from "chart.js";
+import type { ChartData, ScriptableContext } from "chart.js";
 import {
   Chart as ChartJS,
   LineElement,
@@ -21,6 +21,17 @@ import {
 } from "chart.js";
 
 type Aniversariante = { nome: string; data_nascimento: string; tipo: string; dia: number; diff: number; foto_url?: string | null };
+
+// Degradê azul da marca (mesmo tom do menu/cabeçalhos) em vez de azul chapado nos gráficos
+function gradienteAzulMarca(context: ScriptableContext<"bar">) {
+  const { chart } = context;
+  const { ctx, chartArea } = chart;
+  if (!chartArea) return "#1d4ed8";
+  const gradiente = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+  gradiente.addColorStop(0, "#1d4ed8");
+  gradiente.addColorStop(1, "#3b82f6");
+  return gradiente;
+}
 
 ChartJS.register(
   LineElement, CategoryScale, LinearScale, PointElement,
@@ -66,7 +77,10 @@ export default function AdmDashboardPage() {
         setMetricas(res.metricas);
         setGraficoLinha(res.graficoLinha);
         setGraficoPizza(res.graficoPizza);
-        setGraficoBarras(res.graficoBarras);
+        setGraficoBarras(res.graficoBarras ? {
+          ...res.graficoBarras,
+          datasets: res.graficoBarras.datasets.map((d) => ({ ...d, backgroundColor: gradienteAzulMarca })),
+        } : null);
         setMesAtualLabel(res.mesAtualLabel || "");
       }
       await Promise.all([carregarAniversariantes(), carregarAnalytics()]);
@@ -177,15 +191,15 @@ export default function AdmDashboardPage() {
         {
           label: "Receita",
           data: meses.map(m => receitaPorMes[m]),
-          backgroundColor: "rgba(16,185,129,0.75)",
-          borderColor: "rgb(16,185,129)",
+          backgroundColor: "rgba(15,148,136,0.75)",
+          borderColor: "rgb(15,148,136)",
           borderWidth: 1, borderRadius: 6,
         },
         {
           label: "Despesa",
           data: meses.map(m => despesaPorMes[m]),
-          backgroundColor: "rgba(239,68,68,0.75)",
-          borderColor: "rgb(239,68,68)",
+          backgroundColor: "rgba(225,29,72,0.75)",
+          borderColor: "rgb(225,29,72)",
           borderWidth: 1, borderRadius: 6,
         },
       ],
