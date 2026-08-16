@@ -64,8 +64,13 @@ export default function RequisicoesPagina() {
     const { data: uData } = await supabase.from("usuarios").select("nome, role").eq("id", user.id).maybeSingle();
     if (uData) { nome = uData.nome || ""; role = uData.role || ""; }
     else {
-      const { data: pData } = await supabase.from("perfis").select("nome, role").eq("id", user.id).maybeSingle();
-      if (pData) { nome = (pData as any).nome || ""; role = (pData as any).role || ""; }
+      // especialistas/supervisora/AT ficam em atendentes, não em usuarios
+      const { data: aData } = await supabase.from("atendentes").select("nome, role").eq("email", user.email).maybeSingle();
+      if (aData) { nome = aData.nome || ""; role = aData.role || ""; }
+      else {
+        const { data: pData } = await supabase.from("perfis").select("nome, role").eq("id", user.id).maybeSingle();
+        if (pData) { nome = (pData as any).nome || ""; role = (pData as any).role || ""; }
+      }
     }
     setEu({ id: user.id, nome, role, email: user.email || "" });
 
