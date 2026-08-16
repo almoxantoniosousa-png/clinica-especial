@@ -222,12 +222,12 @@ export default function GestaoDashboardPage() {
       { data: atendData },
       { data: criancasData },
       { data: relatoriosData },
-      { data: perfisData },
+      { data: atendentesData },
     ] = await Promise.all([
       supabase.from("atendimentos").select("data, modalidade, atendente_id").gte("data", dataIni).lte("data", dataFim),
       supabase.from("criancas").select("plano_saude"),
       supabase.from("prontuarios").select("id").eq("tipo", "relatorio"),
-      supabase.from("perfis").select("id, nome").eq("role", "atendente"),
+      supabase.from("atendentes").select("id, nome"),
     ]);
 
     // Volume mensal
@@ -289,7 +289,7 @@ export default function GestaoDashboardPage() {
 
     // Top profissionais (mês atual)
     const nomesMap: Record<string, string> = {};
-    (perfisData || []).forEach((p: { id: string; nome: string }) => { nomesMap[p.id] = p.nome; });
+    (atendentesData || []).forEach((p: { id: string; nome: string }) => { nomesMap[p.id] = p.nome; });
     const rankMap: Record<string, number> = {};
     modalMes.forEach(a => {
       const id = a.atendente_id;

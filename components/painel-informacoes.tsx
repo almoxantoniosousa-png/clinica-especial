@@ -190,6 +190,7 @@ export function PainelInformacoes() {
   const [noticias, setNoticias] = useState<Record<string, Noticia[]>>({ brasil: [], mundo: [], inclusao: [] });
   const [abaNoticia, setAbaNoticia] = useState<"brasil" | "mundo" | "inclusao">("brasil");
   const [loadingNoticias, setLoadingNoticias] = useState(true);
+  const [noticiasAbertas, setNoticiasAbertas] = useState(false);
 
   // Relógio
   useEffect(() => {
@@ -355,8 +356,21 @@ export function PainelInformacoes() {
 
       {/* Notícias */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <button onClick={() => setNoticiasAbertas(v => !v)}
+          className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition text-left">
+          <div className="flex items-center gap-2">
+            <span className="text-base">📰</span>
+            <span className="text-sm font-semibold text-slate-800">Notícias Nacionais e Internacionais</span>
+          </div>
+          <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${noticiasAbertas ? "rotate-180" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {noticiasAbertas && (
+        <>
         {/* Abas */}
-        <div className="flex border-b border-slate-100">
+        <div className="flex border-t border-slate-100">
           {abas.map(aba => (
             <button key={aba.key} onClick={() => setAbaNoticia(aba.key)}
               className={`flex-1 py-3 text-xs font-semibold transition-all ${
@@ -414,6 +428,8 @@ export function PainelInformacoes() {
             <p className="text-[10px] text-slate-400">Autismo · TEA · Inclusão · Tratamentos</p>
           )}
         </div>
+        </>
+        )}
       </div>
     </div>
   );
