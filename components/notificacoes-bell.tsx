@@ -75,6 +75,7 @@ export function NotificacoesBell({ userRole, align = "right" }: { userRole: stri
     if (tipo === "reuniao")  return "🗒️";
     if (tipo === "ocorrencia") return "📓";
     if (tipo === "alerta")   return "⚠️";
+    if (tipo === "aniversario") return "🎂";
     return "🔔";
   }
 
