@@ -334,3 +334,52 @@ export async function logout() {
   revalidatePath("/", "layout");
   redirect("/login");
 }
+
+// ============================
+// ENTREVISTA INICIAL (link público, sem login)
+// ============================
+// A família preenche pelo link (sem login), então essa checagem por
+// token precisa acontecer aqui no servidor com a service role — RLS
+// não tem como validar "só quem sabe o token" sem vazar a tabela
+// inteira pra leitura anônima. O componente cliente só manda o token
+// e os dados do formulário; nunca fala direto com o Supabase.
+function admin() {
+  const { createClient } = require("@supabase/supabase-js");
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+export async function buscarEntrevistaPorToken(token: string) {
+  if (!token) return { encontrado: false };
+  const { data } = await admin()
+    .from("entrevistas_iniciais")
+    .select("status, nome_crianca_preenchido")
+    .eq("token", token)
+    .maybeSingle();
+  if (!data) return { encontrado: false };
+  return { encontrado: true, status: data.status, nome: data.nome_crianca_preenchido || "" };
+}
+
+export async function enviarEntrevistaPorToken(token: string, payload: Record<string, unknown>) {
+  if (!token) return { success: false, error: "Link inválido." };
+  const sb = admin();
+
+  const { data: atual } = await sb
+    .from("entrevistas_iniciais")
+    .select("status")
+    .eq("token", token)
+    .maybeSingle();
+  if (!atual) return { success: false, error: "Link não encontrado." };
+  if (atual.status !== "aguardando") return { success: false, error: "Essa entrevista já foi respondida." };
+
+  const { error } = await sb
+    .from("entrevistas_iniciais")
+    .update({ ...payload, status: "respondido", respondido_em: new Date().toISOString() })
+    .eq("token", token)
+    .eq("status", "aguardando");
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}

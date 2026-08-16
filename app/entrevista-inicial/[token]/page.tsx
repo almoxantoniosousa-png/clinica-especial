@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
+import { buscarEntrevistaPorToken, enviarEntrevistaPorToken } from "@/app/actions";
 
 const ETAPAS = [
   "Identificação",
@@ -89,7 +89,6 @@ function CampoOpcoes({ label, campo, form, set, opcoes }: {
 
 export default function EntrevistaInicialPage() {
   const { token } = useParams<{ token: string }>();
-  const supabase = createSupabaseBrowserClient();
 
   const [carregando, setCarregando] = useState(true);
   const [naoEncontrado, setNaoEncontrado] = useState(false);
@@ -109,9 +108,9 @@ export default function EntrevistaInicialPage() {
 
   useEffect(() => {
     async function carregar() {
-      const { data } = await supabase.from("entrevistas_iniciais").select("status, nome_crianca_preenchido").eq("token", token).maybeSingle();
-      if (!data) { setNaoEncontrado(true); setCarregando(false); return; }
-      setNomePreenchido(data.nome_crianca_preenchido || "");
+      const data = await buscarEntrevistaPorToken(token);
+      if (!data.encontrado) { setNaoEncontrado(true); setCarregando(false); return; }
+      setNomePreenchido(data.nome || "");
       if (data.status !== "aguardando") setJaRespondido(true);
       setCarregando(false);
     }
@@ -164,22 +163,18 @@ export default function EntrevistaInicialPage() {
     }
     setErro("");
     setEnviando(true);
-    const { error } = await supabase.from("entrevistas_iniciais")
-      .update({
-        ...form,
-        queixa: queixaAreas.join(", "),
-        primeiros_meses: marcosDesenvolvimento.join(", "),
-        objetivos_aba: objetivosAreas.join(", "),
-        reforcadores: reforcadoresAreas.join(", "),
-        disponibilidade_familia: disponibilidadeTurnos.join(", "),
-        data_nascimento: form.data_nascimento || null, // "" quebra coluna date
-        servicos_recebidos: servicos,
-        status: "respondido",
-        respondido_em: new Date().toISOString(),
-      })
-      .eq("token", token);
+    const resultado = await enviarEntrevistaPorToken(token, {
+      ...form,
+      queixa: queixaAreas.join(", "),
+      primeiros_meses: marcosDesenvolvimento.join(", "),
+      objetivos_aba: objetivosAreas.join(", "),
+      reforcadores: reforcadoresAreas.join(", "),
+      disponibilidade_familia: disponibilidadeTurnos.join(", "),
+      data_nascimento: form.data_nascimento || null, // "" quebra coluna date
+      servicos_recebidos: servicos,
+    });
     setEnviando(false);
-    if (error) { setErro("Não conseguimos salvar: " + error.message); return; }
+    if (!resultado.success) { setErro("Não conseguimos salvar: " + resultado.error); return; }
     setEnviado(true);
   }
 
