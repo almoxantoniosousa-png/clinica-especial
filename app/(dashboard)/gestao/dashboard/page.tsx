@@ -42,9 +42,7 @@ export default function GestaoDashboardPage() {
   const [equipeTotal, setEquipeTotal] = useState(0);
   const [atendimentosHoje, setAtendimentosHoje] = useState(0);
   const [atendimentosMes, setAtendimentosMes] = useState(0);
-  const [receitaMes, setReceitaMes] = useState(0);
   const [inadimplentes, setInadimplentes] = useState(0);
-  const [valorInadimplente, setValorInadimplente] = useState(0);
   const [liminares, setLiminares] = useState<Liminar[]>([]);
   const [equipe, setEquipe] = useState<Membro[]>([]);
   const [equipeAberta, setEquipeAberta] = useState(false);
@@ -101,17 +99,15 @@ export default function GestaoDashboardPage() {
         .eq("data", hoje);
       setAtendimentosHoje(totalHoje || 0);
 
-      // Atendimentos e receita do mês
+      // Atendimentos do mês
       const { data: atendMes } = await supabase
         .from("atendimentos")
-        .select("valor_total, modalidade")
+        .select("modalidade")
         .gte("data", `${mesAtual}-01`)
         .lte("data", `${mesAtual}-31`);
 
       if (atendMes) {
         setAtendimentosMes(atendMes.length);
-        const receita = atendMes.reduce((acc, a) => acc + Number(a.valor_total || 0), 0);
-        setReceitaMes(receita);
 
         // Por modalidade
         const porModalidade: Record<string, number> = { liminar: 0, convenio: 0, particular: 0 };
@@ -124,14 +120,12 @@ export default function GestaoDashboardPage() {
       // Inadimplência
       const { data: cobrancas } = await supabase
         .from("cobrancas")
-        .select("valor, crianca_id")
+        .select("crianca_id")
         .eq("status", "atrasado");
 
       if (cobrancas) {
         const uniqueClientes = new Set(cobrancas.map(c => c.crianca_id)).size;
         setInadimplentes(uniqueClientes);
-        const totalAtrasado = cobrancas.reduce((acc, c) => acc + Number(c.valor || 0), 0);
-        setValorInadimplente(totalAtrasado);
       }
 
       // Liminares próximas do vencimento (30 dias)
@@ -425,7 +419,7 @@ export default function GestaoDashboardPage() {
           {inadimplentes > 0 && (
             <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm font-medium text-red-800">
               <span className="flex-shrink-0">🔴</span>
-              <span className="font-bold">{inadimplentes} família(s)</span> em atraso — R$ {valorInadimplente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              <span className="font-bold">{inadimplentes} família(s)</span> em atraso — valores com o ADM
             </div>
           )}
         </div>
@@ -437,7 +431,7 @@ export default function GestaoDashboardPage() {
           { label: "Crianças ativas",      valor: criancasAtivas,     sub: "ativas na clínica",        icon: "👶", bg: "bg-blue-50",    cor: "text-blue-600" },
           { label: "Profissionais ativos", valor: equipeTotal,         sub: "na equipe",                icon: "👥", bg: "bg-purple-50",  cor: "text-purple-600" },
           { label: "Atendimentos hoje",    valor: atendimentosHoje,    sub: "registrados hoje",         icon: "📅", bg: "bg-amber-50",   cor: "text-amber-600" },
-          { label: "Atendimentos no mês",  valor: atendimentosMes,     sub: `R$ ${receitaMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, icon: "📋", bg: "bg-emerald-50", cor: "text-emerald-600" },
+          { label: "Atendimentos no mês",  valor: atendimentosMes,     sub: "no mês atual",              icon: "📋", bg: "bg-emerald-50", cor: "text-emerald-600" },
         ].map((kpi, i) => (
           <div key={i} className="group bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
@@ -467,7 +461,7 @@ export default function GestaoDashboardPage() {
             <div className="bg-red-50 rounded-xl p-4 border border-red-100">
               <p className="text-xs font-medium text-red-600">Atrasadas</p>
               <p className="text-2xl font-bold text-red-600 mt-1">{inadimplentes}</p>
-              <p className="text-xs text-slate-400 mt-0.5">R$ {valorInadimplente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <p className="text-xs text-slate-400 mt-0.5">famílias</p>
             </div>
           </div>
         </div>
