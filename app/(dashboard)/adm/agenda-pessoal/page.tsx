@@ -41,6 +41,10 @@ function inicioDaSemana(d: Date) {
   novo.setDate(d.getDate() + deslocamento);
   return novo;
 }
+function fmtDataCurta(iso: string) {
+  const d = new Date(iso + "T12:00:00");
+  return `${DIAS[(d.getDay() + 6) % 7].slice(0, 3)} ${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
 function periodo(hora: string | null): "Manhã" | "Tarde" | "Noite" | "Sem horário" {
   if (!hora) return "Sem horário";
   const h = Number(hora.split(":")[0]);
@@ -65,6 +69,11 @@ export default function AgendaPessoalPage() {
 
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
   const [excluindo, setExcluindo] = useState(false);
+
+  // Compromissos de semanas passadas que ficaram sem marcar — pra não
+  // precisar navegar "Semana anterior" repetidas vezes procurando.
+  const [pendentesAntigos, setPendentesAntigos] = useState<Compromisso[]>([]);
+  const [pendentesAbertos, setPendentesAbertos] = useState(true);
 
   const diasSemana = useMemo(() => Array.from({ length: 7 }, (_, i) => {
     const d = new Date(semanaBase); d.setDate(semanaBase.getDate() + i); return toISO(d);
@@ -96,6 +105,28 @@ export default function AgendaPessoalPage() {
   }
 
   useEffect(() => { carregar(); }, [email, semanaBase]);
+
+  async function carregarPendentesAntigos() {
+    if (!email) return;
+    const { data } = await supabase.from("agenda_pessoal")
+      .select("*").eq("usuario_email", email).eq("concluido", false)
+      .lt("data", toISO(new Date())).order("data");
+    setPendentesAntigos((data || []) as Compromisso[]);
+  }
+
+  useEffect(() => { carregarPendentesAntigos(); }, [email]);
+
+  function irParaCompromisso(c: Compromisso) {
+    setSemanaBase(inicioDaSemana(new Date(c.data + "T12:00:00")));
+    setDiaAtivo(c.data);
+  }
+
+  async function marcarPendenteAntigoFeito(c: Compromisso) {
+    setPendentesAntigos(prev => prev.filter(x => x.id !== c.id));
+    setCompromissos(prev => prev.map(x => x.id === c.id ? { ...x, concluido: true } : x));
+    const { error } = await supabase.from("agenda_pessoal").update({ concluido: true }).eq("id", c.id);
+    if (error) { setPendentesAntigos(prev => [...prev, c].sort((a, b) => a.data.localeCompare(b.data))); mostrarFeedback("erro", "Não foi possível atualizar."); }
+  }
 
   function abrirNovo(data?: string) {
     setEditando(null);
@@ -148,6 +179,7 @@ export default function AgendaPessoalPage() {
   async function alternarConcluido(c: Compromisso) {
     const novo = !c.concluido;
     setCompromissos(prev => prev.map(x => x.id === c.id ? { ...x, concluido: novo } : x));
+    if (novo) setPendentesAntigos(prev => prev.filter(x => x.id !== c.id));
     const { error } = await supabase.from("agenda_pessoal").update({ concluido: novo }).eq("id", c.id);
     if (error) {
       setCompromissos(prev => prev.map(x => x.id === c.id ? { ...x, concluido: c.concluido } : x));
@@ -179,6 +211,33 @@ export default function AgendaPessoalPage() {
         {feedback && (
           <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border ${feedback.tipo === "sucesso" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-800"}`}>
             {feedback.tipo === "sucesso" ? "✓" : "✕"} {feedback.msg}
+          </div>
+        )}
+
+        {pendentesAntigos.length > 0 && (
+          <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: "#e2b98f" }}>
+            <button onClick={() => setPendentesAbertos(v => !v)} className="w-full flex items-center justify-between gap-3 px-5 py-3.5" style={{ background: "#fbf1e4" }}>
+              <span className="text-sm font-semibold" style={{ color: "#8a5d1f" }}>
+                ⚠️ {pendentesAntigos.length} compromisso{pendentesAntigos.length > 1 ? "s" : ""} de dias anteriores sem marcar
+              </span>
+              <span className="text-xs" style={{ color: "#8a5d1f" }}>{pendentesAbertos ? "Recolher ▲" : "Ver ▼"}</span>
+            </button>
+            {pendentesAbertos && (
+              <div className="divide-y divide-[#ece9e4]">
+                {pendentesAntigos.map(c => (
+                  <div key={c.id} className="flex items-center gap-3 px-5 py-3">
+                    <button onClick={() => marcarPendenteAntigoFeito(c)} title="Marcar como feito"
+                      className="w-5 h-5 flex-shrink-0 rounded-full border-2 border-[#c9c4bb] text-transparent hover:border-emerald-400 hover:text-emerald-500 flex items-center justify-center text-[10px] font-bold transition">
+                      ✓
+                    </button>
+                    <button onClick={() => irParaCompromisso(c)} className="flex-1 min-w-0 text-left">
+                      <span className="text-sm font-semibold text-[#2c2a27]">{c.titulo}</span>
+                      <span className="text-xs text-[#98938b] ml-2">{fmtDataCurta(c.data)}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

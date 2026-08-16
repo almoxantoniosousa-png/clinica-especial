@@ -53,6 +53,11 @@ export default function MinhaAgendaPage() {
   const [obsTexto, setObsTexto]     = useState("");
   const [salvando, setSalvando]     = useState<string | null>(null);
 
+  // Compromissos de dias passados que ficaram "pendente" — pra não
+  // precisar navegar semana por semana procurando o que ficou sem marcar.
+  const [pendentesAntigos, setPendentesAntigos] = useState<Evento[]>([]);
+  const [pendentesAbertos, setPendentesAbertos] = useState(true);
+
   const diasSemana = useMemo(() => Array.from({ length: 7 }, (_, i) => {
     const d = new Date(semanaBase); d.setDate(semanaBase.getDate() + i); return toISO(d);
   }), [semanaBase]);
@@ -66,6 +71,23 @@ export default function MinhaAgendaPage() {
   }, [diasSemana]);
 
   useEffect(() => { carregar(); }, [semanaBase]);
+  useEffect(() => { carregarPendentesAntigos(); }, []);
+
+  async function carregarPendentesAntigos() {
+    const { data } = await supabase.from("pauta_diretora").select("*")
+      .eq("status", "pendente").lt("data", toISO(new Date())).order("data");
+    setPendentesAntigos((data || []) as Evento[]);
+  }
+
+  function irParaCompromisso(ev: Evento) {
+    setSemanaBase(getSegunda(new Date(ev.data + "T12:00:00")));
+  }
+
+  async function marcarPendenteAntigoRealizado(ev: Evento) {
+    setPendentesAntigos(prev => prev.filter(e => e.id !== ev.id));
+    setEventos(prev => prev.map(e => e.id === ev.id ? { ...e, status: "realizado", obs_simone: null } : e));
+    await supabase.from("pauta_diretora").update({ status: "realizado", obs_simone: null }).eq("id", ev.id);
+  }
 
   async function carregar() {
     setLoading(true);
@@ -81,6 +103,7 @@ export default function MinhaAgendaPage() {
     setSalvando(id);
     await supabase.from("pauta_diretora").update({ status: "realizado", obs_simone: null }).eq("id", id);
     setEventos(prev => prev.map(e => e.id === id ? { ...e, status: "realizado", obs_simone: null } : e));
+    setPendentesAntigos(prev => prev.filter(e => e.id !== id));
     setSalvando(null);
   }
 
@@ -90,6 +113,7 @@ export default function MinhaAgendaPage() {
     const ev  = eventos.find(e => e.id === id);
     await supabase.from("pauta_diretora").update({ status: "nao_realizado", obs_simone: obs }).eq("id", id);
     setEventos(prev => prev.map(e => e.id === id ? { ...e, status: "nao_realizado", obs_simone: obs } : e));
+    setPendentesAntigos(prev => prev.filter(e => e.id !== id));
     if (ev) await notificarFatima(ev, obs);
     setObsAberta(null); setObsTexto(""); setSalvando(null);
   }
@@ -146,6 +170,38 @@ export default function MinhaAgendaPage() {
         <h1 className="text-xl font-bold text-slate-900">Minha Agenda</h1>
         <p className="text-xs text-slate-400 mt-0.5">Confirme cada compromisso após realizá-lo</p>
       </div>
+
+      {/* Pendências de dias anteriores */}
+      {pendentesAntigos.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl overflow-hidden">
+          <button onClick={() => setPendentesAbertos(v => !v)} className="w-full flex items-center justify-between gap-3 px-4 py-3">
+            <span className="text-sm font-semibold text-amber-800">
+              ⚠️ {pendentesAntigos.length} compromisso{pendentesAntigos.length > 1 ? "s" : ""} de dias anteriores sem marcar
+            </span>
+            <span className="text-xs text-amber-700">{pendentesAbertos ? "Recolher ▲" : "Ver ▼"}</span>
+          </button>
+          {pendentesAbertos && (
+            <div className="divide-y divide-amber-100 bg-white">
+              {pendentesAntigos.map(ev => {
+                const c = info(ev.tipo);
+                return (
+                  <div key={ev.id} className="flex items-center gap-3 px-4 py-3">
+                    <span className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center text-sm flex-shrink-0`}>{c.emoji}</span>
+                    <button onClick={() => irParaCompromisso(ev)} className="flex-1 min-w-0 text-left">
+                      <span className="text-sm font-semibold text-slate-800">{ev.titulo}</span>
+                      <span className="text-xs text-slate-400 ml-2">{fmt(ev.data)}</span>
+                    </button>
+                    <button onClick={() => marcarPendenteAntigoRealizado(ev)}
+                      className="h-8 px-3 flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition flex-shrink-0">
+                      <Check className="h-3.5 w-3.5"/> Realizado
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Navegação de semana */}
       <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
