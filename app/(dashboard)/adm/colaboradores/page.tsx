@@ -891,20 +891,25 @@ export default function ColaboradoresPage() {
                         {MOTIVOS_SAIDA.map((m) => <option key={m} value={m}>{m}</option>)}
                       </select>
                     </div>
-                    <div className="flex items-end pb-1">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <div onClick={() => {
-                            const novoAtivo = !(editando.ativo !== false);
-                            setEditando(novoAtivo
-                              ? { ...editando, ativo: true, data_demissao: null, motivo_saida: null }
-                              : { ...editando, ativo: false });
-                          }}
-                          className={`w-12 h-6 rounded-full transition-colors ${editando.ativo !== false ? "bg-emerald-500" : "bg-red-400"} relative`}>
-                          <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${editando.ativo !== false ? "left-6" : "left-0.5"}`} />
-                        </div>
-                        <span className="text-sm font-medium text-slate-700">{editando.ativo !== false ? "Ativo" : "Inativo"}</span>
-                      </label>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Data de Demissão</label>
+                      <input type="date" value={editando.data_demissao || ""} onChange={(e) => setEditando({ ...editando, data_demissao: e.target.value })}
+                        className="w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                     </div>
+                  </div>
+                  <div className="flex items-center justify-end">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <div onClick={() => {
+                          const novoAtivo = !(editando.ativo !== false);
+                          setEditando(novoAtivo
+                            ? { ...editando, ativo: true, data_demissao: null, motivo_saida: null }
+                            : { ...editando, ativo: false });
+                        }}
+                        className={`w-12 h-6 rounded-full transition-colors ${editando.ativo !== false ? "bg-emerald-500" : "bg-red-400"} relative`}>
+                        <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${editando.ativo !== false ? "left-6" : "left-0.5"}`} />
+                      </div>
+                      <span className="text-sm font-medium text-slate-700">{editando.ativo !== false ? "Ativo" : "Inativo"}</span>
+                    </label>
                   </div>
                   <AnexoDocumentos
                     pastaId={editando.id}
