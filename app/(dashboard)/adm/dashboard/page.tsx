@@ -55,6 +55,19 @@ export default function AdmDashboardPage() {
   const [kpisExtra, setKpisExtra] = useState({ totalCriancas: 0, melhorProfissional: "", mediaAtend: 0 });
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
+  // ── contagens de equipe/recursos (cards do painel operacional) ─
+  const [contagens, setContagens] = useState({ acompanhantes: 0, especialistas: 0, criancas: 0, escolas: 0 });
+
+  async function carregarContagens() {
+    const [{ count: acompanhantes }, { count: especialistas }, { count: criancas }, { count: escolas }] = await Promise.all([
+      supabase.from("atendentes").select("id", { count: "exact", head: true }).eq("role", "atendente").is("data_demissao", null),
+      supabase.from("atendentes").select("id", { count: "exact", head: true }).eq("role", "especialista").is("data_demissao", null),
+      supabase.from("criancas").select("id", { count: "exact", head: true }).eq("ativo", true),
+      supabase.from("escolas").select("id", { count: "exact", head: true }),
+    ]);
+    setContagens({ acompanhantes: acompanhantes || 0, especialistas: especialistas || 0, criancas: criancas || 0, escolas: escolas || 0 });
+  }
+
   useEffect(() => {
     async function carregarNome() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -82,7 +95,7 @@ export default function AdmDashboardPage() {
         setMesAtualReal(res.mesAtual || "");
         setMesSelecionado(res.mesAtual || "");
       }
-      await Promise.all([carregarAniversariantes(), carregarAnalytics()]);
+      await Promise.all([carregarAniversariantes(), carregarAnalytics(), carregarContagens()]);
       setLoading(false);
     }
     inicializar();
@@ -399,26 +412,22 @@ export default function AdmDashboardPage() {
       </div>
 
       {/* KPIs OPERACIONAIS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[
-          { label: "Atendimentos hoje",    sub: "sessões de AT registradas hoje",              valor: metricas.totalDia,   sufixo: "",    cor: "text-blue-600",    bg: "bg-blue-50",    icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",  icor: "text-blue-500" },
-          { label: "Aguardando pagamento", sub: "sessões deste mês ainda não pagas ao profissional", valor: metricas.pendentes,  sufixo: "",    cor: "text-amber-600",   bg: "bg-amber-50",   icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z", icor: "text-amber-500" },
-          { label: "Custo acumulado",      sub: "já pago a AT/especialistas este mês",            valor: null,                sufixo: "",    cor: "text-red-600",     bg: "bg-red-50",     icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z", icor: "text-red-500" },
-          { label: "Atendimentos pagos",   sub: "sessões deste mês já pagas",                    valor: metricas.pagos,      sufixo: "",    cor: "text-emerald-600", bg: "bg-emerald-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", icor: "text-emerald-500" },
-        ].map((kpi, i) => (
-          <div key={i} className="group bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200">
+          { label: "Atendimentos hoje", valor: metricas.totalDia,      sub: "sessões de AT hoje",  emoji: "🕐", bg: "bg-blue-50",   cor: "text-blue-600" },
+          { label: "Acompanhantes",     valor: contagens.acompanhantes, sub: "ATs ativas",          emoji: "👤", bg: "bg-indigo-50", cor: "text-indigo-600" },
+          { label: "Especialistas",     valor: contagens.especialistas, sub: "ativas",              emoji: "🩺", bg: "bg-teal-50",   cor: "text-teal-600" },
+          { label: "Crianças",          valor: contagens.criancas,      sub: "cadastradas",         emoji: "🧒", bg: "bg-violet-50", cor: "text-violet-600" },
+          { label: "Escolas",           valor: contagens.escolas,       sub: "parceiras",           emoji: "🏫", bg: "bg-amber-50",  cor: "text-amber-600" },
+        ].map((kpi) => (
+          <div key={kpi.label} className="group bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-medium text-slate-500">{kpi.label}</p>
-              <div className={`w-9 h-9 rounded-xl ${kpi.bg} flex items-center justify-center group-hover:scale-110 transition-transform duration-200`}>
-                <svg className={`w-4 h-4 ${kpi.icor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={kpi.icon}/>
-                </svg>
+              <div className={`w-9 h-9 rounded-xl ${kpi.bg} flex items-center justify-center text-base group-hover:scale-110 transition-transform duration-200`}>
+                {kpi.emoji}
               </div>
             </div>
-            {i === 2
-              ? <p className={`text-xl font-bold ${kpi.cor} tracking-tight`}>R$ {metricas.receitaMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-              : <p className={`text-3xl font-bold ${kpi.cor} tracking-tight`}>{kpi.valor}</p>
-            }
+            <p className={`text-3xl font-bold ${kpi.cor} tracking-tight`}>{kpi.valor}</p>
             <p className="text-xs text-slate-400 mt-1">{kpi.sub}</p>
           </div>
         ))}
