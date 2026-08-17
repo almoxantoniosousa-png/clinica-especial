@@ -455,11 +455,16 @@ export default function MateriaisAdaptadosPage() {
 
     setImportando(true);
     let sucesso = 0;
+    let primeiroErro = "";
     try {
       for (const [i, file] of lista.entries()) {
         const path = `${meuId}/${Date.now()}-${i}-${file.name}`;
         const { error: upErr } = await supabase.storage.from("materiais-adaptados").upload(path, file);
-        if (upErr) continue;
+        if (upErr) {
+          console.error("Falha ao importar (upload):", file.name, upErr);
+          if (!primeiroErro) primeiroErro = upErr.message;
+          continue;
+        }
         const { data: { publicUrl } } = supabase.storage.from("materiais-adaptados").getPublicUrl(path);
         const titulo = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || file.name;
 
@@ -471,7 +476,11 @@ export default function MateriaisAdaptadosPage() {
           criado_por: meuId,
           criado_por_nome: meuNome,
         }).select().single();
-        if (insErr) continue;
+        if (insErr) {
+          console.error("Falha ao importar (cadastro):", file.name, insErr);
+          if (!primeiroErro) primeiroErro = insErr.message;
+          continue;
+        }
 
         sucesso++;
         await registrarLog(supabase, {
@@ -483,9 +492,9 @@ export default function MateriaisAdaptadosPage() {
       if (sucesso === lista.length) {
         mostrarFeedback("sucesso", `${sucesso} material(is) importado(s) como rascunho — ajuste os dados quando quiser.`);
       } else if (sucesso > 0) {
-        mostrarFeedback("erro", `${sucesso} de ${lista.length} importado(s); ${lista.length - sucesso} falharam.`);
+        mostrarFeedback("erro", `${sucesso} de ${lista.length} importado(s); ${lista.length - sucesso} falharam${primeiroErro ? ` (${primeiroErro})` : ""}.`);
       } else {
-        mostrarFeedback("erro", "Não foi possível importar os arquivos.");
+        mostrarFeedback("erro", `Não foi possível importar os arquivos.${primeiroErro ? ` Motivo: ${primeiroErro}` : ""}`);
       }
       carregar();
     } finally {
