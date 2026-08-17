@@ -236,7 +236,6 @@ export async function carregarDadosDashboard() {
     let pagos = 0;
     let despesaTotalPaga = 0;
 
-    const despesaPorDia: Record<string, number> = {};
     const atendimentosPorSemana: Record<string, number> = {
       "Semana 1": 0, "Semana 2": 0, "Semana 3": 0, "Semana 4": 0, "Semana 5": 0,
     };
@@ -253,7 +252,6 @@ export async function carregarDadosDashboard() {
         if (statusNormalizado === "pago" || statusNormalizado === "confirmado") {
           pagos++;
           despesaTotalPaga += valorTotal;
-          despesaPorDia[dataFormatada] = (despesaPorDia[dataFormatada] || 0) + valorTotal;
         } else {
           pendentes++;
         }
@@ -275,27 +273,15 @@ export async function carregarDadosDashboard() {
       especialistaPorSemana[`Semana ${semana}`]++;
     });
 
-    const labelsLinha = Object.keys(despesaPorDia).sort();
-    const valoresLinha = labelsLinha.map((d) => despesaPorDia[d]);
     const labelsBarras = Object.keys(atendimentosPorSemana);
     const valoresBarras = labelsBarras.map((s) => atendimentosPorSemana[s]);
     const valoresBarrasEspecialista = labelsBarras.map((s) => especialistaPorSemana[s]);
 
     return {
       success: true,
+      mesAtual,
       mesAtualLabel,
       metricas: { totalDia, pendentes, receitaMes: despesaTotalPaga, pagos },
-      graficoLinha: {
-        labels: labelsLinha.length > 0 ? labelsLinha.map(l => l.split("-").reverse().slice(0, 2).join("/")) : ["Sem pagamentos"],
-        datasets: [{
-          label: "Despesa Paga (R$)",
-          data: valoresLinha.length > 0 ? valoresLinha : [0],
-          borderColor: "rgb(16, 185, 129)",
-          backgroundColor: "rgba(16, 185, 129, 0.1)",
-          tension: 0.3,
-          fill: true,
-        }],
-      },
       graficoPizza: {
         labels: ["Pendentes", "Pagos"],
         datasets: [{
@@ -322,6 +308,85 @@ export async function carregarDadosDashboard() {
     };
   } catch (err: any) {
     console.error("Erro no processamento do Dashboard:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+// ============================
+// GRÁFICOS DO DASHBOARD POR MÊS (navegação de meses anteriores)
+// ============================
+export async function carregarGraficosPorMes(mesParam: string) {
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    const mesAtualLabel = new Date(`${mesParam}-02T00:00:00`).toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric",
+    });
+
+    const { data: atendimentos, error } = await supabase
+      .from("atendimentos")
+      .select("data")
+      .gte("data", `${mesParam}-01`)
+      .lte("data", `${mesParam}-31`);
+
+    if (error) throw error;
+
+    const { data: atendimentosEspecialista } = await supabase
+      .from("atendimentos_especialista")
+      .select("data, status")
+      .eq("status", "P")
+      .gte("data", `${mesParam}-01`)
+      .lte("data", `${mesParam}-31`);
+
+    const atendimentosPorSemana: Record<string, number> = {
+      "Semana 1": 0, "Semana 2": 0, "Semana 3": 0, "Semana 4": 0, "Semana 5": 0,
+    };
+
+    (atendimentos || []).forEach((a) => {
+      const dataFormatada = a.data ? String(a.data).split("T")[0] : null;
+      if (!dataFormatada) return;
+      const diaDoMes = new Date(dataFormatada + "T12:00:00").getDate();
+      const semana = Math.min(5, Math.ceil(diaDoMes / 7));
+      atendimentosPorSemana[`Semana ${semana}`]++;
+    });
+
+    const especialistaPorSemana: Record<string, number> = {
+      "Semana 1": 0, "Semana 2": 0, "Semana 3": 0, "Semana 4": 0, "Semana 5": 0,
+    };
+    (atendimentosEspecialista || []).forEach((a) => {
+      const dataFormatada = a.data ? String(a.data).split("T")[0] : null;
+      if (!dataFormatada) return;
+      const diaDoMes = new Date(dataFormatada + "T12:00:00").getDate();
+      const semana = Math.min(5, Math.ceil(diaDoMes / 7));
+      especialistaPorSemana[`Semana ${semana}`]++;
+    });
+
+    const labelsBarras = Object.keys(atendimentosPorSemana);
+    const valoresBarras = labelsBarras.map((s) => atendimentosPorSemana[s]);
+    const valoresBarrasEspecialista = labelsBarras.map((s) => especialistaPorSemana[s]);
+
+    return {
+      success: true,
+      mesAtualLabel,
+      graficoBarras: {
+        labels: labelsBarras,
+        datasets: [
+          {
+            label: "AT",
+            data: valoresBarras,
+            backgroundColor: "rgba(59, 130, 246, 0.6)",
+          },
+          {
+            label: "Especialista",
+            data: valoresBarrasEspecialista,
+            backgroundColor: "rgba(15,148,136,0.75)",
+          },
+        ],
+      },
+    };
+  } catch (err: any) {
+    console.error("Erro ao carregar gráficos por mês:", err);
     return { success: false, error: err.message };
   }
 }

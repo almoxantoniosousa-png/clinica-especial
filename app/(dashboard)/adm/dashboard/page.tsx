@@ -1,23 +1,20 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { carregarDadosDashboard } from "@/app/actions";
+import { carregarDadosDashboard, carregarGraficosPorMes } from "@/app/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { PainelInformacoes, Saudacao } from "@/components/painel-informacoes";
 import { primeiroNome } from "@/lib/dataUtils";
-import { Line, Pie, Bar } from "react-chartjs-2";
+import { Pie, Bar } from "react-chartjs-2";
 import type { ChartData, ScriptableContext } from "chart.js";
 import {
   Chart as ChartJS,
-  LineElement,
   CategoryScale,
   LinearScale,
-  PointElement,
   Tooltip,
   Legend,
   ArcElement,
   BarElement,
-  Filler
 } from "chart.js";
 
 type Aniversariante = { nome: string; data_nascimento: string; tipo: string; dia: number; diff: number; foto_url?: string | null };
@@ -33,20 +30,19 @@ function gradienteAzulMarca(context: ScriptableContext<"bar">) {
   return gradiente;
 }
 
-ChartJS.register(
-  LineElement, CategoryScale, LinearScale, PointElement,
-  Tooltip, Legend, ArcElement, BarElement, Filler
-);
+ChartJS.register(CategoryScale, LinearScale, Tooltip, Legend, ArcElement, BarElement);
 
 export default function AdmDashboardPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   // ── estado original ──────────────────────────────────────────
   const [metricas, setMetricas] = useState({ totalDia: 0, pendentes: 0, receitaMes: 0, pagos: 0 });
-  const [graficoLinha, setGraficoLinha] = useState<ChartData<"line"> | null>(null);
   const [graficoPizza, setGraficoPizza] = useState<ChartData<"pie"> | null>(null);
   const [graficoBarras, setGraficoBarras] = useState<ChartData<"bar"> | null>(null);
+  const [mesAtualReal, setMesAtualReal] = useState("");
+  const [mesSelecionado, setMesSelecionado] = useState("");
   const [mesAtualLabel, setMesAtualLabel] = useState("");
+  const [carregandoGraficos, setCarregandoGraficos] = useState(false);
   const [loading, setLoading] = useState(true);
   const [aniversariantes, setAniversariantes] = useState<Aniversariante[]>([]);
   const [aniversariantesAbertos, setAniversariantesAbertos] = useState(true);
@@ -75,7 +71,6 @@ export default function AdmDashboardPage() {
       const res = await carregarDadosDashboard();
       if (res?.success && res.metricas) {
         setMetricas(res.metricas);
-        setGraficoLinha(res.graficoLinha);
         setGraficoPizza(res.graficoPizza);
         setGraficoBarras(res.graficoBarras ? {
           ...res.graficoBarras,
@@ -84,12 +79,39 @@ export default function AdmDashboardPage() {
           ),
         } : null);
         setMesAtualLabel(res.mesAtualLabel || "");
+        setMesAtualReal(res.mesAtual || "");
+        setMesSelecionado(res.mesAtual || "");
       }
       await Promise.all([carregarAniversariantes(), carregarAnalytics()]);
       setLoading(false);
     }
     inicializar();
   }, []);
+
+  // ── navegação de mês do gráfico "Atendimentos por semana" ────
+  async function carregarMes(novoMes: string) {
+    if (novoMes > mesAtualReal) return;
+    setCarregandoGraficos(true);
+    const res = await carregarGraficosPorMes(novoMes);
+    if (res?.success && res.graficoBarras) {
+      setGraficoBarras({
+        ...res.graficoBarras,
+        datasets: res.graficoBarras.datasets.map((d) =>
+          d.label === "AT" ? { ...d, backgroundColor: gradienteAzulMarca } : d
+        ),
+      });
+      setMesAtualLabel(res.mesAtualLabel || "");
+      setMesSelecionado(novoMes);
+    }
+    setCarregandoGraficos(false);
+  }
+
+  function mudarMes(delta: number) {
+    if (!mesSelecionado) return;
+    const [ano, mes] = mesSelecionado.split("-").map(Number);
+    const d = new Date(ano, mes - 1 + delta, 1);
+    carregarMes(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
 
   // ── aniversariantes (original) ───────────────────────────────
   async function carregarAniversariantes() {
@@ -480,31 +502,33 @@ export default function AdmDashboardPage() {
       </div>
 
       {/* GRÁFICOS OPERACIONAIS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100">
-            <h2 className="text-sm font-semibold text-slate-800">Custo por dia</h2>
-            <p className="text-xs text-slate-400">Atendimentos pagos no mês atual</p>
-          </div>
-          <div className="p-5 h-52">
-            {graficoLinha
-              ? <Line data={graficoLinha} options={chartOptions}/>
-              : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados no mês.</p></div>}
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+          <div>
             <h2 className="text-sm font-semibold text-slate-800">Atendimentos por semana</h2>
             <p className="text-xs text-slate-400">
               AT + Especialista · {mesAtualLabel ? `em ${mesAtualLabel}` : "no mês atual"}
             </p>
           </div>
-          <div className="p-5 h-52">
-            {graficoBarras
-              ? <Bar data={graficoBarras} options={chartOptions}/>
-              : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados semanais.</p></div>}
+          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1">
+            <button onClick={() => mudarMes(-1)} disabled={carregandoGraficos}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-white hover:text-blue-700 transition disabled:opacity-40">‹</button>
+            <span className="text-xs font-semibold text-slate-600 min-w-[110px] text-center">
+              {carregandoGraficos ? "Carregando..." : mesAtualLabel}
+            </span>
+            <button onClick={() => mudarMes(1)} disabled={carregandoGraficos || mesSelecionado >= mesAtualReal}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-white hover:text-blue-700 transition disabled:opacity-40">›</button>
+            {mesSelecionado && mesSelecionado !== mesAtualReal && (
+              <button onClick={() => carregarMes(mesAtualReal)} className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-1 ml-1 hover:bg-blue-100 transition">
+                Hoje
+              </button>
+            )}
           </div>
+        </div>
+        <div className="p-5 h-52">
+          {graficoBarras
+            ? <Bar data={graficoBarras} options={chartOptions}/>
+            : <div className="h-full flex items-center justify-center"><p className="text-slate-400 text-sm">Sem dados semanais.</p></div>}
         </div>
       </div>
 
