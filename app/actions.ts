@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { registrarLog } from "@/lib/auditoria";
-import { hojeBrasil } from "@/lib/dataUtils";
+import { hojeBrasil, feriadoNacional } from "@/lib/dataUtils";
 
 // ============================
 // LOGIN
@@ -116,21 +116,42 @@ export async function createAtendimento(input: any) {
   // O id de login (auth) nem sempre é o mesmo id da linha em `atendentes`.
   // Resolve pelo id, depois por usuario_id, depois por e-mail.
   let atendenteId: string | null = null;
-  const { data: porId } = await supabase.from("atendentes").select("id").eq("id", user.id).maybeSingle();
+  let atendenteRole: string | null = null;
+  const { data: porId } = await supabase.from("atendentes").select("id, role").eq("id", user.id).maybeSingle();
   if (porId) {
     atendenteId = porId.id;
+    atendenteRole = porId.role;
   } else {
-    const { data: porUsuarioId } = await supabase.from("atendentes").select("id").eq("usuario_id", user.id).maybeSingle();
+    const { data: porUsuarioId } = await supabase.from("atendentes").select("id, role").eq("usuario_id", user.id).maybeSingle();
     if (porUsuarioId) {
       atendenteId = porUsuarioId.id;
+      atendenteRole = porUsuarioId.role;
     } else if (user.email) {
-      const { data: porEmail } = await supabase.from("atendentes").select("id").eq("email", user.email).maybeSingle();
-      if (porEmail) atendenteId = porEmail.id;
+      const { data: porEmail } = await supabase.from("atendentes").select("id, role").eq("email", user.email).maybeSingle();
+      if (porEmail) {
+        atendenteId = porEmail.id;
+        atendenteRole = porEmail.role;
+      }
     }
   }
 
   if (!atendenteId) {
     return { success: false, error: "Seu perfil de atendente não foi encontrado no cadastro. Contate o administrador." };
+  }
+
+  // Lançamento em fim de semana ou feriado nacional só é aceito de quem já é
+  // adm/gestão/supervisora — pra AT/especialista comum, isso quase sempre é
+  // a data errada (escola não funciona nesses dias). Se for legítimo,
+  // precisa de autorização deles.
+  const dataAtendimento = new Date(`${input.data}T12:00:00`);
+  const diaSemana = dataAtendimento.getDay();
+  const nomeFeriado = feriadoNacional(String(input.data));
+  const podeLancarDiaExcecao = ["adm", "admin", "gestao", "supervisora"].includes(String(atendenteRole || "").toLowerCase());
+  if ((diaSemana === 0 || diaSemana === 6) && !podeLancarDiaExcecao) {
+    return { success: false, error: "Não é possível lançar atendimento em fim de semana. Se for necessário, peça autorização à supervisão/ADM." };
+  }
+  if (nomeFeriado && !podeLancarDiaExcecao) {
+    return { success: false, error: `Não é possível lançar atendimento em feriado (${nomeFeriado}). Se for necessário, peça autorização à supervisão/ADM.` };
   }
 
   const localInput = String(input.local || "").toLowerCase();
