@@ -6,6 +6,14 @@ import { useRouter } from "next/navigation";
 import { registrarLog } from "@/lib/auditoria";
 import { iniciaisNome } from "@/lib/dataUtils";
 
+// Supabase Storage rejeita acento e alguns caracteres especiais na chave do
+// arquivo ("Invalid key") — nome de arquivo real de usuário quase sempre tem
+// (ex: "Erosão e Intemperismo_.docx"). Tira acento e troca o resto por "_".
+function sanitizarNomeArquivo(nome: string): string {
+  const semAcento = nome.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return semAcento.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
 type Material = {
   id: string;
   titulo_livro: string;
@@ -273,7 +281,7 @@ export default function MateriaisAdaptadosPage() {
     try {
       const urlsNovas: string[] = [];
       for (const [i, file] of fotosNovas.entries()) {
-        const path = `${meuId}/${Date.now()}-${i}-${file.name}`;
+        const path = `${meuId}/${Date.now()}-${i}-${sanitizarNomeArquivo(file.name)}`;
         const { error: upErr } = await supabase.storage.from("materiais-adaptados").upload(path, file);
         if (upErr) throw upErr;
         const { data: { publicUrl } } = supabase.storage.from("materiais-adaptados").getPublicUrl(path);
@@ -458,7 +466,7 @@ export default function MateriaisAdaptadosPage() {
     let primeiroErro = "";
     try {
       for (const [i, file] of lista.entries()) {
-        const path = `${meuId}/${Date.now()}-${i}-${file.name}`;
+        const path = `${meuId}/${Date.now()}-${i}-${sanitizarNomeArquivo(file.name)}`;
         const { error: upErr } = await supabase.storage.from("materiais-adaptados").upload(path, file);
         if (upErr) {
           console.error("Falha ao importar (upload):", file.name, upErr);
