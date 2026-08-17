@@ -50,6 +50,8 @@ export default function FormularioEscolarPage() {
   const [lancheComportamento, setLancheComportamento] = useState<string[]>([]);
   const [atividadesSala, setAtividadesSala] = useState("");
   const [interacaoSala, setInteracaoSala] = useState("");
+  const [tarefaLivro, setTarefaLivro] = useState("");
+  const [tarefaPaginas, setTarefaPaginas] = useState("");
   const [tarefaCasa, setTarefaCasa] = useState("");
   const [materiaisPedir, setMateriaisPedir] = useState("");
   const [obsGerais, setObsGerais] = useState("");
@@ -128,6 +130,8 @@ export default function FormularioEscolarPage() {
     setLancheComportamento(p.lanche_comportamento || []);
     setAtividadesSala(p.atividades_sala || "");
     setInteracaoSala(p.interacao_sala || "");
+    setTarefaLivro(p.tarefa_livro || "");
+    setTarefaPaginas(p.tarefa_paginas || "");
     setTarefaCasa(p.tarefa_casa || "");
     setMateriaisPedir(p.materiais_pedir || "");
     setObsGerais(p.obs_gerais || "");
@@ -174,7 +178,7 @@ export default function FormularioEscolarPage() {
       lanche, comeu_tudo: comeuTudo, comeu_tudo_obs: comeuTudoObs,
       lanche_independencia: lancheIndependencia, lanche_resultado: lancheResultado, lanche_comportamento: lancheComportamento,
       atividades_sala: atividadesSala, interacao_sala: interacaoSala,
-      tarefa_casa: tarefaCasa, materiais_pedir: materiaisPedir,
+      tarefa_livro: tarefaLivro, tarefa_paginas: tarefaPaginas, tarefa_casa: tarefaCasa, materiais_pedir: materiaisPedir,
       obs_gerais: obsGerais, eventos_escolares: eventosEscolares,
     };
 
@@ -521,10 +525,27 @@ export default function FormularioEscolarPage() {
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Tarefa de Casa</label>
-              <textarea rows={2} value={tarefaCasa} onChange={e => setTarefaCasa(e.target.value)}
-                placeholder="Páginas, matérias, atividades..."
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">📖 Tarefa de Casa</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-slate-400">Livro / Matéria</label>
+                  <input type="text" value={tarefaLivro} onChange={e => setTarefaLivro(e.target.value)}
+                    placeholder="Ex: Matemática"
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-slate-400">Página(s)</label>
+                  <input type="text" value={tarefaPaginas} onChange={e => setTarefaPaginas(e.target.value)}
+                    placeholder="Ex: 23 a 25"
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400"/>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-slate-400">Observação (opcional)</label>
+                <textarea rows={2} value={tarefaCasa} onChange={e => setTarefaCasa(e.target.value)}
+                  placeholder="Ex: tem uma folha impressa colada na página 24..."
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 resize-none"/>
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide text-red-600">⚠️ Materiais / Avisos Urgentes</label>

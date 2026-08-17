@@ -22,7 +22,8 @@ type FormularioEscolar = {
   evacuou?: boolean; periodo_menstrual?: boolean; agua_ingestao?: string;
   socializacao?: string[]; amizades_intervalo?: string; atencao?: string[];
   lanche?: string; comeu_tudo?: boolean; comeu_tudo_obs?: string;
-  atividades_sala?: string; interacao_sala?: string; eventos_escolares?: string; tarefa_casa?: string;
+  atividades_sala?: string; interacao_sala?: string; eventos_escolares?: string;
+  tarefa_livro?: string; tarefa_paginas?: string; tarefa_casa?: string;
   materiais_pedir?: string; obs_gerais?: string;
   criancas?: { nome: string; foto_url?: string | null };
 };
@@ -296,6 +297,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState<"pendentes" | "enviados" | "todos">("pendentes");
   const [dataFiltro, setDataFiltro] = useState(hoje);
+  const [soComTarefa, setSoComTarefa] = useState(false);
   const [detalhe, setDetalhe] = useState<FormularioEscolar | null>(null);
   const [obs, setObs] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -416,7 +418,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
     }
   }
 
-  const filtrados = formularios;
+  const filtrados = soComTarefa ? formularios.filter(f => f.tarefa_livro || f.tarefa_paginas || f.tarefa_casa) : formularios;
 
   function iniciais(nome: string) {
     return nome ? iniciaisNome(nome) : "?";
@@ -475,7 +477,9 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
           form.atividades_sala && { label: "Conteúdo de sala", valor: form.atividades_sala, tipo: "texto" },
           form.interacao_sala && { label: "Interação em sala", valor: form.interacao_sala, tipo: "texto" },
           form.eventos_escolares && { label: "🎉 Eventos escolares", valor: form.eventos_escolares, tipo: "texto" },
-          form.tarefa_casa && { label: "Tarefa de casa", valor: form.tarefa_casa, tipo: "texto" },
+          form.tarefa_livro && { label: "📖 Tarefa de casa — Livro/Matéria", valor: form.tarefa_livro, tipo: "texto" },
+          form.tarefa_paginas && { label: "📖 Tarefa de casa — Página(s)", valor: form.tarefa_paginas, tipo: "texto" },
+          form.tarefa_casa && { label: form.tarefa_livro || form.tarefa_paginas ? "Observação da tarefa" : "Tarefa de casa", valor: form.tarefa_casa, tipo: "texto" },
           form.materiais_pedir && { label: "⚠️ Materiais / Avisos urgentes", valor: form.materiais_pedir, tipo: "alerta" },
           form.obs_gerais && { label: "Observações gerais", valor: form.obs_gerais, tipo: "texto" },
         ].filter(Boolean),
@@ -548,6 +552,12 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
           ))}
         </div>
 
+        <button onClick={() => setSoComTarefa(v => !v)}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold border transition w-fit ${
+            soComTarefa ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50"}`}>
+          📖 Com tarefa de casa{soComTarefa ? ` · ${filtrados.length}` : ""}
+        </button>
+
         {filtro !== "pendentes" && (
           <div className="flex items-center gap-2">
             <input type="date" value={dataFiltro} onChange={e => setDataFiltro(e.target.value)}
@@ -589,6 +599,11 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
+                  {(f.tarefa_livro || f.tarefa_paginas || f.tarefa_casa) && (
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full border bg-indigo-50 text-indigo-700 border-indigo-100">
+                      📖 Tarefa de casa
+                    </span>
+                  )}
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border
                     ${f.enviado_familia ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}>
                     {f.enviado_familia ? "✓ Enviado" : "⏳ Pendente"}
