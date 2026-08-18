@@ -1466,7 +1466,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
             {/* cabeçalho */}
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-800">
-                {modoExcecao ? "Atendimento" : editandoId ? "Editar atendimento" : "Novo atendimento"}
+                {modoExcecao ? "Atendimento (hoje ou sempre)" : editandoId ? "Editar horário fixo" : "Novo atendimento"}
               </h2>
               <button onClick={fecharModal} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
