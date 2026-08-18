@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
-import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, History, FileText, MoreHorizontal } from "lucide-react";
+import { Clock, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X, History, FileText, MoreHorizontal, Repeat, AlertTriangle } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 import { logoComoDataUrl } from "@/lib/pdfUtils";
 
@@ -258,6 +258,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [form, setForm] = useState<FormData>(FORM_VAZIO);
   const [salvando, setSalvando] = useState(false);
   const [erroForm, setErroForm] = useState("");
+  const [conflito, setConflito] = useState<Slot | null>(null);
 
   // exclusão
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
@@ -346,6 +347,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     setEditandoId(null);
     setForm(FORM_VAZIO);
     setErroForm("");
+    setConflito(null);
     setServicoLivre(false);
     setProfissionalLivre(false);
     setCategoriaNovoAvulso("");
@@ -372,7 +374,17 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     setProfissionalLivre(!slot.profissional_id && !!slot.profissional_nome && !profissionalConhecido);
     setCategoriaNovoAvulso("");
     setErroForm("");
+    setConflito(null);
     setModalAberto(true);
+  }
+
+  // Abre a edição do horário fixo direto (não a exceção de hoje) — usa o
+  // registro real em `slots`, não `item.slot`, porque `item.slot` pode estar
+  // mostrando um valor sobreposto por uma exceção do dia.
+  function abrirEditarParaSempre(item: ItemCalendario) {
+    if (!item.escalaIdOrigem) return;
+    const slotOrigem = slots.find((s) => s.id === item.escalaIdOrigem);
+    if (slotOrigem) abrirEditar(slotOrigem);
   }
 
   async function salvarLancheDia(diaAlvo: string) {
@@ -392,6 +404,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     setEditandoId(null);
     setModoExcecao(null);
     setErroForm("");
+    setConflito(null);
   }
 
   function abrirNovoNaData() {
@@ -399,6 +412,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     setModoExcecao({ dataISO: formatarISO(dataAtiva), escalaId: null, excecaoId: null });
     setForm({ ...FORM_VAZIO, dia: diaSemanaDe(dataAtiva) });
     setErroForm("");
+    setConflito(null);
     setServicoLivre(false);
     setProfissionalLivre(false);
     setCategoriaNovoAvulso("");
@@ -430,6 +444,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     setProfissionalLivre(!item.slot.profissional_id && !!item.slot.profissional_nome && !profissionalConhecido);
     setCategoriaNovoAvulso("");
     setErroForm("");
+    setConflito(null);
     setModalAberto(true);
   }
 
@@ -558,7 +573,25 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     !atendentes.some((a) => a.nome.toLowerCase() === form.profissional_nome.trim().toLowerCase()) &&
     !nomesAvulsos.some((n) => n.toLowerCase() === form.profissional_nome.trim().toLowerCase());
 
-  async function salvar() {
+  // Verifica se o profissional já tem outro horário fixo cadastrado no mesmo
+  // dia/horário (excluindo o próprio registro em edição). Só compara por
+  // profissional_id quando ele existe; nomes avulsos (sem id) comparam por
+  // nome pra também cobrir quem não tem cadastro de atendente.
+  async function verificarConflito(): Promise<Slot | null> {
+    if (!form.dia || !form.horario) return null;
+    if (!form.profissional_id && !form.profissional_nome.trim()) return null;
+
+    let query = supabase.from("escala").select("*").eq("dia", form.dia).eq("horario", form.horario);
+    query = form.profissional_id
+      ? query.eq("profissional_id", form.profissional_id)
+      : query.is("profissional_id", null).ilike("profissional_nome", form.profissional_nome.trim());
+
+    const { data } = await query;
+    const conflitante = ((data || []) as Slot[]).find((s) => s.id !== editandoId);
+    return conflitante ?? null;
+  }
+
+  async function salvar(forcar = false) {
     if (!form.crianca || !form.servico) {
       setErroForm("Criança e serviço são obrigatórios.");
       return;
@@ -567,6 +600,14 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       setErroForm("Escolha se esse nome novo é Especialista ou AT.");
       return;
     }
+    if (!forcar) {
+      const conflitante = await verificarConflito();
+      if (conflitante) {
+        setConflito(conflitante);
+        return;
+      }
+    }
+    setConflito(null);
     setSalvando(true);
     setErroForm("");
 
@@ -1330,6 +1371,11 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                                 <Pencil className="h-3 w-3" />
                               </button>
                             )}
+                            {!item.cancelado && item.escalaIdOrigem && (
+                              <button onClick={() => abrirEditarParaSempre(item)} className="p-0.5 rounded hover:bg-black/10 transition-colors" title="Editar horário fixo (pra sempre)">
+                                <Repeat className="h-3 w-3" />
+                              </button>
+                            )}
                             {item.cancelado ? (
                               <button onClick={() => restaurarPadrao(item)} className="text-[10px] font-semibold underline hover:text-blue-600" title="Restaurar padrão">
                                 restaurar
@@ -1620,6 +1666,20 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{erroForm}</p>
             )}
 
+            {/* conflito de horário fixo */}
+            {conflito && (
+              <div className="flex gap-3 items-start bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-red-700 leading-relaxed">
+                  <p className="font-semibold">{form.profissional_nome || "Esse profissional"} já tem atendimento nesse horário</p>
+                  <p className="mt-0.5">Salvar mesmo assim vai deixar {form.profissional_nome ? form.profissional_nome.split(" ")[0] : "essa pessoa"} alocada em dois lugares ao mesmo tempo.</p>
+                  <p className="mt-1.5 bg-white border border-red-200 rounded-lg px-2.5 py-1.5 font-medium">
+                    👶 {conflito.crianca} · {conflito.servico} · {conflito.dia} {conflito.horario}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* ações */}
             <div className="flex gap-3 justify-end pt-1">
               <button
@@ -1628,10 +1688,26 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
               >
                 Cancelar
               </button>
-              {modoExcecao ? (
+              {conflito ? (
                 <>
                   <button
-                    onClick={salvar}
+                    onClick={() => setConflito(null)}
+                    className="px-4 py-2 text-sm font-semibold text-slate-700 border-2 border-slate-200 hover:bg-slate-50 rounded-xl transition-colors"
+                  >
+                    Trocar profissional
+                  </button>
+                  <button
+                    onClick={() => salvar(true)}
+                    disabled={salvando}
+                    className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50 transition-colors"
+                  >
+                    {salvando ? "Salvando..." : "Salvar mesmo assim"}
+                  </button>
+                </>
+              ) : modoExcecao ? (
+                <>
+                  <button
+                    onClick={() => salvar()}
                     disabled={salvando}
                     title={`Atualiza o padrão permanente de toda ${form.dia}-feira`}
                     className="px-4 py-2 text-sm font-semibold text-slate-700 border-2 border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors"
@@ -1648,7 +1724,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 </>
               ) : (
                 <button
-                  onClick={salvar}
+                  onClick={() => salvar()}
                   disabled={salvando}
                   className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl disabled:opacity-50 transition-colors"
                 >
