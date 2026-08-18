@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { NotificacoesBell } from "@/components/notificacoes-bell";
 import { useGravacao } from "@/contexts/gravacao-context";
 import { primeiroNome } from "@/lib/dataUtils";
+import { Saudacao } from "@/components/painel-informacoes";
 
 interface RoleSidebarProps {
   userRole: string;
@@ -26,6 +27,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const [isMobile, setIsMobile] = useState(true);
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
   const [geralAberto, setGeralAberto] = useState(true);
+  const [dropdownAdm, setDropdownAdm] = useState<string | null>(null);
 
   const role = userRole ? userRole.trim().toLowerCase() : "";
   const isAdmin = role === "adm" || role === "admin";
@@ -51,7 +53,16 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  useEffect(() => { setMenuAberto(false); }, [pathname]);
+  useEffect(() => { setMenuAberto(false); setDropdownAdm(null); }, [pathname]);
+
+  useEffect(() => {
+    if (!dropdownAdm) return;
+    function fechar(e: MouseEvent) {
+      if (!(e.target as HTMLElement).closest("[data-adm-dropdown]")) setDropdownAdm(null);
+    }
+    document.addEventListener("click", fechar);
+    return () => document.removeEventListener("click", fechar);
+  }, [dropdownAdm]);
 
   useEffect(() => {
     if (menuAberto) document.body.style.overflow = "hidden";
@@ -99,6 +110,20 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/gravacoes",        label: "Record",     icon: "🎥" },
     { href: "/ajuda",            label: "Ajuda",     icon: "❓" },
   ];
+
+  // Barra horizontal do ADM: Dashboard e Colaboradores direto, o resto
+  // dividido em 3 dropdowns nomeados por função (não um balde genérico
+  // tipo "Geral"/"Mais") — formato validado com a usuária via protótipo.
+  const HREFS_ADMIN_ROTINA = ["/adm/agenda-pessoal", "/escala", "/adm/criancas", "/adm/escolas", "/adm/responsaveis", "/ocorrencias", "/reuniao", "/mural", "/chat"];
+  const HREFS_ADMIN_SISTEMA = ["/adm/requisicoes", "/adm/patrimonio", "/adm/protocolos", "/adm/auditoria", "/gravacoes", "/ajuda"];
+  const menuAdminRotina = menuAdmin.filter((i) => HREFS_ADMIN_ROTINA.includes(i.href));
+  const menuAdminSistema = menuAdmin.filter((i) => HREFS_ADMIN_SISTEMA.includes(i.href));
+
+  // Preenche o vão entre o menu e os ícones com o "endereço" da tela atual —
+  // útil porque a página em si não tem mais um H1 próprio (a saudação
+  // migrou pra dentro da barra), então isso é o que diz onde a ADM está.
+  const paginaAtualAdm = [...menuAdmin, ...subMenuColaboradoresAdm, ...subMenuFinanceiro]
+    .find((i) => pathname === i.href);
 
   const menuGestao = [
     { href: "/gestao/dashboard",    label: "Dashboard",    icon: "📊" },
@@ -284,6 +309,40 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     );
   };
 
+  const AdmDropdown = ({ id, label, icon, items }: {
+    id: string; label: string; icon: string;
+    items: { href: string; label: string; icon: string }[];
+  }) => {
+    const ativo = items.some((i) => pathname === i.href);
+    const aberto = dropdownAdm === id;
+    return (
+      <div className="relative" data-adm-dropdown>
+        <button onClick={() => setDropdownAdm(aberto ? null : id)}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+            ${ativo || aberto ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+          <span className="text-sm leading-none">{icon}</span>
+          <span>{label}</span>
+          <ChevronDown className={`h-3 w-3 opacity-70 transition-transform duration-200 ${aberto ? "rotate-180" : ""}`} />
+        </button>
+        {aberto && (
+          <div className="absolute top-full left-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-900/10 p-1.5 z-20">
+            {items.map((item) => {
+              const itemAtivo = pathname === item.href;
+              return (
+                <Link key={item.href} href={item.href} onClick={() => setDropdownAdm(null)}
+                  className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200
+                    ${itemAtivo ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"}`}>
+                  <span className="text-sm leading-none">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderMenu = () => (
     <nav className="px-2 py-3 space-y-0.5">
       {(isAdmin || isGestao) ? (
@@ -367,7 +426,58 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
         </div>
       )}
 
-      {!isMobile && !isAtendenteRole && (
+      {!isMobile && isAdmin && (
+        <div className="print:hidden sticky top-0 z-30 bg-gradient-to-r from-blue-950 via-blue-900 to-blue-700 shadow-sm shadow-blue-900/20">
+          <div className="flex items-center gap-1.5 px-4 py-2">
+            <div className="flex items-center gap-2.5 mr-3 flex-shrink-0">
+              <Logo size="sm" />
+              <div className="hidden lg:block">
+                <p className="font-bold text-white text-xs leading-tight"><Saudacao nome={userNome ?? undefined} /></p>
+                <p className="text-[9px] font-medium text-blue-200 leading-snug uppercase tracking-wider">Clínica Abraço · {roleLabel}</p>
+              </div>
+            </div>
+            <nav className="flex items-center gap-1 flex-shrink-0">
+              <Link href="/adm/dashboard"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/adm/dashboard" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">📊</span><span>Dashboard</span>
+              </Link>
+              <Link href="/adm/colaboradores"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/adm/colaboradores" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">👥</span><span>Colaboradores</span>
+              </Link>
+              <AdmDropdown id="financeiro" label="Financeiro" icon="💰" items={subMenuFinanceiro} />
+              <AdmDropdown id="rotina" label="Rotina" icon="🗓️" items={menuAdminRotina} />
+              <AdmDropdown id="sistema" label="Sistema" icon="⚙️" items={menuAdminSistema} />
+            </nav>
+            <div className="flex-1 min-w-0 flex items-center justify-center px-2">
+              {paginaAtualAdm && (
+                <p className="text-[11px] font-medium text-blue-200/80 truncate">
+                  <span className="text-blue-300/60">Painel</span>
+                  <span className="mx-1.5 text-blue-400/40">/</span>
+                  <span className="text-blue-100">{paginaAtualAdm.icon} {paginaAtualAdm.label}</span>
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
+              <div className="hidden md:flex items-center gap-1.5 text-[10px] font-semibold text-white bg-white/10 border border-white/20 rounded-full px-2.5 py-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Ao vivo
+              </div>
+              <NotificacoesBell userRole={role} />
+              <button onClick={() => setConfirmandoSaida(true)} title="Sair do sistema"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-100 hover:bg-white/10 hover:text-white transition-all">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isMobile && !isAtendenteRole && !isAdmin && (
         <aside className="print:hidden w-56 bg-blue-50/40 border-r border-slate-200 h-screen sticky top-0 flex flex-col justify-between flex-shrink-0 overflow-y-auto">
           <div>
             <div className="px-4 py-4 bg-gradient-to-br from-blue-700 to-blue-500">

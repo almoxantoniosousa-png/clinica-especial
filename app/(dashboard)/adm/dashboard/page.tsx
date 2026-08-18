@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { carregarDadosDashboard, carregarGraficosPorMes } from "@/app/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
-import { PainelInformacoes, Saudacao } from "@/components/painel-informacoes";
+import { PainelInformacoes } from "@/components/painel-informacoes";
 import { primeiroNome } from "@/lib/dataUtils";
 import { Pie, Bar } from "react-chartjs-2";
 import type { ChartData, ScriptableContext } from "chart.js";
@@ -46,7 +46,6 @@ export default function AdmDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [aniversariantes, setAniversariantes] = useState<Aniversariante[]>([]);
   const [aniversariantesAbertos, setAniversariantesAbertos] = useState(true);
-  const [nome, setNome] = useState<string | undefined>(undefined);
 
   // ── estado analytics ─────────────────────────────────────────
   const [historicoFinanceiro, setHistoricoFinanceiro] = useState<ChartData<"bar"> | null>(null);
@@ -68,15 +67,6 @@ export default function AdmDashboardPage() {
     setContagens({ acompanhantes: acompanhantes || 0, especialistas: especialistas || 0, criancas: criancas || 0, escolas: escolas || 0 });
   }
 
-  useEffect(() => {
-    async function carregarNome() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) return;
-      const { data: u } = await supabase.from("usuarios").select("nome").eq("email", user.email).maybeSingle();
-      setNome(u?.nome || undefined);
-    }
-    carregarNome();
-  }, [supabase]);
 
   useEffect(() => {
     async function inicializar() {
@@ -385,23 +375,7 @@ export default function AdmDashboardPage() {
   return (
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-8 space-y-5">
 
-      {/* HEADER */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 px-6 py-6 md:px-8 md:py-7 shadow-lg shadow-blue-900/20">
-        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/5" aria-hidden />
-        <div className="absolute -right-4 bottom-0 w-24 h-24 rounded-full bg-white/5" aria-hidden />
-        <div className="relative flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-white"><Saudacao nome={nome} /></h1>
-            <p className="text-xs md:text-sm text-blue-200 mt-1 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-white bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 flex-shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
-            Ao vivo
-          </div>
-        </div>
-      </div>
-
-      {/* PAINEL INFORMATIVO */}
+      {/* PAINEL INFORMATIVO (saudação e "Ao vivo" já ficam na barra horizontal do topo) */}
       <PainelInformacoes />
 
       {/* DIVISOR */}

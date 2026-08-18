@@ -64,15 +64,17 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // AT usa menu horizontal no topo mesmo no desktop (poucos itens, sem
-  // categorias) — por isso o wrapper fica flex-col sempre, em vez de virar
-  // flex-row a partir do md como os outros perfis (sidebar vertical).
+  // AT e ADM usam menu horizontal no topo mesmo no desktop — por isso o
+  // wrapper fica flex-col sempre pra eles, em vez de virar flex-row a
+  // partir do md como os outros perfis (sidebar vertical).
   const isAtendenteRole = !["adm", "admin", "supervisora", "gestao", "especialista", "familia", "aux_adm", "financeiro"].includes(roleFinal);
+  const isAdminRole = roleFinal === "adm" || roleFinal === "admin";
+  const usaMenuHorizontal = isAtendenteRole || isAdminRole;
 
   return (
     <GravacaoProvider>
       <div className="min-h-screen bg-slate-50">
-        <div className={`flex flex-col min-h-screen ${isAtendenteRole ? "" : "md:flex-row"}`}>
+        <div className={`flex flex-col min-h-screen ${usaMenuHorizontal ? "" : "md:flex-row"}`}>
           <RoleSidebar key={user.id} userRole={roleFinal} userCargo={cargoFinal} userNome={nomeFinal} userContataFamilia={contataFamiliaFinal} userFazAdaptado={fazAdaptadoFinal} />
           <main className="flex-1 min-w-0 min-h-screen overflow-y-auto overflow-x-hidden bg-zinc-200 relative">
             {/* Marca d'água — logo da clínica */}

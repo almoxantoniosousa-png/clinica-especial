@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClient";
 import { Check, Trash2, Pencil } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
-import { Saudacao } from "@/components/painel-informacoes";
 import { hojeLocal, mesAtualLocal } from "@/lib/dataUtils";
 import { gerarDespesasRecorrentesPendentes } from "@/lib/despesasRecorrentes";
 
@@ -68,15 +67,13 @@ export default function FinanceiroPage() {
   const [mesAno, setMesAno] = useState(() => mesAtualLocal());
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
   const [role, setRole] = useState("");
-  const [nome, setNome] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.email) return;
-      const { data: usuario } = await supabase.from("usuarios").select("role, nome").eq("email", user.email).maybeSingle();
+      const { data: usuario } = await supabase.from("usuarios").select("role").eq("email", user.email).maybeSingle();
       setRole((usuario?.role || "").toString().trim().toLowerCase());
-      setNome(usuario?.nome);
     })();
   }, [supabase]);
 
@@ -113,8 +110,8 @@ export default function FinanceiroPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold text-slate-900"><Saudacao nome={nome} /></h1>
-          <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">A Clínica Abraço te deseja um excelente trabalho</p>
+          <h1 className="text-xl font-bold text-slate-900">Financeiro</h1>
+          <p className="text-xs text-slate-400 mt-0.5 font-light tracking-wide">Faturamento, folha e atendimentos do mês</p>
         </div>
         <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-1.5 h-10 w-full sm:w-auto">
           <button onClick={() => mudarMes(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition">‹</button>

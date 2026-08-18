@@ -370,6 +370,8 @@ export default function ColaboradoresPage() {
   );
   const ativos = filtrados.filter((c) => c.ativo !== false);
   const inativos = filtrados.filter((c) => c.ativo === false);
+  const totalAtivos = colaboradores.filter((c) => c.ativo !== false).length;
+  const totalInativos = colaboradores.filter((c) => c.ativo === false).length;
 
   const inputClass = "w-full h-12 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 transition";
   const catAtual = CATEGORIAS.find((c) => c.valor === form.categoria)!;
@@ -462,15 +464,21 @@ export default function ColaboradoresPage() {
 
   return (
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-10 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Colaboradores</h1>
           <p className="text-xs text-slate-400 mt-0.5">Especialistas, Acompanhantes Terapêuticos, Supervisoras e Apoio — cadastro único.</p>
         </div>
-        <span className="self-start sm:self-auto inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold px-3 py-1.5 rounded-full">
-          <span className="w-2 h-2 rounded-full bg-slate-500 inline-block"></span>
-          {colaboradores.length} colaboradores
-        </span>
+        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+          <div className="bg-white border border-slate-200 rounded-xl px-4 py-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Ativos</p>
+            <p className="text-lg font-black text-emerald-600 leading-tight">{totalAtivos}</p>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-xl px-4 py-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Inativos</p>
+            <p className="text-lg font-black text-slate-500 leading-tight">{totalInativos}</p>
+          </div>
+        </div>
       </div>
 
       {feedback && (
