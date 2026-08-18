@@ -115,29 +115,33 @@ export default function MeusAtendimentosPage() {
       {/* CARDS RESUMO */}
       {!loading && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Atendimentos</p>
-            <p className="text-2xl font-black text-slate-800 mt-1">{atendimentos.length}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{mesNome} {anoSelecionado}</p>
+          <div className="relative overflow-hidden rounded-2xl p-4 text-white bg-gradient-to-br from-violet-900 to-violet-600 shadow-lg shadow-violet-900/20">
+            <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10" aria-hidden />
+            <p className="relative text-xs font-semibold text-violet-200 uppercase tracking-wide">Atendimentos</p>
+            <p className="relative text-2xl font-black mt-1 text-violet-300">{atendimentos.length}</p>
+            <p className="relative text-xs text-violet-200/80 mt-0.5">{mesNome} {anoSelecionado}</p>
           </div>
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Horas</p>
-            <p className="text-2xl font-black text-blue-700 mt-1">{totais.horas.toFixed(1)}h</p>
-            <p className="text-xs text-slate-400 mt-0.5">trabalhadas</p>
+          <div className="relative overflow-hidden rounded-2xl p-4 text-white bg-gradient-to-br from-blue-950 to-blue-700 shadow-lg shadow-blue-900/20">
+            <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10" aria-hidden />
+            <p className="relative text-xs font-semibold text-blue-200 uppercase tracking-wide">Horas</p>
+            <p className="relative text-2xl font-black mt-1 text-blue-300">{totais.horas.toFixed(1)}h</p>
+            <p className="relative text-xs text-blue-200/80 mt-0.5">trabalhadas</p>
           </div>
-          <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
-            <p className="text-xs font-semibold text-amber-500 uppercase tracking-wide">Pendente</p>
-            <p className="text-2xl font-black text-amber-500 mt-1">
+          <div className="relative overflow-hidden rounded-2xl p-4 text-white bg-gradient-to-br from-yellow-900 to-yellow-700 shadow-lg shadow-yellow-900/20">
+            <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10" aria-hidden />
+            <p className="relative text-xs font-semibold text-yellow-200 uppercase tracking-wide">Pendente</p>
+            <p className="relative text-2xl font-black mt-1 text-yellow-300">
               R$ {totais.pendente.toFixed(2)}
             </p>
-            <p className="text-xs text-slate-400 mt-0.5">a receber</p>
+            <p className="relative text-xs text-yellow-200/80 mt-0.5">a receber</p>
           </div>
-          <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
-            <p className="text-xs font-semibold text-emerald-500 uppercase tracking-wide">Pago</p>
-            <p className="text-2xl font-black text-emerald-600 mt-1">
+          <div className="relative overflow-hidden rounded-2xl p-4 text-white bg-gradient-to-br from-teal-900 to-teal-600 shadow-lg shadow-teal-900/20">
+            <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10" aria-hidden />
+            <p className="relative text-xs font-semibold text-teal-200 uppercase tracking-wide">Pago</p>
+            <p className="relative text-2xl font-black mt-1 text-teal-300">
               R$ {totais.pago.toFixed(2)}
             </p>
-            <p className="text-xs text-slate-400 mt-0.5">recebido</p>
+            <p className="relative text-xs text-teal-200/80 mt-0.5">recebido</p>
           </div>
         </div>
       )}
