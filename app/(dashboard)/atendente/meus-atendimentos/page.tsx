@@ -113,7 +113,7 @@ export default function MeusAtendimentosPage() {
       </div>
 
       {/* CARDS RESUMO */}
-      {!loading && atendimentos.length > 0 && (
+      {!loading && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Atendimentos</p>

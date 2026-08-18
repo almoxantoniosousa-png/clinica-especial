@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { createAtendimento } from '@/app/actions'
 import { useRouter } from 'next/navigation'
-import { Home, School, Building2, Calendar, Clock, FileText, Baby, MapPin, DollarSign } from 'lucide-react'
+import { Home, School, Building2, Calendar, Clock, FileText, Baby, MapPin, DollarSign, ClipboardList } from 'lucide-react'
 import { hojeLocal } from '@/lib/dataUtils'
 
 export default function AtendimentoForm() {
@@ -29,17 +29,10 @@ export default function AtendimentoForm() {
   const [duplicata, setDuplicata] = useState<{ local: string; horas: number; created_at: string } | null>(null)
   const [totalHorasAcumuladas, setTotalHorasAcumuladas] = useState(0)
   const [totalValorAcumulado, setTotalValorAcumulado] = useState(0)
+  const [totalAtendimentosAcumulados, setTotalAtendimentosAcumulados] = useState(0)
   const router = useRouter()
 
   const VALOR_HORA = 30.00
-
-  // AT é CNPJ — o valor diário é só uma soma automática ainda não revisada
-  // pelo financeiro, então só mostra a partir dos últimos 3 dias do mês
-  // (perto do fechamento). Horas continuam visíveis sempre — é só o que
-  // ela mesma lançou. Pedido da Solange/Simone.
-  const hoje = new Date()
-  const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate()
-  const mostrarValorAReceber = ultimoDiaMes - hoje.getDate() < 3
 
   useEffect(() => {
     async function inicializarDados() {
@@ -80,6 +73,7 @@ export default function AtendimentoForm() {
             const somaValor = historico.reduce((acc, curr) => acc + Number(curr.valor_total || 0), 0)
             setTotalHorasAcumuladas(somaHoras)
             setTotalValorAcumulado(somaValor)
+            setTotalAtendimentosAcumulados(historico.length)
           }
         }
       }
@@ -174,35 +168,40 @@ export default function AtendimentoForm() {
     <div className="w-full space-y-5">
 
       {/* CARDS ACUMULADOS */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-slate-800 rounded-2xl p-4 text-white flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Horas acumuladas</p>
-            <p className="text-2xl font-black mt-0.5">{totalHorasAcumuladas.toFixed(2)}h</p>
-            <p className="text-xs text-slate-500 mt-0.5">Pendentes de pagamento</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="relative overflow-hidden rounded-2xl p-4 text-white bg-gradient-to-br from-violet-900 to-violet-600 flex items-center justify-between shadow-lg shadow-violet-900/20">
+          <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10" aria-hidden />
+          <div className="relative">
+            <p className="text-xs font-semibold text-violet-200 uppercase tracking-wide">Atendimentos</p>
+            <p className="text-2xl font-black mt-0.5 text-violet-300">{totalAtendimentosAcumulados}</p>
+            <p className="text-xs text-violet-200/80 mt-0.5">aguardando pagamento</p>
           </div>
-          <div className="bg-slate-700 p-2.5 rounded-xl">
-            <Clock size={20} className="text-blue-400" />
+          <div className="relative bg-white/15 p-2.5 rounded-xl">
+            <ClipboardList size={20} className="text-violet-200" />
           </div>
         </div>
 
-        <div className="bg-blue-900 rounded-2xl p-4 text-white flex items-center justify-between">
-          {mostrarValorAReceber ? (
-            <div>
-              <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide">A receber</p>
-              <p className="text-2xl font-black text-emerald-400 mt-0.5">
-                R$ {totalValorAcumulado.toFixed(2)}
-              </p>
-              <p className="text-xs text-blue-300 mt-0.5">Aguardando financeiro</p>
-            </div>
-          ) : (
-            <div>
-              <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide">A receber</p>
-              <p className="text-sm font-semibold text-blue-200 mt-1.5">Disponível no fechamento do mês</p>
-            </div>
-          )}
-          <div className="bg-blue-800 p-2.5 rounded-xl">
-            <DollarSign size={20} className="text-emerald-400" />
+        <div className="relative overflow-hidden rounded-2xl p-4 text-white bg-gradient-to-br from-blue-950 to-blue-700 flex items-center justify-between shadow-lg shadow-blue-900/20">
+          <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10" aria-hidden />
+          <div className="relative">
+            <p className="text-xs font-semibold text-blue-200 uppercase tracking-wide">Horas acumuladas</p>
+            <p className="text-2xl font-black mt-0.5 text-blue-300">{totalHorasAcumuladas.toFixed(2)}h</p>
+            <p className="text-xs text-blue-200/80 mt-0.5">pendentes de pagamento</p>
+          </div>
+          <div className="relative bg-white/15 p-2.5 rounded-xl">
+            <Clock size={20} className="text-blue-200" />
+          </div>
+        </div>
+
+        <div className="relative overflow-hidden rounded-2xl p-4 text-white bg-gradient-to-br from-teal-900 to-teal-600 flex items-center justify-between shadow-lg shadow-teal-900/20">
+          <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10" aria-hidden />
+          <div className="relative">
+            <p className="text-xs font-semibold text-teal-200 uppercase tracking-wide">A receber</p>
+            <p className="text-2xl font-black mt-0.5 text-teal-300">R$ {totalValorAcumulado.toFixed(2)}</p>
+            <p className="text-xs text-teal-200/80 mt-0.5">valor estimado</p>
+          </div>
+          <div className="relative bg-white/15 p-2.5 rounded-xl">
+            <DollarSign size={20} className="text-teal-200" />
           </div>
         </div>
       </div>
