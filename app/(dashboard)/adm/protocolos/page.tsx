@@ -3,7 +3,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
-import { Plus, Pencil, Trash2, X, Check, Send, ClipboardCheck, ChevronDown, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Check, Send, ClipboardCheck, ChevronDown, Printer, Paperclip, Upload } from "lucide-react";
+
+// Mesmo tratamento usado em materiais-adaptados: Supabase Storage rejeita
+// acento no nome do arquivo ("Invalid key").
+function sanitizarNomeArquivo(nome: string): string {
+  const semAcento = nome.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return semAcento.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
 
 const CARGOS = [
   "Especialista",
@@ -53,7 +60,7 @@ const ORIENTACAO_PADRAO = {
   conteudo: "Descreva as diretrizes, deveres e normas de conduta esperadas para este cargo...",
 };
 
-type Protocolo = { id: string; cargo: string; titulo: string; conteudo: string; created_at: string };
+type Protocolo = { id: string; cargo: string; titulo: string; conteudo: string; created_at: string; anexo_url?: string | null; anexo_nome?: string | null };
 type Pessoa = { id: string; nome: string; role: string };
 type Confirmacao = { protocolo_id: string; pessoa_nome: string; pessoa_role: string; confirmado_em: string };
 
@@ -72,6 +79,10 @@ export default function ProtocolosPage() {
   const [editando, setEditando] = useState<Protocolo | null>(null);
   const [form, setForm] = useState(FORM_VAZIO);
   const [salvando, setSalvando] = useState(false);
+  const [anexoFile, setAnexoFile] = useState<File | null>(null);
+  const [anexoExistente, setAnexoExistente] = useState<{ url: string; nome: string } | null>(null);
+  const [removerAnexo, setRemoverAnexo] = useState(false);
+  const [enviandoAnexo, setEnviandoAnexo] = useState(false);
 
   const [deletando, setDeletando] = useState<Protocolo | null>(null);
   const [excluindo, setExcluindo] = useState(false);
@@ -124,25 +135,48 @@ export default function ProtocolosPage() {
     filtroCargo === "todos" ? protocolos : protocolos.filter(p => p.cargo === filtroCargo),
   [protocolos, filtroCargo]);
 
-  function abrirNovo() { setEditando(null); setForm(FORM_VAZIO); setModal(true); }
+  function abrirNovo() { setEditando(null); setForm(FORM_VAZIO); setAnexoFile(null); setAnexoExistente(null); setRemoverAnexo(false); setModal(true); }
 
-  function abrirNovoParaCargo(cargo: string) { setEditando(null); setForm({ ...FORM_VAZIO, cargo }); setModal(true); }
+  function abrirNovoParaCargo(cargo: string) { setEditando(null); setForm({ ...FORM_VAZIO, cargo }); setAnexoFile(null); setAnexoExistente(null); setRemoverAnexo(false); setModal(true); }
 
   function abrirEditar(p: Protocolo) {
     setEditando(p);
     setForm({ cargo: p.cargo, titulo: p.titulo, conteudo: p.conteudo });
+    setAnexoFile(null);
+    setAnexoExistente(p.anexo_url ? { url: p.anexo_url, nome: p.anexo_nome || "anexo" } : null);
+    setRemoverAnexo(false);
     setModal(true);
   }
 
-  function fecharModal() { setModal(false); setEditando(null); setForm(FORM_VAZIO); }
+  function fecharModal() { setModal(false); setEditando(null); setForm(FORM_VAZIO); setAnexoFile(null); setAnexoExistente(null); setRemoverAnexo(false); }
 
   async function salvar() {
     if (!form.titulo.trim() || !form.conteudo.trim()) {
       mostrarFeedback("erro", "Preencha título e conteúdo."); return;
     }
     setSalvando(true);
+
+    let anexoUrl = removerAnexo ? null : (anexoExistente?.url ?? null);
+    let anexoNome = removerAnexo ? null : (anexoExistente?.nome ?? null);
+
+    if (anexoFile) {
+      setEnviandoAnexo(true);
+      const path = `${Date.now()}-${sanitizarNomeArquivo(anexoFile.name)}`;
+      const { error: uploadError } = await supabase.storage.from("protocolos-anexos").upload(path, anexoFile);
+      setEnviandoAnexo(false);
+      if (uploadError) {
+        mostrarFeedback("erro", "Erro ao enviar o anexo: " + uploadError.message);
+        setSalvando(false);
+        return;
+      }
+      const { data: pub } = supabase.storage.from("protocolos-anexos").getPublicUrl(path);
+      anexoUrl = pub.publicUrl;
+      anexoNome = anexoFile.name;
+    }
+
     const payload = {
       cargo: form.cargo, titulo: form.titulo.trim(), conteudo: form.conteudo.trim(),
+      anexo_url: anexoUrl, anexo_nome: anexoNome,
       updated_at: new Date().toISOString(),
     };
     const { error } = editando
@@ -397,6 +431,13 @@ export default function ProtocolosPage() {
                 </div>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{p.conteudo}</p>
+              {p.anexo_url && (
+                <a href={p.anexo_url} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg border border-violet-100 transition">
+                  <Paperclip className="h-3.5 w-3.5" />
+                  {p.anexo_nome || "Baixar anexo"}
+                </a>
+              )}
 
               <div className="pt-2 border-t border-slate-100">
                 <button onClick={() => setExpandido(expandido === p.id ? null : p.id)}
@@ -487,6 +528,25 @@ export default function ProtocolosPage() {
                   placeholder={(ORIENTACAO_POR_CARGO[form.cargo] || ORIENTACAO_PADRAO).conteudo}
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
               </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Anexo (opcional)</label>
+                <p className="text-[11px] text-slate-400">PDF ou imagem — a equipe consegue baixar direto da tela.</p>
+                {anexoExistente && !removerAnexo && !anexoFile ? (
+                  <div className="flex items-center gap-2 bg-violet-50 border border-violet-100 rounded-xl px-3 py-2.5">
+                    <Paperclip className="h-4 w-4 text-violet-600 flex-shrink-0" />
+                    <span className="text-xs font-semibold text-violet-700 truncate flex-1">{anexoExistente.nome}</span>
+                    <button type="button" onClick={() => setRemoverAnexo(true)} className="text-xs font-semibold text-red-500 hover:text-red-700 flex-shrink-0">Remover</button>
+                  </div>
+                ) : (
+                  <label className="flex items-center gap-2 border-2 border-dashed border-slate-200 rounded-xl px-3 py-2.5 cursor-pointer hover:border-blue-300 hover:bg-blue-50/50 transition">
+                    <Upload className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                    <span className="text-xs text-slate-500 truncate flex-1">
+                      {anexoFile ? anexoFile.name : "Escolher arquivo..."}
+                    </span>
+                    <input type="file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { setAnexoFile(f); setRemoverAnexo(false); } }} />
+                  </label>
+                )}
+              </div>
             </div>
             <div className="p-5 pt-0 flex gap-3 flex-shrink-0">
               <button onClick={fecharModal} className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50">
@@ -494,7 +554,7 @@ export default function ProtocolosPage() {
               </button>
               <button onClick={salvar} disabled={salvando}
                 className="flex-1 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2">
-                {salvando ? "Salvando..." : <><Check className="h-4 w-4" />{editando ? "Salvar" : "Criar protocolo"}</>}
+                {salvando ? (enviandoAnexo ? "Enviando anexo..." : "Salvando...") : <><Check className="h-4 w-4" />{editando ? "Salvar" : "Criar protocolo"}</>}
               </button>
             </div>
           </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
-import { Check, ClipboardCheck } from "lucide-react";
+import { Check, ClipboardCheck, Paperclip } from "lucide-react";
 
 // Mapeia o role do usuário logado para o(s) cargo(s) de protocolo correspondentes
 const ROLE_PARA_CARGO: Record<string, string[]> = {
@@ -17,7 +17,7 @@ const ROLE_PARA_CARGO: Record<string, string[]> = {
 };
 
 type Pessoa = { id: string; nome: string; role: string };
-type Protocolo = { id: string; cargo: string; titulo: string; conteudo: string };
+type Protocolo = { id: string; cargo: string; titulo: string; conteudo: string; anexo_url?: string | null; anexo_nome?: string | null };
 type Confirmacao = { protocolo_id: string; confirmado_em: string };
 
 export default function MeusProtocolosPage() {
@@ -54,7 +54,7 @@ export default function MeusProtocolosPage() {
       if (cargos.length === 0) { setLoading(false); return; }
 
       const [{ data: prot }, { data: conf }] = await Promise.all([
-        supabase.from("protocolos_conduta").select("id, cargo, titulo, conteudo").in("cargo", cargos).order("titulo"),
+        supabase.from("protocolos_conduta").select("id, cargo, titulo, conteudo, anexo_url, anexo_nome").in("cargo", cargos).order("titulo"),
         supabase.from("protocolos_confirmacoes").select("protocolo_id, confirmado_em").eq("pessoa_id", perfil.id),
       ]);
       setProtocolos((prot || []) as Protocolo[]);
@@ -138,6 +138,13 @@ export default function MeusProtocolosPage() {
                   )}
                 </div>
                 <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{p.conteudo}</p>
+                {p.anexo_url && (
+                  <a href={p.anexo_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg border border-violet-100 transition">
+                    <Paperclip className="h-3.5 w-3.5" />
+                    Baixar {p.anexo_nome || "anexo"}
+                  </a>
+                )}
               </div>
             );
           })}
