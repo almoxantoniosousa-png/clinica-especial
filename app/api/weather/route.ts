@@ -5,7 +5,7 @@ export async function GET(req: Request) {
   try {
     const res = await fetch(
       `https://wttr.in/${encodeURIComponent(cidade)}?format=j1`,
-      { next: { revalidate: 900 } }
+      { next: { revalidate: 900 }, signal: AbortSignal.timeout(5000) }
     );
     if (!res.ok) throw new Error("wttr.in error");
     const data = await res.json();

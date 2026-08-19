@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   try {
     const res = await fetch(
       `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi,us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,ozone`,
-      { next: { revalidate: 1800 } }
+      { next: { revalidate: 1800 }, signal: AbortSignal.timeout(5000) }
     );
     if (!res.ok) throw new Error("open-meteo error");
     const data = await res.json();

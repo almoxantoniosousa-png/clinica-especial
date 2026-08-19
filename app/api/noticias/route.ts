@@ -34,9 +34,13 @@ export async function GET(req: Request) {
   const tipo = new URL(req.url).searchParams.get("tipo") ?? "brasil";
   const url = FEEDS[tipo] ?? FEEDS.brasil;
   try {
+    // Sem timeout aqui, um feed lento (já aconteceu com o do Google) trava
+    // a página inteira que chama essa rota — e como o login redireciona
+    // direto pro dashboard, isso já travou o login de todo mundo uma vez.
     const res = await fetch(url, {
       next: { revalidate: 900 },
       headers: { "User-Agent": "Mozilla/5.0 (compatible; ClinicaAbrace/1.0)" },
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const xml = await res.text();
