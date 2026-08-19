@@ -72,7 +72,6 @@ export default function ProtocolosPage() {
   const [eu, setEu] = useState<Pessoa | null>(null);
   const [protocolos, setProtocolos] = useState<Protocolo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtroCargo, setFiltroCargo] = useState<string>("todos");
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
 
   const [modal, setModal] = useState(false);
@@ -125,15 +124,9 @@ export default function ProtocolosPage() {
 
   useEffect(() => { carregar(); }, []);
 
-  const cargosComProtocolo = useMemo(() => Array.from(new Set(protocolos.map(p => p.cargo))), [protocolos]);
-
   const coberturaPorCargo = useMemo(() =>
     CARGOS.map(cargo => ({ cargo, total: protocolos.filter(p => p.cargo === cargo).length })),
   [protocolos]);
-
-  const protocolosFiltrados = useMemo(() =>
-    filtroCargo === "todos" ? protocolos : protocolos.filter(p => p.cargo === filtroCargo),
-  [protocolos, filtroCargo]);
 
   function abrirNovo() { setEditando(null); setForm(FORM_VAZIO); setAnexoFile(null); setAnexoExistente(null); setRemoverAnexo(false); setModal(true); }
 
@@ -369,40 +362,21 @@ export default function ProtocolosPage() {
 
       <div className="grid lg:grid-cols-[1fr_300px] gap-4 items-start">
         <div className="space-y-4 min-w-0">
-          {cargosComProtocolo.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <button onClick={() => setFiltroCargo("todos")}
-                className={`h-8 px-3 text-xs font-semibold rounded-full border transition ${
-                  filtroCargo === "todos" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                }`}>
-                Todos
-              </button>
-              {cargosComProtocolo.map(c => (
-                <button key={c} onClick={() => setFiltroCargo(c)}
-                  className={`h-8 px-3 text-xs font-semibold rounded-full border transition ${
-                    filtroCargo === c ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                  }`}>
-                  {c}
-                </button>
-              ))}
-            </div>
-          )}
-
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <p className="text-sm text-slate-400">Carregando...</p>
             </div>
-          ) : protocolosFiltrados.length === 0 ? (
+          ) : protocolos.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3 bg-white rounded-2xl border border-slate-200">
               <span className="text-4xl">📜</span>
-              <p className="text-sm text-slate-400">Nenhum protocolo cadastrado{filtroCargo !== "todos" ? ` para ${filtroCargo}` : ""}.</p>
+              <p className="text-sm text-slate-400">Nenhum protocolo cadastrado.</p>
               <button onClick={abrirNovo} className="h-9 px-4 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition">
                 + Cadastrar protocolo
               </button>
             </div>
           ) : (
             <div className="space-y-3">
-              {protocolosFiltrados.map(p => (
+              {protocolos.map(p => (
             <div key={p.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="space-y-1.5 min-w-0">
@@ -443,7 +417,7 @@ export default function ProtocolosPage() {
                 <button onClick={() => setExpandido(expandido === p.id ? null : p.id)}
                   className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition">
                   <ClipboardCheck className="h-3.5 w-3.5" />
-                  {(confirmacoes[p.id]?.length || 0)} confirmação{(confirmacoes[p.id]?.length || 0) !== 1 ? "ões" : ""} de leitura
+                  {(confirmacoes[p.id]?.length || 0)} confirmaç{(confirmacoes[p.id]?.length || 0) !== 1 ? "ões" : "ão"} de leitura
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expandido === p.id ? "rotate-180" : ""}`} />
                 </button>
                 {expandido === p.id && (
@@ -469,8 +443,8 @@ export default function ProtocolosPage() {
 
         <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
           <div>
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">Cobertura por cargo</h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">Quem já tem protocolo definido</p>
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">Diretrizes cadastradas</h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">Quem já tem pelo menos uma diretriz</p>
           </div>
           <div className="space-y-1">
             {coberturaPorCargo.map(({ cargo, total }) => (
@@ -480,10 +454,9 @@ export default function ProtocolosPage() {
                   <span className="text-xs font-medium text-slate-600 truncate">{cargo}</span>
                 </div>
                 {total > 0 ? (
-                  <button onClick={() => setFiltroCargo(cargo)}
-                    className="text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5 flex-shrink-0 hover:bg-emerald-100 transition">
-                    {total}
-                  </button>
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5 flex-shrink-0">
+                    {total} {total === 1 ? "diretriz" : "diretrizes"}
+                  </span>
                 ) : (
                   <button onClick={() => abrirNovoParaCargo(cargo)}
                     className="text-[11px] font-bold text-blue-700 bg-blue-50 rounded-full px-2 py-0.5 flex-shrink-0 hover:bg-blue-100 transition">
