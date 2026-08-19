@@ -227,6 +227,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const menuAuxAdm = [
     { href: "/auxiliar/agenda",      label: "Agenda",         icon: "🗓️" },
     { href: "/auxiliar/pauta",       label: "Agenda Simone", icon: "📆" },
+    { href: "/escala",               label: "Escala",        icon: "📅" },
     { href: "/adm/criancas",         label: "Crianças",      icon: "👶" },
     { href: "/adm/escolas",          label: "Escolas",       icon: "🏫" },
     { href: "/adm/colaboradores",    label: "Colaboradores", icon: "👥" },
@@ -575,6 +576,11 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
                   ${pathname === "/auxiliar/pauta" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
                 <span className="text-sm leading-none">📆</span><span>Agenda Simone</span>
+              </Link>
+              <Link href="/escala"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/escala" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">📅</span><span>Escala</span>
               </Link>
               <NavDropdown id="cadastros" label="Cadastros" icon="🗂️" items={menuAuxAdmCadastros} />
               <NavDropdown id="apoio" label="Apoio" icon="🧰" items={menuAuxAdmApoio} />
