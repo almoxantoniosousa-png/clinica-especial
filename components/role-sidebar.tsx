@@ -148,6 +148,17 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/ajuda",               label: "Ajuda",        icon: "❓" },
   ];
 
+  // Barra horizontal da Gestão: mesmo esqueleto do ADM (Dashboard + Minha
+  // Agenda direto, resto em 3 grupos), já que o menu dela é quase do mesmo
+  // tamanho (20 itens).
+  const HREFS_GESTAO_ATENDIMENTO = ["/gestao/entrevista-inicial", "/gestao/criancas", "/gestao/escolas", "/plano-terapeutico", "/adm/atendimentos-especialistas"];
+  const HREFS_GESTAO_ROTINA = ["/escala", "/ocorrencias", "/mural", "/materiais-adaptados", "/requisicoes", "/patrimonio", "/gestao/comunicados"];
+  const HREFS_GESTAO_SISTEMA = ["/protocolos", "/gestao/relatorios", "/reuniao", "/chat", "/gravacoes", "/ajuda"];
+  const menuGestaoAtendimento = menuGestao.filter((i) => HREFS_GESTAO_ATENDIMENTO.includes(i.href));
+  const menuGestaoRotina = menuGestao.filter((i) => HREFS_GESTAO_ROTINA.includes(i.href));
+  const menuGestaoSistema = menuGestao.filter((i) => HREFS_GESTAO_SISTEMA.includes(i.href));
+  const paginaAtualGestao = [...menuGestao, ...subMenuColaboradoresGestao].find((i) => pathname === i.href);
+
   const menuFamilia = [
     { href: "/familia", label: "Meu Portal", icon: "🏠" },
     { href: "/ajuda",   label: "Ajuda",      icon: "❓" },
@@ -611,7 +622,63 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
         </div>
       )}
 
-      {!isMobile && !isAtendenteRole && !isAdmin && !isSupervisora && !isAuxAdm && (
+      {!isMobile && isGestao && (
+        <div className="print:hidden sticky top-0 z-30 bg-gradient-to-r from-blue-950 via-blue-900 to-blue-700 shadow-sm shadow-blue-900/20">
+          <div className="flex items-center gap-1.5 px-4 py-2">
+            <div className="flex items-center gap-2.5 mr-3 flex-shrink-0">
+              <Logo size="sm" />
+              <div className="hidden lg:block">
+                <p className="font-bold text-white text-xs leading-tight"><Saudacao nome={userNome ?? undefined} /></p>
+                <p className="text-[9px] font-medium text-blue-200 leading-snug uppercase tracking-wider">Clínica Abraço · {roleLabel}</p>
+              </div>
+            </div>
+            <nav className="flex items-center gap-1 flex-shrink-0">
+              <Link href="/gestao/dashboard"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/gestao/dashboard" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">📊</span><span>Dashboard</span>
+              </Link>
+              <Link href="/gestao/colaboradores"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/gestao/colaboradores" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">👥</span><span>Colaboradores</span>
+              </Link>
+              <Link href="/gestao/minha-agenda"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/gestao/minha-agenda" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">🗓️</span><span>Minha Agenda</span>
+              </Link>
+              <NavDropdown id="atendimento" label="Atendimento" icon="🩺" items={menuGestaoAtendimento} />
+              <NavDropdown id="rotina" label="Rotina" icon="🗓️" items={menuGestaoRotina} />
+              <NavDropdown id="sistema" label="Sistema" icon="⚙️" items={menuGestaoSistema} />
+            </nav>
+            <div className="flex-1 min-w-0 flex items-center justify-center px-2">
+              {paginaAtualGestao && (
+                <p className="text-[11px] font-medium text-blue-200/80 truncate">
+                  <span className="text-blue-300/60">Painel</span>
+                  <span className="mx-1.5 text-blue-400/40">/</span>
+                  <span className="text-blue-100">{paginaAtualGestao.icon} {paginaAtualGestao.label}</span>
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
+              <div className="hidden md:flex items-center gap-1.5 text-[10px] font-semibold text-white bg-white/10 border border-white/20 rounded-full px-2.5 py-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Ao vivo
+              </div>
+              <NotificacoesBell userRole={role} />
+              <button onClick={() => setConfirmandoSaida(true)} title="Sair do sistema"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-100 hover:bg-white/10 hover:text-white transition-all">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isMobile && !isAtendenteRole && !isAdmin && !isSupervisora && !isAuxAdm && !isGestao && (
         <aside className="print:hidden w-56 bg-blue-50/40 border-r border-slate-200 h-screen sticky top-0 flex flex-col justify-between flex-shrink-0 overflow-y-auto">
           <div>
             <div className="px-4 py-4 bg-gradient-to-br from-blue-700 to-blue-500">
