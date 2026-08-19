@@ -27,7 +27,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const [isMobile, setIsMobile] = useState(true);
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
   const [geralAberto, setGeralAberto] = useState(true);
-  const [dropdownAdm, setDropdownAdm] = useState<string | null>(null);
+  const [dropdownNav, setDropdownNav] = useState<string | null>(null);
 
   const role = userRole ? userRole.trim().toLowerCase() : "";
   const isAdmin = role === "adm" || role === "admin";
@@ -53,16 +53,16 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  useEffect(() => { setMenuAberto(false); setDropdownAdm(null); }, [pathname]);
+  useEffect(() => { setMenuAberto(false); setDropdownNav(null); }, [pathname]);
 
   useEffect(() => {
-    if (!dropdownAdm) return;
+    if (!dropdownNav) return;
     function fechar(e: MouseEvent) {
-      if (!(e.target as HTMLElement).closest("[data-adm-dropdown]")) setDropdownAdm(null);
+      if (!(e.target as HTMLElement).closest("[data-nav-dropdown]")) setDropdownNav(null);
     }
     document.addEventListener("click", fechar);
     return () => document.removeEventListener("click", fechar);
-  }, [dropdownAdm]);
+  }, [dropdownNav]);
 
   useEffect(() => {
     if (menuAberto) document.body.style.overflow = "hidden";
@@ -184,6 +184,19 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/chat",                    label: "Chat",              icon: "💬" },
     { href: "/ajuda",                   label: "Ajuda",             icon: "❓" },
   ];
+
+  // Barra horizontal da Supervisora: as 3 telas do dia a dia direto (a
+  // "inicial" varia — quem fala com família cai em Comunicados, quem não
+  // fala cai em Materiais Adaptados), o resto dividido em Clínico/Apoio.
+  const menuSupervisoraInicial = userContataFamilia
+    ? { href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }
+    : { href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" };
+  const HREFS_SUP_CLINICO = ["/plano-terapeutico", "/ocorrencias", "/materiais-adaptados", "/protocolos"];
+  const HREFS_SUP_APOIO = ["/requisicoes", "/patrimonio", "/mural", "/reuniao", "/chat", "/ajuda"];
+  const menuSupervisoraClinico = menuSupervisora.filter((i) => HREFS_SUP_CLINICO.includes(i.href) && i.href !== menuSupervisoraInicial.href);
+  const menuSupervisoraApoio = menuSupervisora.filter((i) => HREFS_SUP_APOIO.includes(i.href));
+  const paginaAtualSup = [menuSupervisoraInicial, { href: "/supervisora/relatorio", label: "Registro ABC", icon: "📝" }, { href: "/escala", label: "Escala", icon: "📅" }, ...menuSupervisoraClinico, ...menuSupervisoraApoio]
+    .find((i) => pathname === i.href);
 
   const menuEspecialista = [
     { href: "/especialista/escala",      label: "Minha Escala", icon: "📅" },
@@ -309,15 +322,15 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     );
   };
 
-  const AdmDropdown = ({ id, label, icon, items }: {
+  const NavDropdown = ({ id, label, icon, items }: {
     id: string; label: string; icon: string;
     items: { href: string; label: string; icon: string }[];
   }) => {
     const ativo = items.some((i) => pathname === i.href);
-    const aberto = dropdownAdm === id;
+    const aberto = dropdownNav === id;
     return (
-      <div className="relative" data-adm-dropdown>
-        <button onClick={() => setDropdownAdm(aberto ? null : id)}
+      <div className="relative" data-nav-dropdown>
+        <button onClick={() => setDropdownNav(aberto ? null : id)}
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
             ${ativo || aberto ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
           <span className="text-sm leading-none">{icon}</span>
@@ -329,7 +342,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
             {items.map((item) => {
               const itemAtivo = pathname === item.href;
               return (
-                <Link key={item.href} href={item.href} onClick={() => setDropdownAdm(null)}
+                <Link key={item.href} href={item.href} onClick={() => setDropdownNav(null)}
                   className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200
                     ${itemAtivo ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"}`}>
                   <span className="text-sm leading-none">{item.icon}</span>
@@ -447,9 +460,9 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
                   ${pathname === "/adm/colaboradores" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
                 <span className="text-sm leading-none">👥</span><span>Colaboradores</span>
               </Link>
-              <AdmDropdown id="financeiro" label="Financeiro" icon="💰" items={subMenuFinanceiro} />
-              <AdmDropdown id="rotina" label="Rotina" icon="🗓️" items={menuAdminRotina} />
-              <AdmDropdown id="sistema" label="Sistema" icon="⚙️" items={menuAdminSistema} />
+              <NavDropdown id="financeiro" label="Financeiro" icon="💰" items={subMenuFinanceiro} />
+              <NavDropdown id="rotina" label="Rotina" icon="🗓️" items={menuAdminRotina} />
+              <NavDropdown id="sistema" label="Sistema" icon="⚙️" items={menuAdminSistema} />
             </nav>
             <div className="flex-1 min-w-0 flex items-center justify-center px-2">
               {paginaAtualAdm && (
@@ -477,7 +490,62 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
         </div>
       )}
 
-      {!isMobile && !isAtendenteRole && !isAdmin && (
+      {!isMobile && isSupervisora && (
+        <div className="print:hidden sticky top-0 z-30 bg-gradient-to-r from-blue-950 via-blue-900 to-blue-700 shadow-sm shadow-blue-900/20">
+          <div className="flex items-center gap-1.5 px-4 py-2">
+            <div className="flex items-center gap-2.5 mr-3 flex-shrink-0">
+              <Logo size="sm" />
+              <div className="hidden lg:block">
+                <p className="font-bold text-white text-xs leading-tight"><Saudacao nome={userNome ?? undefined} /></p>
+                <p className="text-[9px] font-medium text-blue-200 leading-snug uppercase tracking-wider">Clínica Abraço · {roleLabel}</p>
+              </div>
+            </div>
+            <nav className="flex items-center gap-1 flex-shrink-0">
+              <Link href={menuSupervisoraInicial.href}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === menuSupervisoraInicial.href ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">{menuSupervisoraInicial.icon}</span><span>{menuSupervisoraInicial.label}</span>
+              </Link>
+              <Link href="/supervisora/relatorio"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/supervisora/relatorio" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">📝</span><span>Registro ABC</span>
+              </Link>
+              <Link href="/escala"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/escala" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">📅</span><span>Escala</span>
+              </Link>
+              <NavDropdown id="clinico" label="Clínico" icon="🩺" items={menuSupervisoraClinico} />
+              <NavDropdown id="apoio" label="Apoio" icon="🧰" items={menuSupervisoraApoio} />
+            </nav>
+            <div className="flex-1 min-w-0 flex items-center justify-center px-2">
+              {paginaAtualSup && (
+                <p className="text-[11px] font-medium text-blue-200/80 truncate">
+                  <span className="text-blue-300/60">Painel</span>
+                  <span className="mx-1.5 text-blue-400/40">/</span>
+                  <span className="text-blue-100">{paginaAtualSup.icon} {paginaAtualSup.label}</span>
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
+              <div className="hidden md:flex items-center gap-1.5 text-[10px] font-semibold text-white bg-white/10 border border-white/20 rounded-full px-2.5 py-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Ao vivo
+              </div>
+              <NotificacoesBell userRole={role} />
+              <button onClick={() => setConfirmandoSaida(true)} title="Sair do sistema"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-100 hover:bg-white/10 hover:text-white transition-all">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isMobile && !isAtendenteRole && !isAdmin && !isSupervisora && (
         <aside className="print:hidden w-56 bg-blue-50/40 border-r border-slate-200 h-screen sticky top-0 flex flex-col justify-between flex-shrink-0 overflow-y-auto">
           <div>
             <div className="px-4 py-4 bg-gradient-to-br from-blue-700 to-blue-500">

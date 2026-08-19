@@ -64,12 +64,13 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // AT e ADM usam menu horizontal no topo mesmo no desktop — por isso o
-  // wrapper fica flex-col sempre pra eles, em vez de virar flex-row a
-  // partir do md como os outros perfis (sidebar vertical).
+  // AT, ADM e Supervisora usam menu horizontal no topo mesmo no desktop —
+  // por isso o wrapper fica flex-col sempre pra eles, em vez de virar
+  // flex-row a partir do md como os outros perfis (sidebar vertical).
   const isAtendenteRole = !["adm", "admin", "supervisora", "gestao", "especialista", "familia", "aux_adm", "financeiro"].includes(roleFinal);
   const isAdminRole = roleFinal === "adm" || roleFinal === "admin";
-  const usaMenuHorizontal = isAtendenteRole || isAdminRole;
+  const isSupervisoraRole = roleFinal === "supervisora";
+  const usaMenuHorizontal = isAtendenteRole || isAdminRole || isSupervisoraRole;
 
   return (
     <GravacaoProvider>
