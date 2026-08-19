@@ -461,6 +461,42 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
         </div>
       )}
 
+      {!isMobile && isEspecialista && (
+        <div className="print:hidden sticky top-0 z-30 bg-gradient-to-r from-blue-950 via-blue-900 to-blue-700 shadow-sm shadow-blue-900/20">
+          <div className="flex items-center gap-1 px-4 py-2">
+            <div className="flex items-center gap-2 mr-3 flex-shrink-0">
+              <Logo size="sm" />
+              <div className="hidden lg:block">
+                <p className="font-bold text-white text-xs leading-tight">Clínica Abraço</p>
+                <p title={identLabel} className="text-[9px] font-medium text-blue-200 leading-snug uppercase tracking-wider truncate max-w-[150px]">{identLabel}</p>
+              </div>
+            </div>
+            <nav className="flex items-center gap-1 flex-wrap flex-1">
+              {menuEspecialista.map((item) => {
+                const ativo = pathname === item.href;
+                return (
+                  <Link key={item.href} href={item.href}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                      ${ativo ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                    <span className="text-sm leading-none">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <NotificacoesBell userRole={role} />
+              <button onClick={() => setConfirmandoSaida(true)} title="Sair do sistema"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-100 hover:bg-white/10 hover:text-white transition-all">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!isMobile && isAdmin && (
         <div className="print:hidden sticky top-0 z-30 bg-gradient-to-r from-blue-950 via-blue-900 to-blue-700 shadow-sm shadow-blue-900/20">
           <div className="flex items-center gap-1.5 px-4 py-2">
@@ -678,7 +714,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
         </div>
       )}
 
-      {!isMobile && !isAtendenteRole && !isAdmin && !isSupervisora && !isAuxAdm && !isGestao && (
+      {!isMobile && !isAtendenteRole && !isAdmin && !isSupervisora && !isAuxAdm && !isGestao && !isEspecialista && (
         <aside className="print:hidden w-56 bg-blue-50/40 border-r border-slate-200 h-screen sticky top-0 flex flex-col justify-between flex-shrink-0 overflow-y-auto">
           <div>
             <div className="px-4 py-4 bg-gradient-to-br from-blue-700 to-blue-500">
