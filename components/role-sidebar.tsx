@@ -225,7 +225,8 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   ];
 
   const menuAuxAdm = [
-    { href: "/auxiliar/pauta",       label: "Agenda Simone", icon: "🗓️" },
+    { href: "/auxiliar/agenda",      label: "Agenda",         icon: "🗓️" },
+    { href: "/auxiliar/pauta",       label: "Agenda Simone", icon: "📆" },
     { href: "/adm/criancas",         label: "Crianças",      icon: "👶" },
     { href: "/adm/escolas",          label: "Escolas",       icon: "🏫" },
     { href: "/adm/colaboradores",    label: "Colaboradores", icon: "👥" },
@@ -238,6 +239,15 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/chat",                 label: "Chat",          icon: "💬" },
     { href: "/ajuda",                label: "Ajuda",         icon: "❓" },
   ];
+
+  // Barra horizontal da Aux Adm: as 2 agendas direto (a de crianças/AT, que
+  // hoje nem tinha item de menu, e a pauta pessoal da Simone), resto dividido
+  // em Cadastros/Apoio.
+  const HREFS_AUXADM_CADASTROS = ["/adm/criancas", "/adm/escolas", "/adm/colaboradores", "/adm/financeiro"];
+  const HREFS_AUXADM_APOIO = ["/adm/patrimonio", "/protocolos", "/mural", "/ocorrencias", "/reuniao", "/chat", "/ajuda"];
+  const menuAuxAdmCadastros = menuAuxAdm.filter((i) => HREFS_AUXADM_CADASTROS.includes(i.href));
+  const menuAuxAdmApoio = menuAuxAdm.filter((i) => HREFS_AUXADM_APOIO.includes(i.href));
+  const paginaAtualAuxAdm = menuAuxAdm.find((i) => pathname === i.href);
 
   const menu = isAdmin ? menuAdmin
     : isSupervisora ? menuSupervisora
@@ -545,7 +555,57 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
         </div>
       )}
 
-      {!isMobile && !isAtendenteRole && !isAdmin && !isSupervisora && (
+      {!isMobile && isAuxAdm && (
+        <div className="print:hidden sticky top-0 z-30 bg-gradient-to-r from-blue-950 via-blue-900 to-blue-700 shadow-sm shadow-blue-900/20">
+          <div className="flex items-center gap-1.5 px-4 py-2">
+            <div className="flex items-center gap-2.5 mr-3 flex-shrink-0">
+              <Logo size="sm" />
+              <div className="hidden lg:block">
+                <p className="font-bold text-white text-xs leading-tight"><Saudacao nome={userNome ?? undefined} /></p>
+                <p className="text-[9px] font-medium text-blue-200 leading-snug uppercase tracking-wider">Clínica Abraço · {roleLabel}</p>
+              </div>
+            </div>
+            <nav className="flex items-center gap-1 flex-shrink-0">
+              <Link href="/auxiliar/agenda"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/auxiliar/agenda" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">🗓️</span><span>Agenda</span>
+              </Link>
+              <Link href="/auxiliar/pauta"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/auxiliar/pauta" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">📆</span><span>Agenda Simone</span>
+              </Link>
+              <NavDropdown id="cadastros" label="Cadastros" icon="🗂️" items={menuAuxAdmCadastros} />
+              <NavDropdown id="apoio" label="Apoio" icon="🧰" items={menuAuxAdmApoio} />
+            </nav>
+            <div className="flex-1 min-w-0 flex items-center justify-center px-2">
+              {paginaAtualAuxAdm && (
+                <p className="text-[11px] font-medium text-blue-200/80 truncate">
+                  <span className="text-blue-300/60">Painel</span>
+                  <span className="mx-1.5 text-blue-400/40">/</span>
+                  <span className="text-blue-100">{paginaAtualAuxAdm.icon} {paginaAtualAuxAdm.label}</span>
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
+              <div className="hidden md:flex items-center gap-1.5 text-[10px] font-semibold text-white bg-white/10 border border-white/20 rounded-full px-2.5 py-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Ao vivo
+              </div>
+              <NotificacoesBell userRole={role} />
+              <button onClick={() => setConfirmandoSaida(true)} title="Sair do sistema"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-100 hover:bg-white/10 hover:text-white transition-all">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isMobile && !isAtendenteRole && !isAdmin && !isSupervisora && !isAuxAdm && (
         <aside className="print:hidden w-56 bg-blue-50/40 border-r border-slate-200 h-screen sticky top-0 flex flex-col justify-between flex-shrink-0 overflow-y-auto">
           <div>
             <div className="px-4 py-4 bg-gradient-to-br from-blue-700 to-blue-500">
