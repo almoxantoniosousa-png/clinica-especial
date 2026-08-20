@@ -19,6 +19,9 @@ const ROLE_PARA_CARGO: Record<string, string[]> = {
 type Pessoa = { id: string; nome: string; role: string };
 type Protocolo = { id: string; cargo: string; titulo: string; conteudo: string; anexo_url?: string | null; anexo_nome?: string | null };
 type Confirmacao = { protocolo_id: string; confirmado_em: string };
+type ConfirmacaoNome = { protocolo_id: string; pessoa_id: string; pessoa_nome: string; confirmado_em: string };
+
+const CARGO_AT = "Acompanhante Terapêutico (AT)";
 
 export default function MeusProtocolosPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -29,6 +32,11 @@ export default function MeusProtocolosPage() {
   const [loading, setLoading] = useState(true);
   const [confirmando, setConfirmando] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
+
+  // Só carregado para a supervisora: acompanhamento de leitura da equipe de ATs.
+  const [protocolosAT, setProtocolosAT] = useState<Protocolo[]>([]);
+  const [confirmacoesAT, setConfirmacoesAT] = useState<ConfirmacaoNome[]>([]);
+  const [equipeAT, setEquipeAT] = useState<{ id: string; nome: string }[]>([]);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -62,6 +70,21 @@ export default function MeusProtocolosPage() {
       for (const c of (conf || []) as Confirmacao[]) mapa[c.protocolo_id] = c.confirmado_em;
       setConfirmacoes(mapa);
       setLoading(false);
+
+      if (perfil.role === "supervisora") {
+        const { data: protAT } = await supabase.from("protocolos_conduta")
+          .select("id, cargo, titulo, conteudo, anexo_url, anexo_nome").eq("cargo", CARGO_AT).order("titulo");
+        const idsAT = ((protAT || []) as Protocolo[]).map(p => p.id);
+        const [{ data: confAT }, { data: ats }] = await Promise.all([
+          idsAT.length > 0
+            ? supabase.from("protocolos_confirmacoes").select("protocolo_id, pessoa_id, pessoa_nome, confirmado_em").in("protocolo_id", idsAT)
+            : Promise.resolve({ data: [] as ConfirmacaoNome[] }),
+          supabase.from("atendentes").select("id, nome").eq("role", "atendente").eq("ativo", true).order("nome"),
+        ]);
+        setProtocolosAT((protAT || []) as Protocolo[]);
+        setConfirmacoesAT((confAT || []) as ConfirmacaoNome[]);
+        setEquipeAT((ats || []) as { id: string; nome: string }[]);
+      }
     })();
   }, [supabase]);
 
@@ -145,6 +168,53 @@ export default function MeusProtocolosPage() {
                     Baixar {p.anexo_nome || "anexo"}
                   </a>
                 )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {eu?.role === "supervisora" && protocolosAT.length > 0 && (
+        <div className="space-y-3">
+          {protocolosAT.map(p => {
+            const confirmaramIds = new Set(confirmacoesAT.filter(c => c.protocolo_id === p.id).map(c => c.pessoa_id));
+            const confirmaram = confirmacoesAT.filter(c => c.protocolo_id === p.id).sort((a, b) => a.pessoa_nome.localeCompare(b.pessoa_nome));
+            const pendentes = equipeAT.filter(at => !confirmaramIds.has(at.id));
+            return (
+              <div key={p.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm">Leitura da equipe — {p.titulo}</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Quem já confirmou ler a cartilha da AT</p>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wide mb-1.5">Já confirmaram ({confirmaram.length})</p>
+                    {confirmaram.length === 0 ? (
+                      <p className="text-xs text-slate-400">Ninguém confirmou ainda.</p>
+                    ) : (
+                      <ul className="space-y-1">
+                        {confirmaram.map(c => (
+                          <li key={c.pessoa_id} className="text-xs text-slate-600 flex items-center justify-between gap-2">
+                            <span className="truncate">{c.pessoa_nome}</span>
+                            <span className="text-slate-400 flex-shrink-0">{new Date(c.confirmado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wide mb-1.5">Ainda não confirmaram ({pendentes.length})</p>
+                    {pendentes.length === 0 ? (
+                      <p className="text-xs text-slate-400">Todas confirmaram.</p>
+                    ) : (
+                      <ul className="space-y-1">
+                        {pendentes.map(at => (
+                          <li key={at.id} className="text-xs text-slate-600 truncate">{at.nome}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
               </div>
             );
           })}
