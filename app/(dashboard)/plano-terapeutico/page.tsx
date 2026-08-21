@@ -4,7 +4,55 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
 import { hojeLocal } from "@/lib/dataUtils";
-import { Plus, X, Trash2, ClipboardList, Camera } from "lucide-react";
+import { Plus, X, Trash2, ClipboardList, Paperclip } from "lucide-react";
+
+// Supabase Storage rejeita acento e alguns caracteres especiais na chave do
+// arquivo ("Invalid key") — mesmo tratamento usado em materiais-adaptados.
+function sanitizarNomeArquivo(nome: string): string {
+  const semAcento = nome.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return semAcento.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
+function ehImagemUrl(nome: string) {
+  return /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(nome);
+}
+
+function nomeArquivoUrl(url: string) {
+  try {
+    const semQuery = url.split("?")[0];
+    const partes = semQuery.split("/");
+    const bruto = decodeURIComponent(partes[partes.length - 1] || "arquivo");
+    return bruto.replace(/^[a-f0-9-]{36}-/, "");
+  } catch {
+    return "arquivo";
+  }
+}
+
+function iconeArquivo(nome: string) {
+  const ext = nome.split(".").pop()?.toLowerCase() || "";
+  if (ext === "pdf") return "📕";
+  if (["doc", "docx"].includes(ext)) return "📘";
+  if (["xls", "xlsx"].includes(ext)) return "📗";
+  if (["ppt", "pptx"].includes(ext)) return "📙";
+  return "📎";
+}
+
+function ArquivoChip({ nome, href, onRemover }: { nome: string; href: string; onRemover?: () => void }) {
+  return (
+    <div className="relative w-full h-full rounded-xl border border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-1 px-1 text-center group">
+      <a href={href} target="_blank" rel="noopener noreferrer" title={nome} className="flex flex-col items-center gap-1">
+        <span className="text-2xl">{iconeArquivo(nome)}</span>
+        <span className="text-[9px] text-slate-500 leading-tight line-clamp-2 break-all px-1">{nome}</span>
+      </a>
+      {onRemover && (
+        <button onClick={onRemover}
+          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 transition">
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  );
+}
 
 type Crianca = { id: string; nome: string; foto_url?: string | null };
 
@@ -127,8 +175,7 @@ export default function PlanoTerapeuticoPage() {
     setEnviandoFoto(true);
     const novasUrls: string[] = [];
     for (const file of Array.from(files)) {
-      const ext = file.name.split(".").pop();
-      const path = `${crypto.randomUUID()}.${ext}`;
+      const path = `${crypto.randomUUID()}-${sanitizarNomeArquivo(file.name)}`;
       const { error } = await supabase.storage.from("planos-terapeuticos-fotos").upload(path, file);
       if (!error) {
         const { data } = supabase.storage.from("planos-terapeuticos-fotos").getPublicUrl(path);
@@ -320,25 +367,31 @@ export default function PlanoTerapeuticoPage() {
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-3">
-          <p className="text-xs font-extrabold text-slate-700 flex items-center gap-1.5">📷 Registro fotográfico da reunião</p>
+          <p className="text-xs font-extrabold text-slate-700 flex items-center gap-1.5">📎 Fotos e arquivos da reunião</p>
           {fotos.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {fotos.map((url) => (
                 <div key={url} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group">
-                  <img src={url} alt="Foto da reunião" className="w-full h-full object-cover" />
-                  <button onClick={() => removerFoto(url)}
-                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 transition">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                  {ehImagemUrl(url) ? (
+                    <>
+                      <img src={url} alt="Foto da reunião" className="w-full h-full object-cover" />
+                      <button onClick={() => removerFoto(url)}
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 transition">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <ArquivoChip nome={nomeArquivoUrl(url)} href={url} onRemover={() => removerFoto(url)} />
+                  )}
                 </div>
               ))}
             </div>
           )}
-          <input ref={inputFotoRef} type="file" accept="image/*" multiple className="hidden"
+          <input ref={inputFotoRef} type="file" multiple className="hidden"
             onChange={(e) => enviarFotos(e.target.files)} />
           <button type="button" onClick={() => inputFotoRef.current?.click()} disabled={enviandoFoto}
             className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-slate-300 text-slate-500 text-xs font-bold hover:border-blue-400 hover:text-blue-700 hover:bg-blue-50 transition disabled:opacity-50">
-            <Camera className="w-4 h-4" /> {enviandoFoto ? "Enviando..." : "Adicionar foto(s)"}
+            <Paperclip className="w-4 h-4" /> {enviandoFoto ? "Enviando..." : "Adicionar foto(s) ou arquivo(s)"}
           </button>
         </div>
 
@@ -447,9 +500,15 @@ export default function PlanoTerapeuticoPage() {
               {p.fotos?.length > 0 && (
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
                   {p.fotos.map((url) => (
-                    <a key={url} href={url} target="_blank" rel="noreferrer" className="aspect-square rounded-lg overflow-hidden border border-slate-200 block">
-                      <img src={url} alt="Foto da reunião" className="w-full h-full object-cover hover:scale-105 transition" />
-                    </a>
+                    ehImagemUrl(url) ? (
+                      <a key={url} href={url} target="_blank" rel="noreferrer" className="aspect-square rounded-lg overflow-hidden border border-slate-200 block">
+                        <img src={url} alt="Foto da reunião" className="w-full h-full object-cover hover:scale-105 transition" />
+                      </a>
+                    ) : (
+                      <div key={url} className="aspect-square">
+                        <ArquivoChip nome={nomeArquivoUrl(url)} href={url} />
+                      </div>
+                    )
                   ))}
                 </div>
               )}
