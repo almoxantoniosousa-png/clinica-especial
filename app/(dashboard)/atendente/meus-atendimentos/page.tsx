@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, Home, School, Building2, Clock, DollarSign } from 'lucide-react'
+import { CalendarDays, Home, School, Building2, Clock, DollarSign, Pencil, X } from 'lucide-react'
+import { updateAtendimento } from '@/app/actions'
 
 export default function MeusAtendimentosPage() {
   const [atendimentos, setAtendimentos] = useState<any[]>([])
@@ -12,46 +13,98 @@ export default function MeusAtendimentosPage() {
   const [anoSelecionado, setAnoSelecionado] = useState(new Date().getFullYear())
   const router = useRouter()
 
-  useEffect(() => {
-    async function carregar() {
-      setLoading(true)
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
+  const [criancas, setCriancas] = useState<any[]>([])
+  const [atendenteId, setAtendenteId] = useState<string | null>(null)
+  const [editando, setEditando] = useState<any | null>(null)
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false)
+  const [erroEdicao, setErroEdicao] = useState('')
 
-      // O id de login (auth) nem sempre e o mesmo id da linha em `atendentes`.
-      let atendenteId: string | null = null
+  async function carregar(idParaCarregar?: string) {
+    setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/login'); return }
+
+    // O id de login (auth) nem sempre e o mesmo id da linha em `atendentes`.
+    let id: string | null = idParaCarregar || null
+    if (!id) {
       const { data: porId } = await supabase.from('atendentes').select('id').eq('id', user.id).maybeSingle()
       if (porId) {
-        atendenteId = porId.id
+        id = porId.id
       } else {
         const { data: porUsuarioId } = await supabase.from('atendentes').select('id').eq('usuario_id', user.id).maybeSingle()
         if (porUsuarioId) {
-          atendenteId = porUsuarioId.id
+          id = porUsuarioId.id
         } else if (user.email) {
           const { data: porEmail } = await supabase.from('atendentes').select('id').eq('email', user.email).maybeSingle()
-          if (porEmail) atendenteId = porEmail.id
+          if (porEmail) id = porEmail.id
         }
       }
-
-      if (!atendenteId) { setLoading(false); return }
-
-      const mes = String(mesSelecionado).padStart(2, '0')
-      const primeiroDia = `${anoSelecionado}-${mes}-01`
-      const ultimoDia = `${anoSelecionado}-${mes}-31`
-
-      const { data, error } = await supabase
-        .from('atendimentos')
-        .select('id, data, local, horas, valor_hora, valor_total, status, crianca_texto, criancas(nome)')
-        .eq('atendente_id', atendenteId)
-        .gte('data', primeiroDia)
-        .lte('data', ultimoDia)
-        .order('data', { ascending: false })
-
-      if (!error && data) setAtendimentos(data)
-      setLoading(false)
+      setAtendenteId(id)
     }
-    carregar()
+
+    if (!id) { setLoading(false); return }
+
+    const mes = String(mesSelecionado).padStart(2, '0')
+    const primeiroDia = `${anoSelecionado}-${mes}-01`
+    const ultimoDia = `${anoSelecionado}-${mes}-31`
+
+    const { data, error } = await supabase
+      .from('atendimentos')
+      .select('id, data, local, horas, valor_hora, valor_total, status, crianca_id, crianca_texto, ocorrencia, criancas(nome)')
+      .eq('atendente_id', id)
+      .gte('data', primeiroDia)
+      .lte('data', ultimoDia)
+      .order('data', { ascending: false })
+
+    if (!error && data) setAtendimentos(data)
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    carregar(atendenteId || undefined)
   }, [router, mesSelecionado, anoSelecionado])
+
+  useEffect(() => {
+    supabase.from('criancas').select('id, nome').order('nome').then(({ data }) => {
+      if (data) setCriancas(data)
+    })
+  }, [])
+
+  function abrirEdicao(item: any) {
+    setErroEdicao('')
+    setEditando({
+      id: item.id,
+      data: item.data?.split('T')[0] || item.data,
+      local: item.local,
+      valorHora: item.valor_hora ? String(item.valor_hora) : '',
+      horas: item.horas ? String(item.horas) : '',
+      criancaId: item.crianca_id || '',
+      criancaTexto: item.crianca_texto || '',
+      ocorrencia: item.ocorrencia || '',
+    })
+  }
+
+  async function salvarEdicao() {
+    if (!editando) return
+    setSalvandoEdicao(true)
+    setErroEdicao('')
+    const res = await updateAtendimento(editando.id, {
+      data: editando.data,
+      local: editando.local,
+      valorHora: editando.local === 'clinica' ? Number(editando.valorHora || 0) : undefined,
+      horas: Number(editando.horas || 0),
+      crianca_id: editando.criancaId || null,
+      crianca_texto: editando.criancaId ? '' : editando.criancaTexto,
+      ocorrencia: editando.ocorrencia,
+    })
+    setSalvandoEdicao(false)
+    if (res && !res.success) {
+      setErroEdicao(res.error || 'Erro ao salvar.')
+      return
+    }
+    setEditando(null)
+    carregar(atendenteId || undefined)
+  }
 
   // Totalizadores
   const totais = useMemo(() => {
@@ -175,10 +228,18 @@ export default function MeusAtendimentosPage() {
                     <p className="text-sm font-bold text-slate-800 truncate">
                       {(item.criancas as any)?.nome ?? (item as any).crianca_texto ?? <span className="text-slate-400 italic">Criança não informada</span>}
                     </p>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ml-2 shrink-0
-                      ${pago ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                      {pago ? 'Pago' : 'Pendente'}
-                    </span>
+                    <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full
+                        ${pago ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                        {pago ? 'Pago' : 'Pendente'}
+                      </span>
+                      {!pago && (
+                        <button onClick={() => abrirEdicao(item)}
+                          className="w-7 h-7 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center hover:bg-blue-100 transition">
+                          <Pencil size={13} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 mb-3">
                     {item.local?.toLowerCase() === 'escola'
@@ -222,6 +283,7 @@ export default function MeusAtendimentosPage() {
                     <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Valor/h</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</th>
                     <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -263,6 +325,14 @@ export default function MeusAtendimentosPage() {
                             {pago ? 'Pago' : 'Pendente'}
                           </span>
                         </td>
+                        <td className="px-5 py-3 whitespace-nowrap text-right">
+                          {!pago && (
+                            <button onClick={() => abrirEdicao(item)}
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline transition">
+                              <Pencil size={13} /> Editar
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     )
                   })}
@@ -276,6 +346,94 @@ export default function MeusAtendimentosPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* MODAL DE EDIÇÃO */}
+      {editando && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+          onClick={(e) => { if (e.target === e.currentTarget) setEditando(null) }}>
+          <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-800">Editar atendimento</h2>
+                <p className="text-xs text-slate-400">Corrija os dados do registro — ele continua pendente de pagamento.</p>
+              </div>
+              <button onClick={() => setEditando(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100">
+                <X className="h-4 w-4 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="px-5 py-4 space-y-4 overflow-y-auto">
+              {erroEdicao && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{erroEdicao}</p>}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Data</label>
+                  <input type="date" value={editando.data} onChange={(e) => setEditando({ ...editando, data: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Horas trabalhadas</label>
+                  <input type="number" step="0.25" min="0.25" value={editando.horas}
+                    onChange={(e) => setEditando({ ...editando, horas: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Local</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['casa', 'escola', 'clinica'] as const).map((l) => (
+                    <button key={l} type="button" onClick={() => setEditando({ ...editando, local: l })}
+                      className={`h-10 rounded-xl border-2 text-xs font-bold capitalize transition
+                        ${editando.local === l ? 'border-blue-600 bg-blue-50 text-blue-900' : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {editando.local === 'clinica' && (
+                <div>
+                  <label className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Valor por hora (R$)</label>
+                  <input type="number" step="0.01" min="0.01" value={editando.valorHora}
+                    onChange={(e) => setEditando({ ...editando, valorHora: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              )}
+
+              <div>
+                <label className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Criança</label>
+                <select value={editando.criancaId}
+                  onChange={(e) => setEditando({ ...editando, criancaId: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">
+                    {editando.criancaTexto ? `Texto livre: ${editando.criancaTexto}` : 'Selecione...'}
+                  </option>
+                  {criancas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide mb-1.5 block">Ocorrência / relato</label>
+                <textarea rows={3} value={editando.ocorrencia}
+                  onChange={(e) => setEditando({ ...editando, ocorrencia: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t border-slate-100 flex gap-3 justify-end flex-shrink-0">
+              <button onClick={() => setEditando(null)}
+                className="h-10 px-4 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                Cancelar
+              </button>
+              <button onClick={salvarEdicao} disabled={salvandoEdicao}
+                className="h-10 px-4 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">
+                {salvandoEdicao ? 'Salvando...' : 'Salvar alterações'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

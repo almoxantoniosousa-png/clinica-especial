@@ -223,6 +223,100 @@ export async function createAtendimento(input: any) {
 }
 
 // ============================
+// EDITAR ATENDIMENTO (só o próprio, e só enquanto pendente — sem excluir)
+// ============================
+export async function updateAtendimento(atendimentoId: string, input: any) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Usuário não autenticado." };
+  }
+
+  let atendenteId: string | null = null;
+  const { data: porId } = await supabase.from("atendentes").select("id").eq("id", user.id).maybeSingle();
+  if (porId) {
+    atendenteId = porId.id;
+  } else {
+    const { data: porUsuarioId } = await supabase.from("atendentes").select("id").eq("usuario_id", user.id).maybeSingle();
+    if (porUsuarioId) {
+      atendenteId = porUsuarioId.id;
+    } else if (user.email) {
+      const { data: porEmail } = await supabase.from("atendentes").select("id").eq("email", user.email).maybeSingle();
+      if (porEmail) atendenteId = porEmail.id;
+    }
+  }
+
+  if (!atendenteId) {
+    return { success: false, error: "Seu perfil de atendente não foi encontrado no cadastro. Contate o administrador." };
+  }
+
+  const { data: atual } = await supabase.from("atendimentos").select("id, atendente_id, status").eq("id", atendimentoId).maybeSingle();
+  if (!atual || atual.atendente_id !== atendenteId) {
+    return { success: false, error: "Registro não encontrado." };
+  }
+  if (atual.status !== "pendente") {
+    return { success: false, error: "Esse registro já foi pago e não pode mais ser editado." };
+  }
+
+  const localInput = String(input.local || "").toLowerCase();
+  const local = localInput.includes("clinica") ? "clinica" : localInput.includes("escola") ? "escola" : "casa";
+  const valorHora = local === "clinica" ? Number(input.valorHora ?? 0) : 30.00;
+  const horas = Number(input.horas ?? 0);
+  const valorTotal = horas * valorHora;
+
+  if (horas <= 0) {
+    return { success: false, error: "Informe as horas trabalhadas." };
+  }
+  if (local === "clinica" && valorHora <= 0) {
+    return { success: false, error: "Informe o valor por hora do atendimento na clínica." };
+  }
+
+  const criancaTexto = String(input.crianca_texto ?? "").trim() || null;
+  if (local !== "clinica" && !input.crianca_id) {
+    return { success: false, error: "Selecione a criança." };
+  }
+  if (local === "clinica" && !input.crianca_id && !criancaTexto) {
+    return { success: false, error: "Selecione a criança ou informe \"Adaptado\"/uma descrição." };
+  }
+
+  const { data, error } = await supabase
+    .from("atendimentos")
+    .update({
+      crianca_id: input.crianca_id || null,
+      crianca_texto: input.crianca_id ? null : criancaTexto,
+      data: input.data,
+      horas,
+      local,
+      valor_hora: valorHora,
+      valor_total: valorTotal,
+      ocorrencia: String(input.ocorrencia ?? "").trim(),
+    })
+    .eq("id", atendimentoId)
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  await registrarLog(supabase, {
+    usuario_email: user.email || "desconhecido",
+    usuario_nome: user.email || "desconhecido",
+    acao: "Editou registro de atendimento",
+    tabela: "atendimentos",
+    registro_id: atendimentoId,
+    descricao: `Editou o atendimento de ${input.data} (${local})`,
+  });
+
+  revalidatePath("/adm/financeiro");
+  revalidatePath("/adm/dashboard");
+  revalidatePath("/atendente/meus-atendimentos");
+
+  return { success: true, data };
+}
+
+// ============================
 // CARREGAR DADOS DO DASHBOARD
 // ============================
 export async function carregarDadosDashboard() {
