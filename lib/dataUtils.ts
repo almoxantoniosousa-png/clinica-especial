@@ -118,6 +118,7 @@ const DATAS_COMEMORATIVAS: Record<string, string> = {
   "09-21": "Dia Nacional de Luta da Pessoa com Deficiência",
   "09-30": "Dia da Secretária",
   "10-12": "Dia das Crianças",
+  "10-13": "Dia Mundial de Conscientização sobre o TDAH",
   "10-27": "Dia Mundial da Terapia Ocupacional",
   "12-09": "Dia do Fonoaudiólogo",
 };
