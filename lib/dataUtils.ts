@@ -110,6 +110,10 @@ export function feriadoNacional(dataISO: string): string | null {
 
 // Datas comemorativas relevantes pra equipe da clínica (não são feriado,
 // só lembrete pro ADM). Repetem todo ano no mesmo dia, por isso lista fixa.
+// Não duplicar aqui feriados nacionais já conhecidos de todos (Natal,
+// Independência, Tiradentes etc.) — esses já são tratados por
+// FERIADOS_FIXOS/feriadoNacional() acima, com outra finalidade (bloquear
+// lançamento de atendimento). Aqui é só pra datas que passariam batido.
 const DATAS_COMEMORATIVAS: Record<string, string> = {
   "03-21": "Dia Mundial da Síndrome de Down",
   "04-02": "Dia Mundial de Conscientização do Autismo",
