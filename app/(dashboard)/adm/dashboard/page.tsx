@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { carregarDadosDashboard, carregarGraficosPorMes } from "@/app/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { PainelInformacoes } from "@/components/painel-informacoes";
-import { primeiroNome } from "@/lib/dataUtils";
+import { primeiroNome, hojeLocal, dataComemorativaHoje, proximasDatasComemorativas } from "@/lib/dataUtils";
 import { Pie, Bar } from "react-chartjs-2";
 import type { ChartData, ScriptableContext } from "chart.js";
 import {
@@ -56,6 +56,11 @@ export default function AdmDashboardPage() {
 
   // ── contagens de equipe/recursos (cards do painel operacional) ─
   const [contagens, setContagens] = useState({ acompanhantes: 0, especialistas: 0, criancas: 0, escolas: 0 });
+
+  // ── datas comemorativas (só o ADM vê) ──────────────────────────
+  const hoje = useMemo(() => hojeLocal(), []);
+  const dataComemorativa = useMemo(() => dataComemorativaHoje(hoje), [hoje]);
+  const proximasDatas = useMemo(() => proximasDatasComemorativas(hoje, 3), [hoje]);
 
   async function carregarContagens() {
     const [{ count: acompanhantes }, { count: especialistas }, { count: criancas }, { count: escolas }] = await Promise.all([
@@ -374,6 +379,41 @@ export default function AdmDashboardPage() {
 
   return (
     <div className="min-h-screen bg-transparent px-4 py-6 md:px-8 md:py-8 space-y-5">
+
+      {/* DATAS COMEMORATIVAS (só o ADM vê) */}
+      {dataComemorativa && (
+        <div className="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl px-5 py-4 flex items-center gap-4 shadow-lg shadow-teal-900/20">
+          <span className="text-3xl">🎉</span>
+          <div>
+            <p className="text-white font-bold text-sm">Hoje é {dataComemorativa}!</p>
+            <p className="text-teal-100 text-xs">
+              {new Date(hoje + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })} — vale um agradecimento à equipe.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {proximasDatas.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3">
+          <p className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide mb-2">Próximas datas comemorativas</p>
+          <div className="flex flex-wrap gap-2">
+            {proximasDatas.map((d) => (
+              <div key={d.data} className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5">
+                <div className="text-center leading-none">
+                  <p className="text-sm font-extrabold text-blue-700">{d.data.slice(8, 10)}</p>
+                  <p className="text-[9px] text-slate-400 uppercase font-bold">
+                    {new Date(d.data + "T12:00:00").toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-700">{d.nome}</p>
+                  <p className="text-[10px] text-slate-400">em {d.diasRestantes} dias</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* PAINEL INFORMATIVO (saudação e "Ao vivo" já ficam na barra horizontal do topo) */}
       <PainelInformacoes />

@@ -107,3 +107,44 @@ export function feriadoNacional(dataISO: string): string | null {
   };
   return movel[paraISOLocal(data)] || null;
 }
+
+// Datas comemorativas relevantes pra equipe da clínica (não são feriado,
+// só lembrete pro ADM). Repetem todo ano no mesmo dia, por isso lista fixa.
+const DATAS_COMEMORATIVAS: Record<string, string> = {
+  "03-21": "Dia Mundial da Síndrome de Down",
+  "04-02": "Dia Mundial de Conscientização do Autismo",
+  "08-27": "Dia do Psicólogo",
+  "09-09": "Dia do Administrador",
+  "09-21": "Dia Nacional de Luta da Pessoa com Deficiência",
+  "09-30": "Dia da Secretária",
+  "10-12": "Dia das Crianças",
+  "10-27": "Dia Mundial da Terapia Ocupacional",
+  "12-09": "Dia do Fonoaudiólogo",
+};
+
+// Retorna o nome da data comemorativa se hoje cair numa, senão null.
+export function dataComemorativaHoje(dataISO: string): string | null {
+  const [, mes, dia] = dataISO.split("-").map(Number);
+  const chave = `${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+  return DATAS_COMEMORATIVAS[chave] || null;
+}
+
+export type ProximaDataComemorativa = { nome: string; data: string; diasRestantes: number };
+
+// Próximas datas comemorativas a partir de hoje (não inclui hoje — isso já
+// aparece no banner "hoje é...").
+export function proximasDatasComemorativas(dataISO: string, quantidade = 3): ProximaDataComemorativa[] {
+  const [anoAtual] = dataISO.split("-").map(Number);
+  const hoje = new Date(dataISO + "T00:00:00");
+
+  return Object.entries(DATAS_COMEMORATIVAS)
+    .map(([chave, nome]) => {
+      const [mes, dia] = chave.split("-").map(Number);
+      let data = new Date(anoAtual, mes - 1, dia);
+      if (paraISOLocal(data) <= dataISO) data = new Date(anoAtual + 1, mes - 1, dia);
+      const diasRestantes = Math.round((data.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+      return { nome, data: paraISOLocal(data), diasRestantes };
+    })
+    .sort((a, b) => a.diasRestantes - b.diasRestantes)
+    .slice(0, quantidade);
+}
