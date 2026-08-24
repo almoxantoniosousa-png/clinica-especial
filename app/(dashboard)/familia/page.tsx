@@ -155,7 +155,7 @@ export default function FamiliaDashboardPage() {
           {abas.map(a => (
             <button key={a.id} onClick={() => setAba(a.id as Aba)}
               className={`flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-semibold transition-all
-                ${aba === a.id ? "bg-orange-500 text-white shadow-sm" : "text-slate-500 hover:bg-slate-50"}`}>
+                ${aba === a.id ? "bg-orange-300 text-orange-900 shadow-sm" : "text-slate-500 hover:bg-slate-50"}`}>
               <span className="text-base sm:text-sm">{a.icon}</span>
               <span className="truncate max-w-full">{a.label}</span>
             </button>

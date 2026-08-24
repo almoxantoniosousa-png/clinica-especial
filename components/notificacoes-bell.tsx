@@ -120,9 +120,9 @@ export function NotificacoesBell({ userRole, align = "right" }: { userRole: stri
           setAberto(v => !v);
           if (!aberto) marcarTodasLidas();
         }}
-        className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition"
+        className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/10 transition"
       >
-        <Bell className="w-4 h-4 text-slate-500" />
+        <Bell className="w-4 h-4 text-white/90" />
         {naoLidas > 0 && (
           <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
             {naoLidas > 9 ? "9+" : naoLidas}
