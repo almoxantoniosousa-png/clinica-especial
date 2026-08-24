@@ -507,7 +507,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
       {!isMobile && isFamilia && (
         <div className="print:hidden sticky top-0 z-30 shadow-sm shadow-orange-900/20"
-          style={{ background: "linear-gradient(to right, #f97316, #f97316, #fbbf24)" }}>
+          style={{ background: "linear-gradient(to right, #c2410c, #ea580c)" }}>
           <div className="flex items-center gap-1 px-4 py-2">
             <div className="flex items-center gap-2 mr-3 flex-shrink-0">
               <Logo size="sm" />
@@ -789,7 +789,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
       {isMobile && (
         <>
           <div className="print:hidden fixed top-0 left-0 right-0 z-40 px-4 py-3 flex items-center justify-between shadow-sm"
-            style={{ background: isFamilia ? "linear-gradient(to right, #f97316, #fbbf24)" : "linear-gradient(to right, #1d4ed8, #3b82f6)" }}>
+            style={{ background: isFamilia ? "linear-gradient(to right, #c2410c, #ea580c)" : "linear-gradient(to right, #1d4ed8, #3b82f6)" }}>
             <div className="flex items-center gap-2.5">
               <Logo size="sm" />
               <span className="font-bold text-white text-sm">Clínica Abraço</span>
@@ -819,7 +819,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
           <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMenuAberto(false)} />
           <div className="fixed top-0 left-0 h-full w-72 z-50 bg-white shadow-xl flex flex-col">
             <div className="flex items-start justify-between px-4 py-4"
-              style={{ background: isFamilia ? "linear-gradient(to bottom right, #f97316, #fbbf24)" : "linear-gradient(to bottom right, #1d4ed8, #3b82f6)" }}>
+              style={{ background: isFamilia ? "linear-gradient(to bottom right, #c2410c, #ea580c)" : "linear-gradient(to bottom right, #1d4ed8, #3b82f6)" }}>
               <div>
                 <Logo size="md" />
                 <p className="font-bold text-white text-sm mt-2">Clínica Abraço</p>
