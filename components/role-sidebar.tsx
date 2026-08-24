@@ -303,8 +303,12 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
       <Link href={item.href}
         className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all duration-200
           ${ativo
-            ? "bg-blue-600 text-white font-semibold shadow-sm shadow-blue-600/30"
-            : "text-slate-600 hover:bg-blue-100/70 hover:text-blue-700 hover:translate-x-0.5 font-medium"}`}>
+            ? isFamilia
+              ? "bg-orange-500 text-white font-semibold shadow-sm shadow-orange-600/30"
+              : "bg-blue-600 text-white font-semibold shadow-sm shadow-blue-600/30"
+            : isFamilia
+              ? "text-slate-600 hover:bg-orange-100/70 hover:text-orange-700 hover:translate-x-0.5 font-medium"
+              : "text-slate-600 hover:bg-blue-100/70 hover:text-blue-700 hover:translate-x-0.5 font-medium"}`}>
         <span className="text-base leading-none">{item.icon}</span>
         <span>{item.label}</span>
         {item.href === "/gravacoes" && gravando && (
@@ -502,13 +506,14 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
       )}
 
       {!isMobile && isFamilia && (
-        <div className="print:hidden sticky top-0 z-30 bg-gradient-to-r from-blue-950 via-blue-900 to-blue-700 shadow-sm shadow-blue-900/20">
+        <div className="print:hidden sticky top-0 z-30 shadow-sm shadow-orange-900/20"
+          style={{ background: "linear-gradient(to right, #f97316, #f97316, #fbbf24)" }}>
           <div className="flex items-center gap-1 px-4 py-2">
             <div className="flex items-center gap-2 mr-3 flex-shrink-0">
               <Logo size="sm" />
               <div className="hidden lg:block">
                 <p className="font-bold text-white text-xs leading-tight">Clínica Abraço</p>
-                <p title={identLabel} className="text-[9px] font-medium text-blue-200 leading-snug uppercase tracking-wider truncate max-w-[150px]">{identLabel}</p>
+                <p title={identLabel} className="text-[9px] font-medium text-orange-100 leading-snug uppercase tracking-wider truncate max-w-[150px]">{identLabel}</p>
               </div>
             </div>
             <nav className="flex items-center gap-1 flex-wrap flex-1">
@@ -517,7 +522,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
                 return (
                   <Link key={item.href} href={item.href}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
-                      ${ativo ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                      ${ativo ? "bg-white/20 text-white" : "text-orange-50 hover:bg-white/10 hover:text-white"}`}>
                     <span className="text-sm leading-none">{item.icon}</span>
                     <span>{item.label}</span>
                   </Link>
@@ -527,7 +532,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
             <div className="flex items-center gap-1 flex-shrink-0">
               <NotificacoesBell userRole={role} />
               <button onClick={() => setConfirmandoSaida(true)} title="Sair do sistema"
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-100 hover:bg-white/10 hover:text-white transition-all">
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-orange-50 hover:bg-white/10 hover:text-white transition-all">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
@@ -783,7 +788,8 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
       {isMobile && (
         <>
-          <div className="print:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-blue-700 to-blue-500 px-4 py-3 flex items-center justify-between shadow-sm">
+          <div className="print:hidden fixed top-0 left-0 right-0 z-40 px-4 py-3 flex items-center justify-between shadow-sm"
+            style={{ background: isFamilia ? "linear-gradient(to right, #f97316, #fbbf24)" : "linear-gradient(to right, #1d4ed8, #3b82f6)" }}>
             <div className="flex items-center gap-2.5">
               <Logo size="sm" />
               <span className="font-bold text-white text-sm">Clínica Abraço</span>
@@ -812,11 +818,12 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
         <>
           <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMenuAberto(false)} />
           <div className="fixed top-0 left-0 h-full w-72 z-50 bg-white shadow-xl flex flex-col">
-            <div className="flex items-start justify-between px-4 py-4 bg-gradient-to-br from-blue-700 to-blue-500">
+            <div className="flex items-start justify-between px-4 py-4"
+              style={{ background: isFamilia ? "linear-gradient(to bottom right, #f97316, #fbbf24)" : "linear-gradient(to bottom right, #1d4ed8, #3b82f6)" }}>
               <div>
                 <Logo size="md" />
                 <p className="font-bold text-white text-sm mt-2">Clínica Abraço</p>
-                <p title={identLabel} className="text-[10px] font-medium text-blue-200 leading-snug uppercase tracking-wider truncate max-w-[13rem]">{identLabel}</p>
+                <p title={identLabel} className={`text-[10px] font-medium leading-snug uppercase tracking-wider truncate max-w-[13rem] ${isFamilia ? "text-orange-100" : "text-blue-200"}`}>{identLabel}</p>
               </div>
               <button onClick={() => setMenuAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition">
                 <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -824,7 +831,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
                 </svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto bg-blue-50/40">
+            <div className={`flex-1 overflow-y-auto ${isFamilia ? "bg-orange-50/40" : "bg-blue-50/40"}`}>
               {renderMenu()}
             </div>
             <div className="px-2 pb-5 border-t border-slate-100 pt-3">

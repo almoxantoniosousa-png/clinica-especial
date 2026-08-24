@@ -112,7 +112,8 @@ export default function FamiliaDashboardPage() {
     <div className="min-h-screen bg-transparent">
 
       {/* HEADER DA CRIANÇA */}
-      <div className="bg-gradient-to-br from-orange-400 via-orange-400 to-amber-300 px-4 pt-6 pb-6 relative overflow-hidden rounded-b-[32px]">
+      <div className="px-4 pt-6 pb-6 relative overflow-hidden rounded-b-[32px]"
+        style={{ background: "linear-gradient(to bottom right, #fb923c, #fb923c, #fcd34d)" }}>
         <div className="absolute w-40 h-40 rounded-full bg-white/10 -top-16 -right-10" aria-hidden />
         <div className="absolute w-24 h-24 rounded-full bg-white/10 -bottom-10 left-4" aria-hidden />
         <div className="max-w-lg mx-auto relative">
@@ -400,7 +401,8 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm px-4 pb-4"
           onClick={e => { if (e.target === e.currentTarget) setDetalhe(null); }}>
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4 flex items-center justify-between flex-shrink-0">
+            <div className="px-5 py-4 flex items-center justify-between flex-shrink-0"
+              style={{ background: "linear-gradient(to right, #f97316, #fbbf24)" }}>
               <div>
                 <p className="font-bold text-white text-sm capitalize">
                   {new Date(detalhe.data + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
