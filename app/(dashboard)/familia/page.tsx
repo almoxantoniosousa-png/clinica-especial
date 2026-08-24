@@ -112,7 +112,7 @@ export default function FamiliaDashboardPage() {
     <div className="min-h-screen bg-transparent">
 
       {/* HEADER DA CRIANÇA */}
-      <div className="bg-gradient-to-br from-orange-400 via-orange-400 to-amber-300 px-4 pt-6 pb-8 relative overflow-hidden rounded-b-[32px]">
+      <div className="bg-gradient-to-br from-orange-400 via-orange-400 to-amber-300 px-4 pt-6 pb-6 relative overflow-hidden rounded-b-[32px]">
         <div className="absolute w-40 h-40 rounded-full bg-white/10 -top-16 -right-10" aria-hidden />
         <div className="absolute w-24 h-24 rounded-full bg-white/10 -bottom-10 left-4" aria-hidden />
         <div className="max-w-lg mx-auto relative">
@@ -149,7 +149,7 @@ export default function FamiliaDashboardPage() {
       </div>
 
       {/* ABAS */}
-      <div className="max-w-lg mx-auto px-4 -mt-4">
+      <div className="max-w-lg mx-auto px-4 mt-5">
         <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-1.5 flex gap-1 relative">
           {abas.map(a => (
             <button key={a.id} onClick={() => setAba(a.id as Aba)}
