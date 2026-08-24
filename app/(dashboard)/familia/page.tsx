@@ -354,7 +354,7 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
               className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-base flex-shrink-0">
-                  📅
+                  🗓️
                 </div>
                 <div className="text-left">
                   <p className="font-bold text-slate-800 text-sm capitalize">{labelMes(mes)}</p>
