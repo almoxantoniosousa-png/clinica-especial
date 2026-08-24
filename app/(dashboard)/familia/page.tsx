@@ -112,8 +112,8 @@ export default function FamiliaDashboardPage() {
     <div className="min-h-screen bg-transparent">
 
       {/* HEADER DA CRIANÇA */}
-      <div className="px-4 pt-6 pb-6 relative overflow-hidden rounded-b-[32px]"
-        style={{ background: "linear-gradient(to bottom right, #059669, #d97706)" }}>
+      <div className="px-4 pt-6 pb-6 relative overflow-hidden rounded-[32px] mx-2 mt-2"
+        style={{ background: "linear-gradient(to bottom right, #059669, #fbbf24)" }}>
         <div className="absolute w-40 h-40 rounded-full bg-white/10 -top-16 -right-10" aria-hidden />
         <div className="absolute w-24 h-24 rounded-full bg-white/10 -bottom-10 left-4" aria-hidden />
         <div className="max-w-lg mx-auto relative">
