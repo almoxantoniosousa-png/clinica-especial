@@ -94,7 +94,7 @@ export default async function DashboardLayout({
             </div>
           </main>
         </div>
-        <FloatingContact />
+        {!isFamiliaRole && <FloatingContact />}
         {(roleFinal === "adm" || roleFinal === "admin") && <LembretesAgendaPessoal email={user.email || ""} />}
       </div>
     </GravacaoProvider>

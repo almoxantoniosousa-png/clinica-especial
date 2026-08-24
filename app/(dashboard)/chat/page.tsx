@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import {
   MessageCircle, Send, Paperclip, Image as ImageIcon, Images, Check, CheckCheck,
   X, FileText, Download, Search, PenSquare, Camera, ChevronLeft, Video,
 } from "lucide-react";
+import { FamiliaBottomNav, type FamiliaTabId } from "@/components/familia-bottom-nav";
 
 // ─── Permissões por role ─────────────────────────────────────────────────────
 
@@ -16,7 +18,7 @@ const PODE_CONTATAR: Record<string, string[]> = {
   supervisora: ["adm", "gestao", "especialista", "atendente", "supervisora", "aux_adm", "familia"],
   adm:         ["adm", "gestao", "especialista", "atendente", "supervisora", "aux_adm"],
   aux_adm:     ["adm", "gestao", "supervisora"],
-  familia:     ["supervisora", "gestao"],
+  familia:     ["supervisora", "gestao", "adm", "financeiro"],
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -27,6 +29,7 @@ const ROLE_LABEL: Record<string, string> = {
   atendente:   "Acompanhante",
   familia:     "Família",
   aux_adm:     "Aux. Administrativo",
+  financeiro:  "Financeiro",
 };
 
 // Cores consistentes por role para avatares
@@ -37,6 +40,7 @@ const ROLE_STYLE: Record<string, string> = {
   especialista:"bg-amber-100 text-amber-700",
   atendente:   "bg-slate-100 text-slate-600",
   familia:     "bg-rose-100 text-rose-700",
+  financeiro:  "bg-teal-100 text-teal-700",
 };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -128,9 +132,11 @@ function outro(c: Conversa, meuId: string): Perfil {
 
 export default function ChatPage() {
   const supabase = createSupabaseBrowserClient();
+  const router = useRouter();
 
   // Usuário atual
   const [eu, setEu] = useState<Perfil | null>(null);
+  const isFamilia = eu?.role === "familia";
 
   // Lista de conversas
   const [conversas, setConversas] = useState<Conversa[]>([]);
@@ -795,7 +801,8 @@ export default function ChatPage() {
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full overflow-hidden rounded-xl border border-slate-200 bg-white relative">
+    <div className={`flex flex-col h-full ${isFamilia ? "pb-16 sm:pb-0" : ""}`}>
+    <div className="flex flex-1 min-h-0 overflow-hidden rounded-xl border border-slate-200 bg-white relative">
 
       {/* Inputs ocultos */}
       <input ref={fileRef}   type="file" className="hidden"
@@ -815,7 +822,8 @@ export default function ChatPage() {
       `}>
 
         {/* Cabeçalho */}
-        <div className="px-4 pt-4 pb-3 border-b border-slate-100 space-y-3 bg-[#128C7E]">
+        <div className="px-4 pt-4 pb-3 border-b border-slate-100 space-y-3"
+          style={{ background: isFamilia ? "linear-gradient(to right, #047857, #059669)" : "#128C7E" }}>
           <div className="flex items-center justify-between">
             {/* Avatar próprio clicável */}
             {eu && (
@@ -910,7 +918,7 @@ export default function ChatPage() {
                   key={c.id}
                   onClick={() => setAtiva(c)}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-slate-100 transition-colors ${
-                    isAtiva ? "bg-[#d9fdd3]" : "hover:bg-slate-50"
+                    isAtiva ? (isFamilia ? "bg-emerald-50" : "bg-[#d9fdd3]") : "hover:bg-slate-50"
                   }`}
                 >
                   {/* Avatar */}
@@ -922,7 +930,8 @@ export default function ChatPage() {
                         {o.nome}
                       </p>
                       {nl > 0 && !isAtiva && (
-                        <span className="shrink-0 min-w-5 h-5 px-1.5 rounded-full bg-[#25D366] text-white text-xs font-bold flex items-center justify-center">
+                        <span className={`shrink-0 min-w-5 h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center ${isFamilia ? "" : "bg-[#25D366] text-white"}`}
+                          style={isFamilia ? { background: "#ffb96d", color: "#9f2d00" } : undefined}>
                           {nl > 99 ? "99+" : nl}
                         </span>
                       )}
@@ -943,7 +952,8 @@ export default function ChatPage() {
         <div className="flex-1 flex flex-col overflow-hidden">
 
           {/* Cabeçalho da conversa */}
-          <div className="px-4 py-3 flex items-center gap-3 shrink-0 bg-[#128C7E]">
+          <div className="px-4 py-3 flex items-center gap-3 shrink-0"
+            style={{ background: isFamilia ? "linear-gradient(to right, #047857, #059669)" : "#128C7E" }}>
             <button onClick={() => setAtiva(null)} className="md:hidden text-white/80 mr-1">
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -957,14 +967,20 @@ export default function ChatPage() {
                 }
               </p>
             </div>
-            <button onClick={iniciarVideochamada} title="Iniciar videochamada"
-              className="w-9 h-9 flex items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white transition shrink-0">
-              <Video className="h-5 w-5" />
-            </button>
+            {/* Família não inicia videochamada — só recebe o link quando a equipe inicia */}
+            {!isFamilia && (
+              <button onClick={iniciarVideochamada} title="Iniciar videochamada"
+                className="w-9 h-9 flex items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white transition shrink-0">
+                <Video className="h-5 w-5" />
+              </button>
+            )}
           </div>
 
           {/* Área de mensagens */}
-          <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1" style={{ background: "#e5ddd5 url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9b99a' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }}>
+          <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1" style={isFamilia
+            ? { background: "linear-gradient(180deg, #fdf6ec 0%, #f6f3ec 100%)" }
+            : { background: "#e5ddd5 url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9b99a' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }
+          }>
             {mensagens.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center gap-2 pb-8">
                 <Avatar perfil={parceiro} size="lg" />
@@ -979,7 +995,7 @@ export default function ChatPage() {
 
                 {/* Separador de data */}
                 <div className="flex justify-center my-4">
-                  <span className="text-xs text-slate-600 font-medium bg-[#e1f3fb] px-3 py-1 rounded-full shadow-sm">
+                  <span className={`text-xs text-slate-600 font-medium px-3 py-1 rounded-full shadow-sm ${isFamilia ? "bg-white" : "bg-[#e1f3fb]"}`}>
                     {grupo.label}
                   </span>
                 </div>
@@ -1055,7 +1071,7 @@ export default function ChatPage() {
                           {/* Balão */}
                           <div className={`max-w-xs sm:max-w-sm lg:max-w-md rounded-2xl overflow-hidden shadow-sm text-sm ${
                             minha
-                              ? "bg-[#dcf8c6] text-slate-800 rounded-br-sm"
+                              ? (isFamilia ? "bg-orange-100 text-slate-800 rounded-br-sm" : "bg-[#dcf8c6] text-slate-800 rounded-br-sm")
                               : "bg-white text-slate-800 rounded-bl-sm"
                           }`}>
 
@@ -1080,7 +1096,7 @@ export default function ChatPage() {
                                       {c.autor} iniciou uma reunião por vídeo.
                                     </p>
                                     <a href={c.url} target="_blank" rel="noreferrer"
-                                      className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-[#128C7E] text-white text-sm font-semibold hover:bg-[#0f7a6c] transition">
+                                      className={`flex items-center justify-center gap-2 w-full py-2 rounded-lg text-white text-sm font-semibold transition ${isFamilia ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#128C7E] hover:bg-[#0f7a6c]"}`}>
                                       <Video className="h-4 w-4" /> Entrar na reunião
                                     </a>
                                   </div>
@@ -1113,7 +1129,7 @@ export default function ChatPage() {
                                     </div>
                                     <audio src={c.url} controls preload="metadata"
                                       className="w-full"
-                                      style={{ height: "40px", accentColor: "#128C7E" }}
+                                      style={{ height: "40px", accentColor: isFamilia ? "#059669" : "#128C7E" }}
                                     />
                                   </div>
                                 )}
@@ -1226,7 +1242,7 @@ export default function ChatPage() {
           )}
 
           {/* Barra de input */}
-          <div className="p-3 flex items-end gap-2 shrink-0 bg-[#f0f2f5]">
+          <div className={`p-3 flex items-end gap-2 shrink-0 ${isFamilia ? "bg-orange-50/50" : "bg-[#f0f2f5]"}`}>
 
             {/* Gravando: mostra timer + cancelar + enviar */}
             {gravando ? (
@@ -1241,7 +1257,7 @@ export default function ChatPage() {
                   <span className="text-xs text-slate-400">Gravando…</span>
                 </div>
                 <button onClick={pararGravacao}
-                  className="w-9 h-9 bg-[#128C7E] rounded-full flex items-center justify-center hover:bg-[#0e7568] transition-colors shrink-0 mb-0.5">
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0 mb-0.5 ${isFamilia ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#128C7E] hover:bg-[#0e7568]"}`}>
                   <Send className="h-4 w-4 text-white" />
                 </button>
               </>
@@ -1249,13 +1265,13 @@ export default function ChatPage() {
               <>
                 <button onClick={() => fileRef.current?.click()} disabled={uploading}
                   title="Enviar arquivo"
-                  className="text-slate-400 hover:text-[#128C7E] disabled:opacity-40 transition-colors shrink-0 mb-1.5">
+                  className={`text-slate-400 disabled:opacity-40 transition-colors shrink-0 mb-1.5 ${isFamilia ? "hover:text-emerald-600" : "hover:text-[#128C7E]"}`}>
                   <Paperclip className="h-5 w-5" />
                 </button>
 
                 <button onClick={() => isMobile ? setMenuFoto(v => !v) : imagemRef.current?.click()}
                   disabled={uploading} title="Enviar imagem"
-                  className="text-slate-400 hover:text-[#128C7E] disabled:opacity-40 transition-colors shrink-0 mb-1.5">
+                  className={`text-slate-400 disabled:opacity-40 transition-colors shrink-0 mb-1.5 ${isFamilia ? "hover:text-emerald-600" : "hover:text-[#128C7E]"}`}>
                   <ImageIcon className="h-5 w-5" />
                 </button>
 
@@ -1279,7 +1295,7 @@ export default function ChatPage() {
                 {/* Enviar texto OU microfone */}
                 {texto.trim() ? (
                   <button onClick={() => enviar()} disabled={uploading}
-                    className="w-9 h-9 bg-[#128C7E] rounded-full flex items-center justify-center hover:bg-[#0e7568] transition-colors disabled:opacity-40 shrink-0 mb-0.5">
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 shrink-0 mb-0.5 ${isFamilia ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#128C7E] hover:bg-[#0e7568]"}`}>
                     {uploading
                       ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       : <Send className="h-4 w-4 text-white" />}
@@ -1287,7 +1303,7 @@ export default function ChatPage() {
                 ) : (
                   <button onClick={iniciarGravacao} disabled={uploading}
                     title="Gravar áudio"
-                    className="w-9 h-9 bg-[#128C7E] rounded-full flex items-center justify-center hover:bg-[#0e7568] transition-colors disabled:opacity-40 shrink-0 mb-0.5">
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 shrink-0 mb-0.5 ${isFamilia ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#128C7E] hover:bg-[#0e7568]"}`}>
                     <span className="text-white text-base">🎤</span>
                   </button>
                 )}
@@ -1300,14 +1316,14 @@ export default function ChatPage() {
         /* Estado vazio — desktop */
         <div className="hidden md:flex flex-1 items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
-              <MessageCircle className="h-8 w-8 text-blue-300" />
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isFamilia ? "bg-emerald-50" : "bg-blue-50"}`}>
+              <MessageCircle className={`h-8 w-8 ${isFamilia ? "text-emerald-300" : "text-blue-300"}`} />
             </div>
             <p className="text-sm font-medium text-slate-600">Selecione uma conversa</p>
             <p className="text-xs text-slate-400 mt-1">ou inicie uma nova</p>
             <button
               onClick={() => { setModal(true); setBuscaUsuario(""); setUsuarios([]); }}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 transition-colors"
+              className={`mt-4 px-4 py-2 text-white text-sm rounded-full transition-colors ${isFamilia ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}`}
             >
               Nova conversa
             </button>
@@ -1446,6 +1462,13 @@ export default function ChatPage() {
           </div>
         </div>
       )}
+    </div>
+    {isFamilia && (
+      <FamiliaBottomNav
+        ativa="conversas"
+        onSelect={(id: FamiliaTabId) => { if (id !== "conversas") router.push("/familia"); }}
+      />
+    )}
     </div>
   );
 }

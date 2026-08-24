@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { mesAtualLocal } from "@/lib/dataUtils";
+import { FamiliaBottomNav, type FamiliaTabId } from "@/components/familia-bottom-nav";
 
 type Aba = "diario" | "comunicados" | "momentos" | "evolucao";
 
@@ -20,13 +22,17 @@ type FormDiario = {
   autonomia_nivel?: number; idas_banheiro?: number;
   evacuou?: boolean; periodo_menstrual?: boolean;
   socializacao?: string[]; amizades_intervalo?: string; atencao?: string[];
+  agua_ingestao?: string;
   lanche?: string; comeu_tudo?: boolean; comeu_tudo_obs?: string;
+  lanche_independencia?: string[]; lanche_resultado?: string[]; lanche_comportamento?: string[];
   atividades_sala?: string; interacao_sala?: string; tarefa_casa?: string;
-  materiais_pedir?: string; obs_gerais?: string;
+  tarefa_livro?: string; tarefa_paginas?: string;
+  materiais_pedir?: string; obs_gerais?: string; eventos_escolares?: string;
   obs_supervisora?: string;
 };
 
 export default function FamiliaDashboardPage() {
+  const router = useRouter();
   const supabaseClient = useMemo(() => createSupabaseBrowserClient(), []);
   const [aba, setAba] = useState<Aba>("diario");
   const [responsavel, setResponsavel] = useState<Responsavel | null>(null);
@@ -67,6 +73,11 @@ export default function FamiliaDashboardPage() {
     { id: "momentos",    label: "Momentos",  icon: "📷" },
     { id: "evolucao",    label: "Evolução",  icon: "🌱" },
   ];
+
+  function selecionarTabRodape(id: FamiliaTabId) {
+    if (id === "conversas") { router.push("/chat"); return; }
+    setAba(id as Aba);
+  }
 
   if (loading) {
     return (
@@ -149,27 +160,35 @@ export default function FamiliaDashboardPage() {
         </div>
       </div>
 
-      {/* ABAS */}
-      <div className="max-w-lg mx-auto px-4 mt-5">
+      {/* ABAS — só no desktop/tablet; no celular a navegação vai pro rodapé */}
+      <div className="hidden sm:block max-w-lg mx-auto px-4 mt-5">
         <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-1.5 flex gap-1 relative">
           {abas.map(a => (
             <button key={a.id} onClick={() => setAba(a.id as Aba)}
               className={`flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-semibold transition-all
-                ${aba === a.id ? "bg-orange-300 text-orange-900 shadow-sm" : "text-slate-500 hover:bg-slate-50"}`}>
+                ${aba === a.id ? "shadow-sm" : "text-slate-500 hover:bg-slate-50"}`}
+              style={aba === a.id ? { background: "#ffb96d", color: "#9f2d00" } : undefined}>
               <span className="text-base sm:text-sm">{a.icon}</span>
               <span className="truncate max-w-full">{a.label}</span>
             </button>
           ))}
+          <button onClick={() => router.push("/chat")}
+            className="flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-semibold transition-all text-slate-500 hover:bg-slate-50">
+            <span className="text-base sm:text-sm">💬</span>
+            <span className="truncate max-w-full">Conversas</span>
+          </button>
         </div>
       </div>
 
       {/* CONTEÚDO */}
-      <div className="max-w-lg mx-auto px-4 py-6">
+      <div className="max-w-lg mx-auto px-4 py-6 pb-24 sm:pb-6">
         {aba === "diario"      && <AbaDiario    criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
         {aba === "comunicados" && <AbaAvisos    criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
         {aba === "momentos"    && <AbaMomentos  criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
         {aba === "evolucao"    && <AbaEvolucao  criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
       </div>
+
+      <FamiliaBottomNav ativa={aba} onSelect={selecionarTabRodape} />
     </div>
   );
 }
@@ -270,12 +289,14 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
     }
 
     // Autonomia — discreta por padrão; só destaca quando a AT deixou uma observação específica.
-    if (d.autonomia_nivel || d.banheiro_obs || d.evacuou_obs || d.periodo_menstrual_obs) {
+    if (d.autonomia_nivel || d.banheiro_obs || d.evacuou_obs || d.periodo_menstrual_obs || d.agua_ingestao) {
       const notaCuidados = [d.banheiro_obs, d.evacuou_obs, d.periodo_menstrual_obs].filter(Boolean).join(" ") || undefined;
+      const frasesAutonomia = d.autonomia_nivel ? [autonomiaFrase[d.autonomia_nivel]] : [];
+      if (d.agua_ingestao) frasesAutonomia.push(`💧 Água: ${d.agua_ingestao.toLowerCase()}.`);
       cards.push({
         titulo: "🌟 Autonomia",
         cor: "mint",
-        frases: d.autonomia_nivel ? [autonomiaFrase[d.autonomia_nivel]] : [],
+        frases: frasesAutonomia,
         nota: notaCuidados ? notaCuidados : (d.evacuou != null || d.idas_banheiro != null) ? "Rotina de higiene tranquila, sem nada fora do comum." : undefined,
       });
     }
@@ -283,6 +304,9 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
     // Lanche e recreio
     const recreioFrases: string[] = [];
     if (d.lanche) recreioFrases.push(`No lanche: ${d.lanche.toLowerCase()}${d.comeu_tudo ? ", comeu tudinho" : ""}.`);
+    if (d.lanche_resultado?.length) recreioFrases.push((d.lanche_resultado as string[]).join(", ") + ".");
+    if (d.lanche_independencia?.length) recreioFrases.push(`Na hora de comer: ${(d.lanche_independencia as string[]).join(", ").toLowerCase()}.`);
+    if (d.lanche_comportamento?.length) recreioFrases.push((d.lanche_comportamento as string[]).join(", ") + ".");
     if (d.socializacao?.length) recreioFrases.push(`No intervalo, brincou bem — ${(d.socializacao as string[]).join(", ").toLowerCase()}.`);
     if (d.amizades_intervalo) recreioFrases.push(d.amizades_intervalo);
     if (recreioFrases.length || d.comeu_tudo_obs) {
@@ -293,7 +317,10 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
     const salaFrases: string[] = [];
     if (d.atividades_sala) salaFrases.push(d.atividades_sala);
     if (d.interacao_sala) salaFrases.push(d.interacao_sala);
-    if (d.tarefa_casa) salaFrases.push(`Para praticar em casa: ${d.tarefa_casa} 🧸`);
+    const tarefaCabecalho = [d.tarefa_livro, d.tarefa_paginas ? `págs. ${d.tarefa_paginas}` : null].filter(Boolean).join(" — ");
+    if (tarefaCabecalho) salaFrases.push(`📖 Tarefa de casa: ${tarefaCabecalho}.`);
+    if (d.tarefa_casa) salaFrases.push(tarefaCabecalho ? d.tarefa_casa : `Para praticar em casa: ${d.tarefa_casa} 🧸`);
+    if (d.eventos_escolares) salaFrases.push(`🎉 Na escola hoje: ${d.eventos_escolares}`);
     if (salaFrases.length || d.obs_gerais) {
       cards.push({ titulo: "📚 Na sala", cor: "lav", frases: salaFrases, nota: d.obs_gerais });
     }
