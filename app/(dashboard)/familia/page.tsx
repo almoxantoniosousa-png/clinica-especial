@@ -62,17 +62,17 @@ export default function FamiliaDashboardPage() {
   }, []);
 
   const abas = [
-    { id: "diario",      label: "Diário",    icon: "📋" },
-    { id: "comunicados", label: "Avisos",    icon: "📢" },
-    { id: "momentos",    label: "Momentos",  icon: "📸" },
-    { id: "evolucao",    label: "Evolução",  icon: "📊" },
+    { id: "diario",      label: "Diário",    icon: "📖" },
+    { id: "comunicados", label: "Avisos",    icon: "💌" },
+    { id: "momentos",    label: "Momentos",  icon: "📷" },
+    { id: "evolucao",    label: "Evolução",  icon: "🌱" },
   ];
 
   if (loading) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center space-y-3">
-          <svg className="animate-spin h-8 w-8 text-blue-500 mx-auto" viewBox="0 0 24 24" fill="none">
+          <svg className="animate-spin h-8 w-8 text-orange-400 mx-auto" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
           </svg>
@@ -86,7 +86,7 @@ export default function FamiliaDashboardPage() {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center px-4">
         <div className="text-center space-y-4 max-w-sm">
-          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+          <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
             <span className="text-4xl">👶</span>
           </div>
           <h2 className="font-bold text-slate-800 text-lg">Portal não configurado</h2>
@@ -112,32 +112,34 @@ export default function FamiliaDashboardPage() {
     <div className="min-h-screen bg-transparent">
 
       {/* HEADER DA CRIANÇA */}
-      <div className="bg-gradient-to-br from-blue-900 to-blue-700 px-4 pt-6 pb-8">
-        <div className="max-w-lg mx-auto">
+      <div className="bg-gradient-to-br from-orange-400 via-orange-400 to-amber-300 px-4 pt-6 pb-8 relative overflow-hidden">
+        <div className="absolute w-40 h-40 rounded-full bg-white/10 -top-16 -right-10" aria-hidden />
+        <div className="absolute w-24 h-24 rounded-full bg-white/10 -bottom-10 left-4" aria-hidden />
+        <div className="max-w-lg mx-auto relative">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
+            <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-lg flex-shrink-0 bg-white">
               {crianca.foto_url
                 ? <img src={crianca.foto_url} alt={crianca.nome} className="w-full h-full object-cover"/>
-                : <div className="w-full h-full bg-blue-200 flex items-center justify-center text-blue-800 font-bold text-xl">
+                : <div className="w-full h-full bg-orange-100 flex items-center justify-center text-orange-700 font-bold text-xl">
                     {crianca.nome?.charAt(0)}
                   </div>}
             </div>
             <div>
-              <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider">Portal da Família</p>
+              <p className="text-white/80 text-xs font-semibold uppercase tracking-wider">Portal da Família</p>
               <h1 className="text-white text-xl font-bold">{crianca.nome}</h1>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {crianca.data_nascimento && (
-                  <span className="text-blue-200 text-xs">{calcularIdade(crianca.data_nascimento)}</span>
+                  <span className="text-white/80 text-xs">{calcularIdade(crianca.data_nascimento)}</span>
                 )}
                 {crianca.diagnostico && (
-                  <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full">{crianca.diagnostico}</span>
+                  <span className="bg-white/25 text-white text-xs px-2 py-0.5 rounded-full">{crianca.diagnostico}</span>
                 )}
               </div>
             </div>
           </div>
 
           {/* Saudação */}
-          <div className="mt-4 bg-white/10 rounded-xl px-4 py-3">
+          <div className="mt-4 bg-white/20 rounded-xl px-4 py-3">
             <p className="text-white text-sm">
               Olá, <span className="font-semibold">{responsavel?.nome?.split(" ")[0]}</span>! 👋
               Acompanhe aqui o dia a dia de <span className="font-semibold">{crianca.nome?.split(" ")[0]}</span>.
@@ -148,11 +150,11 @@ export default function FamiliaDashboardPage() {
 
       {/* ABAS */}
       <div className="max-w-lg mx-auto px-4 -mt-4">
-        <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-1.5 flex gap-1">
+        <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-1.5 flex gap-1 relative">
           {abas.map(a => (
             <button key={a.id} onClick={() => setAba(a.id as Aba)}
               className={`flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-2 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-semibold transition-all
-                ${aba === a.id ? "bg-blue-900 text-white shadow-sm" : "text-slate-500 hover:bg-slate-50"}`}>
+                ${aba === a.id ? "bg-orange-500 text-white shadow-sm" : "text-slate-500 hover:bg-slate-50"}`}>
               <span className="text-base sm:text-sm">{a.icon}</span>
               <span className="truncate max-w-full">{a.label}</span>
             </button>
@@ -237,78 +239,89 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
     });
   }
 
-  const autonomiaLabel: Record<number, string> = {
-    1: "Dependência Total",
-    2: "Ajuda Física/Verbal",
-    3: "Independência Parcial",
-    4: "Independência Total",
+  const autonomiaFrase: Record<number, string> = {
+    4: "Hoje ela fez tudo sozinha, sem precisar de ajuda — um baita avanço!",
+    3: "Hoje ela teve bastante independência, com uma ajudinha pontual.",
+    2: "Hoje ela contou com apoio físico ou verbal em algumas atividades.",
+    1: "Hoje ela precisou de mais apoio da equipe em quase tudo.",
+  };
+
+  // Card de conteúdo: título + cor (a mesma paleta quente do resto do portal) + frases já em tom de conversa.
+  type CardDiario = { titulo: string; cor: "coral" | "mint" | "gold" | "lav"; frases: string[]; nota?: string; alerta?: boolean };
+
+  const corCard: Record<CardDiario["cor"], string> = {
+    coral: "bg-orange-50 text-orange-700 border-orange-100",
+    mint:  "bg-emerald-50 text-emerald-700 border-emerald-100",
+    gold:  "bg-amber-50 text-amber-700 border-amber-100",
+    lav:   "bg-violet-50 text-violet-700 border-violet-100",
   };
 
   function renderConteudo(d: FormDiario) {
-    const secoes = [
-      {
-        titulo: "🏁 Chegada",
-        itens: [
-          d.hora_chegada && { label: "Horário de chegada", valor: d.hora_chegada },
-          d.hora_saida && { label: "Horário de saída", valor: d.hora_saida },
-          d.interacao?.length && { label: "Interação", valor: (d.interacao as string[]).join(" · ") },
-          d.interacao_obs && { label: "Outras observações", valor: d.interacao_obs },
-        ].filter(Boolean),
-      },
-      {
-        titulo: "🛠 Autonomia",
-        itens: [
-          d.autonomia_nivel && { label: "Independência", valor: autonomiaLabel[d.autonomia_nivel] || "" },
-          d.idas_banheiro != null && { label: "Banheiro", valor: `${d.idas_banheiro} vez${d.idas_banheiro !== 1 ? "es" : ""}` },
-          d.banheiro_obs && { label: "Sobre o banheiro", valor: d.banheiro_obs },
-          d.evacuou != null && { label: "Evacuou", valor: d.evacuou ? "Sim" : "Não" },
-          d.evacuou_obs && { label: "Sobre evacuar", valor: d.evacuou_obs },
-          d.periodo_menstrual_obs && { label: "Sobre o período", valor: d.periodo_menstrual_obs },
-        ].filter(Boolean),
-      },
-      {
-        titulo: "🏀 Recreio",
-        itens: [
-          d.socializacao?.length && { label: "Socialização", valor: (d.socializacao as string[]).join(" · ") },
-          d.amizades_intervalo && { label: "Amizades no intervalo", valor: d.amizades_intervalo },
-          d.atencao?.length && { label: "Atenção", valor: (d.atencao as string[]).join(" · ") },
-          d.lanche && { label: "Lanche", valor: `${d.lanche}${d.comeu_tudo ? " (comeu tudo)" : ""}` },
-          d.comeu_tudo_obs && { label: "Sobre o lanche", valor: d.comeu_tudo_obs },
-        ].filter(Boolean),
-      },
-      {
-        titulo: "📖 Agenda",
-        itens: [
-          d.atividades_sala && { label: "Atividades", valor: d.atividades_sala },
-          d.interacao_sala && { label: "Interação em sala", valor: d.interacao_sala },
-          d.tarefa_casa && { label: "Tarefa de casa", valor: d.tarefa_casa },
-          d.materiais_pedir && { label: "⚠️ Avisos urgentes", valor: d.materiais_pedir, alerta: true },
-          d.obs_gerais && { label: "Observações", valor: d.obs_gerais },
-        ].filter(Boolean),
-      },
-    ].filter(s => s.itens.length > 0);
+    const cards: CardDiario[] = [];
+
+    // Chegada e saída
+    const chegadaFrases: string[] = [];
+    if (d.hora_chegada && d.hora_saida) chegadaFrases.push(`Chegou às ${d.hora_chegada} e saiu às ${d.hora_saida}.`);
+    else if (d.hora_chegada) chegadaFrases.push(`Chegou às ${d.hora_chegada}.`);
+    if (d.interacao?.length) chegadaFrases.push(`Esteve ${(d.interacao as string[]).join(" e ").toLowerCase()} o dia todo.`);
+    if (chegadaFrases.length || d.interacao_obs) {
+      cards.push({ titulo: "🏁 Chegada e saída", cor: "coral", frases: chegadaFrases, nota: d.interacao_obs });
+    }
+
+    // Autonomia — discreta por padrão; só destaca quando a AT deixou uma observação específica.
+    if (d.autonomia_nivel || d.banheiro_obs || d.evacuou_obs || d.periodo_menstrual_obs) {
+      const notaCuidados = [d.banheiro_obs, d.evacuou_obs, d.periodo_menstrual_obs].filter(Boolean).join(" ") || undefined;
+      cards.push({
+        titulo: "🌟 Autonomia",
+        cor: "mint",
+        frases: d.autonomia_nivel ? [autonomiaFrase[d.autonomia_nivel]] : [],
+        nota: notaCuidados ? notaCuidados : (d.evacuou != null || d.idas_banheiro != null) ? "Rotina de higiene tranquila, sem nada fora do comum." : undefined,
+      });
+    }
+
+    // Lanche e recreio
+    const recreioFrases: string[] = [];
+    if (d.lanche) recreioFrases.push(`No lanche: ${d.lanche.toLowerCase()}${d.comeu_tudo ? ", comeu tudinho" : ""}.`);
+    if (d.socializacao?.length) recreioFrases.push(`No intervalo, brincou bem — ${(d.socializacao as string[]).join(", ").toLowerCase()}.`);
+    if (d.amizades_intervalo) recreioFrases.push(d.amizades_intervalo);
+    if (recreioFrases.length || d.comeu_tudo_obs) {
+      cards.push({ titulo: "🍎 Lanche e recreio", cor: "gold", frases: recreioFrases, nota: d.comeu_tudo_obs });
+    }
+
+    // Na sala + tarefa de casa
+    const salaFrases: string[] = [];
+    if (d.atividades_sala) salaFrases.push(d.atividades_sala);
+    if (d.interacao_sala) salaFrases.push(d.interacao_sala);
+    if (d.tarefa_casa) salaFrases.push(`Para praticar em casa: ${d.tarefa_casa} 🧸`);
+    if (salaFrases.length || d.obs_gerais) {
+      cards.push({ titulo: "📚 Na sala", cor: "lav", frases: salaFrases, nota: d.obs_gerais });
+    }
 
     return (
-      <div className="space-y-4">
-        {secoes.map(s => (
-          <div key={s.titulo}>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">{s.titulo}</p>
-            <div className="space-y-2">
-              {(s.itens as { label: string; valor: string; alerta?: boolean }[]).map((item) => (
-                <div key={item.label}
-                  className={`rounded-xl px-4 py-3 ${item.alerta ? "bg-red-50 border border-red-200" : "bg-slate-50 border border-slate-100"}`}>
-                  <p className="text-[10px] font-bold uppercase tracking-wide mb-0.5 ${item.alerta ? 'text-red-500' : 'text-slate-400'}">{item.label}</p>
-                  <p className={`text-sm leading-relaxed ${item.alerta ? "text-red-700 font-medium" : "text-slate-700"}`}>{item.valor}</p>
-                </div>
-              ))}
-            </div>
+      <div className="space-y-3">
+        {cards.map((c, i) => (
+          <div key={i} className={`rounded-2xl px-4 py-3.5 border ${corCard[c.cor]}`}>
+            <p className="text-xs font-bold mb-1.5">{c.titulo}</p>
+            {c.frases.map((f, j) => (
+              <p key={j} className="text-sm text-slate-700 leading-relaxed mb-1 last:mb-0">{f}</p>
+            ))}
+            {c.nota && (
+              <p className="text-xs text-slate-500 leading-relaxed mt-2 pt-2 border-t border-dashed border-current/20">{c.nota}</p>
+            )}
           </div>
         ))}
 
+        {d.materiais_pedir && (
+          <div className="rounded-2xl px-4 py-3.5 bg-red-50 border border-red-200">
+            <p className="text-xs font-bold text-red-500 mb-1">⚠️ Aviso importante</p>
+            <p className="text-sm text-red-700 leading-relaxed font-medium">{d.materiais_pedir}</p>
+          </div>
+        )}
+
         {d.obs_supervisora && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wide mb-0.5">Observação da Supervisora</p>
-            <p className="text-sm text-blue-800 leading-relaxed">{d.obs_supervisora}</p>
+          <div className="rounded-2xl px-4 py-3.5 bg-orange-50 border border-orange-100">
+            <p className="text-xs font-bold text-orange-600 mb-1">💬 Recado da Supervisora</p>
+            <p className="text-sm text-orange-800 leading-relaxed">{d.obs_supervisora}</p>
           </div>
         )}
       </div>
@@ -339,7 +352,7 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
             <button onClick={() => toggleMes(mes)}
               className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-base flex-shrink-0">
+                <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-base flex-shrink-0">
                   📅
                 </div>
                 <div className="text-left">
@@ -359,8 +372,8 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
                   return (
                     <div key={d.id} onClick={() => setDetalhe(d)}
                       className="flex items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-slate-50 transition">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-base ${temUrgente ? "bg-red-100" : "bg-blue-50"}`}>
-                        {temUrgente ? "⚠️" : "📋"}
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-base ${temUrgente ? "bg-red-100" : "bg-orange-50"}`}>
+                        {temUrgente ? "⚠️" : "📖"}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-800 text-sm capitalize">{dataFormatada}</p>
@@ -387,22 +400,22 @@ function AbaDiario({ criancaId, responsavelId }: { criancaId: string; responsave
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm px-4 pb-4"
           onClick={e => { if (e.target === e.currentTarget) setDetalhe(null); }}>
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="bg-blue-900 px-5 py-4 flex items-center justify-between flex-shrink-0">
+            <div className="bg-gradient-to-r from-orange-500 to-amber-400 px-5 py-4 flex items-center justify-between flex-shrink-0">
               <div>
                 <p className="font-bold text-white text-sm capitalize">
                   {new Date(detalhe.data + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
                 </p>
-                <p className="text-blue-300 text-xs mt-0.5">Comunicado Diário</p>
+                <p className="text-white/80 text-xs mt-0.5">Comunicado Diário</p>
               </div>
               <button onClick={() => setDetalhe(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white transition">✕</button>
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 text-white/80 hover:text-white transition">✕</button>
             </div>
             <div className="overflow-y-auto flex-1 p-5">
               {renderConteudo(detalhe)}
             </div>
             <div className="px-5 py-4 border-t border-slate-100 flex-shrink-0 space-y-2">
               <button onClick={() => setDetalhe(null)}
-                className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
+                className="w-full h-11 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition">
                 Fechar
               </button>
               <button onClick={() => ocultar(detalhe.id)} disabled={ocultando}
@@ -567,7 +580,7 @@ function AbaAvisos({ criancaId, responsavelId }: { criancaId: string; responsave
             <div className="p-5 space-y-3">
               {detalhe.conteudo && <p className="text-sm text-slate-700 leading-relaxed">{detalhe.conteudo}</p>}
               <button onClick={() => setDetalhe(null)}
-                className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
+                className="w-full h-11 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 transition">
                 Fechar
               </button>
               <button onClick={() => ocultar(detalhe)} disabled={ocultando}
@@ -645,7 +658,7 @@ function AbaMomentos({ criancaId, responsavelId }: { criancaId: string; responsa
           <button onClick={() => toggle(mes)}
             className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-pink-100 flex items-center justify-center text-base flex-shrink-0">📸</div>
+              <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center text-base flex-shrink-0">📷</div>
               <div className="text-left">
                 <p className="font-bold text-slate-800 text-sm capitalize">{labelMes(mes)}</p>
                 <p className="text-xs text-slate-400">{items.length} foto{items.length !== 1 ? "s" : ""}</p>
@@ -680,12 +693,12 @@ function AbaMomentos({ criancaId, responsavelId }: { criancaId: string; responsa
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4 pb-4 sm:pb-0"
           onClick={e => { if (e.target === e.currentTarget) setMomentoAberto(null); }}>
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="bg-pink-600 px-5 py-4 flex items-center justify-between">
+            <div className="bg-violet-500 px-5 py-4 flex items-center justify-between">
               <div>
                 <p className="font-bold text-white text-sm">
                   {new Date(momentoAberto.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
                 </p>
-                {momentoAberto.crianca_id === null && <p className="text-pink-100 text-xs mt-0.5">📢 Todas as famílias</p>}
+                {momentoAberto.crianca_id === null && <p className="text-violet-100 text-xs mt-0.5">📢 Todas as famílias</p>}
               </div>
               <button onClick={() => setMomentoAberto(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 text-white transition">✕</button>
             </div>
@@ -695,7 +708,7 @@ function AbaMomentos({ criancaId, responsavelId }: { criancaId: string; responsa
             </div>
             <div className="px-5 py-4 border-t border-slate-100 bg-white space-y-2">
               <button onClick={() => setMomentoAberto(null)}
-                className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
+                className="w-full h-11 rounded-xl bg-violet-500 text-white text-sm font-semibold hover:bg-violet-600 transition">
                 Fechar
               </button>
               <button onClick={() => ocultar(momentoAberto.id)} disabled={ocultando}
@@ -773,7 +786,7 @@ function AbaEvolucao({ criancaId, responsavelId }: { criancaId: string; responsa
           <button onClick={() => toggle(mes)}
             className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-base flex-shrink-0">📊</div>
+              <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-base flex-shrink-0">🌱</div>
               <div className="text-left">
                 <p className="font-bold text-slate-800 text-sm capitalize">{labelMes(mes)}</p>
                 <p className="text-xs text-slate-400">{items.length} registro{items.length !== 1 ? "s" : ""}</p>
@@ -806,10 +819,10 @@ function AbaEvolucao({ criancaId, responsavelId }: { criancaId: string; responsa
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm px-4 pb-4"
           onClick={e => { if (e.target === e.currentTarget) setDetalhe(null); }}>
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden max-h-[80vh] flex flex-col">
-            <div className="bg-blue-900 px-5 py-4 flex items-center justify-between flex-shrink-0">
+            <div className="bg-emerald-500 px-5 py-4 flex items-center justify-between flex-shrink-0">
               <div>
                 <p className="font-bold text-white text-sm">{detalhe.titulo}</p>
-                <p className="text-blue-300 text-xs mt-0.5">
+                <p className="text-emerald-100 text-xs mt-0.5">
                   {new Date(detalhe.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
                 </p>
               </div>
@@ -820,7 +833,7 @@ function AbaEvolucao({ criancaId, responsavelId }: { criancaId: string; responsa
             </div>
             <div className="px-5 py-4 border-t border-slate-100 flex-shrink-0 space-y-2">
               <button onClick={() => setDetalhe(null)}
-                className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-semibold hover:bg-blue-800 transition">
+                className="w-full h-11 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition">
                 Fechar
               </button>
               <button onClick={() => ocultar(detalhe.id)} disabled={ocultando}
