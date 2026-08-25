@@ -797,6 +797,7 @@ export default function ChatPage() {
   }, []);
 
   const parceiro = ativa && eu ? outro(ativa, eu.id) : null;
+  const temVideochamada = mensagens.some(m => parseConteudo(m.conteudo).tipo === "reuniao");
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -1239,6 +1240,13 @@ export default function ChatPage() {
               <span>✏️ Editando mensagem</span>
               <button onClick={cancelarEdicao}><X className="h-3.5 w-3.5" /></button>
             </div>
+          )}
+
+          {/* Aviso de videochamada — só família, e só até ela ver a primeira chamada de verdade */}
+          {isFamilia && !temVideochamada && (
+            <p className="mx-3 mb-1 text-[11px] text-slate-400 text-center shrink-0">
+              🎥 A equipe pode te chamar por vídeo quando for preciso — o link aparece aqui na conversa.
+            </p>
           )}
 
           {/* Barra de input */}
