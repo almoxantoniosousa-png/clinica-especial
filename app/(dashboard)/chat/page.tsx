@@ -751,8 +751,9 @@ export default function ChatPage() {
       const todos: Perfil[] = [];
       for (const u of (contatos || []) as any[]) {
         if (u.id === eu.id) continue;
-        // Família não pode iniciar conversa com uma supervisora que não atende famílias (ex: Sala API)
-        if (eu.role === "familia" && u.role === "supervisora" && u.contata_familia === false) continue;
+        // Família não pode iniciar conversa com quem está marcado como "não atende famílias"
+        // (ex: um segundo login de ADM/Financeiro que só duplicaria o mesmo contato)
+        if (eu.role === "familia" && u.contata_familia === false) continue;
         if (u.email) {
           if (vistos.has(u.email)) continue;
           vistos.add(u.email);
