@@ -17,8 +17,8 @@ const PODE_CONTATAR: Record<string, string[]> = {
   gestao:      ["adm", "supervisora", "especialista", "aux_adm"],
   supervisora: ["adm", "gestao", "especialista", "atendente", "supervisora", "aux_adm", "familia"],
   adm:         ["adm", "gestao", "especialista", "atendente", "supervisora", "aux_adm"],
-  aux_adm:     ["adm", "gestao", "supervisora"],
-  familia:     ["supervisora", "gestao", "adm", "financeiro"],
+  aux_adm:     ["adm", "gestao", "supervisora", "familia"],
+  familia:     ["supervisora", "gestao", "adm", "financeiro", "aux_adm"],
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -41,6 +41,7 @@ const ROLE_STYLE: Record<string, string> = {
   atendente:   "bg-slate-100 text-slate-600",
   familia:     "bg-rose-100 text-rose-700",
   financeiro:  "bg-teal-100 text-teal-700",
+  aux_adm:     "bg-indigo-100 text-indigo-700",
 };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
