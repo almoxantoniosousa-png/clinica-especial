@@ -387,6 +387,18 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     if (slotOrigem) abrirEditar(slotOrigem);
   }
 
+  // Exclusão definitiva do horário fixo (todas as semanas) — distinta de
+  // "cancelar só nesta data", que só afeta um dia (escala_excecoes).
+  function pedirExclusaoPermanente() {
+    if (!editandoId) return;
+    const slot = slots.find((s) => s.id === editandoId);
+    const id = editandoId;
+    const label = slot ? `${slot.crianca} · ${slot.servico} — toda ${slot.dia}-feira, ${slot.horario}` : "";
+    fecharModal();
+    setDeletandoId(id);
+    setDeletandoLabel(label);
+  }
+
   async function salvarLancheDia(diaAlvo: string) {
     await supabase.from("escala_lanche").upsert({
       dia: diaAlvo,
@@ -1430,9 +1442,9 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 <Trash2 className="h-8 w-8 text-red-500" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-800 text-lg">Remover atendimento?</h3>
+                <h3 className="font-bold text-slate-800 text-lg">Excluir da escala para sempre?</h3>
                 <p className="text-sm text-slate-500 mt-1">{deletandoLabel}</p>
-                <p className="text-xs text-slate-400 mt-1">Esta ação não pode ser desfeita.</p>
+                <p className="text-xs text-slate-400 mt-1">Isso remove esse horário de todas as semanas, não só de hoje — e não pode ser desfeito. Se for só pra um dia específico, feche e use "Cancelar só nesta data" em vez disso.</p>
               </div>
             </div>
             {erroExclusao && (
@@ -1451,7 +1463,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 disabled={excluindo}
                 className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
               >
-                {excluindo ? "Removendo..." : "Sim, remover"}
+                {excluindo ? "Excluindo..." : "Sim, excluir para sempre"}
               </button>
             </div>
           </div>
@@ -1732,6 +1744,14 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                 </button>
               )}
             </div>
+            {editandoId && !modoExcecao && !conflito && (
+              <button
+                onClick={pedirExclusaoPermanente}
+                className="w-full text-xs font-semibold text-red-600 hover:text-red-700 hover:underline text-center pt-1"
+              >
+                🗑️ Excluir da escala para sempre (todas as semanas)
+              </button>
+            )}
           </div>
         </div>
       )}
