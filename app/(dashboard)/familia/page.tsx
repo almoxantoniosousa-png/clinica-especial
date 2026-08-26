@@ -178,7 +178,7 @@ export default function FamiliaDashboardPage() {
       </div>
 
       {/* CONTEÚDO */}
-      <div className="max-w-lg sm:max-w-3xl mx-auto px-4 py-6 pb-24 sm:pb-6">
+      <div className="sm:max-w-3xl mx-auto px-4 py-6 pb-24 sm:pb-6">
         {aba === "diario"      && <AbaDiario    criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
         {aba === "comunicados" && <AbaAvisos    criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
         {aba === "momentos"    && <AbaMomentos  criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
