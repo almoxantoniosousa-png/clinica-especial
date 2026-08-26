@@ -317,6 +317,64 @@ export async function updateAtendimento(atendimentoId: string, input: any) {
 }
 
 // ============================
+// EXCLUIR ATENDIMENTO (só o próprio, e só enquanto pendente)
+// ============================
+export async function deleteAtendimento(atendimentoId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Usuário não autenticado." };
+  }
+
+  let atendenteId: string | null = null;
+  const { data: porId } = await supabase.from("atendentes").select("id").eq("id", user.id).maybeSingle();
+  if (porId) {
+    atendenteId = porId.id;
+  } else {
+    const { data: porUsuarioId } = await supabase.from("atendentes").select("id").eq("usuario_id", user.id).maybeSingle();
+    if (porUsuarioId) {
+      atendenteId = porUsuarioId.id;
+    } else if (user.email) {
+      const { data: porEmail } = await supabase.from("atendentes").select("id").eq("email", user.email).maybeSingle();
+      if (porEmail) atendenteId = porEmail.id;
+    }
+  }
+
+  if (!atendenteId) {
+    return { success: false, error: "Seu perfil de atendente não foi encontrado no cadastro. Contate o administrador." };
+  }
+
+  const { data: atual } = await supabase.from("atendimentos").select("id, atendente_id, status, data, local").eq("id", atendimentoId).maybeSingle();
+  if (!atual || atual.atendente_id !== atendenteId) {
+    return { success: false, error: "Registro não encontrado." };
+  }
+  if (atual.status !== "pendente") {
+    return { success: false, error: "Esse registro já foi pago e não pode mais ser excluído." };
+  }
+
+  const { error } = await supabase.from("atendimentos").delete().eq("id", atendimentoId);
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  await registrarLog(supabase, {
+    usuario_email: user.email || "desconhecido",
+    usuario_nome: user.email || "desconhecido",
+    acao: "Excluiu registro de atendimento",
+    tabela: "atendimentos",
+    registro_id: atendimentoId,
+    descricao: `Excluiu o atendimento de ${atual.data} (${atual.local})`,
+  });
+
+  revalidatePath("/adm/financeiro");
+  revalidatePath("/adm/dashboard");
+  revalidatePath("/atendente/meus-atendimentos");
+
+  return { success: true };
+}
+
+// ============================
 // CARREGAR DADOS DO DASHBOARD
 // ============================
 export async function carregarDadosDashboard() {

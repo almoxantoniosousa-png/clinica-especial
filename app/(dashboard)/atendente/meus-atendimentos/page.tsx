@@ -3,8 +3,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, Home, School, Building2, Clock, DollarSign, Pencil, X } from 'lucide-react'
-import { updateAtendimento } from '@/app/actions'
+import { CalendarDays, Home, School, Building2, Clock, DollarSign, Pencil, X, Trash2 } from 'lucide-react'
+import { updateAtendimento, deleteAtendimento } from '@/app/actions'
 
 export default function MeusAtendimentosPage() {
   const [atendimentos, setAtendimentos] = useState<any[]>([])
@@ -18,6 +18,9 @@ export default function MeusAtendimentosPage() {
   const [editando, setEditando] = useState<any | null>(null)
   const [salvandoEdicao, setSalvandoEdicao] = useState(false)
   const [erroEdicao, setErroEdicao] = useState('')
+  const [excluindoItem, setExcluindoItem] = useState<any | null>(null)
+  const [excluindo, setExcluindo] = useState(false)
+  const [erroExclusao, setErroExclusao] = useState('')
 
   async function carregar(idParaCarregar?: string) {
     setLoading(true)
@@ -103,6 +106,20 @@ export default function MeusAtendimentosPage() {
       return
     }
     setEditando(null)
+    carregar(atendenteId || undefined)
+  }
+
+  async function confirmarExclusao() {
+    if (!excluindoItem) return
+    setExcluindo(true)
+    setErroExclusao('')
+    const res = await deleteAtendimento(excluindoItem.id)
+    setExcluindo(false)
+    if (res && !res.success) {
+      setErroExclusao(res.error || 'Erro ao excluir.')
+      return
+    }
+    setExcluindoItem(null)
     carregar(atendenteId || undefined)
   }
 
@@ -234,10 +251,16 @@ export default function MeusAtendimentosPage() {
                         {pago ? 'Pago' : 'Pendente'}
                       </span>
                       {!pago && (
-                        <button onClick={() => abrirEdicao(item)}
-                          className="w-7 h-7 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center hover:bg-blue-100 transition">
-                          <Pencil size={13} />
-                        </button>
+                        <>
+                          <button onClick={() => abrirEdicao(item)}
+                            className="w-7 h-7 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center hover:bg-blue-100 transition">
+                            <Pencil size={13} />
+                          </button>
+                          <button onClick={() => { setErroExclusao(''); setExcluindoItem(item) }}
+                            className="w-7 h-7 rounded-full bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition">
+                            <Trash2 size={13} />
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -327,10 +350,16 @@ export default function MeusAtendimentosPage() {
                         </td>
                         <td className="px-5 py-3 whitespace-nowrap text-right">
                           {!pago && (
-                            <button onClick={() => abrirEdicao(item)}
-                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline transition">
-                              <Pencil size={13} /> Editar
-                            </button>
+                            <div className="flex items-center justify-end gap-3">
+                              <button onClick={() => abrirEdicao(item)}
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline transition">
+                                <Pencil size={13} /> Editar
+                              </button>
+                              <button onClick={() => { setErroExclusao(''); setExcluindoItem(item) }}
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-800 hover:underline transition">
+                                <Trash2 size={13} /> Excluir
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -430,6 +459,45 @@ export default function MeusAtendimentosPage() {
               <button onClick={salvarEdicao} disabled={salvandoEdicao}
                 className="h-10 px-4 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">
                 {salvandoEdicao ? 'Salvando...' : 'Salvar alterações'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {excluindoItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
+                <Trash2 className="h-8 w-8 text-red-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Excluir este registro?</h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  {excluindoItem.data?.split('T')[0].split('-').reverse().join('/')} · {excluindoItem.local} · {Number(excluindoItem.horas).toFixed(2)}h
+                </p>
+                <p className="text-xs text-slate-400 mt-1">Esta ação não pode ser desfeita.</p>
+              </div>
+            </div>
+            {erroExclusao && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-center">{erroExclusao}</p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setExcluindoItem(null); setErroExclusao('') }}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarExclusao}
+                disabled={excluindo}
+                className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {excluindo ? 'Excluindo...' : 'Sim, excluir'}
               </button>
             </div>
           </div>

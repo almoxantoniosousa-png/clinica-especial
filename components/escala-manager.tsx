@@ -1372,39 +1372,38 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                         item.cancelado ? "bg-slate-100 text-slate-400 border-slate-200 line-through" : getCorServico(item.slot.servico, corMap)
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">👶 {item.slot.crianca}</span>
-                        <span className="opacity-60">·</span>
-                        <span>{item.slot.servico}</span>
-                        {podeEditar && (
-                          <div className="flex items-center gap-1 ml-auto pl-2 no-underline flex-wrap justify-end">
-                            {!item.cancelado && (
-                              <button onClick={() => abrirEditarNaData(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-black/10 transition-colors text-[10px] font-semibold" title="Muda só o que está sendo visto agora, sem afetar as outras semanas">
-                                <Pencil className="h-3 w-3" /> Ajustar hoje
-                              </button>
-                            )}
-                            {!item.cancelado && item.escalaIdOrigem && (
-                              <button onClick={() => abrirEditarParaSempre(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-black/10 transition-colors text-[10px] font-semibold" title="Muda o padrão de toda semana, dali pra frente">
-                                <Repeat className="h-3 w-3" /> Sempre
-                              </button>
-                            )}
-                            {item.cancelado ? (
-                              <button onClick={() => restaurarPadrao(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors text-[10px] font-bold">
-                                ↩️ Restaurar
-                              </button>
-                            ) : item.escalaIdOrigem ? (
-                              <button onClick={() => cancelarNestaData(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors text-[10px] font-bold" title="Cancela só o dia que está sendo visto — nas outras semanas continua normal">
-                                🚫 Só hoje
-                              </button>
-                            ) : (
-                              <button onClick={() => restaurarPadrao(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 transition-colors text-[10px] font-bold">
-                                🗑️ Remover
-                              </button>
-                            )}
-                          </div>
-                        )}
+                      <div>
+                        <span className="font-bold leading-snug">👶 {item.slot.crianca}</span>
+                        <span className="block opacity-70 leading-snug">{item.slot.servico}</span>
                       </div>
-                      {item.slot.profissional_nome && <span className="text-xs opacity-70 mt-0.5">👤 {item.slot.profissional_nome}</span>}
+                      {podeEditar && (
+                        <div className="flex items-center gap-1 flex-wrap no-underline mt-1.5">
+                          {!item.cancelado && (
+                            <button onClick={() => abrirEditarNaData(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-black/10 transition-colors text-[10px] font-semibold" title="Muda só o que está sendo visto agora, sem afetar as outras semanas">
+                              <Pencil className="h-3 w-3" /> Ajustar hoje
+                            </button>
+                          )}
+                          {!item.cancelado && item.escalaIdOrigem && (
+                            <button onClick={() => abrirEditarParaSempre(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-black/10 transition-colors text-[10px] font-semibold" title="Muda o padrão de toda semana, dali pra frente">
+                              <Repeat className="h-3 w-3" /> Sempre
+                            </button>
+                          )}
+                          {item.cancelado ? (
+                            <button onClick={() => restaurarPadrao(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors text-[10px] font-bold">
+                              ↩️ Restaurar
+                            </button>
+                          ) : item.escalaIdOrigem ? (
+                            <button onClick={() => cancelarNestaData(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors text-[10px] font-bold" title="Cancela só o dia que está sendo visto — nas outras semanas continua normal">
+                              🚫 Só hoje
+                            </button>
+                          ) : (
+                            <button onClick={() => restaurarPadrao(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 transition-colors text-[10px] font-bold">
+                              🗑️ Remover
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {item.slot.profissional_nome && <span className="text-xs opacity-70 mt-1.5 block">👤 {item.slot.profissional_nome}</span>}
                       {item.slot.local && <span className="text-xs opacity-70">📍 {item.slot.local}</span>}
                       {item.slot.motivo && <span className="text-[11px] bg-black/10 rounded px-1.5 py-1 mt-1 leading-snug">⚠️ {item.slot.motivo}</span>}
                       {item.cancelado ? (
