@@ -123,11 +123,11 @@ export default function FamiliaDashboardPage() {
     <div className="min-h-screen bg-transparent">
 
       {/* HEADER DA CRIANÇA */}
-      <div className="px-4 pt-6 pb-6 relative overflow-hidden rounded-[32px] mx-2 mt-2"
+      <div className="px-4 pt-6 pb-6 relative overflow-hidden rounded-[32px] mx-2 mt-2 sm:max-w-3xl sm:mx-auto"
         style={{ background: "linear-gradient(to bottom right, #059669, #fbbf24)" }}>
         <div className="absolute w-40 h-40 rounded-full bg-white/10 -top-16 -right-10" aria-hidden />
         <div className="absolute w-24 h-24 rounded-full bg-white/10 -bottom-10 left-4" aria-hidden />
-        <div className="max-w-lg mx-auto relative">
+        <div className="relative">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-lg flex-shrink-0 bg-white">
               {crianca.foto_url
@@ -158,7 +158,7 @@ export default function FamiliaDashboardPage() {
       </div>
 
       {/* ABAS — só no desktop/tablet; no celular a navegação vai pro rodapé */}
-      <div className="hidden sm:block max-w-lg mx-auto px-4 mt-5">
+      <div className="hidden sm:block sm:max-w-3xl mx-auto px-4 mt-5">
         <div className="bg-white rounded-2xl shadow-md border border-slate-100 p-1.5 flex gap-1 relative">
           {abas.map(a => (
             <button key={a.id} onClick={() => setAba(a.id as Aba)}
@@ -178,7 +178,7 @@ export default function FamiliaDashboardPage() {
       </div>
 
       {/* CONTEÚDO */}
-      <div className="max-w-lg mx-auto px-4 py-6 pb-24 sm:pb-6">
+      <div className="max-w-lg sm:max-w-3xl mx-auto px-4 py-6 pb-24 sm:pb-6">
         {aba === "diario"      && <AbaDiario    criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
         {aba === "comunicados" && <AbaAvisos    criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
         {aba === "momentos"    && <AbaMomentos  criancaId={crianca.id} responsavelId={responsavel?.id || ""} />}
