@@ -1364,7 +1364,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                     {itensHorario.length} atendimento{itensHorario.length !== 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="p-3 flex flex-wrap gap-2">
+                <div className="p-3 grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>
                   {itensHorario.map((item) => (
                     <div
                       key={item.chave}
@@ -1377,28 +1377,28 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                         <span className="opacity-60">·</span>
                         <span>{item.slot.servico}</span>
                         {podeEditar && (
-                          <div className="flex items-center gap-1 ml-auto pl-2 no-underline">
+                          <div className="flex items-center gap-1 ml-auto pl-2 no-underline flex-wrap justify-end">
                             {!item.cancelado && (
-                              <button onClick={() => abrirEditarNaData(item)} className="p-0.5 rounded hover:bg-black/10 transition-colors" title="Ajustar só nesta data">
-                                <Pencil className="h-3 w-3" />
+                              <button onClick={() => abrirEditarNaData(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-black/10 transition-colors text-[10px] font-semibold" title="Muda só o que está sendo visto agora, sem afetar as outras semanas">
+                                <Pencil className="h-3 w-3" /> Ajustar hoje
                               </button>
                             )}
                             {!item.cancelado && item.escalaIdOrigem && (
-                              <button onClick={() => abrirEditarParaSempre(item)} className="p-0.5 rounded hover:bg-black/10 transition-colors" title="Editar horário fixo (pra sempre)">
-                                <Repeat className="h-3 w-3" />
+                              <button onClick={() => abrirEditarParaSempre(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-black/10 transition-colors text-[10px] font-semibold" title="Muda o padrão de toda semana, dali pra frente">
+                                <Repeat className="h-3 w-3" /> Sempre
                               </button>
                             )}
                             {item.cancelado ? (
-                              <button onClick={() => restaurarPadrao(item)} className="text-[10px] font-semibold underline hover:text-blue-600" title="Restaurar padrão">
-                                restaurar
+                              <button onClick={() => restaurarPadrao(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors text-[10px] font-bold">
+                                ↩️ Restaurar
                               </button>
                             ) : item.escalaIdOrigem ? (
-                              <button onClick={() => cancelarNestaData(item)} className="p-0.5 rounded hover:bg-red-200 text-red-600 transition-colors" title="Cancelar só nesta data">
-                                <X className="h-3 w-3" />
+                              <button onClick={() => cancelarNestaData(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors text-[10px] font-bold" title="Cancela só o dia que está sendo visto — nas outras semanas continua normal">
+                                🚫 Só hoje
                               </button>
                             ) : (
-                              <button onClick={() => restaurarPadrao(item)} className="p-0.5 rounded hover:bg-red-200 text-red-600 transition-colors" title="Remover">
-                                <Trash2 className="h-3 w-3" />
+                              <button onClick={() => restaurarPadrao(item)} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 hover:bg-red-200 transition-colors text-[10px] font-bold">
+                                🗑️ Remover
                               </button>
                             )}
                           </div>
@@ -1407,9 +1407,13 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                       {item.slot.profissional_nome && <span className="text-xs opacity-70 mt-0.5">👤 {item.slot.profissional_nome}</span>}
                       {item.slot.local && <span className="text-xs opacity-70">📍 {item.slot.local}</span>}
                       {item.slot.motivo && <span className="text-[11px] bg-black/10 rounded px-1.5 py-1 mt-1 leading-snug">⚠️ {item.slot.motivo}</span>}
-                      {item.excecao && !item.cancelado && (
-                        <span className="text-[10px] mt-1 font-semibold opacity-70">
-                          {item.escalaIdOrigem ? "✎ ajustado só nesta data" : "＋ adicionado só nesta data"}
+                      {item.cancelado ? (
+                        <span className="inline-flex w-fit items-center gap-1 text-[10px] font-bold mt-1.5 px-2 py-0.5 rounded-full bg-slate-200 text-slate-500 no-underline">
+                          🚫 Cancelado só hoje
+                        </span>
+                      ) : item.excecao && (
+                        <span className="inline-flex w-fit items-center gap-1 text-[10px] font-bold mt-1.5 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                          {item.escalaIdOrigem ? "🔄 Alterado só hoje" : "➕ Adicionado só hoje"}
                         </span>
                       )}
                     </div>
