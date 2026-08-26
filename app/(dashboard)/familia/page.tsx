@@ -143,9 +143,6 @@ export default function FamiliaDashboardPage() {
                 {crianca.data_nascimento && (
                   <span className="text-white/80 text-xs">{calcularIdade(crianca.data_nascimento)}</span>
                 )}
-                {crianca.diagnostico && (
-                  <span className="bg-white/25 text-white text-xs px-2 py-0.5 rounded-full">{crianca.diagnostico}</span>
-                )}
               </div>
             </div>
           </div>
@@ -154,7 +151,7 @@ export default function FamiliaDashboardPage() {
           <div className="mt-4 bg-white/20 rounded-xl px-4 py-3">
             <p className="text-white text-sm">
               Olá, <span className="font-semibold">{responsavel?.nome?.split(" ")[0]}</span>! 👋
-              Acompanhe aqui o dia a dia de <span className="font-semibold">{crianca.nome?.split(" ")[0]}</span>.
+              Acompanhe por aqui as novidades do dia a dia.
             </p>
           </div>
         </div>
