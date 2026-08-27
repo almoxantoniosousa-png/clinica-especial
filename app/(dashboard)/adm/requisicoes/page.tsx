@@ -296,7 +296,7 @@ export default function RequisicoesPaginaAdm() {
 
       {/* MODAL ATUALIZAR */}
       {modalReq && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-start justify-center p-4 sm:pt-8 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900">Atualizar requisição</h2>
@@ -354,7 +354,7 @@ export default function RequisicoesPaginaAdm() {
 
       {/* MODAL NOVA REQUISIÇÃO (do próprio ADM) */}
       {modalNova && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-start justify-center p-4 sm:pt-8 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900">Nova requisição</h2>

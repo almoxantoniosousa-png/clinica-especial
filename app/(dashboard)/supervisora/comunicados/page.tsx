@@ -608,7 +608,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
 
       {/* Modal detalhe */}
       {detalhe && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-8 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setDetalhe(null); }}>
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
 
