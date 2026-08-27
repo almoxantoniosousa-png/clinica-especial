@@ -716,7 +716,7 @@ function AbaMomentos({ criancaId, responsavelId }: { criancaId: string; responsa
       ))}
 
       {momentoAberto && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/70 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-8 overflow-y-auto"
+        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/70 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-24 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setMomentoAberto(null); }}>
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="bg-violet-500 px-5 py-4 flex items-center justify-between">

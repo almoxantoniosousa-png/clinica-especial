@@ -769,7 +769,7 @@ export default function ColaboradoresPage() {
       )}
 
       {editando && editandoCatInfo && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-8 overflow-y-auto"
+        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-24 overflow-y-auto"
           onClick={(e) => { if (e.target === e.currentTarget) setEditando(null); }}>
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">

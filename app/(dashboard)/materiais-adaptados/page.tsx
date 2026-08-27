@@ -782,7 +782,7 @@ export default function MateriaisAdaptadosPage() {
 
       {/* MODAL CRIAR/EDITAR */}
       {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-8 overflow-y-auto"
+        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-24 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setModalAberto(false); }}>
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="bg-blue-900 px-5 py-4 flex items-center justify-between">
@@ -913,7 +913,7 @@ export default function MateriaisAdaptadosPage() {
 
       {/* MODAL REVISÃO */}
       {revisando && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-8 overflow-y-auto"
+        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-24 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setRevisando(null); }}>
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="bg-blue-900 px-5 py-4 flex items-center justify-between">
@@ -971,7 +971,7 @@ export default function MateriaisAdaptadosPage() {
 
       {/* MODAL NOVA CRIANÇA */}
       {modalCriancaAberto && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-8 overflow-y-auto"
+        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-24 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setModalCriancaAberto(false); }}>
           <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="bg-blue-900 px-5 py-4 flex items-center justify-between">

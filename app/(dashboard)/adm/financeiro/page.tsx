@@ -1086,7 +1086,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
 
       {/* Modal nova conta */}
       {modalAberto && (
-        <div className="fixed inset-0 z-[60] flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-8 overflow-y-auto"
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-24 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) fecharModal(); }}>
           <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-slate-800">{editandoId ? "Editar Conta a Pagar" : "Nova Conta a Pagar"}</h3>
@@ -1740,7 +1740,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       )}
 
       {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-8 overflow-y-auto"
+        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-24 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) { setModalAberto(false); resetForm(); } }}>
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-slate-800 text-lg">{editandoId ? "Editar Fatura" : "Nova Fatura"}</h3>
@@ -2569,7 +2569,7 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
       )}
 
       {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-8 overflow-y-auto"
+        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-24 overflow-y-auto"
           onClick={ev => { if (ev.target === ev.currentTarget) { setModalAberto(false); resetForm(); } }}>
           <div className="w-full sm:max-w-md bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-slate-800 text-lg">Novo Empréstimo</h3>
