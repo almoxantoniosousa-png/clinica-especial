@@ -1029,7 +1029,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
         if (!conta) return null;
         const falta = restante(conta);
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto">
             <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
               <div className="flex flex-col items-center text-center gap-3">
                 <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center">
@@ -1178,7 +1178,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
 
       {/* Modal nova/editar despesa recorrente */}
       {modalRecorrenteAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-slate-800 text-lg">{editandoRecorrenteId ? "Editar recorrente" : "Nova despesa recorrente"}</h3>
@@ -1244,7 +1244,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
 
       {/* Modal histórico completo de uma despesa recorrente — igual ao card da criança: tudo daquela despesa, num lugar só */}
       {historicoRecorrente && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto"
           onClick={(e) => { if (e.target === e.currentTarget) setHistoricoRecorrente(null); }}>
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl max-h-[85vh] overflow-y-auto">
             <div className="bg-blue-900 px-6 py-4 flex items-center justify-between sticky top-0 rounded-t-2xl">
@@ -1671,7 +1671,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       )}
 
       {confirmando && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <div className="flex flex-col items-center text-center gap-3">
               <div className={`w-16 h-16 rounded-full flex items-center justify-center ${confirmando.novoStatus === "recebido" ? "bg-emerald-50" : "bg-blue-50"}`}>
@@ -1710,7 +1710,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       )}
 
       {excluindo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <div className="flex flex-col items-center text-center gap-3">
               <div className="w-16 h-16 rounded-full flex items-center justify-center bg-red-50">

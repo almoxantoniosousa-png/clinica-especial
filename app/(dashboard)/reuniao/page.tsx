@@ -532,7 +532,7 @@ export default function ReuniaoPage() {
 
       {/* MODAL CONFIRMAR EXCLUSÃO */}
       {deletandoId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <div className="flex flex-col items-center text-center gap-3">
               <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-3xl">🗑️</div>
@@ -554,8 +554,8 @@ export default function ReuniaoPage() {
 
       {/* MODAL NOVA ATA */}
       {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false); }}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 pt-24 pb-8 overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false); }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[calc(100vh-8rem)] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h2 className="text-lg font-bold text-slate-800">Nova ata de reunião</h2>
               <button onClick={() => setModalAberto(false)} className="text-slate-400 hover:text-slate-600">

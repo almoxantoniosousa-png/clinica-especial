@@ -467,7 +467,7 @@ export default function MeusAtendimentosPage() {
 
       {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
       {excluindoItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <div className="flex flex-col items-center text-center gap-3">
               <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">

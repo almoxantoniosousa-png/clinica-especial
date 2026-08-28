@@ -442,7 +442,7 @@ export default function PatrimonioPage() {
 
       {/* MODAL CADASTRO/EDIÇÃO DE BEM */}
       {modalCadastro && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={e => { if (e.target === e.currentTarget) setModalCadastro(false); }}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setModalCadastro(false); }}>
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-4 flex items-center justify-between">
               <h2 className="font-bold text-white">{editandoBem ? "✏️ Editar bem" : "📦 Cadastrar bem"}</h2>
@@ -530,7 +530,7 @@ export default function PatrimonioPage() {
 
       {/* DETALHE DO BEM */}
       {detalheBem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={e => { if (e.target === e.currentTarget) setDetalheBem(null); }}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetalheBem(null); }}>
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-4 flex items-center justify-between">
               <div>
@@ -594,7 +594,7 @@ export default function PatrimonioPage() {
 
       {/* CONFIRMAÇÃO DE BAIXA */}
       {baixandoBem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <div className="flex flex-col items-center text-center gap-3">
               <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-3xl">📉</div>
@@ -611,7 +611,7 @@ export default function PatrimonioPage() {
 
       {/* DETALHE / GESTÃO DE MANUTENÇÃO */}
       {detalheManut && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={e => { if (e.target === e.currentTarget) setDetalheManut(null); }}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetalheManut(null); }}>
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-4 flex items-center justify-between">
               <h2 className="font-bold text-white">🔧 Chamado de manutenção</h2>

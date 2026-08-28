@@ -820,7 +820,7 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
         </div>
       )}
       {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={e => { if (e.target === e.currentTarget) setModalAberto(false); }}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setModalAberto(false); }}>
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
             <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-4 flex items-center justify-between">
               <h2 className="font-bold text-white">📸 Publicar Momento</h2>
@@ -860,7 +860,7 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
         </div>
       )}
       {deletandoId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <div className="flex flex-col items-center text-center gap-3">
               <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-3xl">🗑️</div>
@@ -1004,7 +1004,7 @@ function AbaEvolucao({ mostrarFeedback }: AbaProps) {
       )}
 
       {detalhe && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={e => { if (e.target === e.currentTarget) setDetalhe(null); }}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetalhe(null); }}>
           <div className="w-full max-w-lg max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-4 flex items-center justify-between flex-shrink-0">
               <h2 className="font-bold text-white">📊 Relatório de {detalhe.criancas?.nome}</h2>
@@ -1196,7 +1196,7 @@ function AbaAvisos({ mostrarFeedback }: AbaProps) {
         </div>
       )}
       {deletandoId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <div className="flex flex-col items-center text-center gap-3">
               <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-3xl">🗑️</div>
@@ -1210,7 +1210,7 @@ function AbaAvisos({ mostrarFeedback }: AbaProps) {
         </div>
       )}
       {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={e => { if (e.target === e.currentTarget) setModalAberto(false); }}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setModalAberto(false); }}>
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-4 flex items-center justify-between">
               <h2 className="font-bold text-white">📢 Novo Aviso</h2>

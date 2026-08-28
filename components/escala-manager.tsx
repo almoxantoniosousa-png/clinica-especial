@@ -1438,7 +1438,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
       {/* MODAL CONFIRMAÇÃO DE EXCLUSÃO */}
       {deletandoId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <div className="flex flex-col items-center text-center gap-3">
               <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
@@ -1475,7 +1475,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
       {/* MODAL CADASTRO / EDIÇÃO */}
       {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 pt-24 pb-8 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5 max-h-[90vh] overflow-y-auto">
 
             {/* cabeçalho */}
@@ -1761,7 +1761,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
       {/* PAINEL DE HISTÓRICO / CONSULTA COMPROBATÓRIA */}
       {historicoAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) setHistoricoAberto(false); }}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 pt-24 pb-8 overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget) setHistoricoAberto(false); }}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">

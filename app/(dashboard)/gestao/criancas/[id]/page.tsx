@@ -449,7 +449,7 @@ export default function CardCriancaPage() {
       </Secao>
 
       {editando && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto"
           onClick={(e) => { if (e.target === e.currentTarget) setEditando(false); }}>
           <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="bg-blue-900 px-6 py-4 flex items-center justify-between sticky top-0 rounded-t-2xl">

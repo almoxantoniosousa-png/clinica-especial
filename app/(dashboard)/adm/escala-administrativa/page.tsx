@@ -281,7 +281,7 @@ export default function EscalaAdministrativaPage() {
 
       {/* CONFIRMAÇÃO DE EXCLUSÃO */}
       {excluindoId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto">
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
             <div className="flex flex-col items-center text-center gap-3">
               <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
@@ -309,7 +309,7 @@ export default function EscalaAdministrativaPage() {
 
       {/* MODAL CADASTRO / EDIÇÃO */}
       {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 pt-24 pb-8 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-800">

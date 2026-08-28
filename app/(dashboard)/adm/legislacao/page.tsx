@@ -243,7 +243,7 @@ export default function LegislacaoApoioAdmPage() {
 
       {/* Confirmação de exclusão */}
       {deletando && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) setDeletando(null); }}>
           <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-5 space-y-4">
             <div>
