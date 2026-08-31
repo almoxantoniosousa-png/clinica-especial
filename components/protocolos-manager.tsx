@@ -60,11 +60,11 @@ const ORIENTACAO_PADRAO = {
   conteudo: "Descreva as diretrizes, deveres e normas de conduta esperadas para este cargo...",
 };
 
-type Protocolo = { id: string; cargo: string; titulo: string; conteudo: string; created_at: string; anexo_url?: string | null; anexo_nome?: string | null };
+type Protocolo = { id: string; cargos: string[]; titulo: string; conteudo: string; created_at: string; anexo_url?: string | null; anexo_nome?: string | null };
 type Pessoa = { id: string; nome: string; role: string };
 type Confirmacao = { protocolo_id: string; pessoa_nome: string; pessoa_role: string; confirmado_em: string };
 
-const FORM_VAZIO = { cargo: CARGOS[0], titulo: "", conteudo: "" };
+const FORM_VAZIO = { cargos: [] as string[], titulo: "", conteudo: "" };
 
 export function ProtocolosManager() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -111,7 +111,7 @@ export function ProtocolosManager() {
   async function carregar() {
     setLoading(true);
     const [{ data: prot }, { data: conf }] = await Promise.all([
-      supabase.from("protocolos_conduta").select("*").order("cargo").order("titulo"),
+      supabase.from("protocolos_conduta").select("*").order("titulo"),
       supabase.from("protocolos_confirmacoes").select("protocolo_id, pessoa_nome, pessoa_role, confirmado_em").order("confirmado_em", { ascending: false }),
     ]);
     setProtocolos((prot || []) as Protocolo[]);
@@ -126,16 +126,20 @@ export function ProtocolosManager() {
   useEffect(() => { carregar(); }, []);
 
   const coberturaPorCargo = useMemo(() =>
-    CARGOS.map(cargo => ({ cargo, total: protocolos.filter(p => p.cargo === cargo).length })),
+    CARGOS.map(cargo => ({ cargo, total: protocolos.filter(p => p.cargos.includes(cargo)).length })),
   [protocolos]);
 
   function abrirNovo() { setEditando(null); setForm(FORM_VAZIO); setAnexoFile(null); setAnexoExistente(null); setRemoverAnexo(false); setModal(true); }
 
-  function abrirNovoParaCargo(cargo: string) { setEditando(null); setForm({ ...FORM_VAZIO, cargo }); setAnexoFile(null); setAnexoExistente(null); setRemoverAnexo(false); setModal(true); }
+  function abrirNovoParaCargo(cargo: string) { setEditando(null); setForm({ ...FORM_VAZIO, cargos: [cargo] }); setAnexoFile(null); setAnexoExistente(null); setRemoverAnexo(false); setModal(true); }
+
+  function toggleCargoForm(cargo: string) {
+    setForm(f => ({ ...f, cargos: f.cargos.includes(cargo) ? f.cargos.filter(c => c !== cargo) : [...f.cargos, cargo] }));
+  }
 
   function abrirEditar(p: Protocolo) {
     setEditando(p);
-    setForm({ cargo: p.cargo, titulo: p.titulo, conteudo: p.conteudo });
+    setForm({ cargos: p.cargos, titulo: p.titulo, conteudo: p.conteudo });
     setAnexoFile(null);
     setAnexoExistente(p.anexo_url ? { url: p.anexo_url, nome: p.anexo_nome || "anexo" } : null);
     setRemoverAnexo(false);
@@ -145,6 +149,9 @@ export function ProtocolosManager() {
   function fecharModal() { setModal(false); setEditando(null); setForm(FORM_VAZIO); setAnexoFile(null); setAnexoExistente(null); setRemoverAnexo(false); }
 
   async function salvar() {
+    if (form.cargos.length === 0) {
+      mostrarFeedback("erro", "Selecione ao menos um cargo."); return;
+    }
     if (!form.titulo.trim() || !form.conteudo.trim()) {
       mostrarFeedback("erro", "Preencha título e conteúdo."); return;
     }
@@ -169,7 +176,7 @@ export function ProtocolosManager() {
     }
 
     const payload = {
-      cargo: form.cargo, titulo: form.titulo.trim(), conteudo: form.conteudo.trim(),
+      cargos: form.cargos, titulo: form.titulo.trim(), conteudo: form.conteudo.trim(),
       anexo_url: anexoUrl, anexo_nome: anexoNome,
       updated_at: new Date().toISOString(),
     };
@@ -185,7 +192,7 @@ export function ProtocolosManager() {
         acao: editando ? "Editou" : "Criou",
         tabela: "protocolos_conduta",
         registro_id: editando?.id,
-        descricao: `${editando ? "Editou" : "Criou"} o protocolo de conduta "${form.titulo.trim()}" (${form.cargo})`,
+        descricao: `${editando ? "Editou" : "Criou"} o protocolo de conduta "${form.titulo.trim()}" (${form.cargos.join(", ")})`,
       });
       mostrarFeedback("sucesso", editando ? "Protocolo atualizado!" : "Protocolo criado!");
       fecharModal();
@@ -208,7 +215,7 @@ export function ProtocolosManager() {
         acao: "Excluiu",
         tabela: "protocolos_conduta",
         registro_id: deletando.id,
-        descricao: `Excluiu o protocolo de conduta "${deletando.titulo}" (${deletando.cargo})`,
+        descricao: `Excluiu o protocolo de conduta "${deletando.titulo}" (${deletando.cargos.join(", ")})`,
       });
       mostrarFeedback("sucesso", "Protocolo removido.");
       setProtocolos(prev => prev.filter(p => p.id !== deletando.id));
@@ -240,9 +247,10 @@ export function ProtocolosManager() {
   function imprimir(p: Protocolo) {
     const w = window.open("", "_blank");
     if (!w) return;
+    const cargosTexto = p.cargos.join(", ");
     w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
       <meta charset="UTF-8"/>
-      <title>Protocolo — ${p.cargo}</title>
+      <title>Protocolo — ${cargosTexto}</title>
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; padding: 40px; max-width: 720px; margin: auto; }
@@ -264,7 +272,7 @@ export function ProtocolosManager() {
         <img class="logo" src="${window.location.origin}/logo.png" alt="Clínica Abraço"/>
         <div>
           <div class="clinica">Clínica Abraço — Protocolo de Conduta</div>
-          <div class="cargo-badge">${p.cargo}</div>
+          <div class="cargo-badge">${cargosTexto}</div>
           <h1>${p.titulo}</h1>
         </div>
       </div>
@@ -312,7 +320,7 @@ export function ProtocolosManager() {
         conversaId = nova.id;
       }
 
-      const texto = `📋 Protocolo de Conduta — ${enviando.cargo}\n\n${enviando.titulo}\n\n${enviando.conteudo}`;
+      const texto = `📋 Protocolo de Conduta — ${enviando.cargos.join(", ")}\n\n${enviando.titulo}\n\n${enviando.conteudo}`;
       const { error: errMsg } = await supabase
         .from("mensagens_chat")
         .insert({ conversa_id: conversaId, autor_id: eu.id, conteudo: texto, lida: false });
@@ -325,7 +333,7 @@ export function ProtocolosManager() {
         acao: "Enviou",
         tabela: "protocolos_conduta",
         registro_id: enviando.id,
-        descricao: `Enviou o protocolo "${enviando.titulo}" (${enviando.cargo}) pelo chat para ${destinatario.nome}`,
+        descricao: `Enviou o protocolo "${enviando.titulo}" (${enviando.cargos.join(", ")}) pelo chat para ${destinatario.nome}`,
       });
 
       mostrarFeedback("sucesso", `Protocolo enviado para ${destinatario.nome}.`);
@@ -336,7 +344,6 @@ export function ProtocolosManager() {
     }
   }
 
-  const sel = "w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500";
   const inp = "w-full h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
   return (
@@ -381,9 +388,13 @@ export function ProtocolosManager() {
             <div key={p.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="space-y-1.5 min-w-0">
-                  <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-blue-50 text-blue-700 border-blue-100">
-                    {p.cargo}
-                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {p.cargos.map(c => (
+                      <span key={c} className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-blue-50 text-blue-700 border-blue-100">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
                   <h3 className="font-bold text-slate-800 text-base">{p.titulo}</h3>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -485,7 +496,7 @@ export function ProtocolosManager() {
             <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
               <div>
                 <h2 className="text-sm font-semibold text-slate-800">{editando ? "Editar Protocolo" : "Novo Protocolo"}</h2>
-                <p className="text-xs text-slate-400">Diretriz de conduta para um cargo</p>
+                <p className="text-xs text-slate-400">Diretriz de conduta para um ou mais cargos</p>
               </div>
               <button onClick={fecharModal} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100">
                 <X className="h-4 w-4 text-slate-500" />
@@ -493,20 +504,31 @@ export function ProtocolosManager() {
             </div>
             <div className="overflow-y-auto p-5 space-y-4 flex-1">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Cargo *</label>
-                <select value={form.cargo} onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))} className={sel}>
-                  {CARGOS.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Cargo(s) *</label>
+                <p className="text-[11px] text-slate-400">Marque todos os cargos aos quais esse protocolo se aplica.</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {CARGOS.map(c => {
+                    const marcado = form.cargos.includes(c);
+                    return (
+                      <button key={c} type="button" onClick={() => toggleCargoForm(c)}
+                        className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition ${
+                          marcado ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+                        }`}>
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Título *</label>
                 <input type="text" value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
-                  placeholder={(ORIENTACAO_POR_CARGO[form.cargo] || ORIENTACAO_PADRAO).titulo} className={inp} />
+                  placeholder={(ORIENTACAO_POR_CARGO[form.cargos[0] ?? ""] || ORIENTACAO_PADRAO).titulo} className={inp} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Conteúdo *</label>
                 <textarea rows={8} value={form.conteudo} onChange={e => setForm(f => ({ ...f, conteudo: e.target.value }))}
-                  placeholder={(ORIENTACAO_POR_CARGO[form.cargo] || ORIENTACAO_PADRAO).conteudo}
+                  placeholder={(ORIENTACAO_POR_CARGO[form.cargos[0] ?? ""] || ORIENTACAO_PADRAO).conteudo}
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
               </div>
               <div className="space-y-1.5">
