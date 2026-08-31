@@ -17,7 +17,7 @@ const ROLE_PARA_CARGO: Record<string, string[]> = {
 };
 
 type Pessoa = { id: string; nome: string; role: string };
-type Protocolo = { id: string; cargo: string; titulo: string; conteudo: string; anexo_url?: string | null; anexo_nome?: string | null };
+type Protocolo = { id: string; cargos: string[]; titulo: string; conteudo: string; anexo_url?: string | null; anexo_nome?: string | null };
 type Confirmacao = { protocolo_id: string; confirmado_em: string };
 type ConfirmacaoNome = { protocolo_id: string; pessoa_id: string; pessoa_nome: string; confirmado_em: string };
 
@@ -62,7 +62,7 @@ export default function MeusProtocolosPage() {
       if (cargos.length === 0) { setLoading(false); return; }
 
       const [{ data: prot }, { data: conf }] = await Promise.all([
-        supabase.from("protocolos_conduta").select("id, cargo, titulo, conteudo, anexo_url, anexo_nome").in("cargo", cargos).order("titulo"),
+        supabase.from("protocolos_conduta").select("id, cargos, titulo, conteudo, anexo_url, anexo_nome").overlaps("cargos", cargos).order("titulo"),
         supabase.from("protocolos_confirmacoes").select("protocolo_id, confirmado_em").eq("pessoa_id", perfil.id),
       ]);
       setProtocolos((prot || []) as Protocolo[]);
@@ -73,7 +73,7 @@ export default function MeusProtocolosPage() {
 
       if (perfil.role === "supervisora") {
         const { data: protAT } = await supabase.from("protocolos_conduta")
-          .select("id, cargo, titulo, conteudo, anexo_url, anexo_nome").eq("cargo", CARGO_AT).order("titulo");
+          .select("id, cargos, titulo, conteudo, anexo_url, anexo_nome").contains("cargos", [CARGO_AT]).order("titulo");
         const idsAT = ((protAT || []) as Protocolo[]).map(p => p.id);
         const [{ data: confAT }, { data: ats }] = await Promise.all([
           idsAT.length > 0
@@ -106,7 +106,7 @@ export default function MeusProtocolosPage() {
       acao: "Confirmou leitura",
       tabela: "protocolos_conduta",
       registro_id: p.id,
-      descricao: `Confirmou a leitura do protocolo "${p.titulo}" (${p.cargo})`,
+      descricao: `Confirmou a leitura do protocolo "${p.titulo}" (${p.cargos.join(", ")})`,
     });
   }
 
@@ -142,9 +142,13 @@ export default function MeusProtocolosPage() {
               <div key={p.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="space-y-1.5 min-w-0">
-                    <span className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-blue-50 text-blue-700 border-blue-100">
-                      {p.cargo}
-                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {p.cargos.map(c => (
+                        <span key={c} className="inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-blue-50 text-blue-700 border-blue-100">
+                          {c}
+                        </span>
+                      ))}
+                    </div>
                     <h3 className="font-bold text-slate-800 text-base">{p.titulo}</h3>
                   </div>
                   {confirmadoEm ? (
