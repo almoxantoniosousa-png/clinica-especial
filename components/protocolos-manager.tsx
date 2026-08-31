@@ -93,6 +93,7 @@ export function ProtocolosManager() {
   const [confirmacoes, setConfirmacoes] = useState<Record<string, Confirmacao[]>>({});
   const [expandido, setExpandido] = useState<string | null>(null);
   const [conteudoAberto, setConteudoAberto] = useState<string | null>(null);
+  const [cardAberto, setCardAberto] = useState<string | null>(null);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -385,8 +386,9 @@ export function ProtocolosManager() {
           ) : (
             <div className="space-y-3">
               {protocolos.map(p => (
-            <div key={p.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div key={p.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              <button onClick={() => setCardAberto(cardAberto === p.id ? null : p.id)}
+                className="w-full flex items-start justify-between gap-3 flex-wrap text-left">
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex flex-wrap gap-1">
                     {p.cargos.map(c => (
@@ -397,63 +399,73 @@ export function ProtocolosManager() {
                   </div>
                   <h3 className="font-bold text-slate-800 text-base">{p.titulo}</h3>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button onClick={() => abrirEnvio(p)}
-                    className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-100 transition">
-                    <Send className="h-3 w-3" /> Enviar
-                  </button>
-                  <button onClick={() => imprimir(p)}
-                    className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg border border-violet-100 transition">
-                    <Printer className="h-3 w-3" /> Imprimir
-                  </button>
-                  <button onClick={() => abrirEditar(p)}
-                    className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
-                    <Pencil className="h-3 w-3" /> Editar
-                  </button>
-                  <button onClick={() => setDeletando(p)}
-                    className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-600 rounded-lg border border-red-100 transition">
-                    <Trash2 className="h-3 w-3" /> Excluir
-                  </button>
-                </div>
-              </div>
-              <button onClick={() => setConteudoAberto(conteudoAberto === p.id ? null : p.id)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition">
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${conteudoAberto === p.id ? "rotate-180" : ""}`} />
-                {conteudoAberto === p.id ? "Ocultar conteúdo" : "Ver conteúdo"}
-              </button>
-              {conteudoAberto === p.id && (
-                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{p.conteudo}</p>
-              )}
-              {p.anexo_url && (
-                <a href={p.anexo_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg border border-violet-100 transition">
-                  <Paperclip className="h-3.5 w-3.5" />
-                  {p.anexo_nome || "Baixar anexo"}
-                </a>
-              )}
-
-              <div className="pt-2 border-t border-slate-100">
-                <button onClick={() => setExpandido(expandido === p.id ? null : p.id)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition">
+                <div className="flex items-center gap-2 flex-shrink-0 text-xs font-semibold text-slate-500">
                   <ClipboardCheck className="h-3.5 w-3.5" />
-                  {(confirmacoes[p.id]?.length || 0)} confirmaç{(confirmacoes[p.id]?.length || 0) !== 1 ? "ões" : "ão"} de leitura
-                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expandido === p.id ? "rotate-180" : ""}`} />
-                </button>
-                {expandido === p.id && (
-                  <div className="mt-2 space-y-1.5">
-                    {(confirmacoes[p.id]?.length || 0) === 0 ? (
-                      <p className="text-xs text-slate-400">Ninguém confirmou a leitura ainda.</p>
-                    ) : confirmacoes[p.id].map((c, i) => (
-                      <div key={i} className="flex items-center justify-between gap-3 text-xs bg-slate-50 rounded-lg px-3 py-2">
-                        <span className="font-semibold text-slate-700">{c.pessoa_nome}</span>
-                        <span className="text-slate-400">
-                          {new Date(c.confirmado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                    ))}
+                  {(confirmacoes[p.id]?.length || 0)} confirmaç{(confirmacoes[p.id]?.length || 0) !== 1 ? "ões" : "ão"}
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${cardAberto === p.id ? "rotate-180" : ""}`} />
+                </div>
+              </button>
+
+              {cardAberto === p.id && (
+                <div className="space-y-3 pt-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button onClick={() => abrirEnvio(p)}
+                      className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-100 transition">
+                      <Send className="h-3 w-3" /> Enviar
+                    </button>
+                    <button onClick={() => imprimir(p)}
+                      className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg border border-violet-100 transition">
+                      <Printer className="h-3 w-3" /> Imprimir
+                    </button>
+                    <button onClick={() => abrirEditar(p)}
+                      className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
+                      <Pencil className="h-3 w-3" /> Editar
+                    </button>
+                    <button onClick={() => setDeletando(p)}
+                      className="h-8 px-3 flex items-center gap-1.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-600 rounded-lg border border-red-100 transition">
+                      <Trash2 className="h-3 w-3" /> Excluir
+                    </button>
                   </div>
-                )}
-              </div>
+                  <button onClick={() => setConteudoAberto(conteudoAberto === p.id ? null : p.id)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition">
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${conteudoAberto === p.id ? "rotate-180" : ""}`} />
+                    {conteudoAberto === p.id ? "Ocultar conteúdo" : "Ver conteúdo"}
+                  </button>
+                  {conteudoAberto === p.id && (
+                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{p.conteudo}</p>
+                  )}
+                  {p.anexo_url && (
+                    <a href={p.anexo_url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg border border-violet-100 transition">
+                      <Paperclip className="h-3.5 w-3.5" />
+                      {p.anexo_nome || "Baixar anexo"}
+                    </a>
+                  )}
+
+                  <div className="pt-2 border-t border-slate-100">
+                    <button onClick={() => setExpandido(expandido === p.id ? null : p.id)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition">
+                      <ClipboardCheck className="h-3.5 w-3.5" />
+                      Ver quem confirmou
+                      <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expandido === p.id ? "rotate-180" : ""}`} />
+                    </button>
+                    {expandido === p.id && (
+                      <div className="mt-2 space-y-1.5">
+                        {(confirmacoes[p.id]?.length || 0) === 0 ? (
+                          <p className="text-xs text-slate-400">Ninguém confirmou a leitura ainda.</p>
+                        ) : confirmacoes[p.id].map((c, i) => (
+                          <div key={i} className="flex items-center justify-between gap-3 text-xs bg-slate-50 rounded-lg px-3 py-2">
+                            <span className="font-semibold text-slate-700">{c.pessoa_nome}</span>
+                            <span className="text-slate-400">
+                              {new Date(c.confirmado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
             </div>

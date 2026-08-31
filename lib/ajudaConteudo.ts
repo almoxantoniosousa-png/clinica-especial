@@ -51,7 +51,7 @@ const ADM: AjudaConteudo = {
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
-      texto: "Documentos com diretrizes de conduta para cada cargo da clínica (Especialista, AT, Supervisora, Auxiliar Administrativo, Gestão, Financeiro etc.).\n\nClique em \"Novo Protocolo\" para criar um (escolha um ou mais cargos, título e conteúdo — se o mesmo protocolo vale pra vários cargos, marque todos de uma vez em vez de cadastrar repetido). Use \"Enviar\" para mandar pelo chat, \"Imprimir\" para gerar uma versão em PDF com campos de assinatura, e acompanhe quem já confirmou a leitura de cada protocolo.",
+      texto: "Documentos com diretrizes de conduta para cada cargo da clínica (Especialista, AT, Supervisora, Auxiliar Administrativo, Gestão, Financeiro etc.). Cada protocolo aparece fechado na lista — clique no card pra abrir e ver os botões de ação.\n\nClique em \"Novo Protocolo\" para criar um (escolha um ou mais cargos, título e conteúdo — se o mesmo protocolo vale pra vários cargos, marque todos de uma vez em vez de cadastrar repetido). Use \"Enviar\" para mandar pelo chat, \"Imprimir\" para gerar uma versão em PDF com campos de assinatura, e acompanhe quem já confirmou a leitura de cada protocolo.",
       reflexo: "O protocolo criado aqui aparece na tela Protocolos de cada cargo escolhido — cada pessoa precisa abrir e confirmar a leitura, e você acompanha aqui quem já confirmou."
     },
     {
@@ -170,7 +170,7 @@ const GESTAO: AjudaConteudo = {
     },
     {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
-      texto: "Documentos com diretrizes de conduta para cada cargo da clínica (Especialista, AT, Supervisora, Auxiliar Administrativo, Gestão, Financeiro etc.).\n\nClique em \"Novo Protocolo\" para criar um (escolha um ou mais cargos, título e conteúdo — se o mesmo protocolo vale pra vários cargos, marque todos de uma vez em vez de cadastrar repetido). Use \"Enviar\" para mandar pelo chat, \"Imprimir\" para gerar uma versão em PDF com campos de assinatura, e acompanhe quem já confirmou a leitura de cada protocolo.",
+      texto: "Documentos com diretrizes de conduta para cada cargo da clínica (Especialista, AT, Supervisora, Auxiliar Administrativo, Gestão, Financeiro etc.). Cada protocolo aparece fechado na lista — clique no card pra abrir e ver os botões de ação.\n\nClique em \"Novo Protocolo\" para criar um (escolha um ou mais cargos, título e conteúdo — se o mesmo protocolo vale pra vários cargos, marque todos de uma vez em vez de cadastrar repetido). Use \"Enviar\" para mandar pelo chat, \"Imprimir\" para gerar uma versão em PDF com campos de assinatura, e acompanhe quem já confirmou a leitura de cada protocolo.",
       reflexo: "O protocolo criado aqui aparece na tela Protocolos de cada cargo escolhido — cada pessoa precisa abrir e confirmar a leitura, e você acompanha aqui quem já confirmou."
     },
     {
