@@ -92,6 +92,7 @@ export function ProtocolosManager() {
 
   const [confirmacoes, setConfirmacoes] = useState<Record<string, Confirmacao[]>>({});
   const [expandido, setExpandido] = useState<string | null>(null);
+  const [conteudoAberto, setConteudoAberto] = useState<string | null>(null);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
     setFeedback({ tipo, msg });
@@ -404,7 +405,14 @@ export function ProtocolosManager() {
                   </button>
                 </div>
               </div>
-              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{p.conteudo}</p>
+              <button onClick={() => setConteudoAberto(conteudoAberto === p.id ? null : p.id)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition">
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${conteudoAberto === p.id ? "rotate-180" : ""}`} />
+                {conteudoAberto === p.id ? "Ocultar conteúdo" : "Ver conteúdo"}
+              </button>
+              {conteudoAberto === p.id && (
+                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{p.conteudo}</p>
+              )}
               {p.anexo_url && (
                 <a href={p.anexo_url} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg border border-violet-100 transition">
