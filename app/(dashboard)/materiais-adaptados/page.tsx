@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { registrarLog } from "@/lib/auditoria";
 import { iniciaisNome } from "@/lib/dataUtils";
+import { FotoCrianca } from "@/components/foto-crianca";
 
 // Supabase Storage rejeita acento e alguns caracteres especiais na chave do
 // arquivo ("Invalid key") — nome de arquivo real de usuário quase sempre tem
@@ -620,7 +621,7 @@ export default function MateriaisAdaptadosPage() {
                         className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex flex-col items-center gap-2 hover:shadow-md hover:border-blue-300 transition text-center">
                         <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-200 shrink-0">
                           {c.foto_url ? (
-                            <img src={c.foto_url} alt={c.nome} className="w-full h-full object-cover"/>
+                            <FotoCrianca url={c.foto_url} alt={c.nome} className="w-full h-full object-cover" />
                           ) : (
                             <div className={`w-full h-full flex items-center justify-center font-bold text-lg ${corAvatarCrianca(c.nome)}`}>{iniciaisCrianca(c.nome)}</div>
                           )}
@@ -660,7 +661,7 @@ export default function MateriaisAdaptadosPage() {
                       </button>
                       <div className="w-11 h-11 rounded-full overflow-hidden border border-slate-200 shrink-0">
                         {criancaSelecionada.foto_url ? (
-                          <img src={criancaSelecionada.foto_url} alt={criancaSelecionada.nome} className="w-full h-full object-cover"/>
+                          <FotoCrianca url={criancaSelecionada.foto_url} alt={criancaSelecionada.nome} className="w-full h-full object-cover" />
                         ) : (
                           <div className={`w-full h-full flex items-center justify-center font-bold text-sm ${corAvatarCrianca(criancaSelecionada.nome)}`}>{iniciaisCrianca(criancaSelecionada.nome)}</div>
                         )}

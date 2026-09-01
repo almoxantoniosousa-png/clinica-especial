@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
+import { FotoCrianca } from "@/components/foto-crianca";
 
 type FiltroStatus = "todos" | "ativo" | "inativo";
 
@@ -160,7 +161,7 @@ export default function GestaoCriancasPage() {
                 className={`bg-white border rounded-2xl p-4 shadow-sm space-y-3 cursor-pointer hover:shadow-md hover:border-blue-200 transition ${c.ativo === false ? "opacity-60" : ""}`}>
                 <div className="flex items-center gap-3">
                   {c.foto_url ? (
-                    <img src={c.foto_url} alt={c.nome} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                    <FotoCrianca url={c.foto_url} alt={c.nome} className="w-10 h-10 rounded-full object-cover shrink-0" />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700 shrink-0">
                       {c.nome?.charAt(0).toUpperCase()}

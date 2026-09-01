@@ -7,6 +7,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { iniciaisNome } from "@/lib/dataUtils";
 import { registrarLog } from "@/lib/auditoria";
 import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
+import { FotoCrianca } from "@/components/foto-crianca";
 
 function Secao({ titulo, icone, children }: { titulo: string; icone: string; children: React.ReactNode }) {
   return (
@@ -583,7 +584,7 @@ export default function AdmCriancasPage() {
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-11 h-11 flex-shrink-0 rounded-full overflow-hidden border border-slate-200">
                         {c.foto_url ? (
-                          <img src={c.foto_url} alt={c.nome} className="w-full h-full object-cover"/>
+                          <FotoCrianca url={c.foto_url} alt={c.nome} className="w-full h-full object-cover" />
                         ) : (
                           <div className={`w-full h-full flex items-center justify-center font-bold text-sm ${corAvatar(c.nome)}`}>{iniciais(c.nome)}</div>
                         )}
