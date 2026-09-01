@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
 import { AnexoDocumentos, type DocumentoAnexo } from "@/components/anexo-documentos";
+import { FotoCrianca } from "@/components/foto-crianca";
 import { CAMPOS_DETALHE, CAMPOS_LIGACAO, CAMPOS_PRESENCIAL } from "../../entrevista-inicial/page";
 
 const inputClass = "w-full h-11 px-4 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition placeholder:text-slate-400 bg-white";
@@ -283,7 +284,7 @@ export default function CardCriancaPage() {
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 rounded-2xl overflow-hidden border border-slate-200 shrink-0 bg-slate-50 flex items-center justify-center">
             {crianca.foto_url ? (
-              <img src={crianca.foto_url} alt={crianca.nome} className="w-full h-full object-cover" />
+              <FotoCrianca url={crianca.foto_url} alt={crianca.nome} className="w-full h-full object-cover" />
             ) : (
               <span className="text-2xl font-bold text-blue-700">{crianca.nome?.charAt(0).toUpperCase()}</span>
             )}

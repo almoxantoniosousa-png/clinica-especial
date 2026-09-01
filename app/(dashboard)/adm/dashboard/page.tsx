@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { carregarDadosDashboard, carregarGraficosPorMes } from "@/app/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { PainelInformacoes } from "@/components/painel-informacoes";
+import { FotoCrianca } from "@/components/foto-crianca";
 import { primeiroNome, hojeLocal, dataComemorativaHoje, proximasDatasComemorativas } from "@/lib/dataUtils";
 import { Pie, Bar } from "react-chartjs-2";
 import type { ChartData, ScriptableContext } from "chart.js";
@@ -494,7 +495,9 @@ export default function AdmDashboardPage() {
                           isProximo ? "bg-amber-200 text-amber-800" :
                                       "bg-slate-200 text-slate-600"}`}>
                           {p.foto_url
-                            ? <img src={p.foto_url} alt={p.nome} className="w-full h-full object-cover" />
+                            ? (p.tipo === "Criança"
+                                ? <FotoCrianca url={p.foto_url} alt={p.nome} className="w-full h-full object-cover" />
+                                : <img src={p.foto_url} alt={p.nome} className="w-full h-full object-cover" />)
                             : p.nome.charAt(0).toUpperCase()}
                         </div>
                       </div>

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { mesAtualLocal } from "@/lib/dataUtils";
 import { FamiliaBottomNav, type FamiliaTabId } from "@/components/familia-bottom-nav";
+import { FotoCrianca } from "@/components/foto-crianca";
 
 type Aba = "diario" | "comunicados" | "momentos" | "evolucao";
 
@@ -131,7 +132,7 @@ export default function FamiliaDashboardPage() {
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-lg flex-shrink-0 bg-white">
               {crianca.foto_url
-                ? <img src={crianca.foto_url} alt={crianca.nome} className="w-full h-full object-cover"/>
+                ? <FotoCrianca url={crianca.foto_url} alt={crianca.nome} className="w-full h-full object-cover" />
                 : <div className="w-full h-full bg-orange-100 flex items-center justify-center text-orange-700 font-bold text-xl">
                     {crianca.nome?.charAt(0)}
                   </div>}
@@ -699,7 +700,7 @@ function AbaMomentos({ criancaId, responsavelId }: { criancaId: string; responsa
                 {items.map(m => (
                   <div key={m.id} onClick={() => setMomentoAberto(m)}
                     className="rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition border border-slate-100">
-                    <img src={m.imagem_url} alt="Momento" className="w-full h-36 object-cover"/>
+                    <FotoCrianca url={m.imagem_url} alt="Momento" className="w-full h-36 object-cover" />
                     <div className="p-2 bg-white">
                       {m.crianca_id === null && <p className="text-[10px] font-semibold text-amber-600 mb-0.5">📢 Todas as famílias</p>}
                       {m.descricao && <p className="text-xs text-slate-600 truncate">{m.descricao}</p>}
@@ -729,7 +730,7 @@ function AbaMomentos({ criancaId, responsavelId }: { criancaId: string; responsa
               <button onClick={() => setMomentoAberto(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 text-white transition">✕</button>
             </div>
             <div className="overflow-y-auto flex-1 bg-slate-100">
-              <img src={momentoAberto.imagem_url} alt="Momento" className="w-full max-h-[55vh] object-contain bg-black"/>
+              <FotoCrianca url={momentoAberto.imagem_url} alt="Momento" className="w-full max-h-[55vh] object-contain bg-black" />
               {momentoAberto.descricao && <p className="text-sm text-slate-700 p-4">{momentoAberto.descricao}</p>}
             </div>
             <div className="px-5 py-4 border-t border-slate-100 bg-white space-y-2">

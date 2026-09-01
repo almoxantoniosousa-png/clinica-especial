@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
+import { FotoCrianca } from "@/components/foto-crianca";
 
 type Aba = "avisos" | "evolucao";
 
@@ -133,7 +134,7 @@ function AbaAvisos({ mostrarFeedback }: any) {
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
                   {a.criancas?.foto_url
-                    ? <img src={a.criancas.foto_url} alt="" className="w-full h-full object-cover"/>
+                    ? <FotoCrianca url={a.criancas.foto_url} alt="" className="w-full h-full object-cover" />
                     : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{a.criancas?.nome?.charAt(0)}</div>}
                 </div>
                 <div className="min-w-0">
@@ -302,7 +303,7 @@ function AbaEvolucao({ mostrarFeedback }: any) {
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
                   {e.criancas?.foto_url
-                    ? <img src={e.criancas.foto_url} alt="" className="w-full h-full object-cover"/>
+                    ? <FotoCrianca url={e.criancas.foto_url} alt="" className="w-full h-full object-cover" />
                     : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{e.criancas?.nome?.charAt(0)}</div>}
                 </div>
                 <div className="min-w-0">

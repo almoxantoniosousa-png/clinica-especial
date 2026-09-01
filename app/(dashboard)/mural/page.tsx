@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { Trash2 } from "lucide-react";
 import { primeiroNome } from "@/lib/dataUtils";
+import { FotoCrianca } from "@/components/foto-crianca";
 
 type Aniversariante = { nome: string; foto: string | null };
 
@@ -526,7 +527,7 @@ export default function MuralPage() {
               {/* Conteúdo */}
               {c.aniversario && c.foto_url ? (
                 <div className="flex items-center gap-3">
-                  <img src={c.foto_url} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-blue-600 ring-2 ring-amber-300 shrink-0" />
+                  <FotoCrianca url={c.foto_url} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-blue-600 ring-2 ring-amber-300 shrink-0" />
                   <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{c.conteudo}</p>
                 </div>
               ) : (

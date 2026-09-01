@@ -5,6 +5,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { registrarLog } from "@/lib/auditoria";
 import { hojeLocal } from "@/lib/dataUtils";
 import { Plus, X, Trash2, ClipboardList, Paperclip } from "lucide-react";
+import { FotoCrianca } from "@/components/foto-crianca";
 
 // Supabase Storage rejeita acento e alguns caracteres especiais na chave do
 // arquivo ("Invalid key") — mesmo tratamento usado em materiais-adaptados.
@@ -448,7 +449,7 @@ export default function PlanoTerapeuticoPage() {
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 flex-shrink-0 bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
                     {p.criancas?.foto_url
-                      ? <img src={p.criancas.foto_url} alt="" className="w-full h-full object-cover" />
+                      ? <FotoCrianca url={p.criancas.foto_url} alt="" className="w-full h-full object-cover" />
                       : (p.criancas?.nome?.charAt(0) || "?")}
                   </div>
                   <div className="min-w-0">

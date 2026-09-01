@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { registrarLog } from "@/lib/auditoria";
 import { hojeLocal, iniciaisNome } from "@/lib/dataUtils";
+import { FotoCrianca } from "@/components/foto-crianca";
 
 const TOPICOS_CORRECAO = ["Entrada e Interação", "Autonomia e Higiene", "Recreio e Socialização", "Agenda e Recados"];
 
@@ -576,7 +577,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
                     {f.criancas?.foto_url
-                      ? <img src={f.criancas.foto_url} alt={f.criancas.nome} className="w-full h-full object-cover"/>
+                      ? <FotoCrianca url={f.criancas.foto_url} alt={f.criancas.nome} className="w-full h-full object-cover" />
                       : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">{iniciais(f.criancas?.nome || "?")}</div>}
                   </div>
                   <div>
@@ -617,7 +618,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/20">
                   {detalhe.criancas?.foto_url
-                    ? <img src={detalhe.criancas.foto_url} alt="" className="w-full h-full object-cover"/>
+                    ? <FotoCrianca url={detalhe.criancas.foto_url} alt="" className="w-full h-full object-cover" />
                     : <div className="w-full h-full bg-blue-700 flex items-center justify-center text-white font-bold text-sm">{detalhe.criancas?.nome?.charAt(0)}</div>}
                 </div>
                 <div>
@@ -795,7 +796,7 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
             <div key={m.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden relative">
               <button onClick={() => setDeletandoId(m.id)}
                 className="absolute top-2 right-2 p-1.5 bg-white/90 text-slate-500 hover:text-red-600 hover:bg-white rounded-lg shadow-sm transition">🗑️</button>
-              <img src={m.imagem_url} alt="Momento" className="w-full h-48 object-cover"/>
+              <FotoCrianca url={m.imagem_url} alt="Momento" className="w-full h-48 object-cover" />
               <div className="p-3">
                 <div className="flex items-center gap-2 mb-1">
                   {m.crianca_id === null ? (
@@ -806,7 +807,7 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
                   ) : (
                     <>
                       <div className="w-6 h-6 rounded-full overflow-hidden border border-slate-200">
-                        {m.criancas?.foto_url ? <img src={m.criancas.foto_url} alt="" className="w-full h-full object-cover"/> : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{m.criancas?.nome?.charAt(0)}</div>}
+                        {m.criancas?.foto_url ? <FotoCrianca url={m.criancas.foto_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{m.criancas?.nome?.charAt(0)}</div>}
                       </div>
                       <p className="text-xs font-semibold text-slate-700">{m.criancas?.nome}</p>
                     </>
@@ -986,7 +987,7 @@ function AbaEvolucao({ mostrarFeedback }: AbaProps) {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
-                    {r.criancas?.foto_url ? <img src={r.criancas.foto_url} alt="" className="w-full h-full object-cover"/> : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{r.criancas?.nome?.charAt(0)}</div>}
+                    {r.criancas?.foto_url ? <FotoCrianca url={r.criancas.foto_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{r.criancas?.nome?.charAt(0)}</div>}
                   </div>
                   <div className="min-w-0">
                     <p className="font-semibold text-slate-800 text-sm">{r.criancas?.nome}</p>
@@ -1182,7 +1183,7 @@ function AbaAvisos({ mostrarFeedback }: AbaProps) {
             <div key={a.id} className="bg-white rounded-2xl border border-slate-200 p-4 border-l-4 border-l-amber-400 flex items-start justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
-                  {a.criancas?.foto_url ? <img src={a.criancas.foto_url} alt="" className="w-full h-full object-cover"/> : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{a.criancas?.nome?.charAt(0)}</div>}
+                  {a.criancas?.foto_url ? <FotoCrianca url={a.criancas.foto_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">{a.criancas?.nome?.charAt(0)}</div>}
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold text-slate-800 text-sm">{a.titulo}</p>
