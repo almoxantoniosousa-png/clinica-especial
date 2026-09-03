@@ -46,7 +46,7 @@ type ContaReceber = {
   faturado_em?: string | null; recebido_em?: string | null;
   especialidades?: ItemEsp[];
   sessoes_realizadas?: number | null; valor_sessao?: number | null;
-  plano_saude?: string | null; desconto_iss?: number | null;
+  plano_saude?: string | null; desconto_iss?: number | null; desconto_glosa?: number | null;
   criancas?: { nome: string };
 };
 type CriancaSimples = { id: string; nome: string; plano_saude?: string | null };
@@ -1359,6 +1359,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
   const [numeroNotaFiscal, setNumeroNotaFiscal] = useState("");
   const [dataEnvio, setDataEnvio] = useState("");
   const [descontoISS, setDescontoISS] = useState("");
+  const [descontoGlosa, setDescontoGlosa] = useState("");
   const [observacao, setObservacao] = useState("");
 
   type Confirmacao = { id: string; novoStatus: string; nomeLabel?: string; valor: number } | null;
@@ -1398,7 +1399,8 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
 
   const totalBruto = especialidades.reduce((acc, e) => acc + subtotalLinha(e), 0);
   const valorISS = Math.min(Number(descontoISS) || 0, totalBruto);
-  const totalLiquido = totalBruto - valorISS;
+  const valorGlosa = Math.min(Number(descontoGlosa) || 0, totalBruto);
+  const totalLiquido = Math.max(0, totalBruto - valorISS - valorGlosa);
 
   function addEspecialidade() {
     setEspecialidades(prev => [...prev, { especialidade: "", qtd: "", valor_sessao: "", unidade: "sessao" }]);
@@ -1415,7 +1417,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     setCriancaId("");
     setMesAnoFatura(mesAno);
     setEspecialidades([{ especialidade: "", qtd: "", valor_sessao: "", unidade: "sessao" }]);
-    setPlano(""); setNumeroNotaFiscal(""); setDataEnvio(""); setDescontoISS(""); setObservacao("");
+    setPlano(""); setNumeroNotaFiscal(""); setDataEnvio(""); setDescontoISS(""); setDescontoGlosa(""); setObservacao("");
   }
 
   function abrirNovo() {
@@ -1438,6 +1440,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     setNumeroNotaFiscal(c.numero_nota_fiscal || "");
     setDataEnvio(c.data_envio || "");
     setDescontoISS(c.desconto_iss ? String(c.desconto_iss) : "");
+    setDescontoGlosa(c.desconto_glosa ? String(c.desconto_glosa) : "");
     setObservacao(c.observacao || "");
     setModalAberto(true);
   }
@@ -1465,6 +1468,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     });
     const bruto = espComSubtotal.reduce((acc, e) => acc + e.subtotal, 0);
     const iss = Math.min(Number(descontoISS) || 0, bruto);
+    const glosa = Math.min(Number(descontoGlosa) || 0, bruto);
     const payload = {
       crianca_id: criancaId,
       mes_referencia: mesAnoFatura,
@@ -1472,8 +1476,9 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       sessoes_realizadas: espComSubtotal.reduce((acc, e) => acc + e.qtd, 0),
       valor_sessao: 0,
       valor_total: bruto,
-      valor_liquido: bruto - iss,
+      valor_liquido: Math.max(0, bruto - iss - glosa),
       desconto_iss: Number(descontoISS) || 0,
+      desconto_glosa: Number(descontoGlosa) || 0,
       plano_saude: plano,
       numero_nota_fiscal: numeroNotaFiscal,
       data_envio: dataEnvio || null,
@@ -1627,10 +1632,15 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    {(c.desconto_iss || 0) > 0 && (
+                    {((c.desconto_iss || 0) > 0 || (c.desconto_glosa || 0) > 0) && (
                       <>
                         <p className="text-xs text-slate-400 line-through">R$ {Number(c.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                        <p className="text-xs text-red-400">ISS -R$ {Number(c.desconto_iss).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                        {(c.desconto_iss || 0) > 0 && (
+                          <p className="text-xs text-red-400">ISS -R$ {Number(c.desconto_iss).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                        )}
+                        {(c.desconto_glosa || 0) > 0 && (
+                          <p className="text-xs text-red-400">Glosa -R$ {Number(c.desconto_glosa).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                        )}
                       </>
                     )}
                     <p className="font-bold text-slate-800">R$ {Number(valorFinal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
@@ -1859,12 +1869,20 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                 )}
               </div>
 
-              {/* Desconto ISS */}
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase">Desconto ISS (R$)</label>
-                <input type="number" min="0" step="0.01" value={descontoISS}
-                  onChange={e => setDescontoISS(e.target.value)} placeholder="Ex: 900,00"
-                  className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+              {/* Descontos: ISS + Glosa */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Desconto ISS (R$)</label>
+                  <input type="number" min="0" step="0.01" value={descontoISS}
+                    onChange={e => setDescontoISS(e.target.value)} placeholder="Ex: 900,00"
+                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase">Desconto Glosa (R$)</label>
+                  <input type="number" min="0" step="0.01" value={descontoGlosa}
+                    onChange={e => setDescontoGlosa(e.target.value)} placeholder="Ex: 200,00"
+                    className="mt-1 w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
               </div>
 
               {/* Resumo financeiro */}
@@ -1878,6 +1896,12 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
                     <div className="flex justify-between text-sm">
                       <span className="text-red-400">Desconto ISS</span>
                       <span className="font-semibold text-red-400">− R$ {valorISS.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+                  {valorGlosa > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-red-400">Desconto Glosa</span>
+                      <span className="font-semibold text-red-400">− R$ {valorGlosa.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm font-bold border-t border-slate-200 pt-1.5">
