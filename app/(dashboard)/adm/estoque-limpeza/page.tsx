@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { Droplets, Plus, History, PackagePlus } from "lucide-react";
+import { Droplets, Plus, History, PackagePlus, Pencil, ArrowUp, ArrowDown } from "lucide-react";
 
 type Material = {
   id: string;
@@ -10,6 +10,7 @@ type Material = {
   unidade: string;
   quantidade_atual: number;
   quantidade_minima: number | null;
+  foto_url: string | null;
 };
 
 type Movimentacao = {
@@ -20,32 +21,48 @@ type Movimentacao = {
   responsavel_nome: string;
   observacao: string | null;
   created_at: string;
+  valor_unitario: number | null;
 };
 
 export default function EstoqueLimpezaPage() {
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
+  const [precosPorMaterial, setPrecosPorMaterial] = useState<Record<string, number[]>>({});
   const [loading, setLoading] = useState(true);
   const [lancando, setLancando] = useState<Material | null>(null);
   const [quantidade, setQuantidade] = useState("1");
+  const [valorPago, setValorPago] = useState("");
   const [observacao, setObservacao] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [msg, setMsg] = useState<{ tipo: "sucesso" | "erro"; texto: string } | null>(null);
   const [historicoAberto, setHistoricoAberto] = useState(false);
-  const [novoProdutoAberto, setNovoProdutoAberto] = useState(false);
-  const [novoNome, setNovoNome] = useState("");
-  const [novaUnidade, setNovaUnidade] = useState("un");
-  const [novaQtdMinima, setNovaQtdMinima] = useState("");
-  const [criandoProduto, setCriandoProduto] = useState(false);
+
+  const [produtoModalAberto, setProdutoModalAberto] = useState(false);
+  const [produtoEditId, setProdutoEditId] = useState<string | null>(null);
+  const [pNome, setPNome] = useState("");
+  const [pUnidade, setPUnidade] = useState("un");
+  const [pQtdMinima, setPQtdMinima] = useState("");
+  const [pFotoAtual, setPFotoAtual] = useState<string | null>(null);
+  const [pFotoFile, setPFotoFile] = useState<File | null>(null);
+  const [pFotoUrl, setPFotoUrl] = useState("");
+  const [salvandoProduto, setSalvandoProduto] = useState(false);
 
   async function carregar() {
     setLoading(true);
-    const [{ data: mats }, { data: movs }] = await Promise.all([
-      supabase.from("materiais_limpeza").select("id, nome, unidade, quantidade_atual, quantidade_minima").eq("ativo", true).order("nome"),
-      supabase.from("materiais_limpeza_movimentacoes").select("id, material_id, tipo, quantidade, responsavel_nome, observacao, created_at").order("created_at", { ascending: false }).limit(50),
+    const [{ data: mats }, { data: movs }, { data: precos }] = await Promise.all([
+      supabase.from("materiais_limpeza").select("id, nome, unidade, quantidade_atual, quantidade_minima, foto_url").eq("ativo", true).order("nome"),
+      supabase.from("materiais_limpeza_movimentacoes").select("id, material_id, tipo, quantidade, responsavel_nome, observacao, created_at, valor_unitario").order("created_at", { ascending: false }).limit(50),
+      supabase.from("materiais_limpeza_movimentacoes").select("material_id, valor_unitario, created_at").eq("tipo", "entrada").not("valor_unitario", "is", null).order("created_at", { ascending: false }),
     ]);
     setMateriais(mats || []);
     setMovimentacoes(movs || []);
+
+    const porMaterial: Record<string, number[]> = {};
+    (precos || []).forEach((p: any) => {
+      if (!porMaterial[p.material_id]) porMaterial[p.material_id] = [];
+      if (porMaterial[p.material_id].length < 2) porMaterial[p.material_id].push(Number(p.valor_unitario));
+    });
+    setPrecosPorMaterial(porMaterial);
     setLoading(false);
   }
 
@@ -54,6 +71,7 @@ export default function EstoqueLimpezaPage() {
   function abrirEntrada(m: Material) {
     setLancando(m);
     setQuantidade("1");
+    setValorPago("");
     setObservacao("");
   }
 
@@ -70,6 +88,7 @@ export default function EstoqueLimpezaPage() {
       p_tipo: "entrada",
       p_quantidade: qtd,
       p_observacao: observacao.trim() || null,
+      p_valor_unitario: valorPago ? Number(valorPago) : null,
     });
     setSalvando(false);
     if (error) {
@@ -87,30 +106,78 @@ export default function EstoqueLimpezaPage() {
   }
 
   function abrirNovoProduto() {
-    setNovoNome("");
-    setNovaUnidade("un");
-    setNovaQtdMinima("");
-    setNovoProdutoAberto(true);
+    setProdutoEditId(null);
+    setPNome("");
+    setPUnidade("un");
+    setPQtdMinima("");
+    setPFotoAtual(null);
+    setPFotoFile(null);
+    setPFotoUrl("");
+    setProdutoModalAberto(true);
   }
 
-  async function confirmarNovoProduto() {
-    if (!novoNome.trim()) {
+  function abrirEditarProduto(m: Material) {
+    setProdutoEditId(m.id);
+    setPNome(m.nome);
+    setPUnidade(m.unidade);
+    setPQtdMinima(m.quantidade_minima != null ? String(m.quantidade_minima) : "");
+    setPFotoAtual(m.foto_url);
+    setPFotoFile(null);
+    setPFotoUrl("");
+    setProdutoModalAberto(true);
+  }
+
+  async function uploadFotoProduto(file: File, materialId: string): Promise<string | null> {
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${materialId}/foto.${ext}`;
+    const { error } = await supabase.storage.from("materiais-limpeza-fotos").upload(path, file, { upsert: true });
+    if (error) return null;
+    const { data } = supabase.storage.from("materiais-limpeza-fotos").getPublicUrl(path);
+    return `${data.publicUrl}?t=${Date.now()}`;
+  }
+
+  async function confirmarProduto() {
+    if (!pNome.trim()) {
       setMsg({ tipo: "erro", texto: "Informe o nome do produto." });
       return;
     }
-    setCriandoProduto(true);
-    const { error } = await supabase.from("materiais_limpeza").insert({
-      nome: novoNome.trim(),
-      unidade: novaUnidade.trim() || "un",
-      quantidade_minima: novaQtdMinima ? Number(novaQtdMinima) : null,
-    });
-    setCriandoProduto(false);
-    if (error) {
-      setMsg({ tipo: "erro", texto: "Erro ao cadastrar: " + error.message });
+    setSalvandoProduto(true);
+
+    const payload: any = {
+      nome: pNome.trim(),
+      unidade: pUnidade.trim() || "un",
+      quantidade_minima: pQtdMinima ? Number(pQtdMinima) : null,
+    };
+    // Link colado (ex: copiado do Google Imagens) tem prioridade sobre arquivo
+    // se os dois forem preenchidos por engano.
+    if (pFotoUrl.trim() && !pFotoFile) payload.foto_url = pFotoUrl.trim();
+
+    let materialId = produtoEditId;
+    let erro: string | null = null;
+
+    if (materialId) {
+      const { error } = await supabase.from("materiais_limpeza").update(payload).eq("id", materialId);
+      erro = error?.message || null;
+    } else {
+      const { data, error } = await supabase.from("materiais_limpeza").insert(payload).select("id").single();
+      erro = error?.message || null;
+      materialId = data?.id || null;
+    }
+
+    if (!erro && materialId && pFotoFile) {
+      const url = await uploadFotoProduto(pFotoFile, materialId);
+      if (url) {
+        await supabase.from("materiais_limpeza").update({ foto_url: url }).eq("id", materialId);
+      }
+    }
+
+    setSalvandoProduto(false);
+    if (erro) {
+      setMsg({ tipo: "erro", texto: "Erro ao salvar: " + erro });
       return;
     }
-    setMsg({ tipo: "sucesso", texto: `${novoNome.trim()} cadastrado no estoque.` });
-    setNovoProdutoAberto(false);
+    setMsg({ tipo: "sucesso", texto: `${pNome.trim()} ${produtoEditId ? "atualizado" : "cadastrado"}.` });
+    setProdutoModalAberto(false);
     carregar();
     setTimeout(() => setMsg(null), 4000);
   }
@@ -120,7 +187,7 @@ export default function EstoqueLimpezaPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Estoque de Materiais de Limpeza</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Acompanhe o estoque e registre entradas de compra</p>
+          <p className="text-xs text-slate-400 mt-0.5">Acompanhe o estoque, os preços e registre entradas de compra</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button onClick={abrirNovoProduto}
@@ -155,6 +222,7 @@ export default function EstoqueLimpezaPage() {
                   <div>
                     <p className="font-medium text-slate-700">
                       {nomeDoMaterial(mv.material_id)}
+                      {mv.valor_unitario != null && <span className="text-slate-400 font-normal"> · R$ {Number(mv.valor_unitario).toFixed(2)}/un</span>}
                       {mv.observacao && <span className="text-slate-400 font-normal"> — {mv.observacao}</span>}
                     </p>
                     <p className="text-xs text-slate-400">{mv.responsavel_nome} · {new Date(mv.created_at).toLocaleString("pt-BR")}</p>
@@ -168,32 +236,49 @@ export default function EstoqueLimpezaPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-stone-100 border border-stone-300 rounded-2xl overflow-hidden">
-          <div className="divide-y divide-stone-200">
-            {materiais.map((m) => {
-              const baixo = m.quantidade_minima != null && m.quantidade_atual <= m.quantidade_minima;
-              return (
-                <div key={m.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                      <Droplets size={13} className="text-blue-500" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {materiais.map((m) => {
+            const baixo = m.quantidade_minima != null && m.quantidade_atual <= m.quantidade_minima;
+            const precos = precosPorMaterial[m.id] || [];
+            const [precoAtual, precoAnterior] = precos;
+            const subiu = precoAtual != null && precoAnterior != null && precoAtual > precoAnterior;
+            const desceu = precoAtual != null && precoAnterior != null && precoAtual < precoAnterior;
+            return (
+              <div key={m.id} className="bg-stone-100 border border-stone-300 rounded-2xl overflow-hidden flex flex-col">
+                <div className="relative aspect-square bg-stone-200 flex items-center justify-center">
+                  {m.foto_url ? (
+                    <img src={m.foto_url} alt={m.nome} className="w-full h-full object-cover" />
+                  ) : (
+                    <Droplets size={28} className="text-stone-400" />
+                  )}
+                  <button onClick={() => abrirEditarProduto(m)}
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-white/90 hover:bg-white flex items-center justify-center shadow-sm transition">
+                    <Pencil size={11} className="text-slate-600" />
+                  </button>
+                </div>
+                <div className="p-2.5 flex flex-col gap-1.5 flex-1">
+                  <p className="font-medium text-xs text-slate-700 leading-snug line-clamp-2">{m.nome}</p>
+                  <p className={`text-xs ${baixo ? "text-red-500 font-semibold" : "text-slate-400"}`}>
+                    {m.quantidade_atual} {m.unidade}{baixo ? " · baixo" : ""}
+                  </p>
+                  {precoAtual != null ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-bold text-slate-800">R$ {precoAtual.toFixed(2)}</span>
+                      {subiu && <ArrowUp size={13} className="text-red-500" />}
+                      {desceu && <ArrowDown size={13} className="text-emerald-600" />}
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm text-slate-700 truncate">{m.nome}</p>
-                      <p className={`text-xs ${baixo ? "text-red-500 font-semibold" : "text-slate-400"}`}>
-                        {m.quantidade_atual} {m.unidade}{baixo ? " · estoque baixo" : ""}
-                      </p>
-                    </div>
-                  </div>
+                  ) : (
+                    <span className="text-xs text-slate-300">sem preço ainda</span>
+                  )}
                   <button
                     onClick={() => abrirEntrada(m)}
-                    className="h-7 px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold transition active:scale-95 flex items-center justify-center gap-1 flex-shrink-0">
+                    className="mt-auto h-7 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold transition active:scale-95 flex items-center justify-center gap-1">
                     <Plus size={11} /> Entrada
                   </button>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -208,6 +293,11 @@ export default function EstoqueLimpezaPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase">Quantidade comprada ({lancando.unidade})</label>
               <input type="number" min="1" step="1" value={quantidade} onChange={(e) => setQuantidade(e.target.value)}
+                className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase">Valor pago (por {lancando.unidade}, opcional)</label>
+              <input type="number" min="0" step="0.01" value={valorPago} onChange={(e) => setValorPago(e.target.value)} placeholder="Ex: 5,90"
                 className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div className="space-y-1.5">
@@ -229,37 +319,59 @@ export default function EstoqueLimpezaPage() {
         </div>
       )}
 
-      {novoProdutoAberto && (
+      {produtoModalAberto && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
-          onClick={(e) => { if (e.target === e.currentTarget) setNovoProdutoAberto(false); }}>
-          <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+          onClick={(e) => { if (e.target === e.currentTarget) setProdutoModalAberto(false); }}>
+          <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div>
-              <h3 className="font-bold text-slate-800 text-base">Novo produto</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Cadastra um item novo no estoque, começando com 0</p>
+              <h3 className="font-bold text-slate-800 text-base">{produtoEditId ? "Editar produto" : "Novo produto"}</h3>
+              <p className="text-xs text-slate-400 mt-0.5">{produtoEditId ? "Atualize os dados ou a foto do produto" : "Cadastra um item novo no estoque, começando com 0"}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-16 rounded-xl bg-stone-100 border border-stone-300 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {pFotoFile ? (
+                  <img src={URL.createObjectURL(pFotoFile)} alt="" className="w-full h-full object-cover" />
+                ) : pFotoUrl.trim() ? (
+                  <img src={pFotoUrl.trim()} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                ) : pFotoAtual ? (
+                  <img src={pFotoAtual} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <Droplets size={22} className="text-stone-400" />
+                )}
+              </div>
+              <label className="flex-1 h-10 px-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition flex items-center justify-center cursor-pointer">
+                Escolher foto
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { setPFotoFile(e.target.files?.[0] || null); setPFotoUrl(""); }} />
+              </label>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase">Ou cole o link de uma imagem</label>
+              <input type="text" value={pFotoUrl} onChange={(e) => { setPFotoUrl(e.target.value); setPFotoFile(null); }} placeholder="Ex: link copiado do Google Imagens"
+                className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase">Nome</label>
-              <input type="text" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Ex: Álcool em gel"
+              <input type="text" value={pNome} onChange={(e) => setPNome(e.target.value)} placeholder="Ex: Álcool em gel"
                 className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase">Unidade</label>
-              <input type="text" value={novaUnidade} onChange={(e) => setNovaUnidade(e.target.value)} placeholder="un, pacote, rolo, litro..."
+              <input type="text" value={pUnidade} onChange={(e) => setPUnidade(e.target.value)} placeholder="un, pacote, rolo, litro..."
                 className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase">Estoque mínimo (opcional)</label>
-              <input type="number" min="0" step="1" value={novaQtdMinima} onChange={(e) => setNovaQtdMinima(e.target.value)} placeholder="Avisa quando chegar nesse número"
+              <input type="number" min="0" step="1" value={pQtdMinima} onChange={(e) => setPQtdMinima(e.target.value)} placeholder="Avisa quando chegar nesse número"
                 className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setNovoProdutoAberto(false)}
+              <button onClick={() => setProdutoModalAberto(false)}
                 className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
                 Cancelar
               </button>
-              <button onClick={confirmarNovoProduto} disabled={criandoProduto}
+              <button onClick={confirmarProduto} disabled={salvandoProduto}
                 className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
-                {criandoProduto ? "Salvando..." : "Cadastrar"}
+                {salvandoProduto ? "Salvando..." : produtoEditId ? "Salvar" : "Cadastrar"}
               </button>
             </div>
           </div>
