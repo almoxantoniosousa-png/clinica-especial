@@ -55,6 +55,9 @@ export default function EstoqueLimpezaPage() {
   const [pFotoFile, setPFotoFile] = useState<File | null>(null);
   const [pFotoUrl, setPFotoUrl] = useState("");
   const [salvandoProduto, setSalvandoProduto] = useState(false);
+  const [editandoValorMov, setEditandoValorMov] = useState<Movimentacao | null>(null);
+  const [novoValorMov, setNovoValorMov] = useState("");
+  const [salvandoValorMov, setSalvandoValorMov] = useState(false);
 
   async function carregar() {
     setLoading(true);
@@ -112,6 +115,27 @@ export default function EstoqueLimpezaPage() {
 
   function nomeDoMaterial(id: string) {
     return materiais.find((m) => m.id === id)?.nome || "—";
+  }
+
+  function abrirEdicaoValor(mv: Movimentacao) {
+    setEditandoValorMov(mv);
+    setNovoValorMov(mv.valor_unitario != null ? String(mv.valor_unitario) : "");
+  }
+
+  async function confirmarNovoValor() {
+    if (!editandoValorMov) return;
+    const valor = novoValorMov ? Number(novoValorMov) : null;
+    setSalvandoValorMov(true);
+    const { error } = await supabase.from("materiais_limpeza_movimentacoes").update({ valor_unitario: valor }).eq("id", editandoValorMov.id);
+    setSalvandoValorMov(false);
+    if (error) {
+      setMsg({ tipo: "erro", texto: "Erro ao corrigir: " + error.message });
+      return;
+    }
+    setMsg({ tipo: "sucesso", texto: "Valor corrigido." });
+    setEditandoValorMov(null);
+    carregar();
+    setTimeout(() => setMsg(null), 4000);
   }
 
   function abrirNovoProduto() {
@@ -236,9 +260,17 @@ export default function EstoqueLimpezaPage() {
                     </p>
                     <p className="text-xs text-slate-400">{mv.responsavel_nome} · {new Date(mv.created_at).toLocaleString("pt-BR")}</p>
                   </div>
-                  <span className={`text-sm font-bold ${mv.tipo === "entrada" ? "text-emerald-600" : "text-red-500"}`}>
-                    {mv.tipo === "entrada" ? "+" : "−"}{mv.quantidade}
-                  </span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className={`text-sm font-bold ${mv.tipo === "entrada" ? "text-emerald-600" : "text-red-500"}`}>
+                      {mv.tipo === "entrada" ? "+" : "−"}{mv.quantidade}
+                    </span>
+                    {mv.tipo === "entrada" && (
+                      <button onClick={() => abrirEdicaoValor(mv)} title="Corrigir valor"
+                        className="w-6 h-6 rounded-lg hover:bg-slate-100 flex items-center justify-center transition">
+                        <Pencil size={11} className="text-slate-400" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))
             )}
@@ -374,6 +406,33 @@ export default function EstoqueLimpezaPage() {
               <button onClick={confirmarProduto} disabled={salvandoProduto}
                 className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
                 {salvandoProduto ? "Salvando..." : produtoEditId ? "Salvar" : "Cadastrar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editandoValorMov && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+          onClick={(e) => { if (e.target === e.currentTarget) setEditandoValorMov(null); }}>
+          <div className="w-full sm:max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div>
+              <h3 className="font-bold text-slate-800 text-base">Corrigir valor</h3>
+              <p className="text-xs text-slate-400 mt-0.5">{nomeDoMaterial(editandoValorMov.material_id)} — entrada de {editandoValorMov.quantidade} em {new Date(editandoValorMov.created_at).toLocaleDateString("pt-BR")}</p>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase">Valor pago (por unidade)</label>
+              <input type="number" min="0" step="0.01" value={novoValorMov} onChange={(e) => setNovoValorMov(e.target.value)} placeholder="Ex: 5,90"
+                className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setEditandoValorMov(null)}
+                className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                Cancelar
+              </button>
+              <button onClick={confirmarNovoValor} disabled={salvandoValorMov}
+                className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
+                {salvandoValorMov ? "Salvando..." : "Salvar"}
               </button>
             </div>
           </div>
