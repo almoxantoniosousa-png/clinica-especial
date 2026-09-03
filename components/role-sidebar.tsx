@@ -862,6 +862,12 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
               <span className="font-bold text-white text-sm">Clínica Abraço</span>
             </div>
             <div className="flex items-center gap-1">
+              {(isAdmin || isGestao) && (
+                <button onClick={alternarValores} title={valoresVisiveis ? "Ocultar valores" : "Mostrar valores"}
+                  className="w-9 h-9 flex items-center justify-center rounded-xl text-white hover:bg-white/10 transition">
+                  {valoresVisiveis ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              )}
               <NotificacoesBell userRole={role} />
               <button onClick={() => setMenuAberto(!menuAberto)}
                 className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/10 transition">
