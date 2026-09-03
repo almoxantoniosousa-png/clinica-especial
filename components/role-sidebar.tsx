@@ -110,13 +110,14 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/auditoria",    label: "Auditoria",  icon: "🔍" },
     { href: "/gravacoes",        label: "Record",     icon: "🎥" },
     { href: "/ajuda",            label: "Ajuda",     icon: "❓" },
+    { href: "/suporte-tecnico",  label: "Suporte Técnico", icon: "🛟" },
   ];
 
   // Barra horizontal do ADM: Dashboard e Colaboradores direto, o resto
   // dividido em 3 dropdowns nomeados por função (não um balde genérico
   // tipo "Geral"/"Mais") — formato validado com a usuária via protótipo.
   const HREFS_ADMIN_ROTINA = ["/adm/agenda-pessoal", "/escala", "/adm/criancas", "/adm/escolas", "/adm/responsaveis", "/ocorrencias", "/reuniao", "/mural", "/chat"];
-  const HREFS_ADMIN_SISTEMA = ["/adm/requisicoes", "/adm/patrimonio", "/adm/protocolos", "/adm/legislacao", "/adm/auditoria", "/gravacoes", "/ajuda"];
+  const HREFS_ADMIN_SISTEMA = ["/adm/requisicoes", "/adm/patrimonio", "/adm/protocolos", "/adm/legislacao", "/adm/auditoria", "/gravacoes", "/ajuda", "/suporte-tecnico"];
   const menuAdminRotina = menuAdmin.filter((i) => HREFS_ADMIN_ROTINA.includes(i.href));
   const menuAdminSistema = menuAdmin.filter((i) => HREFS_ADMIN_SISTEMA.includes(i.href));
 
@@ -135,7 +136,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/escala",              label: "Escala",         icon: "📅" },
     { href: "/mural",               label: "Mural",        icon: "📢" },
     { href: "/ocorrencias",         label: "Ocorrência Diária", icon: "📓" },
-    { href: "/protocolos",          label: "Protocolos",   icon: "📜" },
+    { href: "/adm/protocolos",      label: "Protocolos",   icon: "📜" },
     { href: "/legislacao",          label: "Legislação de Apoio", icon: "📚" },
     { href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" },
     { href: "/requisicoes",         label: "Requisições",  icon: "🛒" },
@@ -148,6 +149,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/gestao/comunicados",  label: "Família",      icon: "💬" },
     { href: "/gravacoes",           label: "Record",       icon: "🎥" },
     { href: "/ajuda",               label: "Ajuda",        icon: "❓" },
+    { href: "/suporte-tecnico",     label: "Suporte Técnico", icon: "🛟" },
   ];
 
   // Barra horizontal da Gestão: mesmo esqueleto do ADM (Dashboard + Minha
@@ -155,7 +157,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   // tamanho (20 itens).
   const HREFS_GESTAO_ATENDIMENTO = ["/gestao/entrevista-inicial", "/gestao/criancas", "/gestao/escolas", "/plano-terapeutico", "/adm/atendimentos-especialistas"];
   const HREFS_GESTAO_ROTINA = ["/escala", "/ocorrencias", "/mural", "/materiais-adaptados", "/requisicoes", "/patrimonio", "/gestao/comunicados"];
-  const HREFS_GESTAO_SISTEMA = ["/protocolos", "/legislacao", "/gestao/relatorios", "/reuniao", "/chat", "/gravacoes", "/ajuda"];
+  const HREFS_GESTAO_SISTEMA = ["/adm/protocolos", "/legislacao", "/gestao/relatorios", "/reuniao", "/chat", "/gravacoes", "/ajuda", "/suporte-tecnico"];
   const menuGestaoAtendimento = menuGestao.filter((i) => HREFS_GESTAO_ATENDIMENTO.includes(i.href));
   const menuGestaoRotina = menuGestao.filter((i) => HREFS_GESTAO_ROTINA.includes(i.href));
   const menuGestaoSistema = menuGestao.filter((i) => HREFS_GESTAO_SISTEMA.includes(i.href));
@@ -164,6 +166,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const menuFamilia = [
     { href: "/familia", label: "Meu Portal", icon: "🏠" },
     { href: "/ajuda",   label: "Ajuda",      icon: "❓" },
+    { href: "/suporte-tecnico", label: "Suporte Técnico", icon: "🛟" },
   ];
 
   const menuAtendente = [
@@ -180,6 +183,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/reuniao",                      label: "Reunião",           icon: "🗒️" },
     { href: "/chat",                         label: "Chat",              icon: "💬" },
     { href: "/ajuda",                        label: "Ajuda",             icon: "❓" },
+    { href: "/suporte-tecnico",              label: "Suporte Técnico",   icon: "🛟" },
   ];
 
   const menuSupervisora = [
@@ -197,6 +201,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/reuniao",                 label: "Reunião",           icon: "🗒️" },
     { href: "/chat",                    label: "Chat",              icon: "💬" },
     { href: "/ajuda",                   label: "Ajuda",             icon: "❓" },
+    { href: "/suporte-tecnico",         label: "Suporte Técnico",   icon: "🛟" },
   ];
 
   // Barra horizontal da Supervisora: as 3 telas do dia a dia direto (a
@@ -206,7 +211,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     ? { href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }
     : { href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" };
   const HREFS_SUP_CLINICO = ["/plano-terapeutico", "/ocorrencias", "/materiais-adaptados", "/protocolos", "/legislacao"];
-  const HREFS_SUP_APOIO = ["/requisicoes", "/patrimonio", "/mural", "/reuniao", "/chat", "/ajuda"];
+  const HREFS_SUP_APOIO = ["/requisicoes", "/patrimonio", "/mural", "/reuniao", "/chat", "/ajuda", "/suporte-tecnico"];
   const menuSupervisoraClinico = menuSupervisora.filter((i) => HREFS_SUP_CLINICO.includes(i.href) && i.href !== menuSupervisoraInicial.href);
   const menuSupervisoraApoio = menuSupervisora.filter((i) => HREFS_SUP_APOIO.includes(i.href));
   const paginaAtualSup = [menuSupervisoraInicial, { href: "/supervisora/relatorio", label: "Registro ABC", icon: "📝" }, { href: "/escala", label: "Escala", icon: "📅" }, ...menuSupervisoraClinico, ...menuSupervisoraApoio]
@@ -225,6 +230,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/reuniao",                  label: "Reunião",      icon: "🗒️" },
     { href: "/chat",                     label: "Chat",         icon: "💬" },
     { href: "/ajuda",                    label: "Ajuda",        icon: "❓" },
+    { href: "/suporte-tecnico",          label: "Suporte Técnico", icon: "🛟" },
   ];
 
   const menuFinanceiro = [
@@ -237,6 +243,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/reuniao",             label: "Reunião",           icon: "🗒️" },
     { href: "/chat",                label: "Chat",              icon: "💬" },
     { href: "/ajuda",                label: "Ajuda",            icon: "❓" },
+    { href: "/suporte-tecnico",      label: "Suporte Técnico",  icon: "🛟" },
   ];
 
   const menuAuxAdm = [
@@ -254,13 +261,14 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/reuniao",              label: "Reunião",       icon: "🗒️" },
     { href: "/chat",                 label: "Chat",          icon: "💬" },
     { href: "/ajuda",                label: "Ajuda",         icon: "❓" },
+    { href: "/suporte-tecnico",      label: "Suporte Técnico", icon: "🛟" },
   ];
 
   // Barra horizontal da Aux Adm: as 2 agendas direto (a de crianças/AT, que
   // hoje nem tinha item de menu, e a pauta pessoal da Simone), resto dividido
   // em Cadastros/Apoio.
   const HREFS_AUXADM_CADASTROS = ["/adm/criancas", "/adm/escolas", "/adm/colaboradores", "/adm/financeiro"];
-  const HREFS_AUXADM_APOIO = ["/adm/patrimonio", "/protocolos", "/mural", "/ocorrencias", "/reuniao", "/chat", "/ajuda"];
+  const HREFS_AUXADM_APOIO = ["/adm/patrimonio", "/protocolos", "/mural", "/ocorrencias", "/reuniao", "/chat", "/ajuda", "/suporte-tecnico"];
   const menuAuxAdmCadastros = menuAuxAdm.filter((i) => HREFS_AUXADM_CADASTROS.includes(i.href));
   const menuAuxAdmApoio = menuAuxAdm.filter((i) => HREFS_AUXADM_APOIO.includes(i.href));
   const paginaAtualAuxAdm = menuAuxAdm.find((i) => pathname === i.href);
