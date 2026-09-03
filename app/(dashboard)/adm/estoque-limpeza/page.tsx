@@ -168,7 +168,7 @@ export default function EstoqueLimpezaPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden">
           <div className="divide-y divide-slate-100">
             {materiais.map((m) => {
               const baixo = m.quantidade_minima != null && m.quantidade_atual <= m.quantidade_minima;
