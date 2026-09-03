@@ -1,4 +1,5 @@
 import { RoleSidebar } from "@/components/role-sidebar";
+import { ConteudoWrapper } from "@/components/conteudo-wrapper";
 import { FloatingContact } from "@/components/floating-contact";
 import { LembretesAgendaPessoal } from "@/components/lembretes-agenda-pessoal";
 import { GravacaoProvider } from "@/contexts/gravacao-context";
@@ -89,9 +90,7 @@ export default async function DashboardLayout({
                 style={{ opacity: 0.08, filter: "grayscale(100%)" }}
               />
             </div>
-            <div className="relative z-10 max-w-5xl mx-auto p-4 md:p-8 h-full">
-              {children}
-            </div>
+            <ConteudoWrapper>{children}</ConteudoWrapper>
           </main>
         </div>
         {!isFamiliaRole && <FloatingContact />}
