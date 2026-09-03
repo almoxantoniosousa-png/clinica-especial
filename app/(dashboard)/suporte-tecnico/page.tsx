@@ -1,19 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { linkSuporteTecnico, formatarSuporteTecnicoWhatsApp } from "@/lib/suporteTecnico";
-
-const ROTULO_CARGO: Record<string, string> = {
-  adm: "ADM",
-  admin: "ADM",
-  gestao: "Gestão",
-  supervisora: "Supervisora",
-  especialista: "Especialista",
-  at: "Acompanhante Terapêutico",
-  atendente: "Acompanhante Terapêutico",
-  financeiro: "Financeiro",
-  aux_adm: "Auxiliar Administrativo",
-  familia: "Família",
-};
+import { rotuloRole } from "@/lib/roles";
 
 export default async function SuporteTecnicoPage() {
   const supabase = await createSupabaseServerClient();
@@ -57,7 +45,7 @@ export default async function SuporteTecnicoPage() {
     }
   }
 
-  const cargo = roleFinal ? (ROTULO_CARGO[roleFinal] || roleFinal) : "";
+  const cargo = rotuloRole(roleFinal);
   const quem = [nomeFinal, cargo].filter(Boolean).join(" — ");
   const textoWhatsApp = `Olá! Preciso de ajuda no sistema.${quem ? `\n${quem}` : ""}`;
 

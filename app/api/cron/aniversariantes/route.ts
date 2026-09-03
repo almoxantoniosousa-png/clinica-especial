@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { rotuloRole } from "@/lib/roles";
 
 const ROLES_AVISADAS = ["adm", "gestao"];
 
@@ -37,7 +38,7 @@ export async function GET(req: Request) {
   ]);
 
   const todos = [
-    ...(atendentes || []).map(a => ({ nome: a.nome, data_nascimento: a.data_nascimento, tipo: a.role === "especialista" ? "Especialista" : "Acompanhante" })),
+    ...(atendentes || []).map(a => ({ nome: a.nome, data_nascimento: a.data_nascimento, tipo: rotuloRole(a.role) })),
     ...(internas || []).map(i => ({ nome: i.nome, data_nascimento: i.data_nascimento, tipo: i.cargo || "Equipe" })),
     ...(criancas || []).map(c => ({ nome: c.nome, data_nascimento: c.data_nascimento, tipo: "Criança" })),
   ];

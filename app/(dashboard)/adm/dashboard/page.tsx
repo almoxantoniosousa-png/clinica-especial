@@ -6,6 +6,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { PainelInformacoes } from "@/components/painel-informacoes";
 import { FotoCrianca } from "@/components/foto-crianca";
 import { primeiroNome, hojeLocal, dataComemorativaHoje, proximasDatasComemorativas } from "@/lib/dataUtils";
+import { rotuloRole } from "@/lib/roles";
 import { Pie, Bar } from "react-chartjs-2";
 import type { ChartData, ScriptableContext } from "chart.js";
 import {
@@ -135,7 +136,7 @@ export default function AdmDashboardPage() {
       .from("criancas").select("nome, data_nascimento, foto_url").eq("ativo", true).not("data_nascimento", "is", null);
 
     const todos = [
-      ...(atendentes || []).map((a: { nome: string; data_nascimento: string; role: string; logo_url?: string | null }) => ({ ...a, tipo: a.role === "especialista" ? "Especialista" : "Acompanhante", foto_url: a.logo_url })),
+      ...(atendentes || []).map((a: { nome: string; data_nascimento: string; role: string; logo_url?: string | null }) => ({ ...a, tipo: rotuloRole(a.role), foto_url: a.logo_url })),
       ...(internas  || []).map((i: { nome: string; data_nascimento: string; cargo: string; foto_url?: string | null }) => ({ ...i, tipo: i.cargo })),
       ...(criancas  || []).map((c: { nome: string; data_nascimento: string; foto_url?: string | null }) => ({ ...c, tipo: "Criança" })),
     ];
