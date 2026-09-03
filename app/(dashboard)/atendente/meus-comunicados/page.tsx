@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { iniciaisNome } from "@/lib/dataUtils";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { FotoCrianca } from "@/components/foto-crianca";
 
 const POR_PAGINA = 8;
 
@@ -209,7 +210,7 @@ export default function MeusComunicadosPage() {
                     {/* Foto criança */}
                     <div className="w-11 h-11 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
                       {c.criancas?.foto_url
-                        ? <img src={c.criancas.foto_url} alt={c.criancas.nome} className="w-full h-full object-cover"/>
+                        ? <FotoCrianca url={c.criancas.foto_url} alt={c.criancas.nome} className="w-full h-full object-cover" />
                         : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
                             {iniciais(c.criancas?.nome)}
                           </div>}

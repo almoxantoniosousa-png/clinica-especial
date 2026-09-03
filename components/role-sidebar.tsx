@@ -136,7 +136,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/escala",              label: "Escala",         icon: "📅" },
     { href: "/mural",               label: "Mural",        icon: "📢" },
     { href: "/ocorrencias",         label: "Ocorrência Diária", icon: "📓" },
-    { href: "/adm/protocolos",      label: "Protocolos",   icon: "📜" },
+    { href: "/gestao/protocolos",   label: "Protocolos",   icon: "📜" },
     { href: "/legislacao",          label: "Legislação de Apoio", icon: "📚" },
     { href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" },
     { href: "/requisicoes",         label: "Requisições",  icon: "🛒" },
@@ -157,7 +157,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   // tamanho (20 itens).
   const HREFS_GESTAO_ATENDIMENTO = ["/gestao/entrevista-inicial", "/gestao/criancas", "/gestao/escolas", "/plano-terapeutico", "/adm/atendimentos-especialistas"];
   const HREFS_GESTAO_ROTINA = ["/escala", "/ocorrencias", "/mural", "/materiais-adaptados", "/requisicoes", "/patrimonio", "/gestao/comunicados"];
-  const HREFS_GESTAO_SISTEMA = ["/adm/protocolos", "/legislacao", "/gestao/relatorios", "/reuniao", "/chat", "/gravacoes", "/ajuda", "/suporte-tecnico"];
+  const HREFS_GESTAO_SISTEMA = ["/gestao/protocolos", "/legislacao", "/gestao/relatorios", "/reuniao", "/chat", "/gravacoes", "/ajuda", "/suporte-tecnico"];
   const menuGestaoAtendimento = menuGestao.filter((i) => HREFS_GESTAO_ATENDIMENTO.includes(i.href));
   const menuGestaoRotina = menuGestao.filter((i) => HREFS_GESTAO_ROTINA.includes(i.href));
   const menuGestaoSistema = menuGestao.filter((i) => HREFS_GESTAO_SISTEMA.includes(i.href));

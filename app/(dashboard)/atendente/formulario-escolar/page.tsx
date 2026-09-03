@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { hojeLocal } from "@/lib/dataUtils";
+import { FotoCrianca } from "@/components/foto-crianca";
 
 const ETAPAS = [
   { num: 1, titulo: "Entrada e Interação", icon: "🏁" },
@@ -338,7 +339,7 @@ export default function FormularioEscolarPage() {
                 <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
                   <div className="w-10 h-10 rounded-full overflow-hidden border border-blue-200 flex-shrink-0">
                     {criancaSelecionada.foto_url
-                      ? <img src={criancaSelecionada.foto_url} alt={criancaSelecionada.nome} className="w-full h-full object-cover"/>
+                      ? <FotoCrianca url={criancaSelecionada.foto_url} alt={criancaSelecionada.nome} className="w-full h-full object-cover" />
                       : <div className="w-full h-full bg-blue-200 flex items-center justify-center text-blue-700 font-bold text-sm">{criancaSelecionada.nome.charAt(0)}</div>}
                   </div>
                   <div>
@@ -566,7 +567,7 @@ export default function FormularioEscolarPage() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 flex-shrink-0">
                   {criancaSelecionada?.foto_url
-                    ? <img src={criancaSelecionada.foto_url} alt={criancaSelecionada.nome} className="w-full h-full object-cover"/>
+                    ? <FotoCrianca url={criancaSelecionada.foto_url} alt={criancaSelecionada.nome} className="w-full h-full object-cover" />
                     : <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">{criancaSelecionada?.nome?.charAt(0) || "?"}</div>}
                 </div>
                 <div>

@@ -5,6 +5,7 @@ import { createSupabaseBrowserClient } from "../../../../lib/supabaseBrowserClie
 import { Users, Plus, Pencil, Trash2, X, Check, Mail, Phone, Baby, Power, User, MapPin, CreditCard } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 import { iniciaisNome } from "@/lib/dataUtils";
+import { FotoCrianca } from "@/components/foto-crianca";
 
 export default function ResponsaveisPage() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -209,7 +210,7 @@ export default function ResponsaveisPage() {
               <div className="flex items-center gap-4 min-w-0">
                 <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-white shadow-sm ring-1 ring-slate-100">
                   {r.criancas?.foto_url ? (
-                    <img src={r.criancas.foto_url} alt={r.criancas.nome} className="w-full h-full object-cover"/>
+                    <FotoCrianca url={r.criancas.foto_url} alt={r.criancas.nome} className="w-full h-full object-cover" />
                   ) : (
                     <div className={`w-full h-full flex items-center justify-center font-bold text-sm
                       ${r.ativo ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400"}`}>
