@@ -524,6 +524,32 @@ const AUX_ADM: AjudaConteudo = {
   ],
 };
 
+const APOIO: AjudaConteudo = {
+  roleLabel: "Apoio",
+  intro: "Aqui você encontra uma explicação rápida de cada tela do seu menu. Toque em um item para abrir os detalhes.",
+  contato: "Ainda com dúvidas? Use o Chat pra falar com a Administração ou a Auxiliar Administrativa.",
+  itens: [
+    {
+      icone: "🧴", titulo: "Materiais de Limpeza", mockup: "lista-cards",
+      texto: "Veja quanto tem de cada produto de limpeza no estoque da clínica. Toque em \"Retirar\" no item que você pegou, informe a quantidade (e, se quiser, uma observação) e confirme — o estoque desconta sozinho na hora.",
+      reflexo: "A Administração acompanha o mesmo estoque em tempo real e vê tudo que você retirou, com data e horário."
+    },
+    {
+      icone: "🛒", titulo: "Requisições de Compra", mockup: "tabela",
+      texto: "Peça pra Administração comprar um produto de limpeza que está acabando ou que ainda não existe no estoque.\n\nClique em \"Nova requisição\" para preencher: produto, quantidade, descrição (para que serve), link do produto (opcional) e urgência (Normal ou Urgente).\n\nAcompanhe o histórico e receba a resposta do ADM: Pendente → Em análise → Comprado → Entregue.",
+      reflexo: "O ADM vê sua requisição, atualiza o status e pode deixar uma observação pra você — que aparece direto nesta tela."
+    },
+    {
+      icone: "📢", titulo: "Mural", mockup: "mural",
+      texto: "Mural de avisos da equipe, com os comunicados fixados (📌) sempre no topo. Você só vê os avisos \"Para todos\" e os endereçados especificamente ao seu perfil ou a você por nome."
+    },
+    {
+      icone: "💬", titulo: "Chat", mockup: "chat",
+      texto: "Conversas internas. Clique no lápis para iniciar uma conversa, envie texto, arquivos, imagens ou áudios, e reaja com emojis.\n\n🔔 Notificações: na primeira vez que abrir o Chat, toque em \"Ativar\" na faixa azul para receber notificações de novas mensagens mesmo com o Chat fechado."
+    },
+  ],
+};
+
 export function getAjudaConteudo(userRole: string, contataFamilia: boolean = true): AjudaConteudo {
   const role = userRole ? userRole.trim().toLowerCase() : "";
   if (role === "adm" || role === "admin") return ADM;
@@ -539,5 +565,6 @@ export function getAjudaConteudo(userRole: string, contataFamilia: boolean = tru
   if (role === "familia") return FAMILIA;
   if (role === "financeiro") return FINANCEIRO;
   if (role === "aux_adm") return AUX_ADM;
+  if (role === "apoio") return APOIO;
   return ATENDENTE;
 }

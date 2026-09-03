@@ -83,32 +83,32 @@ export default function MateriaisApoioPage() {
       {loading ? (
         <p className="text-sm text-slate-400">Carregando...</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {materiais.map((m) => {
-            const baixo = m.quantidade_minima != null && m.quantidade_atual <= m.quantidade_minima;
-            return (
-              <div key={m.id} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                      <Droplets size={16} className="text-blue-500" />
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <div className="divide-y divide-slate-100">
+            {materiais.map((m) => {
+              const baixo = m.quantidade_minima != null && m.quantidade_atual <= m.quantidade_minima;
+              return (
+                <div key={m.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                      <Droplets size={13} className="text-blue-500" />
                     </div>
-                    <div>
-                      <p className="font-semibold text-sm text-slate-800">{m.nome}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm text-slate-700 truncate">{m.nome}</p>
                       <p className={`text-xs ${baixo ? "text-red-500 font-semibold" : "text-slate-400"}`}>
                         {m.quantidade_atual} {m.unidade}{baixo ? " · estoque baixo" : ""}
                       </p>
                     </div>
                   </div>
+                  <button
+                    onClick={() => abrirRetirada(m)}
+                    className="h-7 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold transition active:scale-95 flex items-center justify-center gap-1 flex-shrink-0">
+                    <Minus size={11} /> Retirar
+                  </button>
                 </div>
-                <button
-                  onClick={() => abrirRetirada(m)}
-                  className="h-9 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold transition active:scale-95 flex items-center justify-center gap-1.5">
-                  <Minus size={13} /> Retirar
-                </button>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 
