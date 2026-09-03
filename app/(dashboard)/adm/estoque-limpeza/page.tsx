@@ -24,6 +24,15 @@ type Movimentacao = {
   valor_unitario: number | null;
 };
 
+// Alguns links do Google Imagens bloqueiam o carregamento fora do site de
+// origem ("hotlink") -- em vez de deixar o icone de imagem quebrada
+// aparecer, cai pro icone padrao assim que o navegador acusa a falha.
+function FotoProduto({ url, nome, tamanhoIcone = 28 }: { url: string | null; nome: string; tamanhoIcone?: number }) {
+  const [erro, setErro] = useState(false);
+  if (!url || erro) return <Droplets size={tamanhoIcone} className="text-stone-400" />;
+  return <img src={url} alt={nome} className="w-full h-full object-cover" onError={() => setErro(true)} />;
+}
+
 export default function EstoqueLimpezaPage() {
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
@@ -246,11 +255,7 @@ export default function EstoqueLimpezaPage() {
             return (
               <div key={m.id} className="bg-stone-100 border border-stone-300 rounded-2xl overflow-hidden flex flex-col">
                 <div className="relative aspect-square bg-stone-200 flex items-center justify-center">
-                  {m.foto_url ? (
-                    <img src={m.foto_url} alt={m.nome} className="w-full h-full object-cover" />
-                  ) : (
-                    <Droplets size={28} className="text-stone-400" />
-                  )}
+                  <FotoProduto url={m.foto_url} nome={m.nome} />
                   <button onClick={() => abrirEditarProduto(m)}
                     className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-white/90 hover:bg-white flex items-center justify-center shadow-sm transition">
                     <Pencil size={11} className="text-slate-600" />
@@ -329,15 +334,12 @@ export default function EstoqueLimpezaPage() {
             </div>
             <div className="flex items-center gap-3">
               <div className="w-16 h-16 rounded-xl bg-stone-100 border border-stone-300 flex items-center justify-center overflow-hidden flex-shrink-0">
-                {pFotoFile ? (
-                  <img src={URL.createObjectURL(pFotoFile)} alt="" className="w-full h-full object-cover" />
-                ) : pFotoUrl.trim() ? (
-                  <img src={pFotoUrl.trim()} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                ) : pFotoAtual ? (
-                  <img src={pFotoAtual} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <Droplets size={22} className="text-stone-400" />
-                )}
+                <FotoProduto
+                  key={pFotoFile ? pFotoFile.name : pFotoUrl.trim() || pFotoAtual || "vazio"}
+                  url={pFotoFile ? URL.createObjectURL(pFotoFile) : pFotoUrl.trim() || pFotoAtual}
+                  nome={pNome || "produto"}
+                  tamanhoIcone={22}
+                />
               </div>
               <label className="flex-1 h-10 px-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition flex items-center justify-center cursor-pointer">
                 Escolher foto
