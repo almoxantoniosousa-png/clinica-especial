@@ -101,6 +101,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/responsaveis", label: "Família",    icon: "👨‍👩‍👧" },
     { href: "/adm/requisicoes",  label: "Requisições", icon: "🛒" },
     { href: "/adm/patrimonio",   label: "Patrimônio", icon: "📦" },
+    { href: "/adm/estoque-limpeza", label: "Materiais de Limpeza", icon: "🧴" },
     { href: "/mural",            label: "Mural",      icon: "📢" },
     { href: "/adm/protocolos",   label: "Protocolos", icon: "📜" },
     { href: "/adm/legislacao",   label: "Legislação de Apoio", icon: "📚" },
@@ -118,7 +119,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   // dividido em 3 dropdowns nomeados por função (não um balde genérico
   // tipo "Geral"/"Mais") — formato validado com a usuária via protótipo.
   const HREFS_ADMIN_ROTINA = ["/adm/agenda-pessoal", "/escala", "/adm/criancas", "/adm/escolas", "/adm/responsaveis", "/ocorrencias", "/reuniao", "/mural", "/chat"];
-  const HREFS_ADMIN_SISTEMA = ["/adm/requisicoes", "/adm/patrimonio", "/adm/protocolos", "/adm/legislacao", "/adm/auditoria", "/gravacoes", "/ajuda", "/suporte-tecnico"];
+  const HREFS_ADMIN_SISTEMA = ["/adm/requisicoes", "/adm/patrimonio", "/adm/estoque-limpeza", "/adm/protocolos", "/adm/legislacao", "/adm/auditoria", "/gravacoes", "/ajuda", "/suporte-tecnico"];
   const menuAdminRotina = menuAdmin.filter((i) => HREFS_ADMIN_ROTINA.includes(i.href));
   const menuAdminSistema = menuAdmin.filter((i) => HREFS_ADMIN_SISTEMA.includes(i.href));
 
