@@ -39,6 +39,17 @@ export function iniciaisNome(nomeCompleto: string): string {
   return partes.slice(0, 2).map((p) => p[0]).join("").toUpperCase();
 }
 
+// "YYYY-MM" -> "YYYY-MM-DD" do ultimo dia real do mes. `${mes}-31` parece
+// inofensivo como limite superior de filtro, mas abr/jun/set/nov tem só 30
+// dias e fev tem 28 ou 29 — usar "-31" fixo nesses meses gera um literal de
+// data invalido, e o Postgres rejeita a query inteira (erro, não "sem
+// resultados").
+export function ultimoDiaDoMes(mesISO: string): string {
+  const [ano, mes] = mesISO.split("-").map(Number);
+  const dia = new Date(ano, mes, 0).getDate();
+  return `${mesISO}-${String(dia).padStart(2, "0")}`;
+}
+
 export function mesAtualLocal(): string {
   return hojeLocal().slice(0, 7);
 }

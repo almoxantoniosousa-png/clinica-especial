@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { registrarLog } from "@/lib/auditoria";
-import { hojeBrasil, feriadoNacional } from "@/lib/dataUtils";
+import { hojeBrasil, feriadoNacional, ultimoDiaDoMes } from "@/lib/dataUtils";
 
 // ============================
 // LOGIN
@@ -392,7 +392,7 @@ export async function carregarDadosDashboard() {
       .from("atendimentos")
       .select("status, data, valor_total")
       .gte("data", `${mesAtual}-01`)
-      .lte("data", `${mesAtual}-31`)
+      .lte("data", ultimoDiaDoMes(mesAtual))
       .order("data", { ascending: true });
 
     if (error) throw error;
@@ -402,7 +402,7 @@ export async function carregarDadosDashboard() {
       .select("data, status")
       .eq("status", "P")
       .gte("data", `${mesAtual}-01`)
-      .lte("data", `${mesAtual}-31`);
+      .lte("data", ultimoDiaDoMes(mesAtual));
 
     let totalDia = 0;
     let pendentes = 0;
@@ -501,7 +501,7 @@ export async function carregarGraficosPorMes(mesParam: string) {
       .from("atendimentos")
       .select("data")
       .gte("data", `${mesParam}-01`)
-      .lte("data", `${mesParam}-31`);
+      .lte("data", ultimoDiaDoMes(mesParam));
 
     if (error) throw error;
 
@@ -510,7 +510,7 @@ export async function carregarGraficosPorMes(mesParam: string) {
       .select("data, status")
       .eq("status", "P")
       .gte("data", `${mesParam}-01`)
-      .lte("data", `${mesParam}-31`);
+      .lte("data", ultimoDiaDoMes(mesParam));
 
     const atendimentosPorSemana: Record<string, number> = {
       "Semana 1": 0, "Semana 2": 0, "Semana 3": 0, "Semana 4": 0, "Semana 5": 0,

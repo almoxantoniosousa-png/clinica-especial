@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { CalendarDays, Home, School, Building2, Clock, DollarSign, Pencil, X, Trash2 } from 'lucide-react'
 import { updateAtendimento, deleteAtendimento } from '@/app/actions'
+import { ultimoDiaDoMes } from '@/lib/dataUtils'
 
 export default function MeusAtendimentosPage() {
   const [atendimentos, setAtendimentos] = useState<any[]>([])
@@ -49,7 +50,7 @@ export default function MeusAtendimentosPage() {
 
     const mes = String(mesSelecionado).padStart(2, '0')
     const primeiroDia = `${anoSelecionado}-${mes}-01`
-    const ultimoDia = `${anoSelecionado}-${mes}-31`
+    const ultimoDia = ultimoDiaDoMes(`${anoSelecionado}-${mes}`)
 
     const { data, error } = await supabase
       .from('atendimentos')

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { PainelInformacoes } from "@/components/painel-informacoes";
 import { iniciaisNome } from "@/lib/dataUtils";
-import { hojeLocal, paraISOLocal } from "@/lib/dataUtils";
+import { hojeLocal, paraISOLocal, ultimoDiaDoMes } from "@/lib/dataUtils";
 import { Bar, Line, Pie } from "react-chartjs-2";
 import type { ChartData } from "chart.js";
 import {
@@ -93,7 +93,7 @@ export default function GestaoDashboardPage() {
         .from("atendimentos")
         .select("modalidade")
         .gte("data", `${mesAtual}-01`)
-        .lte("data", `${mesAtual}-31`);
+        .lte("data", ultimoDiaDoMes(mesAtual));
 
       if (atendMes) {
         setAtendimentosMes(atendMes.length);
