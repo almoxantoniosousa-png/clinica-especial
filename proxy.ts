@@ -23,6 +23,7 @@ const PREFIXOS_STAFF: { prefixo: string; roles: string[] }[] = [
   { prefixo: "/gestao", roles: ["gestao"] },
   { prefixo: "/atendente", roles: ["atendente", "at"] },
   { prefixo: "/auxiliar", roles: ["aux_adm"] },
+  { prefixo: "/apoio", roles: ["apoio"] },
   { prefixo: "/plano-terapeutico", roles: ["gestao", "supervisora", "especialista"] },
 ];
 
@@ -38,6 +39,7 @@ const HOME_POR_ROLE: Record<string, string> = {
   atendente: "/atendente/dashboard",
   at: "/atendente/dashboard",
   aux_adm: "/auxiliar/agenda",
+  apoio: "/apoio/materiais",
 };
 
 export async function proxy(request: NextRequest) {

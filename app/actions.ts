@@ -95,6 +95,7 @@ export async function loginWithPassword(
     if (role === "supervisora") redirect("/supervisora/comunicados");
     if (role === "especialista") redirect("/especialista/escala");
     if (role === "at" || role === "atendente") redirect("/atendente/dashboard");
+    if (role === "apoio") redirect("/apoio/materiais");
 
     redirect("/atendente/dashboard");
   }
