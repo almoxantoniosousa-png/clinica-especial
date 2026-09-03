@@ -3,6 +3,7 @@ import { ConteudoWrapper } from "@/components/conteudo-wrapper";
 import { FloatingContact } from "@/components/floating-contact";
 import { LembretesAgendaPessoal } from "@/components/lembretes-agenda-pessoal";
 import { GravacaoProvider } from "@/contexts/gravacao-context";
+import { ValoresVisiveisProvider } from "@/contexts/valores-visiveis-context";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 
@@ -79,6 +80,7 @@ export default async function DashboardLayout({
 
   return (
     <GravacaoProvider>
+      <ValoresVisiveisProvider>
       <div className="min-h-screen bg-slate-50">
         <div className={`flex flex-col min-h-screen ${usaMenuHorizontal ? "" : "md:flex-row"}`}>
           <RoleSidebar key={user.id} userRole={roleFinal} userCargo={cargoFinal} userNome={nomeFinal} userContataFamilia={contataFamiliaFinal} userFazAdaptado={fazAdaptadoFinal} />
@@ -96,6 +98,7 @@ export default async function DashboardLayout({
         {!isFamiliaRole && <FloatingContact />}
         {(roleFinal === "adm" || roleFinal === "admin") && <LembretesAgendaPessoal email={user.email || ""} />}
       </div>
+      </ValoresVisiveisProvider>
     </GravacaoProvider>
   );
 }

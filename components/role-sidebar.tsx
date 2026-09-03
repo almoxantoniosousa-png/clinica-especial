@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { NotificacoesBell } from "@/components/notificacoes-bell";
 import { useGravacao } from "@/contexts/gravacao-context";
+import { useValoresVisiveis } from "@/contexts/valores-visiveis-context";
 import { primeiroNome } from "@/lib/dataUtils";
 import { Saudacao } from "@/components/painel-informacoes";
 
@@ -28,6 +29,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const [financeiroAberto, setFinanceiroAberto] = useState(false);
   const [geralAberto, setGeralAberto] = useState(true);
   const [dropdownNav, setDropdownNav] = useState<string | null>(null);
+  const { visivel: valoresVisiveis, alternar: alternarValores } = useValoresVisiveis();
 
   const role = userRole ? userRole.trim().toLowerCase() : "";
   const isAdmin = role === "adm" || role === "admin";
@@ -638,6 +640,10 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Ao vivo
               </div>
+              <button onClick={alternarValores} title={valoresVisiveis ? "Ocultar valores" : "Mostrar valores"}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-100 hover:bg-white/10 hover:text-white transition-all">
+                {valoresVisiveis ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </button>
               <NotificacoesBell userRole={role} />
               <button onClick={() => setConfirmandoSaida(true)} title="Sair do sistema"
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-100 hover:bg-white/10 hover:text-white transition-all">
@@ -804,6 +810,10 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Ao vivo
               </div>
+              <button onClick={alternarValores} title={valoresVisiveis ? "Ocultar valores" : "Mostrar valores"}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-100 hover:bg-white/10 hover:text-white transition-all">
+                {valoresVisiveis ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </button>
               <NotificacoesBell userRole={role} />
               <button onClick={() => setConfirmandoSaida(true)} title="Sair do sistema"
                 className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-100 hover:bg-white/10 hover:text-white transition-all">

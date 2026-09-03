@@ -6,6 +6,7 @@ import { Check, Trash2, Pencil } from "lucide-react";
 import { registrarLog } from "@/lib/auditoria";
 import { hojeLocal, mesAtualLocal } from "@/lib/dataUtils";
 import { gerarDespesasRecorrentesPendentes } from "@/lib/despesasRecorrentes";
+import { Valor } from "@/contexts/valores-visiveis-context";
 
 type Aba = "contas_pagar" | "contas_receber" | "fluxo" | "emprestimos";
 type SupabaseClient = ReturnType<typeof createSupabaseBrowserClient>;
@@ -800,19 +801,19 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Total</p>
-          <p className="text-2xl font-bold text-slate-800">R$ {totais.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-slate-800">R$ <Valor>{totais.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</Valor></p>
           <p className="text-xs text-slate-400 mt-1">{contas.length} {contas.length === 1 ? "conta" : "contas"} no mês</p>
         </div>
         <div className="bg-white border border-red-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-red-600 uppercase mb-1">A Pagar</p>
-          <p className="text-2xl font-bold text-red-500">R$ {totais.pendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-red-500">R$ <Valor>{totais.pendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</Valor></p>
           {totais.vencidas > 0 && (
             <p className="text-xs font-bold text-red-400 mt-1">{totais.vencidas} {totais.vencidas === 1 ? "conta vencida" : "contas vencidas"}</p>
           )}
         </div>
         <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Pago</p>
-          <p className="text-2xl font-bold text-emerald-600">R$ {totais.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-emerald-600">R$ <Valor>{totais.pago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</Valor></p>
           <p className="text-xs text-slate-400 mt-1">{nPagas} {nPagas === 1 ? "conta quitada" : "contas quitadas"}</p>
         </div>
       </div>
@@ -1573,7 +1574,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Total Faturado</p>
-          <p className="text-2xl font-bold text-slate-800">R$ {totais.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-slate-800">R$ <Valor>{totais.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</Valor></p>
           <p className="text-xs text-slate-400 mt-1">{contas.length} {contas.length === 1 ? "fatura" : "faturas"} emitida{contas.length === 1 ? "" : "s"}</p>
         </div>
         <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
@@ -1583,7 +1584,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
         </div>
         <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Liquidado</p>
-          <p className="text-2xl font-bold text-emerald-600">R$ {totais.recebido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-emerald-600">R$ <Valor>{totais.recebido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</Valor></p>
           <p className="text-xs text-emerald-400 mt-1">{contas.filter(c => c.status === "recebido").length} {contas.filter(c => c.status === "recebido").length === 1 ? "fatura" : "faturas"} recebida{contas.filter(c => c.status === "recebido").length === 1 ? "" : "s"}</p>
         </div>
       </div>
@@ -2050,16 +2051,16 @@ function AbaFluxo({ supabase, mesAno }: AbaFluxoProps) {
       <div className={`rounded-2xl p-6 text-center shadow-sm ${saldo >= 0 ? "bg-emerald-50 border border-emerald-200" : "bg-red-50 border border-red-200"}`}>
         <p className="text-xs font-bold uppercase tracking-wide mb-1 text-slate-500">Saldo Realizado</p>
         <p className={`text-4xl font-bold ${saldo >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-          {saldo < 0 && "− "}R$ {brl(Math.abs(saldo))}
+          {saldo < 0 && "− "}R$ <Valor>{brl(Math.abs(saldo))}</Valor>
         </p>
         <p className="text-xs text-slate-400 mt-2">Entradas já recebidas menos saídas já pagas</p>
         {difAnterior !== null && (
           <div className="flex items-center justify-center gap-2 mt-2">
             <span className="text-xs text-slate-400">
-              Mês anterior: {saldoAnterior! < 0 && "− "}R$ {brl(Math.abs(saldoAnterior!))}
+              Mês anterior: {saldoAnterior! < 0 && "− "}R$ <Valor>{brl(Math.abs(saldoAnterior!))}</Valor>
             </span>
             <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${difAnterior >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"}`}>
-              {difAnterior >= 0 ? "▲" : "▼"} R$ {brl(Math.abs(difAnterior))}
+              {difAnterior >= 0 ? "▲" : "▼"} R$ <Valor>{brl(Math.abs(difAnterior))}</Valor>
             </span>
           </div>
         )}
@@ -2069,7 +2070,7 @@ function AbaFluxo({ supabase, mesAno }: AbaFluxoProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Entradas Realizadas</p>
-          <p className="text-2xl font-bold text-emerald-600">R$ {brl(d.entradas)}</p>
+          <p className="text-2xl font-bold text-emerald-600">R$ <Valor>{brl(d.entradas)}</Valor></p>
           {receitaTotal > 0 && (
             <div className="mt-2">
               <div className="flex justify-between text-[10px] text-slate-400 mb-1">
@@ -2083,26 +2084,26 @@ function AbaFluxo({ supabase, mesAno }: AbaFluxoProps) {
         </div>
         <div className="bg-white border border-red-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-red-600 uppercase mb-1">Saídas Realizadas</p>
-          <p className="text-2xl font-bold text-red-500">R$ {brl(saidas)}</p>
+          <p className="text-2xl font-bold text-red-500">R$ <Valor>{brl(saidas)}</Valor></p>
           {saidas > 0 && (
             <div className="mt-2 space-y-0.5">
-              <p className="text-[10px] text-slate-400">Contas: R$ {brl(d.saidasContas)}</p>
-              <p className="text-[10px] text-slate-400">Folha: R$ {brl(d.saidasFolha)}</p>
+              <p className="text-[10px] text-slate-400">Contas: R$ <Valor>{brl(d.saidasContas)}</Valor></p>
+              <p className="text-[10px] text-slate-400">Folha: R$ <Valor>{brl(d.saidasFolha)}</Valor></p>
             </div>
           )}
         </div>
         <div className="bg-white border border-blue-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-blue-600 uppercase mb-1">A Receber</p>
-          <p className="text-2xl font-bold text-blue-600">R$ {brl(d.receberPlano)}</p>
+          <p className="text-2xl font-bold text-blue-600">R$ <Valor>{brl(d.receberPlano)}</Valor></p>
           <p className="text-xs text-slate-400 mt-1">Faturas pendentes do plano</p>
         </div>
         <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-amber-600 uppercase mb-1">A Pagar</p>
-          <p className="text-2xl font-bold text-amber-500">R$ {brl(pagar)}</p>
+          <p className="text-2xl font-bold text-amber-500">R$ <Valor>{brl(pagar)}</Valor></p>
           {pagar > 0 && (
             <div className="mt-2 space-y-0.5">
-              <p className="text-[10px] text-slate-400">Contas: R$ {brl(d.pagarContas)}</p>
-              <p className="text-[10px] text-slate-400">Folha: R$ {brl(d.pagarFolha)}</p>
+              <p className="text-[10px] text-slate-400">Contas: R$ <Valor>{brl(d.pagarContas)}</Valor></p>
+              <p className="text-[10px] text-slate-400">Folha: R$ <Valor>{brl(d.pagarFolha)}</Valor></p>
             </div>
           )}
         </div>
@@ -2115,7 +2116,7 @@ function AbaFluxo({ supabase, mesAno }: AbaFluxoProps) {
           <div>
             <p className="font-bold text-red-700 text-sm">Despesas superam a receita prevista</p>
             <p className="text-xs text-red-500 mt-0.5">
-              Déficit projetado de R$ {brl(despesaTotal - receitaTotal)}. Revise as contas a pagar ou a folha de pagamento.
+              Déficit projetado de R$ <Valor>{brl(despesaTotal - receitaTotal)}</Valor>. Revise as contas a pagar ou a folha de pagamento.
             </p>
           </div>
         </div>
@@ -2129,7 +2130,7 @@ function AbaFluxo({ supabase, mesAno }: AbaFluxoProps) {
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-slate-500">Contas fixas</span>
-                <span className="font-semibold text-slate-700">R$ {brl(d.saidasContas + d.pagarContas)} <span className="text-slate-400 font-normal">({pctContas}%)</span></span>
+                <span className="font-semibold text-slate-700">R$ <Valor>{brl(d.saidasContas + d.pagarContas)}</Valor> <span className="text-slate-400 font-normal">({pctContas}%)</span></span>
               </div>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full bg-orange-400 rounded-full" style={{ width: `${pctContas}%` }} />
@@ -2138,7 +2139,7 @@ function AbaFluxo({ supabase, mesAno }: AbaFluxoProps) {
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-slate-500">Folha de pagamento</span>
-                <span className="font-semibold text-slate-700">R$ {brl(d.saidasFolha + d.pagarFolha)} <span className="text-slate-400 font-normal">({pctFolha}%)</span></span>
+                <span className="font-semibold text-slate-700">R$ <Valor>{brl(d.saidasFolha + d.pagarFolha)}</Valor> <span className="text-slate-400 font-normal">({pctFolha}%)</span></span>
               </div>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full bg-blue-400 rounded-full" style={{ width: `${pctFolha}%` }} />
@@ -2155,16 +2156,16 @@ function AbaFluxo({ supabase, mesAno }: AbaFluxoProps) {
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-slate-500">Receita total prevista</span>
-            <span className="font-semibold text-emerald-600">+ R$ {brl(receitaTotal)}</span>
+            <span className="font-semibold text-emerald-600">+ R$ <Valor>{brl(receitaTotal)}</Valor></span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-slate-500">Despesa total prevista</span>
-            <span className="font-semibold text-red-500">− R$ {brl(despesaTotal)}</span>
+            <span className="font-semibold text-red-500">− R$ <Valor>{brl(despesaTotal)}</Valor></span>
           </div>
           <div className="border-t border-slate-100 pt-2 flex justify-between text-sm font-bold">
             <span className="text-slate-700">Resultado projetado</span>
             <span className={saldoProj >= 0 ? "text-emerald-600" : "text-red-600"}>
-              {saldoProj < 0 && "− "}R$ {brl(Math.abs(saldoProj))}
+              {saldoProj < 0 && "− "}R$ <Valor>{brl(Math.abs(saldoProj))}</Valor>
             </span>
           </div>
           {receitaTotal > 0 && (
@@ -2428,17 +2429,17 @@ function AbaEmprestimos({ supabase, mostrarFeedback }: AbaSemMesProps) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Total Emprestado</p>
-          <p className="text-2xl font-bold text-slate-800">R$ {totais.emprestado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-slate-800">R$ <Valor>{totais.emprestado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</Valor></p>
           <p className="text-xs text-slate-400 mt-1">{emprestimos.length} empréstimo{emprestimos.length === 1 ? "" : "s"}</p>
         </div>
         <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-amber-600 uppercase mb-1">Em Aberto</p>
-          <p className="text-2xl font-bold text-amber-500">R$ {totais.emAberto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-amber-500">R$ <Valor>{totais.emAberto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</Valor></p>
           <p className="text-xs text-amber-400 mt-1">{emprestimos.filter(e => e.status === "ativo").length} ativo{emprestimos.filter(e => e.status === "ativo").length === 1 ? "" : "s"}</p>
         </div>
         <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
           <p className="text-xs font-semibold text-emerald-600 uppercase mb-1">Quitado</p>
-          <p className="text-2xl font-bold text-emerald-600">R$ {totais.quitado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-emerald-600">R$ <Valor>{totais.quitado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</Valor></p>
           <p className="text-xs text-emerald-400 mt-1">{emprestimos.filter(e => e.status === "quitado").length} quitado{emprestimos.filter(e => e.status === "quitado").length === 1 ? "" : "s"}</p>
         </div>
       </div>
