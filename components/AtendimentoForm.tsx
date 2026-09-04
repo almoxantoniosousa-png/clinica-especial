@@ -6,6 +6,7 @@ import { createAtendimento } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Home, School, Building2, Calendar, Clock, FileText, Baby, MapPin, DollarSign, ClipboardList } from 'lucide-react'
 import { hojeLocal } from '@/lib/dataUtils'
+import { Valor } from '@/contexts/valores-visiveis-context'
 
 export default function AtendimentoForm() {
   const [local, setLocal] = useState<'casa' | 'escola' | 'clinica'>('casa')
@@ -197,7 +198,7 @@ export default function AtendimentoForm() {
           <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10" aria-hidden />
           <div className="relative">
             <p className="text-xs font-semibold text-teal-200 uppercase tracking-wide">A receber</p>
-            <p className="text-2xl font-black mt-0.5 text-teal-300">R$ {totalValorAcumulado.toFixed(2)}</p>
+            <p className="text-2xl font-black mt-0.5 text-teal-300">R$ <Valor>{totalValorAcumulado.toFixed(2)}</Valor></p>
             <p className="text-xs text-teal-200/80 mt-0.5">valor estimado</p>
           </div>
           <div className="relative bg-white/15 p-2.5 rounded-xl">
