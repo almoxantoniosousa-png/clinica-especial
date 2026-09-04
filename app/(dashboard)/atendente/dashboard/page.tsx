@@ -10,7 +10,6 @@ const ATALHOS = [
   { href: "/atendente/meus-atendimentos",  label: "Meus Atendimentos", icon: "📋", cor: "bg-emerald-50 text-emerald-700" },
   { href: "/atendente/formulario-escolar", label: "Comunicado Diário", icon: "📄", cor: "bg-amber-50 text-amber-700" },
   { href: "/atendente/meus-comunicados",   label: "Meus Comunicados",  icon: "📬", cor: "bg-purple-50 text-purple-700" },
-  { href: "/escala",                       label: "Minha Escala",      icon: "📅", cor: "bg-rose-50 text-rose-700" },
   { href: "/mural",                        label: "Mural",             icon: "📢", cor: "bg-sky-50 text-sky-700" },
 ];
 
