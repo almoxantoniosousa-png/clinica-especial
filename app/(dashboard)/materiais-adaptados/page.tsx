@@ -389,6 +389,17 @@ export default function MateriaisAdaptadosPage() {
       acao: "Solicitou ajustes em material adaptado", tabela: "materiais_adaptados", registro_id: revisando.id,
       descricao: `${revisando.titulo_livro} — ${obsRevisao.trim()}`,
     });
+    // Sem coluna de destinatário individual na tabela notificacoes (broadcast
+    // só por role) — nomeia a AT autora no texto pra ficar claro pra quem é,
+    // já que outras ATs também recebem o sino.
+    await supabase.from("notificacoes").insert({
+      destinatario_role: "atendente",
+      titulo: "⚠️ Ajuste solicitado em material adaptado",
+      mensagem: `${revisando.criado_por_nome || "Autor"}, ${meuNome} pediu um ajuste em "${revisando.titulo_livro}": ${obsRevisao.trim().slice(0, 120)}`,
+      tipo: "alerta",
+      link: "/materiais-adaptados",
+      autor_nome: meuNome,
+    });
     mostrarFeedback("sucesso", "Ajustes solicitados ao autor.");
     setRevisando(null);
     carregar();
