@@ -157,9 +157,9 @@ export default function LoginPage() {
         </div>
 
         {/* Aviso legal */}
-        <div className="relative z-10 mt-2 pt-2 border-t border-blue-200">
+        <div className="relative z-10 mt-2 pt-2 border-t border-blue-200 text-center">
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Aviso legal</p>
-          <p className="text-[13px] leading-snug text-slate-400">
+          <p className="text-[13px] leading-snug text-slate-400 text-justify">
             Este ambiente é de uso exclusivo da equipe da Clínica Abraço e pode conter informações confidenciais e protegidas por sigilo profissional, nos termos da Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018). É proibido divulgar, copiar ou utilizar as informações aqui contidas caso você não seja a pessoa autorizada.
           </p>
           <p className="text-[11px] text-slate-300 mt-1">
