@@ -126,7 +126,7 @@ export function LoginForm() {
 
       {/* FORMULÁRIO DE LOGIN */}
       {!modoBloqueio && !mostrarRecuperacao && (
-        <form action={formAction} className="space-y-3">
+        <form action={formAction} className="space-y-2">
 
           {/* EMAIL */}
           <div className="space-y-1">
