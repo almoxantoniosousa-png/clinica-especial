@@ -87,7 +87,7 @@ export function LoginForm() {
               value={novaSenha}
               onChange={e => setNovaSenha(e.target.value)}
               className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700
-                focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                focus:outline-none focus:ring-2 focus:ring-blue-900 shadow-sm"
             />
           </div>
 
@@ -99,7 +99,7 @@ export function LoginForm() {
               value={confirmaSenha}
               onChange={e => setConfirmaSenha(e.target.value)}
               className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700
-                focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                focus:outline-none focus:ring-2 focus:ring-blue-900 shadow-sm"
             />
           </div>
 
@@ -144,7 +144,7 @@ export function LoginForm() {
                 placeholder="nome@clinicaabraco.com"
                 required
                 className="w-full h-11 pl-10 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700
-                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                  focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent
                   placeholder:text-slate-400 transition shadow-sm"
               />
             </div>
@@ -166,7 +166,7 @@ export function LoginForm() {
                 placeholder="••••••••"
                 required
                 className="w-full h-11 pl-10 pr-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700
-                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                  focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent
                   placeholder:text-slate-400 transition shadow-sm"
               />
             </div>
@@ -186,7 +186,7 @@ export function LoginForm() {
             <button
               type="button"
               onClick={() => setMostrarRecuperacao(true)}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline transition"
+              className="text-xs font-semibold text-blue-900 hover:text-blue-950 hover:underline transition"
             >
               Esqueci minha senha
             </button>
@@ -214,7 +214,7 @@ export function LoginForm() {
               value={emailRecuperacao}
               onChange={(e) => setEmailRecuperacao(e.target.value)}
               className="w-full h-12 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent
                 placeholder:text-slate-400 transition"
             />
           </div>
