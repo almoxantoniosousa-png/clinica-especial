@@ -482,20 +482,21 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
 
   async function registrarPagamento(c: ContaPagar) {
     const valorAgora = Number(valorPagamento.replace(",", "."));
-    const falta = restante(c);
     if (!valorAgora || valorAgora <= 0) { setErroPagamento("Informe um valor válido."); return; }
     if (!dataPagamento) { setErroPagamento("Informe a data do pagamento."); return; }
-    if (valorAgora > falta + 0.01) {
-      setErroPagamento(`O valor não pode passar do restante (R$ ${falta.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}).`);
-      return;
-    }
     setErroPagamento("");
     setProcessando(true);
     const novosPagamentos = [...(c.pagamentos || []), { data: dataPagamento, valor: valorAgora }];
-    const novoRestante = Number(c.valor) - novosPagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
+    const totalPago = novosPagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
+    // Se o valor pago passar do "valor do serviço" registrado (ex: reajuste do
+    // mês), o valor do serviço sobe junto — não trava o pagamento nem deixa
+    // "restante" negativo escondido.
+    const valorServico = Math.max(Number(c.valor), totalPago);
+    const novoRestante = valorServico - totalPago;
     const quitado = novoRestante <= 0.01;
     await supabase.from("contas_pagar").update({
       pagamentos: novosPagamentos,
+      valor: valorServico,
       status: quitado ? "pago" : "pendente",
       pago_em: quitado ? dataPagamento : null,
     }).eq("id", c.id);
@@ -527,11 +528,15 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
 
   async function aplicarPagamentos(c: ContaPagar, novosPagamentos: { data: string; valor: number }[], acaoLog: string) {
     const totalPago = novosPagamentos.reduce((acc, p) => acc + Number(p.valor || 0), 0);
-    const novoRestante = Number(c.valor) - totalPago;
+    // mesma lógica do registrarPagamento: se a soma dos pagamentos passar do
+    // "valor do serviço" registrado, o valor do serviço sobe junto.
+    const valorServico = Math.max(Number(c.valor), totalPago);
+    const novoRestante = valorServico - totalPago;
     const quitado = novoRestante <= 0.01;
     const ultimaData = novosPagamentos.length > 0 ? novosPagamentos.reduce((a, b) => (a.data > b.data ? a : b)).data : null;
     await supabase.from("contas_pagar").update({
       pagamentos: novosPagamentos,
+      valor: valorServico,
       status: quitado ? "pago" : "pendente",
       pago_em: quitado ? ultimaData : null,
     }).eq("id", c.id);
@@ -552,12 +557,6 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
     if (!valorNovo || valorNovo <= 0) { setErroPagamentoEdit("Informe um valor válido."); return; }
     if (!dataPagamentoEdit) { setErroPagamentoEdit("Informe a data do pagamento."); return; }
     const pagamentos = [...(c.pagamentos || [])];
-    const outros = pagamentos.filter((_, i) => i !== editandoPagamento.index);
-    const totalOutros = outros.reduce((acc, p) => acc + Number(p.valor || 0), 0);
-    if (totalOutros + valorNovo > Number(c.valor) + 0.01) {
-      setErroPagamentoEdit(`A soma dos pagamentos não pode passar do valor do serviço (R$ ${Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}).`);
-      return;
-    }
     setErroPagamentoEdit("");
     setProcessando(true);
     const antigo = pagamentos[editandoPagamento.index];
@@ -1057,7 +1056,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                 <div>
                   <label className="text-xs font-semibold text-slate-500 uppercase">Valor pago *</label>
                   <input
-                    type="number" min="0.01" step="0.01" max={falta}
+                    type="number" min="0.01" step="0.01"
                     value={valorPagamento} onChange={e => { setValorPagamento(e.target.value); setErroPagamento(""); }}
                     className="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-center font-bold"/>
                 </div>
@@ -1070,7 +1069,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                 </div>
               </div>
               <p className="text-xs text-slate-400 text-center">
-                Pra pagar menos que o total, edite o valor — o restante fica pendente na mesma conta pra pagar depois.
+                Pra pagar menos que o total, edite o valor — o restante fica pendente na mesma conta pra pagar depois. Se o valor deste mês veio maior (reajuste), é só digitar o valor real — o "valor do serviço" desta conta é atualizado automaticamente.
               </p>
               {erroPagamento && <p className="text-xs text-red-500 text-center font-semibold">{erroPagamento}</p>}
 
