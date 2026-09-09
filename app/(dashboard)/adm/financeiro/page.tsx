@@ -871,6 +871,12 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                             {pago ? "Pago" : "Agendado"}
                           </span>
                           <span className="text-[13px] font-bold text-slate-700 flex-shrink-0 w-24 text-right tabular-nums">R$ {Number(c.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                          {!pago && (
+                            <button onClick={() => abrirEditar(c)} title="Editar valor deste mês"
+                              className="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-md transition flex-shrink-0">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </div>
                       );
                     })}
