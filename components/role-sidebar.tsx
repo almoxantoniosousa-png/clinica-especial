@@ -106,6 +106,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/adm/estoque-limpeza", label: "Materiais de Limpeza", icon: "🧴" },
     { href: "/mural",            label: "Mural",      icon: "📢" },
     { href: "/adm/protocolos",   label: "Protocolos", icon: "📜" },
+    { href: "/nao-conformidades", label: "Não Conformidades", icon: "⚠️" },
     { href: "/adm/legislacao",   label: "Legislação de Apoio", icon: "📚" },
     { href: "/ocorrencias",      label: "Ocorrência Diária", icon: "📓" },
     { href: "/reuniao",          label: "Reunião",    icon: "🗒️" },
@@ -121,7 +122,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   // dividido em 3 dropdowns nomeados por função (não um balde genérico
   // tipo "Geral"/"Mais") — formato validado com a usuária via protótipo.
   const HREFS_ADMIN_ROTINA = ["/adm/agenda-pessoal", "/escala", "/adm/criancas", "/adm/escolas", "/adm/responsaveis", "/ocorrencias", "/reuniao", "/mural", "/chat"];
-  const HREFS_ADMIN_SISTEMA = ["/adm/requisicoes", "/adm/patrimonio", "/adm/estoque-limpeza", "/adm/protocolos", "/adm/legislacao", "/adm/auditoria", "/gravacoes", "/ajuda", "/suporte-tecnico"];
+  const HREFS_ADMIN_SISTEMA = ["/adm/requisicoes", "/adm/patrimonio", "/adm/estoque-limpeza", "/adm/protocolos", "/nao-conformidades", "/adm/legislacao", "/adm/auditoria", "/gravacoes", "/ajuda", "/suporte-tecnico"];
   const menuAdminRotina = menuAdmin.filter((i) => HREFS_ADMIN_ROTINA.includes(i.href));
   const menuAdminSistema = menuAdmin.filter((i) => HREFS_ADMIN_SISTEMA.includes(i.href));
 
@@ -141,6 +142,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/mural",               label: "Mural",        icon: "📢" },
     { href: "/ocorrencias",         label: "Ocorrência Diária", icon: "📓" },
     { href: "/gestao/protocolos",   label: "Protocolos",   icon: "📜" },
+    { href: "/nao-conformidades",   label: "Não Conformidades", icon: "⚠️" },
     { href: "/legislacao",          label: "Legislação de Apoio", icon: "📚" },
     { href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" },
     { href: "/requisicoes",         label: "Requisições",  icon: "🛒" },
@@ -161,7 +163,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   // tamanho (20 itens).
   const HREFS_GESTAO_ATENDIMENTO = ["/gestao/entrevista-inicial", "/gestao/criancas", "/gestao/escolas", "/plano-terapeutico", "/adm/atendimentos-especialistas"];
   const HREFS_GESTAO_ROTINA = ["/escala", "/ocorrencias", "/mural", "/materiais-adaptados", "/requisicoes", "/patrimonio", "/gestao/comunicados"];
-  const HREFS_GESTAO_SISTEMA = ["/gestao/protocolos", "/legislacao", "/gestao/relatorios", "/reuniao", "/chat", "/gravacoes", "/ajuda", "/suporte-tecnico"];
+  const HREFS_GESTAO_SISTEMA = ["/gestao/protocolos", "/nao-conformidades", "/legislacao", "/gestao/relatorios", "/reuniao", "/chat", "/gravacoes", "/ajuda", "/suporte-tecnico"];
   const menuGestaoAtendimento = menuGestao.filter((i) => HREFS_GESTAO_ATENDIMENTO.includes(i.href));
   const menuGestaoRotina = menuGestao.filter((i) => HREFS_GESTAO_ROTINA.includes(i.href));
   const menuGestaoSistema = menuGestao.filter((i) => HREFS_GESTAO_SISTEMA.includes(i.href));
@@ -183,6 +185,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/escala",                       label: "Minha Escala",      icon: "📅" },
     ...(userFazAdaptado ? [{ href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" }] : []),
     { href: "/protocolos",                   label: "Protocolos",        icon: "📜" },
+    { href: "/nao-conformidades",            label: "Não Conformidades", icon: "⚠️" },
     { href: "/mural",                        label: "Mural",             icon: "📢" },
     { href: "/reuniao",                      label: "Reunião",           icon: "🗒️" },
     { href: "/chat",                         label: "Chat",              icon: "💬" },
@@ -193,6 +196,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const menuSupervisora = [
     ...(userContataFamilia ? [{ href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }] : []),
     { href: "/supervisora/relatorio",   label: "Registro ABC",      icon: "📝" },
+    { href: "/supervisora/agenda-simone", label: "Agenda Simone",   icon: "📆" },
     { href: "/plano-terapeutico",       label: "Plano Terapêutico", icon: "📋" },
     { href: "/ocorrencias",             label: "Ocorrência Diária", icon: "📓" },
     { href: "/escala",                label: "Escala",                 icon: "📅" },
@@ -200,6 +204,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
     { href: "/materiais-adaptados",     label: "Materiais Adaptados", icon: "📚" },
     { href: "/patrimonio",              label: "Reportar Defeito",  icon: "🔧" },
     { href: "/protocolos",              label: "Protocolos",        icon: "📜" },
+    { href: "/nao-conformidades",       label: "Não Conformidades", icon: "⚠️" },
     { href: "/legislacao",              label: "Legislação de Apoio", icon: "📚" },
     { href: "/mural",                   label: "Mural",             icon: "📢" },
     { href: "/reuniao",                 label: "Reunião",           icon: "🗒️" },
@@ -214,11 +219,11 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const menuSupervisoraInicial = userContataFamilia
     ? { href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }
     : { href: "/materiais-adaptados", label: "Materiais Adaptados", icon: "📚" };
-  const HREFS_SUP_CLINICO = ["/plano-terapeutico", "/ocorrencias", "/materiais-adaptados", "/protocolos", "/legislacao"];
+  const HREFS_SUP_CLINICO = ["/plano-terapeutico", "/ocorrencias", "/materiais-adaptados", "/protocolos", "/nao-conformidades", "/legislacao"];
   const HREFS_SUP_APOIO = ["/requisicoes", "/patrimonio", "/mural", "/reuniao", "/chat", "/ajuda", "/suporte-tecnico"];
   const menuSupervisoraClinico = menuSupervisora.filter((i) => HREFS_SUP_CLINICO.includes(i.href) && i.href !== menuSupervisoraInicial.href);
   const menuSupervisoraApoio = menuSupervisora.filter((i) => HREFS_SUP_APOIO.includes(i.href));
-  const paginaAtualSup = [menuSupervisoraInicial, { href: "/supervisora/relatorio", label: "Registro ABC", icon: "📝" }, { href: "/escala", label: "Escala", icon: "📅" }, ...menuSupervisoraClinico, ...menuSupervisoraApoio]
+  const paginaAtualSup = [menuSupervisoraInicial, { href: "/supervisora/relatorio", label: "Registro ABC", icon: "📝" }, { href: "/supervisora/agenda-simone", label: "Agenda Simone", icon: "📆" }, { href: "/escala", label: "Escala", icon: "📅" }, ...menuSupervisoraClinico, ...menuSupervisoraApoio]
     .find((i) => pathname === i.href);
 
   const menuEspecialista = [
@@ -680,6 +685,11 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
                   ${pathname === "/supervisora/relatorio" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
                 <span className="text-sm leading-none">📝</span><span>Registro ABC</span>
+              </Link>
+              <Link href="/supervisora/agenda-simone"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/supervisora/agenda-simone" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">📆</span><span>Agenda Simone</span>
               </Link>
               <Link href="/escala"
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200

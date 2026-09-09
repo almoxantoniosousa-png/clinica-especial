@@ -55,6 +55,11 @@ const ADM: AjudaConteudo = {
       reflexo: "O protocolo criado aqui aparece na tela Protocolos de cada cargo escolhido — cada pessoa precisa abrir e confirmar a leitura, e você acompanha aqui quem já confirmou."
     },
     {
+      icone: "⚠️", titulo: "Não Conformidades", mockup: "lista-cards",
+      texto: "Registro objetivo de quando uma AT não seguiu algo previsto no Protocolo de Conduta — data do fato, item do protocolo, descrição concreta e anexo opcional (foto/print). Clique em \"Nova notificação\" para registrar.\n\nDepois de criado, o registro fica travado (não dá pra editar nem apagar, pra preservar o histórico). A AT recebe o registro na área dela e precisa confirmar ciência assinando na tela. Use \"Exportar dossiê em PDF\" (com uma AT selecionada no filtro) pra baixar o histórico completo dela, caso precise embasar uma decisão de não renovar o contrato.",
+      reflexo: "A AT vê o registro na própria tela de Não Conformidades e precisa assinar confirmando ciência — até assinar, o registro fica marcado como \"Aguardando ciência\"."
+    },
+    {
       icone: "📓", titulo: "Ocorrência Diária", mockup: "lista-cards",
       texto: "Registro dos acontecimentos fora da normalidade do dia a dia da clínica — substitui o caderno físico usado até 21/07/2026 (ocorrências anteriores a essa data continuam só no livro físico). Escolha a data (padrão é hoje, mas dá pra voltar pra um dia anterior esquecido) e clique em \"Começar ocorrências\" pra abrir o registro do dia, e vá adicionando quantas ocorrências quiser ao longo do dia (cada uma com horário, texto livre e foto opcional). Se esse dia já tiver sido aberto por você (mas ainda não assinado), o botão \"+ Adicionar ocorrência neste dia\" no card dele reabre a adição. Dá pra editar ou excluir qualquer ocorrência do dia enquanto ele ainda não foi assinado.\n\n✍️ Assinatura: no final do dia, assine uma vez só pra fechar o registro — usa a mesma assinatura salva de outras telas do sistema (ou desenha na hora, na primeira vez). Depois de assinado, o dia fecha: nenhuma ocorrência daquele dia pode mais ser editada, excluída ou adicionada.\n\n🔍 Use a busca para encontrar dias antigos por texto ou autor, o campo de data pra pular direto pra um dia exato, e os filtros de ano/mês/dia da semana pra ver um período mais amplo. O botão \"Imprimir\" gera uma versão em papel de todo o histórico.\n\n👁️ Você vê os registros feitos pela Administração e pela Aux. Administrativa (e os seus). Os registros da Supervisora não aparecem aqui — só a Gestão (Simone) vê tudo.",
       reflexo: "A Gestão recebe uma notificação quando você fecha (assina) o dia, mas só pode visualizar — não cria, edita nem assina."
@@ -138,7 +143,7 @@ const GESTAO: AjudaConteudo = {
     {
       icone: "🗓️", titulo: "Minha Agenda", mockup: "agenda-semana",
       texto: "Sua agenda semanal pessoal de compromissos (treinos, atendimentos, reuniões etc.), organizada de segunda a domingo. Use as setas para navegar entre semanas.\n\nPara cada compromisso pendente, clique em \"Realizado\" ou \"Não realizei\" (que abre um campo opcional para escrever um recado, enviado automaticamente pelo chat para a auxiliar administrativa). Use \"Desfazer\" se marcar algo por engano.",
-      reflexo: "Os compromissos desta agenda também podem ser cadastrados/editados pela Auxiliar Administrativa em \"Agenda Simone\". Quando você marca \"Não realizei\", o recado é enviado automaticamente pelo Chat para ela organizar a remarcação."
+      reflexo: "Os compromissos desta agenda também podem ser cadastrados/editados pela Auxiliar Administrativa e pela Supervisora Raquel, ambas em \"Agenda Simone\". Quando você marca \"Não realizei\", o recado é enviado automaticamente pelo Chat para a Auxiliar Administrativa organizar a remarcação."
     },
     {
       icone: "📋", titulo: "Entrevista Inicial", mockup: "lista-cards",
@@ -172,6 +177,11 @@ const GESTAO: AjudaConteudo = {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
       texto: "Documentos com diretrizes de conduta para cada cargo da clínica (Especialista, AT, Supervisora, Auxiliar Administrativo, Gestão, Financeiro etc.). Cada protocolo aparece fechado na lista — clique no card pra abrir e ver os botões de ação.\n\nClique em \"Novo Protocolo\" para criar um (escolha um ou mais cargos, título e conteúdo — se o mesmo protocolo vale pra vários cargos, marque todos de uma vez em vez de cadastrar repetido). Use \"Enviar\" para mandar pelo chat, \"Imprimir\" para gerar uma versão em PDF com campos de assinatura, e acompanhe quem já confirmou a leitura de cada protocolo.",
       reflexo: "O protocolo criado aqui aparece na tela Protocolos de cada cargo escolhido — cada pessoa precisa abrir e confirmar a leitura, e você acompanha aqui quem já confirmou."
+    },
+    {
+      icone: "⚠️", titulo: "Não Conformidades", mockup: "lista-cards",
+      texto: "Registro objetivo de quando uma AT não seguiu algo previsto no Protocolo de Conduta — data do fato, item do protocolo, descrição concreta e anexo opcional (foto/print). Clique em \"Nova notificação\" para registrar.\n\nDepois de criado, o registro fica travado (não dá pra editar nem apagar, pra preservar o histórico). A AT recebe o registro na área dela e precisa confirmar ciência assinando na tela. Use \"Exportar dossiê em PDF\" (com uma AT selecionada no filtro) pra baixar o histórico completo dela, caso precise embasar uma decisão de não renovar o contrato.",
+      reflexo: "A AT vê o registro na própria tela de Não Conformidades e precisa assinar confirmando ciência — até assinar, o registro fica marcado como \"Aguardando ciência\"."
     },
     {
       icone: "📈", titulo: "Relatórios", mockup: "tabela",
@@ -245,6 +255,11 @@ const SUPERVISORA: AjudaConteudo = {
       reflexo: "A Gestão (Simone) vê e pode responder pelo lado dela em Relatórios — você recebe uma notificação quando ela deixa um feedback."
     },
     {
+      icone: "🗓️", titulo: "Agenda Simone", mockup: "agenda-semana",
+      texto: "A pedido da Simone (Gestão), você tem acesso completo à agenda pessoal dela — a mesma tela que a Auxiliar Administrativa já usa. Está dividida em dois grupos:\n\n• 🏥 Agenda da Clínica — Atendimento (escolha o local: Clínica, Casa ou Escola, dentro do formulário), Treinamento, Supervisão.\n\n• 🤍 Agenda Pessoal — Espiritual, Atividade Física, Médico, Salão, Pet, Feriado/Livre.\n\nClique num card pra abrir o formulário de novo compromisso (data, horário e \"com quem/o quê\"). Abaixo, veja a semana inteira com os compromissos já cadastrados; use \"Editar\"/lixeira pra editar ou excluir. Compromissos marcados como \"não realizados\" aparecem em vermelho com um recado pedindo remarcação.\n\nUse \"Copiar pauta\" para gerar um texto com toda a agenda da semana, pronto para colar no WhatsApp.",
+      reflexo: "Os compromissos cadastrados ou editados aqui aparecem também em \"Minha Agenda\" da própria Simone e em \"Agenda Simone\" da Auxiliar Administrativa — é a mesma agenda vista por todo mundo com acesso a ela."
+    },
+    {
       icone: "📋", titulo: "Plano Terapêutico", mockup: "lista-cards",
       texto: "Você e a Gestão cadastram aqui o plano definido em reunião (as Especialistas participam da reunião, mas não mexem nessa tela). Clique em \"Novo plano\", escolha a criança, a data, quem participou, e adicione os comportamentos-alvo com a definição de cada um, as estratégias gerais recomendadas e, se quiser, fotos da reunião.\n\nUse o histórico de Registros ABC que você já vem preenchendo como base — normalmente essa reunião acontece depois de já ter acumulado algumas observações sobre a criança.",
       reflexo: "A Especialista consegue visualizar o plano depois de pronto, mas não edita."
@@ -263,6 +278,11 @@ const SUPERVISORA: AjudaConteudo = {
       icone: "📜", titulo: "Protocolos", mockup: "protocolos",
       texto: "Diretrizes de conduta da sua função. Abra um protocolo, leia o conteúdo e clique em \"Confirmar leitura\" para registrar que está ciente.",
       reflexo: "Ao confirmar a leitura, o ADM passa a ver seu nome na lista de confirmações desse protocolo."
+    },
+    {
+      icone: "⚠️", titulo: "Não Conformidades", mockup: "lista-cards",
+      texto: "Registro de quando uma AT não seguiu algo previsto no Protocolo de Conduta. Clique em \"Nova notificação\" pra registrar (data do fato, item do protocolo e descrição objetiva). A AT recebe o registro na área dela e confirma ciência assinando na tela.",
+      reflexo: "A AT vê o registro e precisa assinar confirmando ciência — o registro fica travado depois de criado, não dá pra editar nem apagar."
     },
     {
       icone: "📢", titulo: "Mural", mockup: "mural",
@@ -401,6 +421,11 @@ const ATENDENTE: AjudaConteudo = {
       reflexo: "Ao confirmar a leitura, o ADM passa a ver seu nome (e a data) na lista de confirmações desse protocolo."
     },
     {
+      icone: "⚠️", titulo: "Não Conformidades", mockup: "lista-cards",
+      texto: "Se você não seguiu algo previsto no Protocolo de Conduta, a Supervisão/Gestão/ADM pode registrar aqui, com data e descrição do que aconteceu. Você vê o registro nesta tela e precisa confirmar ciência desenhando sua assinatura — depois de assinado, fica registrado com a data e hora.",
+      reflexo: "A partir do momento que você assina, a Supervisão/Gestão/ADM vê que você tomou ciência. O registro não pode ser apagado nem por você nem por quem criou."
+    },
+    {
       icone: "📢", titulo: "Mural", mockup: "mural",
       texto: "Mural de avisos da equipe. Os avisos fixados (📌) aparecem sempre no topo. Tela de consulta — você só vê os avisos \"Para todos\" e os endereçados especificamente a você (pelo seu perfil ou pelo seu nome)."
     },
@@ -476,7 +501,7 @@ const AUX_ADM: AjudaConteudo = {
     {
       icone: "🗓️", titulo: "Agenda Simone", mockup: "agenda-semana",
       texto: "Organize a agenda semanal da diretora, dividida em dois grupos:\n\n• 🏥 Agenda da Clínica — Atendimento (escolha o local: Clínica, Casa ou Escola, dentro do formulário), Treinamento, Supervisão.\n\n• 🤍 Agenda Pessoal — Espiritual, Atividade Física, Médico, Salão, Pet, Feriado/Livre.\n\nClique num card pra abrir o formulário de novo compromisso (data, horário e \"com quem/o quê\" — pra reunião, é só escrever no título de qualquer categoria). Abaixo, veja a semana inteira com os compromissos já cadastrados; use \"Editar\"/lixeira pra editar ou excluir. Compromissos marcados como \"não realizados\" aparecem em vermelho com um recado pedindo remarcação.\n\nUse \"Copiar pauta\" para gerar um texto com toda a agenda da semana, pronto para colar no WhatsApp.",
-      reflexo: "Os compromissos cadastrados aqui aparecem em \"Minha Agenda\" da Simone (Gestão); quando ela marcar um compromisso como \"Não realizei\", você recebe o recado automaticamente pelo Chat para organizar a remarcação."
+      reflexo: "Os compromissos cadastrados aqui aparecem em \"Minha Agenda\" da Simone (Gestão) e também em \"Agenda Simone\" da Supervisora Raquel, que tem o mesmo acesso; quando a Simone marcar um compromisso como \"Não realizei\", você recebe o recado automaticamente pelo Chat para organizar a remarcação."
     },
     {
       icone: "👶", titulo: "Crianças", mockup: "lista-cards",
