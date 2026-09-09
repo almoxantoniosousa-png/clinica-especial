@@ -228,8 +228,8 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
 
   const menuEspecialista = [
     { href: "/especialista/escala",      label: "Minha Escala", icon: "📅" },
-    { href: "/especialista/relatorio",   label: "Prontuário",   icon: "📋" },
-    { href: "/especialista/prontuarios", label: "Relatório",    icon: "📝" },
+    { href: "/especialista/relatorio",   label: "Novo Prontuário", icon: "📋" },
+    { href: "/especialista/prontuarios", label: "Histórico",    icon: "📝" },
     { href: "/plano-terapeutico",        label: "Plano Terapêutico", icon: "📋" },
     { href: "/requisicoes",              label: "Requisições",  icon: "🛒" },
     { href: "/patrimonio",               label: "Reportar Defeito", icon: "🔧" },

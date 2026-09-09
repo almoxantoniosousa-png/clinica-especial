@@ -326,12 +326,12 @@ const ESPECIALISTA: AjudaConteudo = {
       reflexo: "O que você marca aqui (P/F/FJ) aparece na tela \"Atendimentos Especialistas\" da Gestão e do Financeiro, usada como referência pra saber quanto pagar no mês."
     },
     {
-      icone: "📋", titulo: "Prontuário", mockup: "form-simples",
+      icone: "📋", titulo: "Novo Prontuário", mockup: "form-simples",
       texto: "Registro diário de cada sessão (\"Prontuário de Atendimento\"). Escolha a criança, a data e o tipo de sessão (Sessão, Avaliação ou Reunião), descreva o objetivo do atendimento e preencha os campos Avaliação, Resultados, Intervenção, Avanços e Conclusão.\n\nClique em \"Salvar e Enviar Prontuário\" para enviar para a Supervisora e a Gestão.\n\nDica: preencha os campos com asterisco (*) logo após cada sessão, enquanto os detalhes ainda estão frescos.",
       reflexo: "O prontuário enviado aqui aparece na tela Relatórios da Supervisora e da Gestão para acompanhamento."
     },
     {
-      icone: "📝", titulo: "Relatório", mockup: "tabela",
+      icone: "📝", titulo: "Histórico", mockup: "tabela",
       texto: "Lista/histórico de tudo que você já enviou (prontuários e relatórios), com filtros por criança e por tipo. Clique em um item para abrir e ver os detalhes.\n\nUse \"+ Prontuário\" para ir ao registro diário de sessão (fica interno, não vai para a família), ou \"+ Relatório\" para preencher um Relatório de Evolução completo (período, evolução geral, objetivos trabalhados/alcançados, dificuldades e recomendações) — use este quando quiser registrar a evolução da criança para a família ficar sabendo.",
       reflexo: "O Relatório de Evolução enviado aqui aparece na tela Relatórios da Gestão e na aba Evolução da Supervisora, que revisa o conteúdo e decide quando enviar para a família no Portal."
     },
