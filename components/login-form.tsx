@@ -57,8 +57,17 @@ export function LoginForm() {
     setEnviandoRecuperacao(true);
     setFeedbackRecuperacao(null);
     const supabase = createSupabaseBrowserClient();
+    // Cada publicação no Vercel gera uma URL nova com hash aleatório — se o
+    // link de redefinição apontar pra uma dessas URLs "de passagem", o
+    // Supabase não reconhece o destino como autorizado e o link de
+    // recuperação simplesmente cai no login normal, sem ativar a troca de
+    // senha. Por isso usamos sempre o endereço fixo em produção (só em
+    // localhost, durante desenvolvimento, usamos a origem atual mesmo).
+    const origemFixa = window.location.hostname === "localhost"
+      ? window.location.origin
+      : "https://clinica-especial-antonio-1d34c3f0.vercel.app";
     const { error } = await supabase.auth.resetPasswordForEmail(emailRecuperacao, {
-      redirectTo: window.location.origin + "/login",
+      redirectTo: origemFixa + "/login",
     });
     setEnviandoRecuperacao(false);
     if (error) {
