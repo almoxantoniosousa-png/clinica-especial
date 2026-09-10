@@ -56,6 +56,26 @@ const FORM_VAZIO = {
   itensAcao: [{ ...ITEM_ACAO_VAZIO }] as ItemAcao[],
 };
 
+// Rascunho da ata em criação, salvo no navegador enquanto a pessoa digita —
+// se a página fechar ou o modal fechar sem querer (ex: toque acidental fora
+// dele), o texto não some: reabrindo "Nova ata" o rascunho volta sozinho.
+const RASCUNHO_KEY = "reuniao_rascunho_nova_ata";
+
+function lerRascunho(): typeof FORM_VAZIO | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const salvo = window.localStorage.getItem(RASCUNHO_KEY);
+    return salvo ? JSON.parse(salvo) : null;
+  } catch {
+    return null;
+  }
+}
+
+function limparRascunho() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(RASCUNHO_KEY);
+}
+
 export default function ReuniaoPage() {
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
@@ -77,6 +97,7 @@ export default function ReuniaoPage() {
 
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState(FORM_VAZIO);
+  const [rascunhoRestaurado, setRascunhoRestaurado] = useState(false);
   const [novoAvulso, setNovoAvulso] = useState<Record<string, string>>({});
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -188,10 +209,27 @@ export default function ReuniaoPage() {
   }
 
   function abrirNovo() {
-    setForm(FORM_VAZIO);
+    const rascunho = lerRascunho();
+    setForm(rascunho || FORM_VAZIO);
+    setRascunhoRestaurado(!!rascunho);
     setErro("");
     setModalAberto(true);
   }
+
+  function comecarDoZero() {
+    limparRascunho();
+    setForm(FORM_VAZIO);
+    setRascunhoRestaurado(false);
+  }
+
+  // Salva o rascunho a cada mudança, enquanto o modal estiver aberto — é
+  // isso que garante que um fechamento acidental não perde o que já foi
+  // digitado.
+  useEffect(() => {
+    if (!modalAberto) return;
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(RASCUNHO_KEY, JSON.stringify(form));
+  }, [form, modalAberto]);
 
   function togglePessoa(email: string) {
     setForm(f => ({
@@ -295,6 +333,7 @@ export default function ReuniaoPage() {
       );
     }
 
+    limparRascunho();
     setModalAberto(false);
     carregar();
   }
@@ -563,6 +602,14 @@ export default function ReuniaoPage() {
               </button>
             </div>
             <div className="overflow-y-auto flex-1 p-6 space-y-4">
+              {rascunhoRestaurado && (
+                <div className="flex items-center justify-between gap-3 text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-3 py-2.5">
+                  <span>📝 Recuperamos automaticamente o que você tinha digitado antes.</span>
+                  <button type="button" onClick={comecarDoZero} className="font-semibold underline hover:text-amber-900 flex-shrink-0">
+                    Começar do zero
+                  </button>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Título</label>
                 <input value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
