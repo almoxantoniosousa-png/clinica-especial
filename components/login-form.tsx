@@ -61,11 +61,12 @@ export function LoginForm() {
     // link de redefinição apontar pra uma dessas URLs "de passagem", o
     // Supabase não reconhece o destino como autorizado e o link de
     // recuperação simplesmente cai no login normal, sem ativar a troca de
-    // senha. Por isso usamos sempre o endereço fixo em produção (só em
-    // localhost, durante desenvolvimento, usamos a origem atual mesmo).
+    // senha. Por isso usamos sempre o endereço fixo em produção (o mesmo já
+    // cadastrado nas Redirect URLs do Supabase) — só em localhost, durante
+    // desenvolvimento, usamos a origem atual mesmo.
     const origemFixa = window.location.hostname === "localhost"
       ? window.location.origin
-      : "https://clinica-especial-antonio-1d34c3f0.vercel.app";
+      : "https://clinica-especial.vercel.app";
     const { error } = await supabase.auth.resetPasswordForEmail(emailRecuperacao, {
       redirectTo: origemFixa + "/login",
     });
