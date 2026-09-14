@@ -1453,7 +1453,13 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
 
   async function salvar() {
     if (!criancaId) { mostrarFeedback("erro", "Selecione a criança."); return; }
-    if (especialidades.some(e => {
+    // Ignora linhas deixadas em branco (sobra de um "+ Adicionar" nao
+    // preenchido) em vez de travar o salvamento por causa delas.
+    const especialidadesPreenchidas = especialidades.filter(e => e.especialidade || e.valor_sessao);
+    if (especialidadesPreenchidas.length === 0) {
+      mostrarFeedback("erro", "Adicione ao menos uma especialidade."); return;
+    }
+    if (especialidadesPreenchidas.some(e => {
       if (!e.valor_sessao) return true;
       if ((e.unidade || "sessao") !== "credito") return !e.especialidade || !e.qtd;
       return false;
@@ -1461,7 +1467,7 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
       mostrarFeedback("erro", "Preencha ao menos o valor de cada especialidade (especialidade e quantidade são obrigatórias só quando não for crédito)."); return;
     }
     setSalvando(true);
-    const espComSubtotal = especialidades.map(e => {
+    const espComSubtotal = especialidadesPreenchidas.map(e => {
       const unidade = e.unidade || "sessao";
       const qtd = qtdEfetiva(e);
       return {
