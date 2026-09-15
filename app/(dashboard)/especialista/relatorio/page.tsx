@@ -188,7 +188,7 @@ export default function ProntuarioPage() {
           {/* Criança + Data + Tipo */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-1 space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Estudante *</label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Criança *</label>
               <select value={criancaId} onChange={e => setCriancaId(e.target.value)}
                 className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                 <option value="">Selecione...</option>

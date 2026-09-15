@@ -359,7 +359,7 @@ export default function RelatorioPage() {
             <div className="overflow-y-auto p-5 space-y-4 flex-1">
               {/* Criança */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-500 uppercase">Estudante *</label>
+                <label className="text-xs font-semibold text-slate-500 uppercase">Criança *</label>
                 <select value={rCriancaId} onChange={e => setRCriancaId(e.target.value)}
                   className="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500">
                   <option value="">Selecione...</option>
