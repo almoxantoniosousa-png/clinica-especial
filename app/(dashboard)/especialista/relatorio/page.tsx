@@ -18,10 +18,14 @@ export default function ProntuarioPage() {
   const [tipoSessao, setTipoSessao] = useState("sessao");
   const [objetivoAtendimento, setObjetivoAtendimento] = useState("");
   const [avaliacao, setAvaliacao] = useState("");
+  const [comportamentoInterferente, setComportamentoInterferente] = useState("");
   const [resultado, setResultado] = useState("");
   const [intervencao, setIntervencao] = useState("");
   const [avancos, setAvancos] = useState("");
   const [conclusao, setConclusao] = useState("");
+  const [foto1, setFoto1] = useState<File | null>(null);
+  const [foto2, setFoto2] = useState<File | null>(null);
+  const [enviandoFotos, setEnviandoFotos] = useState(false);
 
   const criancaSelecionada = useMemo(
     () => criancas.find(c => c.id === criancaId),
@@ -64,10 +68,24 @@ export default function ProntuarioPage() {
       return;
     }
     setSalvando(true);
+
+    // Fotos são opcionais — sobe até 2, se a especialista anexou.
+    setEnviandoFotos(true);
+    const fotos: string[] = [];
+    for (const foto of [foto1, foto2]) {
+      if (!foto) continue;
+      const ext = foto.name.split(".").pop();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("prontuarios-fotos").upload(path, foto);
+      if (!upErr) fotos.push(supabase.storage.from("prontuarios-fotos").getPublicUrl(path).data.publicUrl);
+    }
+    setEnviandoFotos(false);
+
     const conteudo = {
       tipo_sessao: tipoSessao,
       objetivo_atendimento: objetivoAtendimento,
-      avaliacao, resultado, intervencao, avancos, conclusao,
+      avaliacao, comportamento_interferente: comportamentoInterferente, resultado, intervencao, avancos, conclusao,
+      fotos,
       data_sessao: data,
       especialidade: autor?.especialidade || "",
     };
@@ -107,18 +125,33 @@ export default function ProntuarioPage() {
       ]);
       mostrarFeedback("sucesso", "Prontuário salvo e enviado para Supervisora e Gestão!");
       setCriancaId(""); setObjetivoAtendimento(""); setAvaliacao("");
+      setComportamentoInterferente("");
       setResultado(""); setIntervencao(""); setAvancos(""); setConclusao("");
+      setFoto1(null); setFoto2(null);
       setTipoSessao("sessao");
       setData(hojeLocal());
     }
   }
 
   const campos = [
-    { key: "avaliacao",   label: "Avaliação",   dica: "Como a criança chegou? Estado inicial da sessão",        valor: avaliacao,   set: setAvaliacao,   cor: "border-blue-300 focus:ring-blue-500",     badge: "bg-blue-100 text-blue-700" },
-    { key: "resultado",   label: "Resultados",  dica: "O que foi identificado? Qual o desempenho observado?",   valor: resultado,   set: setResultado,   cor: "border-amber-300 focus:ring-amber-500",   badge: "bg-amber-100 text-amber-700" },
-    { key: "intervencao", label: "Intervenção", dica: "O que foi feito para a criança adquirir a habilidade?",  valor: intervencao, set: setIntervencao, cor: "border-purple-300 focus:ring-purple-500",  badge: "bg-purple-100 text-purple-700" },
-    { key: "avancos",     label: "Avanços",     dica: "O que está avançando ou melhorando?",                   valor: avancos,     set: setAvancos,     cor: "border-emerald-300 focus:ring-emerald-500",badge: "bg-emerald-100 text-emerald-700" },
-    { key: "conclusao",   label: "Conclusão",   dica: "Conclusão da sessão e próximos passos",                  valor: conclusao,   set: setConclusao,   cor: "border-slate-300 focus:ring-slate-500",   badge: "bg-slate-100 text-slate-700" },
+    { key: "avaliacao",   label: "Registro da Sessão", obrigatorio: true,
+      dica: "Como chegou para o atendimento? Participou, foi colaborativo? Quais necessidades programadas conseguiu trabalhar?",
+      valor: avaliacao, set: setAvaliacao, cor: "border-blue-300 focus:ring-blue-500", badge: "bg-blue-100 text-blue-700" },
+    { key: "comportamento_interferente", label: "Comportamento Interferente", obrigatorio: false,
+      dica: "Apresentou algum comportamento interferente? Qual? Em que momento, realizando qual atividade? Que manejo foi feito — o que você fez ou falou? Qual a reação do aprendiz? (deixe em branco se não houve)",
+      valor: comportamentoInterferente, set: setComportamentoInterferente, cor: "border-red-300 focus:ring-red-500", badge: "bg-red-100 text-red-700" },
+    { key: "intervencao", label: "Intervenção", obrigatorio: true,
+      dica: "Sobre a proposta de intervenção pra sessão, o que conseguiu aplicar?",
+      valor: intervencao, set: setIntervencao, cor: "border-purple-300 focus:ring-purple-500", badge: "bg-purple-100 text-purple-700" },
+    { key: "avancos",     label: "Avanços", obrigatorio: true,
+      dica: "O que está avançando ou melhorando?",
+      valor: avancos, set: setAvancos, cor: "border-emerald-300 focus:ring-emerald-500", badge: "bg-emerald-100 text-emerald-700" },
+    { key: "conclusao",   label: "Conclusão", obrigatorio: true,
+      dica: "Conclusão da sessão e próximos passos",
+      valor: conclusao, set: setConclusao, cor: "border-slate-300 focus:ring-slate-500", badge: "bg-slate-100 text-slate-700" },
+    { key: "resultado",   label: "Resultados", obrigatorio: true,
+      dica: "O que foi identificado? Qual o desempenho observado?",
+      valor: resultado, set: setResultado, cor: "border-amber-300 focus:ring-amber-500", badge: "bg-amber-100 text-amber-700" },
   ];
 
   return (
@@ -198,7 +231,7 @@ export default function ProntuarioPage() {
           {campos.map(campo => (
             <div key={campo.key} className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${campo.badge}`}>{campo.label} *</span>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${campo.badge}`}>{campo.label}{campo.obrigatorio ? " *" : " (opcional)"}</span>
                 <span className="text-xs text-slate-400">{campo.dica}</span>
               </div>
               <textarea value={campo.valor} onChange={e => campo.set(e.target.value)}
@@ -207,6 +240,19 @@ export default function ProntuarioPage() {
             </div>
           ))}
 
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">Fotos (opcional)</span>
+              <span className="text-xs text-slate-400">Até 2 fotos da criança em atividade</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input type="file" accept="image/*" onChange={e => setFoto1(e.target.files?.[0] || null)}
+                className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-600 file:text-xs file:font-semibold border border-slate-200 rounded-xl p-1.5 bg-white"/>
+              <input type="file" accept="image/*" onChange={e => setFoto2(e.target.files?.[0] || null)}
+                className="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-600 file:text-xs file:font-semibold border border-slate-200 rounded-xl p-1.5 bg-white"/>
+            </div>
+          </div>
+
           <div className="bg-blue-50 rounded-xl px-4 py-3 text-xs text-blue-600 border border-blue-100 flex items-center gap-2">
             <span>📤</span>
             Este prontuário será enviado automaticamente para Supervisora e Gestão.
@@ -214,7 +260,7 @@ export default function ProntuarioPage() {
 
           <button onClick={salvar} disabled={salvando || !camposPreenchidos}
             className="w-full h-12 bg-blue-900 hover:bg-blue-800 text-white font-bold text-sm rounded-xl transition active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
-            {salvando ? "Salvando..." : "Salvar e Enviar Prontuário"}
+            {salvando ? (enviandoFotos ? "Enviando fotos..." : "Salvando...") : "Salvar e Enviar Prontuário"}
           </button>
         </div>
       </div>

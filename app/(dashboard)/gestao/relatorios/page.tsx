@@ -97,11 +97,12 @@ export default function GestaoRelatoriosPage() {
   }
 
   const campos = [
-    { key: "avaliacao",   label: "Avaliação",    badge: "bg-blue-100 text-blue-700" },
-    { key: "resultado",   label: "Resultados",   badge: "bg-amber-100 text-amber-700" },
+    { key: "avaliacao",   label: "Registro da Sessão",         badge: "bg-blue-100 text-blue-700" },
+    { key: "comportamento_interferente", label: "Comportamento Interferente", badge: "bg-red-100 text-red-700" },
     { key: "intervencao", label: "Intervenção",  badge: "bg-purple-100 text-purple-700" },
     { key: "avancos",     label: "Avanços",      badge: "bg-emerald-100 text-emerald-700" },
     { key: "conclusao",   label: "Conclusão",    badge: "bg-slate-100 text-slate-700" },
+    { key: "resultado",   label: "Resultados",   badge: "bg-amber-100 text-amber-700" },
   ];
 
   return (
@@ -315,6 +316,15 @@ export default function GestaoRelatoriosPage() {
                             <p className="text-sm text-slate-700 leading-relaxed mt-2">{conteudo[campo.key]}</p>
                           </div>
                         ) : null)}
+                        {Array.isArray(conteudo.fotos) && conteudo.fotos.length > 0 && (
+                          <div className="flex gap-2 flex-wrap">
+                            {conteudo.fotos.map((url: string, i: number) => (
+                              <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                                <img src={url} alt={`Foto ${i + 1} da sessão`} className="w-24 h-24 object-cover rounded-xl border border-slate-200" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       {!campos.some(c => conteudo[c.key]) && !conteudo.texto && !conteudo.comportamentos_alvo && (
