@@ -8,7 +8,7 @@ import { hojeLocal, mesAtualLocal } from "@/lib/dataUtils";
 import { gerarDespesasRecorrentesPendentes } from "@/lib/despesasRecorrentes";
 import { Valor } from "@/contexts/valores-visiveis-context";
 
-type Aba = "contas_pagar" | "contas_receber" | "fluxo" | "emprestimos";
+type Aba = "contas_pagar" | "contas_receber" | "valores" | "fluxo" | "emprestimos";
 type SupabaseClient = ReturnType<typeof createSupabaseBrowserClient>;
 
 const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -96,13 +96,15 @@ export default function FinanceiroPage() {
   const todasAbas = [
     { id: "contas_pagar",   label: "Contas a Pagar",  icon: "📤" },
     { id: "contas_receber", label: "Contas a Receber", icon: "📥" },
+    { id: "valores",        label: "Tabela de Valores", icon: "🏷️" },
     { id: "fluxo",          label: "Fluxo de Caixa",  icon: "📊" },
     { id: "emprestimos",    label: "Empréstimos",     icon: "🤝" },
   ];
-  // aux_adm só enxerga Faturamento (contas a pagar/receber) — fluxo de caixa e
-  // empréstimos de colaboradores ficam restritos ao ADM/Gestão/Financeiro.
+  // aux_adm só enxerga Faturamento (contas a pagar/receber + a tabela de
+  // valores que alimenta a fatura) — fluxo de caixa e empréstimos de
+  // colaboradores ficam restritos ao ADM/Gestão/Financeiro.
   const abas = role === "aux_adm"
-    ? todasAbas.filter(a => a.id === "contas_pagar" || a.id === "contas_receber")
+    ? todasAbas.filter(a => ["contas_pagar", "contas_receber", "valores"].includes(a.id))
     : todasAbas;
 
   return (
@@ -145,6 +147,7 @@ export default function FinanceiroPage() {
       {/* CONTEUDO */}
       {aba === "contas_pagar"   && <AbaContasPagar   supabase={supabase} mesAno={mesAno} mostrarFeedback={mostrarFeedback} role={role}/>}
       {aba === "contas_receber" && <AbaContasReceber supabase={supabase} mesAno={mesAno} mostrarFeedback={mostrarFeedback}/>}
+      {aba === "valores"        && <AbaValores       supabase={supabase} mostrarFeedback={mostrarFeedback}/>}
       {aba === "fluxo"          && <AbaFluxo         supabase={supabase} mesAno={mesAno}/>}
       {aba === "emprestimos"    && <AbaEmprestimos   supabase={supabase} mostrarFeedback={mostrarFeedback}/>}
     </div>
@@ -1394,6 +1397,19 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     if (criancaSelecionada && !editandoId) setPlano(criancaSelecionada.plano_saude || "");
   }, [criancaId]);
 
+  // Valores já cadastrados na Tabela de Valores pra essa criança — usados
+  // pra preencher sozinho o "Valor" quando a especialidade é escolhida.
+  const [precosCrianca, setPrecosCrianca] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!criancaId) { setPrecosCrianca({}); return; }
+    (async () => {
+      const { data } = await supabase.from("precos_atendimento").select("especialidade, valor_sessao").eq("crianca_id", criancaId);
+      const mapa: Record<string, string> = {};
+      (data || []).forEach((p: any) => { mapa[p.especialidade] = String(p.valor_sessao); });
+      setPrecosCrianca(mapa);
+    })();
+  }, [criancaId]);
+
   // No modo "crédito", Qtd é opcional — sem Qtd preenchida, o valor digitado
   // já é o subtotal da linha (Qtd conta como 1 pro cálculo).
   function qtdEfetiva(e: ItemEsp): number {
@@ -1415,7 +1431,17 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
     setEspecialidades(prev => prev.filter((_, idx) => idx !== i));
   }
   function updateEspecialidade(i: number, field: keyof ItemEsp, value: string) {
-    setEspecialidades(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: value } : e));
+    setEspecialidades(prev => prev.map((e, idx) => {
+      if (idx !== i) return e;
+      const atualizado = { ...e, [field]: value };
+      // Ao escolher a especialidade, puxa o valor já cadastrado na Tabela de
+      // Valores pra essa criança — só se o campo valor ainda estiver vazio,
+      // pra nunca sobrescrever algo que a pessoa já digitou na mão.
+      if (field === "especialidade" && !e.valor_sessao && precosCrianca[value]) {
+        atualizado.valor_sessao = precosCrianca[value];
+      }
+      return atualizado;
+    }));
   }
 
   function resetForm() {
@@ -1960,6 +1986,156 @@ function AbaContasReceber({ supabase, mesAno, mostrarFeedback }: AbaProps) {
               <button onClick={salvar} disabled={salvando}
                 className="flex-1 h-11 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold transition disabled:opacity-50">
                 {salvando ? "Salvando..." : editandoId ? "Salvar alterações" : "Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================
+// ABA TABELA DE VALORES
+// =============================================
+type PrecoAtendimento = { id: string; crianca_id: string; especialidade: string; valor_sessao: number };
+const ESPECIALIDADES_OPCOES = ["ABA", "Artes", "Capoeira", "Fisioterapia", "Fonoaudiologia", "Pedagoga", "Psicologia", "Psicopedagogia", "Psicomotricidade", "Terapia Ocupacional"];
+
+function AbaValores({ supabase, mostrarFeedback }: AbaSemMesProps) {
+  const [criancas, setCriancas] = useState<CriancaSimples[]>([]);
+  const [precos, setPrecos] = useState<PrecoAtendimento[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busca, setBusca] = useState("");
+  const [editandoCriancaId, setEditandoCriancaId] = useState<string | null>(null);
+  const [linhas, setLinhas] = useState<{ especialidade: string; valor: string }[]>([]);
+  const [salvando, setSalvando] = useState(false);
+
+  const carregar = async () => {
+    setLoading(true);
+    const { data: cs } = await supabase.from("criancas").select("id, nome, plano_saude").order("nome");
+    setCriancas(cs || []);
+    const { data: ps } = await supabase.from("precos_atendimento").select("id, crianca_id, especialidade, valor_sessao");
+    setPrecos(ps || []);
+    setLoading(false);
+  };
+  useEffect(() => { carregar(); }, []);
+
+  const criancasFiltradas = criancas.filter(c => c.nome.toLowerCase().includes(busca.toLowerCase()));
+
+  function abrirEdicao(criancaId: string) {
+    const doCrianca = precos.filter(p => p.crianca_id === criancaId);
+    setLinhas(doCrianca.length > 0
+      ? doCrianca.map(p => ({ especialidade: p.especialidade, valor: String(p.valor_sessao) }))
+      : [{ especialidade: "", valor: "" }]);
+    setEditandoCriancaId(criancaId);
+  }
+
+  function addLinha() { setLinhas(prev => [...prev, { especialidade: "", valor: "" }]); }
+  function removeLinha(i: number) { setLinhas(prev => prev.filter((_, idx) => idx !== i)); }
+  function updateLinha(i: number, campo: "especialidade" | "valor", v: string) {
+    setLinhas(prev => prev.map((l, idx) => idx === i ? { ...l, [campo]: v } : l));
+  }
+
+  async function salvar() {
+    if (!editandoCriancaId) return;
+    const validas = linhas.filter(l => l.especialidade && l.valor);
+    setSalvando(true);
+    // Substitui tudo que já existia pra essa criança pelo conjunto atual —
+    // mais simples e seguro do que tentar casar linha a linha com o que já
+    // tinha, pra uma tabela desse tamanho.
+    await supabase.from("precos_atendimento").delete().eq("crianca_id", editandoCriancaId);
+    if (validas.length > 0) {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from("precos_atendimento").insert(
+        validas.map(l => ({
+          crianca_id: editandoCriancaId,
+          especialidade: l.especialidade,
+          valor_sessao: Number(l.valor),
+          atualizado_por_nome: user?.email || null,
+        }))
+      );
+      if (error) { setSalvando(false); mostrarFeedback("erro", "Erro ao salvar: " + error.message); return; }
+    }
+    setSalvando(false);
+    mostrarFeedback("sucesso", "Valores atualizados!");
+    setEditandoCriancaId(null);
+    carregar();
+  }
+
+  const criancaEditando = criancas.find(c => c.id === editandoCriancaId);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="font-bold text-slate-700">Tabela de Valores</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Valor por sessão, por criança e especialidade — usado pra preencher a Nova Fatura sozinho</p>
+        </div>
+        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar criança..."
+          className="h-10 px-4 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-56"/>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12"><p className="text-sm text-slate-400">Carregando...</p></div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {criancasFiltradas.map(c => {
+            const linhasCrianca = precos.filter(p => p.crianca_id === c.id);
+            return (
+              <div key={c.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-semibold text-slate-800 text-sm leading-snug">{c.nome}</p>
+                  <button onClick={() => abrirEdicao(c.id)}
+                    className="flex-shrink-0 h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-700 hover:bg-blue-50 transition">
+                    <Pencil size={14} />
+                  </button>
+                </div>
+                {linhasCrianca.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">Nenhum valor cadastrado ainda.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {linhasCrianca.map(p => (
+                      <div key={p.id} className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500">{p.especialidade}</span>
+                        <span className="font-semibold text-slate-700">R$ {Number(p.valor_sessao).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {editandoCriancaId && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center bg-black/40 backdrop-blur-sm px-4 pb-4 sm:pb-8 sm:pt-24 overflow-y-auto"
+          onClick={e => { if (e.target === e.currentTarget) setEditandoCriancaId(null); }}>
+          <div className="w-full sm:max-w-md bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-blue-900 px-5 py-4 flex items-center justify-between">
+              <h2 className="font-bold text-white text-sm">Valores — {criancaEditando?.nome}</h2>
+              <button onClick={() => setEditandoCriancaId(null)} className="text-white/70 hover:text-white">✕</button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-5 space-y-3">
+              <p className="text-xs text-slate-400">Especialidades sem liberação do plano: apague a linha ou deixe o valor em 0,00.</p>
+              {linhas.map((l, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <select value={l.especialidade} onChange={e => updateLinha(i, "especialidade", e.target.value)}
+                    className="flex-1 h-10 px-3 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Selecione...</option>
+                    {ESPECIALIDADES_OPCOES.map(op => <option key={op} value={op}>{op}</option>)}
+                  </select>
+                  <input type="number" min="0" step="0.01" value={l.valor} onChange={e => updateLinha(i, "valor", e.target.value)}
+                    placeholder="0,00" className="w-28 h-10 px-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  <button onClick={() => removeLinha(i)} className="h-9 w-9 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition text-lg">×</button>
+                </div>
+              ))}
+              <button onClick={addLinha} className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition">+ Adicionar especialidade</button>
+            </div>
+            <div className="px-5 py-4 border-t border-slate-100 bg-white">
+              <button onClick={salvar} disabled={salvando}
+                className="w-full h-11 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">
+                {salvando ? "Salvando..." : "Salvar valores"}
               </button>
             </div>
           </div>
