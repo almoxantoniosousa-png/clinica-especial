@@ -227,7 +227,7 @@ export default function MinhaAgendaPage() {
       {loading ? (
         <p className="text-sm text-slate-400 text-center py-10">Carregando agenda...</p>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
           {diasSemana.map(dia => {
             const d          = new Date(dia + "T12:00:00");
             const evsDoDia   = eventos.filter(e => e.data === dia);

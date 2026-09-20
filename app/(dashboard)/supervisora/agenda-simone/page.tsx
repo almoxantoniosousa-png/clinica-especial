@@ -282,7 +282,7 @@ export default function AgendaSimonePage() {
       {loading ? (
         <p className="text-sm text-slate-400 text-center py-10">Carregando...</p>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
           {diasSemana.map(dia => {
             const d      = new Date(dia + "T12:00:00");
             const evs    = eventos.filter(e => e.data === dia);
