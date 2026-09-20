@@ -56,7 +56,9 @@ export default function MinhaAgendaPage() {
   // Compromissos de dias passados que ficaram "pendente" — pra não
   // precisar navegar semana por semana procurando o que ficou sem marcar.
   const [pendentesAntigos, setPendentesAntigos] = useState<Evento[]>([]);
-  const [pendentesAbertos, setPendentesAbertos] = useState(true);
+  // Começa recolhida — se acumular muita pendência antiga, isso não pode
+  // virar a própria tela inteira antes mesmo de chegar na semana atual.
+  const [pendentesAbertos, setPendentesAbertos] = useState(false);
 
   // Ao confirmar (realizado/não realizado), o compromisso sai da lista
   // principal do dia e vai pra uma seção "concluídos" recolhida — assim o
