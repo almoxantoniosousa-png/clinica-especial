@@ -204,6 +204,14 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
   const [observacao, setObservacao] = useState("");
   const [salvarModelo, setSalvarModelo] = useState(false);
 
+  // "Confirmar valor" tem tela própria, só com o valor — separado da edição
+  // geral (que também mexe em vencimento/categoria) pra evitar mudar o campo
+  // errado sem querer, como já aconteceu.
+  const [confirmandoValorId, setConfirmandoValorId] = useState<string | null>(null);
+  const [confirmandoValorDescricao, setConfirmandoValorDescricao] = useState("");
+  const [valorConfirmar, setValorConfirmar] = useState("");
+  const [salvandoConfirmarValor, setSalvandoConfirmarValor] = useState(false);
+
   const [pagandoId, setPagandoId] = useState<string | null>(null);
   const [valorPagamento, setValorPagamento] = useState("");
   const [dataPagamento, setDataPagamento] = useState("");
@@ -427,6 +435,43 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
     setVencimento(c.vencimento); setObservacao(c.observacao || "");
     setSalvarModelo(false);
     setModalAberto(true);
+  }
+
+  function abrirConfirmarValor(c: ContaPagar) {
+    setConfirmandoValorId(c.id);
+    setConfirmandoValorDescricao(c.descricao);
+    setValorConfirmar(String(c.valor));
+  }
+  function fecharConfirmarValor() {
+    setConfirmandoValorId(null);
+    setConfirmandoValorDescricao("");
+    setValorConfirmar("");
+  }
+  async function salvarValorConfirmado() {
+    if (!confirmandoValorId || !valorConfirmar) return;
+    setSalvandoConfirmarValor(true);
+    const novoValor = Number(valorConfirmar);
+    const contaAtual = contas.find(c => c.id === confirmandoValorId) || historicoLista.find(c => c.id === confirmandoValorId);
+    const jaPago = contaAtual ? (contaAtual.pagamentos || []).reduce((acc, p) => acc + Number(p.valor || 0), 0) : 0;
+    const quita = contaAtual && contaAtual.status !== "pago" && jaPago > 0 && jaPago >= novoValor - 0.01;
+    const extra = quita ? { status: "pago", pago_em: (contaAtual!.pagamentos || []).slice(-1)[0]?.data || hoje } : {};
+    const { error } = await supabase.from("contas_pagar")
+      .update({ valor: novoValor, valor_confirmado: true, ...extra })
+      .eq("id", confirmandoValorId);
+    setSalvandoConfirmarValor(false);
+    if (error) { mostrarFeedback("erro", "Erro ao salvar: " + error.message); return; }
+    mostrarFeedback("sucesso", quita ? "Valor confirmado — já estava quitado com o que foi pago!" : "Valor confirmado!");
+    const { data: { user } } = await supabase.auth.getUser();
+    await registrarLog(supabase, {
+      usuario_email: user?.email || "desconhecido",
+      acao: "Confirmou valor",
+      tabela: "contas_pagar",
+      registro_id: confirmandoValorId,
+      descricao: `Confirmou valor da fatura de "${confirmandoValorDescricao}": R$ ${novoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+    });
+    fecharConfirmarValor();
+    if (historicoRecorrente) await abrirHistoricoRecorrente(historicoRecorrente);
+    carregar();
   }
 
   async function salvar() {
@@ -1029,7 +1074,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {c.valor_confirmado === false ? (
                       <button
-                        onClick={() => abrirEditar(c)}
+                        onClick={() => abrirConfirmarValor(c)}
                         title="Digite o valor real da fatura antes de pagar"
                         className="h-8 px-3 text-xs font-semibold bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">
                         Confirmar valor
@@ -1065,6 +1110,39 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
         </div>
       )}
       </>
+      )}
+
+      {/* Modal confirmar valor — só o valor, de propósito, pra não mexer em vencimento/categoria sem querer */}
+      {confirmandoValorId && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm px-4 pt-24 pb-8 overflow-y-auto"
+          onClick={(e) => { if (e.target === e.currentTarget) fecharConfirmarValor(); }}>
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6 space-y-4">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center text-2xl">⚠️</div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Confirmar valor da fatura</h3>
+                <p className="text-sm text-slate-600 mt-1 font-medium">{confirmandoValorDescricao}</p>
+                <p className="text-xs text-slate-400 mt-1">Digite o valor real que veio na fatura desse mês.</p>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Valor (R$)</label>
+              <input type="number" min="0.01" step="0.01" value={valorConfirmar} onChange={e => setValorConfirmar(e.target.value)}
+                autoFocus
+                className="w-full h-12 px-4 rounded-xl border border-slate-200 text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-amber-500"/>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={fecharConfirmarValor}
+                className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                Cancelar
+              </button>
+              <button onClick={salvarValorConfirmado} disabled={salvandoConfirmarValor || !valorConfirmar}
+                className="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition disabled:opacity-50">
+                {salvandoConfirmarValor ? "Salvando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal registrar pagamento */}
@@ -1375,7 +1453,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                         <div className="flex items-center gap-1.5">
                           {!pago && (
                             c.valor_confirmado === false ? (
-                              <button onClick={() => abrirEditar(c)}
+                              <button onClick={() => abrirConfirmarValor(c)}
                                 title="Digite o valor real da fatura antes de pagar"
                                 className="h-8 px-3 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition">
                                 Confirmar valor
