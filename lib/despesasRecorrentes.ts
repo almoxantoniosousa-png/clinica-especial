@@ -63,6 +63,10 @@ export async function gerarDespesasRecorrentesPendentes(supabase: any): Promise<
       status: "pendente",
       recorrente_id: r.id,
       observacao: r.observacao || null,
+      // valor variável (ex: energia, água): a conta nasce com o valor do
+      // cadastro só como referência — pedindo confirmação, pra não pagar
+      // sem olhar a fatura real desse mês.
+      valor_confirmado: !r.valor_variavel,
     }]);
     if (error) continue;
 
@@ -71,11 +75,14 @@ export async function gerarDespesasRecorrentesPendentes(supabase: any): Promise<
 
     const valorFmt = Number(r.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
     const vencFmt = new Date(proximoVencimento + "T12:00:00").toLocaleDateString("pt-BR");
+    const mensagemValor = r.valor_variavel
+      ? `${r.descricao} — valor estimado R$ ${valorFmt}, confirme com a fatura real. Vence em ${vencFmt}`
+      : `${r.descricao} — R$ ${valorFmt}, vence em ${vencFmt}`;
     // gestão das recorrentes é exclusiva da ADM — só ela é avisada
     await supabase.from("notificacoes").insert({
       destinatario_role: "adm",
       titulo: "🔁 Despesa recorrente gerada",
-      mensagem: `${r.descricao} — R$ ${valorFmt}, vence em ${vencFmt}`,
+      mensagem: mensagemValor,
       tipo: "financeiro",
       link: "/adm/financeiro",
       autor_nome: "Sistema",

@@ -24,6 +24,7 @@ type ContaPagar = {
   observacao?: string | null; pago_em?: string | null;
   pagamentos?: PagamentoConta[];
   recorrente_id?: string | null;
+  valor_confirmado?: boolean;
 };
 type ModeloPagar = { id: string; descricao: string; categoria: string; valor: number; observacao?: string | null };
 type DespesaRecorrente = {
@@ -31,6 +32,7 @@ type DespesaRecorrente = {
   dia_vencimento: number; dias_antecedencia: number; ativo: boolean;
   frequencia_meses: number;
   ultima_geracao?: string | null; observacao?: string | null;
+  valor_variavel?: boolean;
 };
 const FREQUENCIAS_RECORRENTE = [
   { valor: 1, label: "Mensal" },
@@ -192,6 +194,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
   const [diaRecorrente, setDiaRecorrente] = useState("5");
   const [antecedenciaRecorrente, setAntecedenciaRecorrente] = useState("5");
   const [salvandoRecorrente, setSalvandoRecorrente] = useState(false);
+  const [valorVariavelRecorrente, setValorVariavelRecorrente] = useState(false);
 
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [descricao, setDescricao] = useState("");
@@ -248,6 +251,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
     setEditandoRecorrenteId(null);
     setDescRecorrente(""); setCatRecorrente("salario"); setValorRecorrente("");
     setFreqRecorrente("1"); setDiaRecorrente("5"); setAntecedenciaRecorrente("5");
+    setValorVariavelRecorrente(false);
   }
 
   async function abrirHistoricoRecorrente(r: DespesaRecorrente) {
@@ -321,6 +325,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
     setValorRecorrente(String(r.valor)); setDiaRecorrente(String(r.dia_vencimento));
     setFreqRecorrente(String(r.frequencia_meses || 1));
     setAntecedenciaRecorrente(String(r.dias_antecedencia));
+    setValorVariavelRecorrente(!!r.valor_variavel);
     setModalRecorrenteAberto(true);
   }
 
@@ -334,6 +339,7 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
       descricao: descRecorrente, categoria: catRecorrente, valor: Number(valorRecorrente),
       dia_vencimento: Number(diaRecorrente), dias_antecedencia: Number(antecedenciaRecorrente) || 5,
       frequencia_meses: Number(freqRecorrente) || 1,
+      valor_variavel: valorVariavelRecorrente,
     };
     if (editandoRecorrenteId) {
       const { error } = await supabase.from("despesas_recorrentes").update(payload).eq("id", editandoRecorrenteId);
@@ -430,7 +436,8 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (editandoId) {
-      const { error } = await supabase.from("contas_pagar").update(payload).eq("id", editandoId);
+      // editar o valor conta como confirmação — some o aviso de "valor a confirmar"
+      const { error } = await supabase.from("contas_pagar").update({ ...payload, valor_confirmado: true }).eq("id", editandoId);
       setSalvando(false);
       if (error) mostrarFeedback("erro", "Erro ao salvar: " + error.message);
       else {
@@ -775,8 +782,15 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                   <button onClick={() => abrirHistoricoRecorrente(r)} className="w-full text-left" title="Ver histórico completo">
                     <span className="text-base">{iconeCategoria(r.categoria)}</span>
                     <p className="font-semibold text-slate-800 text-[13px] truncate mt-1">{r.descricao}</p>
-                    <p className="text-sm font-bold text-slate-700 mt-0.5">R$ {Number(r.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                    <span className={`inline-block mt-1 text-[9.5px] font-bold px-1.5 py-px rounded-full border ${corFrequencia(r.frequencia_meses)}`}>{labelFrequencia(r.frequencia_meses)} · dia {r.dia_vencimento}</span>
+                    <p className="text-sm font-bold text-slate-700 mt-0.5">
+                      {r.valor_variavel ? "~ " : ""}R$ {Number(r.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      <span className={`inline-block text-[9.5px] font-bold px-1.5 py-px rounded-full border ${corFrequencia(r.frequencia_meses)}`}>{labelFrequencia(r.frequencia_meses)} · dia {r.dia_vencimento}</span>
+                      {r.valor_variavel && (
+                        <span className="inline-block text-[9.5px] font-bold px-1.5 py-px rounded-full border border-amber-200 bg-amber-50 text-amber-700">valor variável</span>
+                      )}
+                    </div>
                   </button>
                   <div className="flex items-center gap-1 mt-2 pt-2 border-t border-slate-100">
                     <button onClick={() => alternarAtivoRecorrente(r)} title={r.ativo ? "Pausar" : "Reativar"}
@@ -935,6 +949,9 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                     {c.recorrente_id && (
                       <span className="text-[10px] font-bold text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full flex-shrink-0">🔁 {labelFrequencia(frequenciaPorRecorrente[c.recorrente_id])}</span>
                     )}
+                    {c.valor_confirmado === false && c.status !== "pago" && (
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full flex-shrink-0">⚠️ Confirmar valor da fatura</span>
+                    )}
                     {badgeVenc(c)}
                   </div>
                   <p className="text-xs text-slate-400">Vencimento: {new Date(c.vencimento + "T12:00:00").toLocaleDateString("pt-BR")}</p>
@@ -1001,11 +1018,20 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                 </div>
                 {c.status !== "pago" ? (
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      onClick={() => abrirPagamento(c)}
-                      className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
-                      Pagar
-                    </button>
+                    {c.valor_confirmado === false ? (
+                      <button
+                        onClick={() => abrirEditar(c)}
+                        title="Digite o valor real da fatura antes de pagar"
+                        className="h-8 px-3 text-xs font-semibold bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">
+                        Confirmar valor
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => abrirPagamento(c)}
+                        className="h-8 px-3 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">
+                        Pagar
+                      </button>
+                    )}
                     <button onClick={() => abrirEditar(c)}
                       title="Editar"
                       className="h-8 w-8 flex items-center justify-center text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
@@ -1214,6 +1240,14 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                     className="w-full h-11 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 </div>
               </div>
+              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 cursor-pointer">
+                <input type="checkbox" checked={valorVariavelRecorrente} onChange={e => setValorVariavelRecorrente(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500"/>
+                <span className="text-xs text-amber-800">
+                  <span className="font-semibold block">O valor varia todo mês</span>
+                  Ex: conta de energia, água. O valor acima vira só uma referência — cada conta gerada automaticamente nasce pedindo pra digitar o valor real da fatura antes de pagar.
+                </span>
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Frequência</label>
@@ -1278,7 +1312,12 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                     <div key={c.id} className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 space-y-2">
                       <div className="flex items-center gap-3">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 capitalize">{mesAno}</p>
+                          <p className="text-sm font-semibold text-slate-800 capitalize flex items-center gap-1.5 flex-wrap">
+                            {mesAno}
+                            {c.valor_confirmado === false && !pago && (
+                              <span className="text-[9.5px] font-bold text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-px rounded-full">⚠️ confirmar valor</span>
+                            )}
+                          </p>
                           <p className="text-xs text-slate-400">
                             {pago ? `pago em ${c.pago_em ? new Date(c.pago_em + "T12:00:00").toLocaleDateString("pt-BR") : "—"}` : `vence em ${new Date(c.vencimento + "T12:00:00").toLocaleDateString("pt-BR")}`}
                           </p>
@@ -1326,10 +1365,18 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
                       ) : (
                         <div className="flex items-center gap-1.5">
                           {!pago && (
-                            <button onClick={() => abrirPagamentoHistorico(c)}
-                              className="h-8 px-3 text-xs font-bold bg-blue-900 hover:bg-blue-800 text-white rounded-lg transition">
-                              Pagar
-                            </button>
+                            c.valor_confirmado === false ? (
+                              <button onClick={() => abrirEditar(c)}
+                                title="Digite o valor real da fatura antes de pagar"
+                                className="h-8 px-3 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition">
+                                Confirmar valor
+                              </button>
+                            ) : (
+                              <button onClick={() => abrirPagamentoHistorico(c)}
+                                className="h-8 px-3 text-xs font-bold bg-blue-900 hover:bg-blue-800 text-white rounded-lg transition">
+                                Pagar
+                              </button>
+                            )
                           )}
                           <button onClick={() => abrirEditar(c)}
                             className="h-8 px-3 text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 rounded-lg transition">
