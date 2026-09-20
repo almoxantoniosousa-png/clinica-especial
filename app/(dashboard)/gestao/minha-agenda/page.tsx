@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, ChevronRight, Check, X, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, X } from "lucide-react";
 import { paraISOLocal } from "@/lib/dataUtils";
 
 const CARDS: Record<string, { label: string; emoji: string; bg: string }> = {
@@ -57,6 +57,11 @@ export default function MinhaAgendaPage() {
   // precisar navegar semana por semana procurando o que ficou sem marcar.
   const [pendentesAntigos, setPendentesAntigos] = useState<Evento[]>([]);
   const [pendentesAbertos, setPendentesAbertos] = useState(true);
+
+  // Ao confirmar (realizado/não realizado), o compromisso sai da lista
+  // principal do dia e vai pra uma seção "concluídos" recolhida — assim o
+  // dia não fica cada vez mais comprido conforme a semana passa.
+  const [concluidosAbertos, setConcluidosAbertos] = useState<Record<string, boolean>>({});
 
   const diasSemana = useMemo(() => Array.from({ length: 7 }, (_, i) => {
     const d = new Date(semanaBase); d.setDate(semanaBase.getDate() + i); return toISO(d);
@@ -222,8 +227,11 @@ export default function MinhaAgendaPage() {
       ) : (
         <div className="space-y-4">
           {diasSemana.map(dia => {
-            const d   = new Date(dia + "T12:00:00");
-            const evs = eventos.filter(e => e.data === dia);
+            const d          = new Date(dia + "T12:00:00");
+            const evsDoDia   = eventos.filter(e => e.data === dia);
+            const evs        = evsDoDia.filter(e => e.status === "pendente");
+            const concluidos = evsDoDia.filter(e => e.status !== "pendente");
+            const concluidosAberto = !!concluidosAbertos[dia];
             return (
               <div key={dia} className={`rounded-2xl border overflow-hidden ${dia === hoje ? "border-blue-300" : "border-slate-200"}`}>
                 {/* Cabeçalho do dia */}
@@ -241,19 +249,18 @@ export default function MinhaAgendaPage() {
                   </div>
                 </div>
 
-                {/* Lista */}
+                {/* Lista — só os pendentes, os já confirmados ficam recolhidos embaixo */}
                 <div className="bg-white divide-y divide-slate-50">
-                  {evs.length === 0 ? (
+                  {evs.length === 0 && concluidos.length === 0 ? (
                     <p className="px-4 py-3 text-xs text-slate-400 italic">Nada agendado</p>
+                  ) : evs.length === 0 ? (
+                    <p className="px-4 py-3 text-xs text-slate-400 italic">Tudo confirmado por aqui 🎉</p>
                   ) : evs.map(ev => {
-                    const c         = info(ev.tipo);
-                    const realizado = ev.status === "realizado";
-                    const naoFeito  = ev.status === "nao_realizado";
-                    const pendente  = ev.status === "pendente";
+                    const c = info(ev.tipo);
                     const obsEsteAberta = obsAberta === ev.id;
 
                     return (
-                      <div key={ev.id} className={`px-4 py-4 space-y-3 ${naoFeito ? "bg-red-50/60" : realizado ? "bg-emerald-50/40" : ""}`}>
+                      <div key={ev.id} className="px-4 py-4 space-y-3">
 
                         {/* Linha do evento */}
                         <div className="flex items-center gap-3">
@@ -262,7 +269,7 @@ export default function MinhaAgendaPage() {
                           </span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <p className={`text-sm font-semibold truncate ${realizado ? "line-through text-slate-400" : "text-slate-800"}`}>
+                              <p className="text-sm font-semibold truncate text-slate-800">
                                 {ev.titulo}
                               </p>
                               {LOCAL_ATENDIMENTO[ev.tipo] && (
@@ -275,40 +282,19 @@ export default function MinhaAgendaPage() {
                               </p>
                             )}
                           </div>
-                          {/* Badge de status */}
-                          {realizado && (
-                            <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full flex-shrink-0">
-                              <Check className="h-3 w-3"/> Realizado
-                            </span>
-                          )}
-                          {naoFeito && (
-                            <span className="flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-100 px-2.5 py-1 rounded-full flex-shrink-0">
-                              <X className="h-3 w-3"/> Não realizado
-                            </span>
-                          )}
                         </div>
 
-                        {/* Nota de Simone quando não realizado */}
-                        {naoFeito && ev.obs_simone && (
-                          <div className="flex items-start gap-2 px-3 py-2 bg-red-100 rounded-xl">
-                            <MessageSquare className="h-3.5 w-3.5 text-red-500 mt-0.5 flex-shrink-0"/>
-                            <p className="text-xs text-red-700">{ev.obs_simone}</p>
-                          </div>
-                        )}
-
-                        {/* Ações */}
-                        {pendente && (
-                          <div className="flex gap-2">
-                            <button onClick={() => marcarRealizado(ev.id)} disabled={salvando === ev.id}
-                              className="flex-1 h-9 flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition disabled:opacity-50">
-                              <Check className="h-3.5 w-3.5"/> Realizado
-                            </button>
-                            <button onClick={() => { setObsAberta(ev.id); setObsTexto(""); }}
-                              className="flex-1 h-9 flex items-center justify-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition">
-                              <X className="h-3.5 w-3.5"/> Não realizei
-                            </button>
-                          </div>
-                        )}
+                        {/* Ações — discretas, não são mais barras enormes */}
+                        <div className="flex gap-2">
+                          <button onClick={() => marcarRealizado(ev.id)} disabled={salvando === ev.id}
+                            className="h-8 px-3 flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold rounded-lg transition disabled:opacity-50">
+                            <Check className="h-3.5 w-3.5"/> Realizado
+                          </button>
+                          <button onClick={() => { setObsAberta(ev.id); setObsTexto(""); }}
+                            className="h-8 px-3 flex items-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold rounded-lg transition">
+                            <X className="h-3.5 w-3.5"/> Não realizei
+                          </button>
+                        </div>
 
                         {/* Form de não realizado */}
                         {obsEsteAberta && (
@@ -333,18 +319,51 @@ export default function MinhaAgendaPage() {
                             </div>
                           </div>
                         )}
-
-                        {/* Desfazer (realizado ou não realizado) */}
-                        {(realizado || naoFeito) && !obsEsteAberta && (
-                          <button onClick={() => desfazer(ev.id)}
-                            className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 transition">
-                            Desfazer
-                          </button>
-                        )}
                       </div>
                     );
                   })}
                 </div>
+
+                {/* Concluídos do dia — recolhidos por padrão */}
+                {concluidos.length > 0 && (
+                  <div className="border-t border-slate-100">
+                    <button onClick={() => setConcluidosAbertos(prev => ({ ...prev, [dia]: !prev[dia] }))}
+                      className="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition">
+                      <span>{concluidos.length} confirmado{concluidos.length > 1 ? "s" : ""}</span>
+                      <span>{concluidosAberto ? "Recolher ▲" : "Ver ▼"}</span>
+                    </button>
+                    {concluidosAberto && (
+                      <div className="divide-y divide-slate-50">
+                        {concluidos.map(ev => {
+                          const c         = info(ev.tipo);
+                          const realizado = ev.status === "realizado";
+                          const naoFeito  = ev.status === "nao_realizado";
+                          return (
+                            <div key={ev.id} className={`px-4 py-3 space-y-2 ${naoFeito ? "bg-red-50/40" : "bg-emerald-50/30"}`}>
+                              <div className="flex items-center gap-3">
+                                <span className={`w-7 h-7 rounded-lg ${c.bg} flex items-center justify-center text-sm flex-shrink-0 opacity-70`}>
+                                  {c.emoji}
+                                </span>
+                                <p className={`flex-1 min-w-0 text-sm truncate ${realizado ? "line-through text-slate-400" : "text-slate-600"}`}>
+                                  {ev.titulo}
+                                </p>
+                                {realizado && <span className="text-[11px] font-semibold text-emerald-600 flex-shrink-0">✓ Realizado</span>}
+                                {naoFeito && <span className="text-[11px] font-semibold text-red-500 flex-shrink-0">✕ Não realizado</span>}
+                              </div>
+                              {naoFeito && ev.obs_simone && (
+                                <p className="text-xs text-red-600 pl-10">{ev.obs_simone}</p>
+                              )}
+                              <button onClick={() => desfazer(ev.id)}
+                                className="ml-10 text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 transition">
+                                Desfazer
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

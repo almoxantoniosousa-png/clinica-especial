@@ -94,6 +94,10 @@ function fmt(dia: string) {
 export default function AgendaSimonePage() {
   const [semanaBase, setSemanaBase] = useState<Date>(() => getSegunda(new Date()));
   const [grupoAberto, setGrupoAberto] = useState<"clinica" | "pessoal" | null>(null);
+  // Só o dia de hoje começa aberto — os outros dias da semana ficam
+  // recolhidos, pra não virar uma lista gigante de rolar. Clica no
+  // cabeçalho do dia pra abrir/fechar.
+  const [diaAberto, setDiaAberto] = useState<string>(toISO(new Date()));
   const [eventos, setEventos]       = useState<Evento[]>([]);
   const [loading, setLoading]       = useState(true);
   const [copiado, setCopiado]       = useState(false);
@@ -280,30 +284,47 @@ export default function AgendaSimonePage() {
       ) : (
         <div className="space-y-3">
           {diasSemana.map(dia => {
-            const d    = new Date(dia + "T12:00:00");
-            const evs  = eventos.filter(e => e.data === dia);
-            const hoje = toISO(new Date());
+            const d      = new Date(dia + "T12:00:00");
+            const evs    = eventos.filter(e => e.data === dia);
+            const hoje   = toISO(new Date());
+            const aberto = diaAberto === dia;
+            const semNadaEFuturo = evs.length === 0 && dia >= hoje;
             return (
               <div key={dia} className={`rounded-2xl border overflow-hidden ${dia === hoje ? "border-blue-300" : "border-slate-200"}`}>
-                {/* Cabeçalho do dia */}
-                <div className={`flex items-center gap-3 px-4 py-2.5 ${dia === hoje ? "bg-blue-50" : "bg-slate-50"}`}>
-                  <div className={`w-9 h-9 rounded-xl flex flex-col items-center justify-center font-bold text-xs leading-none ${
+                {/* Cabeçalho do dia — clicável, abre/fecha */}
+                <button onClick={() => setDiaAberto(aberto ? "" : dia)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left ${dia === hoje ? "bg-blue-50" : "bg-slate-50"}`}>
+                  <div className={`w-9 h-9 rounded-xl flex flex-col items-center justify-center font-bold text-xs leading-none flex-shrink-0 ${
                     dia === hoje ? "bg-blue-600 text-white" : "bg-white text-slate-700 border border-slate-200"}`}>
                     <span className="uppercase text-[10px]">{["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()]}</span>
                     <span className="text-sm">{d.getDate()}</span>
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className={`text-sm font-semibold ${dia === hoje ? "text-blue-800" : "text-slate-700"}`}>
                       {DIAS_FULL[d.getDay()]}
                     </p>
                     <p className="text-xs text-slate-400">{fmt(dia)}</p>
                   </div>
-                </div>
+                  {!aberto && (
+                    semNadaEFuturo
+                      ? <span className="text-[11px] font-semibold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full flex-shrink-0">⚠ definir</span>
+                      : evs.length > 0 && <span className="text-[11px] font-semibold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full flex-shrink-0">{evs.length}</span>
+                  )}
+                  <ChevronDown className={`h-4 w-4 text-slate-400 flex-shrink-0 transition-transform ${aberto ? "rotate-180" : ""}`}/>
+                </button>
 
                 {/* Lista de eventos */}
+                {aberto && (
                 <div className="bg-white divide-y divide-slate-50">
                   {evs.length === 0 ? (
-                    <p className="px-4 py-3 text-xs text-slate-400 italic">Nada agendado</p>
+                    semNadaEFuturo ? (
+                      <div className="flex items-center gap-2 px-4 py-3 bg-amber-50">
+                        <span className="text-amber-500">⚠️</span>
+                        <p className="text-xs text-amber-700 font-medium">Nenhum compromisso definido ainda pra este dia.</p>
+                      </div>
+                    ) : (
+                      <p className="px-4 py-3 text-xs text-slate-400 italic">Nada agendado</p>
+                    )
                   ) : evs.map(ev => {
                     const c          = cardInfo(ev.tipo);
                     const naoFeito   = ev.status === "nao_realizado";
@@ -357,6 +378,7 @@ export default function AgendaSimonePage() {
                     );
                   })}
                 </div>
+                )}
               </div>
             );
           })}
