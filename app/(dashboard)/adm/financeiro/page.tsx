@@ -436,12 +436,21 @@ function AbaContasPagar({ supabase, mesAno, mostrarFeedback, role }: AbaProps) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (editandoId) {
-      // editar o valor conta como confirmação — some o aviso de "valor a confirmar"
-      const { error } = await supabase.from("contas_pagar").update({ ...payload, valor_confirmado: true }).eq("id", editandoId);
+      // editar o valor conta como confirmação — some o aviso de "valor a confirmar".
+      // Se o valor real digitado agora bate com o que já foi pago (ex: conta de
+      // energia que veio com valor errado e a pessoa já quitou o valor certo),
+      // a conta já nasce quitada em vez de continuar pedindo pra "pagar" R$ 0,00.
+      const contaAtual = contas.find(c => c.id === editandoId) || historicoLista.find(c => c.id === editandoId);
+      const jaPago = contaAtual ? (contaAtual.pagamentos || []).reduce((acc, p) => acc + Number(p.valor || 0), 0) : 0;
+      const quitaAoSalvar = contaAtual && contaAtual.status !== "pago" && jaPago > 0 && jaPago >= payload.valor - 0.01;
+      const extra = quitaAoSalvar
+        ? { status: "pago", pago_em: (contaAtual!.pagamentos || []).slice(-1)[0]?.data || hoje }
+        : {};
+      const { error } = await supabase.from("contas_pagar").update({ ...payload, valor_confirmado: true, ...extra }).eq("id", editandoId);
       setSalvando(false);
       if (error) mostrarFeedback("erro", "Erro ao salvar: " + error.message);
       else {
-        mostrarFeedback("sucesso", "Conta atualizada!");
+        mostrarFeedback("sucesso", quitaAoSalvar ? "Valor confirmado — já estava quitado com o que foi pago!" : "Conta atualizada!");
         await registrarLog(supabase, {
           usuario_email: user?.email || "desconhecido",
           acao: "Editou",
