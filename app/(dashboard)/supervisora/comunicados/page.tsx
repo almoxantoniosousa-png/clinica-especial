@@ -277,7 +277,7 @@ function AbaDashboard() {
 // ABA COMUNICADOS DIÁRIOS — novo fluxo:
 // supervisora revisa e envia direto para família
 // =============================================
-function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
+export function AbaComunicadosDiarios({ mostrarFeedback, somenteLeitura }: AbaProps & { somenteLeitura?: boolean }) {
   const hoje = hojeLocal();
   const [formularios, setFormularios] = useState<FormularioEscolar[]>([]);
   const [totalPendentes, setTotalPendentes] = useState(0);
@@ -633,7 +633,7 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
             <div className="overflow-y-auto flex-1 p-5 space-y-3 bg-slate-50">
               {renderDetalhe(detalhe)}
 
-              {!detalhe.enviado_familia && (
+              {!detalhe.enviado_familia && !somenteLeitura && (
                 <div className="bg-white rounded-xl border border-blue-200 overflow-hidden">
                   <div className="bg-blue-50 px-4 py-2 border-b border-blue-100">
                     <p className="text-xs font-bold text-blue-600 uppercase tracking-wide">✍️ Sua observação (opcional)</p>
@@ -652,51 +652,58 @@ function AbaComunicadosDiarios({ mostrarFeedback }: AbaProps) {
               )}
 
               {/* Correção pedida para a AT — independente de já ter sido enviado pra família */}
-              <div className="bg-white rounded-xl border border-orange-200 overflow-hidden">
-                <div className="bg-orange-50 px-4 py-2 border-b border-orange-100">
-                  <p className="text-xs font-bold text-orange-600 uppercase tracking-wide">🔁 Correção para a AT</p>
-                </div>
-                {detalhe.correcao_solicitada ? (
-                  <div className="p-3 space-y-2">
-                    <p className="text-xs font-semibold text-orange-600">Aguardando a AT refazer:</p>
-                    {!!detalhe.correcao_topicos?.length && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {detalhe.correcao_topicos.map((t) => (
-                          <span key={t} className="text-[11px] font-semibold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{t}</span>
-                        ))}
-                      </div>
-                    )}
-                    <p className="text-sm text-slate-700">{detalhe.correcao_texto}</p>
+              {(!somenteLeitura || detalhe.correcao_solicitada) && (
+                <div className="bg-white rounded-xl border border-orange-200 overflow-hidden">
+                  <div className="bg-orange-50 px-4 py-2 border-b border-orange-100">
+                    <p className="text-xs font-bold text-orange-600 uppercase tracking-wide">🔁 Correção para a AT</p>
                   </div>
-                ) : (
-                  <div className="p-3 space-y-2">
-                    <div className="space-y-1">
-                      <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Qual seção precisa corrigir? (opcional)</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5">
-                        {TOPICOS_CORRECAO.map((topico) => (
-                          <label key={topico} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                            <input type="checkbox" checked={correcaoTopicos.includes(topico)} onChange={() => toggleTopicoCorrecao(topico)}
-                              className="w-4 h-4 rounded border-slate-300 accent-orange-500 cursor-pointer" />
-                            {topico}
-                          </label>
-                        ))}
-                      </div>
+                  {detalhe.correcao_solicitada ? (
+                    <div className="p-3 space-y-2">
+                      <p className="text-xs font-semibold text-orange-600">Aguardando a AT refazer:</p>
+                      {!!detalhe.correcao_topicos?.length && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {detalhe.correcao_topicos.map((t) => (
+                            <span key={t} className="text-[11px] font-semibold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{t}</span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-sm text-slate-700">{detalhe.correcao_texto}</p>
                     </div>
-                    <textarea rows={2} value={correcaoTexto} onChange={e => setCorrecaoTexto(e.target.value)}
-                      placeholder="O que a AT precisa refazer ou corrigir?"
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"/>
-                    <button onClick={() => solicitarCorrecao(detalhe.id)} disabled={solicitandoCorrecao || !correcaoTexto.trim()}
-                      className="text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 px-3 py-2 rounded-lg transition disabled:opacity-50">
-                      {solicitandoCorrecao ? "Enviando..." : "🔁 Pedir para a AT refazer"}
-                    </button>
-                  </div>
-                )}
-              </div>
+                  ) : (
+                    <div className="p-3 space-y-2">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Qual seção precisa corrigir? (opcional)</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5">
+                          {TOPICOS_CORRECAO.map((topico) => (
+                            <label key={topico} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                              <input type="checkbox" checked={correcaoTopicos.includes(topico)} onChange={() => toggleTopicoCorrecao(topico)}
+                                className="w-4 h-4 rounded border-slate-300 accent-orange-500 cursor-pointer" />
+                              {topico}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      <textarea rows={2} value={correcaoTexto} onChange={e => setCorrecaoTexto(e.target.value)}
+                        placeholder="O que a AT precisa refazer ou corrigir?"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"/>
+                      <button onClick={() => solicitarCorrecao(detalhe.id)} disabled={solicitandoCorrecao || !correcaoTexto.trim()}
+                        className="text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 px-3 py-2 rounded-lg transition disabled:opacity-50">
+                        {solicitandoCorrecao ? "Enviando..." : "🔁 Pedir para a AT refazer"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Rodapé */}
             <div className="px-5 py-4 border-t border-slate-100 bg-white">
-              {!detalhe.enviado_familia ? (
+              {somenteLeitura ? (
+                <button onClick={() => setDetalhe(null)}
+                  className="w-full h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">
+                  Fechar
+                </button>
+              ) : !detalhe.enviado_familia ? (
                 <div className="flex gap-3">
                   <button onClick={() => setDetalhe(null)}
                     className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">

@@ -3,11 +3,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { FotoCrianca } from "@/components/foto-crianca";
+import { AbaComunicadosDiarios } from "@/app/(dashboard)/supervisora/comunicados/page";
 
-type Aba = "avisos" | "evolucao";
+type Aba = "diarios" | "avisos" | "evolucao";
 
 export default function GestaoComunicadosPage() {
-  const [aba, setAba] = useState<Aba>("avisos");
+  const [aba, setAba] = useState<Aba>("diarios");
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
 
   function mostrarFeedback(tipo: "sucesso" | "erro", msg: string) {
@@ -16,8 +17,9 @@ export default function GestaoComunicadosPage() {
   }
 
   const abas = [
-    { id: "avisos",   label: "Avisos",   icon: "📢" },
-    { id: "evolucao", label: "Evolução", icon: "📊" },
+    { id: "diarios",  label: "Comunicados das ATs", icon: "📋" },
+    { id: "avisos",   label: "Avisos",              icon: "📢" },
+    { id: "evolucao", label: "Evolução",             icon: "📊" },
   ];
 
   return (
@@ -26,7 +28,7 @@ export default function GestaoComunicadosPage() {
       {/* HEADER */}
       <div>
         <h1 className="text-xl font-bold text-slate-900">Comunicação com a Família</h1>
-        <p className="text-xs text-slate-400 mt-0.5">Publique avisos e registros de evolução para as famílias</p>
+        <p className="text-xs text-slate-400 mt-0.5">Acompanhe os comunicados diários das ATs e publique avisos e registros de evolução</p>
       </div>
 
       {/* FEEDBACK */}
@@ -51,6 +53,7 @@ export default function GestaoComunicadosPage() {
       </div>
 
       {/* CONTEÚDO */}
+      {aba === "diarios"  && <AbaComunicadosDiarios mostrarFeedback={mostrarFeedback} somenteLeitura />}
       {aba === "avisos"   && <AbaAvisos   mostrarFeedback={mostrarFeedback} />}
       {aba === "evolucao" && <AbaEvolucao mostrarFeedback={mostrarFeedback} />}
     </div>

@@ -199,6 +199,18 @@ export default function FormularioEscolarPage() {
       if (bloqueadoPorCorrecao) window.location.reload();
     } else {
       mostrarFeedback("sucesso", editandoId ? "Comunicado corrigido e reenviado à supervisora!" : "Comunicado enviado! Aguardando aprovação da supervisora.");
+      // a Gestão pediu pra ser avisada de todo comunicado diário que as ATs
+      // fazem — só no novo, não na correção, pra não duplicar aviso
+      if (!editandoId) {
+        await supabase.from("notificacoes").insert({
+          destinatario_role: "gestao",
+          titulo: "📋 Novo comunicado diário",
+          mensagem: `${atNome || "Uma AT"} enviou o comunicado de ${criancaSelecionada?.nome || "uma criança"}`,
+          tipo: "comunicado",
+          link: "/gestao/comunicados",
+          autor_nome: atNome || null,
+        });
+      }
       setTimeout(() => router.push("/atendente/meus-atendimentos"), 2000);
     }
   }
