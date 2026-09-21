@@ -102,6 +102,9 @@ export default function AgendaSimonePage() {
   const [loading, setLoading]       = useState(true);
   const [copiado, setCopiado]       = useState(false);
   const [historicoTitulos, setHistoricoTitulos] = useState<{ tipo: string; titulo: string }[]>([]);
+  // Pedido da Gestão: algumas contas só veem/mexem no grupo "clinica"
+  // (trabalho), sem acesso à Agenda Pessoal — checado por e-mail em atendentes.
+  const [vePessoal, setVePessoal] = useState(true);
 
   // Modal
   const [tipoSelecionado, setTipoSelecionado] = useState<Tipo | null>(null);
@@ -125,11 +128,21 @@ export default function AgendaSimonePage() {
     return `${ini.getDate()} ${MESES[ini.getMonth()].slice(0,3)} – ${fim.getDate()} ${MESES[fim.getMonth()].slice(0,3)} ${fim.getFullYear()}`;
   }, [diasSemana]);
 
-  useEffect(() => { carregar(); }, [semanaBase]);
+  useEffect(() => { carregar(); }, [semanaBase, vePessoal]);
 
   // Carrega uma vez só, pra sugerir (autocompletar) nomes já digitados antes — não precisa repetir "com quem" toda vez
   useEffect(() => {
     supabase.from("pauta_diretora").select("tipo, titulo").then(({ data }) => setHistoricoTitulos((data || []) as { tipo: string; titulo: string }[]));
+  }, []);
+
+  useEffect(() => {
+    async function verificarAcessoPessoal() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return;
+      const { data: atendente } = await supabase.from("atendentes").select("pauta_diretora_ve_pessoal").eq("email", user.email).maybeSingle();
+      if (atendente?.pauta_diretora_ve_pessoal === false) setVePessoal(false);
+    }
+    verificarAcessoPessoal();
   }, []);
 
   const sugestoesPorTipo = useMemo(() => {
@@ -148,7 +161,8 @@ export default function AgendaSimonePage() {
       .from("pauta_diretora").select("*")
       .gte("data", diasSemana[0]).lte("data", diasSemana[6])
       .order("data").order("hora", { nullsFirst: true });
-    setEventos((rows || []) as Evento[]);
+    const todos = (rows || []) as Evento[];
+    setEventos(vePessoal ? todos : todos.filter(e => cardInfo(e.tipo).grupo !== "pessoal"));
     setLoading(false);
   }
 
@@ -239,7 +253,7 @@ export default function AgendaSimonePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {([
           { id: "clinica" as const, label: "Agenda da Clínica", emoji: "🏥", border: "border-blue-100", bg: "bg-blue-50/50", text: "text-blue-900", cards: CARDS_CLINICA },
-          { id: "pessoal" as const, label: "Agenda Pessoal",     emoji: "🤍", border: "border-rose-100", bg: "bg-rose-50/50", text: "text-rose-900", cards: CARDS_PESSOAL },
+          ...(vePessoal ? [{ id: "pessoal" as const, label: "Agenda Pessoal", emoji: "🤍", border: "border-rose-100", bg: "bg-rose-50/50", text: "text-rose-900", cards: CARDS_PESSOAL }] : []),
         ]).map(grupo => {
           const aberto = grupoAberto === grupo.id;
           return (

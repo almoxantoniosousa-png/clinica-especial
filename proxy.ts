@@ -86,6 +86,18 @@ export async function proxy(request: NextRequest) {
       url.pathname = HOME_POR_ROLE[role] || "/login";
       return NextResponse.redirect(url);
     }
+
+    // Agenda de Simone: bloqueio por pessoa (não por role) — pedido da
+    // Gestão pra tirar o acesso de uma supervisora específica, sem afetar
+    // as outras. Aux_adm nunca é bloqueada aqui (não tem essa coluna).
+    if (pathname.startsWith("/supervisora/agenda-simone") && role === "supervisora") {
+      const { data: atendente } = await supabase.from("atendentes").select("acesso_pauta_diretora").eq("email", user.email).maybeSingle();
+      if (atendente?.acesso_pauta_diretora === false) {
+        const url = request.nextUrl.clone();
+        url.pathname = HOME_POR_ROLE[role] || "/login";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   return NextResponse.next();
