@@ -731,7 +731,7 @@ export function AbaComunicadosDiarios({ mostrarFeedback, somenteLeitura }: AbaPr
 // =============================================
 // ABA MOMENTOS
 // =============================================
-function AbaMomentos({ mostrarFeedback }: AbaProps) {
+export function AbaMomentos({ mostrarFeedback, somenteLeitura }: AbaProps & { somenteLeitura?: boolean }) {
   const [momentos, setMomentos] = useState<any[]>([]);
   const [criancas, setCriancas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -790,9 +790,11 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500">{momentos.length} momento{momentos.length !== 1 ? "s" : ""} publicado{momentos.length !== 1 ? "s" : ""}</p>
-        <button onClick={() => setModalAberto(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition">
-          📸 Publicar momento
-        </button>
+        {!somenteLeitura && (
+          <button onClick={() => setModalAberto(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition">
+            📸 Publicar momento
+          </button>
+        )}
       </div>
       {loading ? <div className="text-center py-12 text-slate-400 text-sm">Carregando...</div>
       : momentos.length === 0 ? (
@@ -801,8 +803,10 @@ function AbaMomentos({ mostrarFeedback }: AbaProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {momentos.map(m => (
             <div key={m.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden relative">
-              <button onClick={() => setDeletandoId(m.id)}
-                className="absolute top-2 right-2 p-1.5 bg-white/90 text-slate-500 hover:text-red-600 hover:bg-white rounded-lg shadow-sm transition">🗑️</button>
+              {!somenteLeitura && (
+                <button onClick={() => setDeletandoId(m.id)}
+                  className="absolute top-2 right-2 p-1.5 bg-white/90 text-slate-500 hover:text-red-600 hover:bg-white rounded-lg shadow-sm transition">🗑️</button>
+              )}
               <FotoCrianca url={m.imagem_url} alt="Momento" className="w-full h-48 object-cover" />
               <div className="p-3">
                 <div className="flex items-center gap-2 mb-1">

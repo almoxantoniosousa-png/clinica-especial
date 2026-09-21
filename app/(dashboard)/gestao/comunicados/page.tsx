@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseBrowserClient";
 import { FotoCrianca } from "@/components/foto-crianca";
-import { AbaComunicadosDiarios } from "@/app/(dashboard)/supervisora/comunicados/page";
+import { AbaComunicadosDiarios, AbaMomentos } from "@/app/(dashboard)/supervisora/comunicados/page";
 
-type Aba = "diarios" | "avisos" | "evolucao";
+type Aba = "diarios" | "momentos" | "avisos" | "evolucao";
 
 export default function GestaoComunicadosPage() {
   const [aba, setAba] = useState<Aba>("diarios");
@@ -18,6 +18,7 @@ export default function GestaoComunicadosPage() {
 
   const abas = [
     { id: "diarios",  label: "Comunicados das ATs", icon: "📋" },
+    { id: "momentos", label: "Momentos",            icon: "📸" },
     { id: "avisos",   label: "Avisos",              icon: "📢" },
     { id: "evolucao", label: "Evolução",             icon: "📊" },
   ];
@@ -54,6 +55,7 @@ export default function GestaoComunicadosPage() {
 
       {/* CONTEÚDO */}
       {aba === "diarios"  && <AbaComunicadosDiarios mostrarFeedback={mostrarFeedback} somenteLeitura />}
+      {aba === "momentos" && <AbaMomentos mostrarFeedback={mostrarFeedback} somenteLeitura />}
       {aba === "avisos"   && <AbaAvisos   mostrarFeedback={mostrarFeedback} />}
       {aba === "evolucao" && <AbaEvolucao mostrarFeedback={mostrarFeedback} />}
     </div>
