@@ -1,6 +1,5 @@
 import { RoleSidebar } from "@/components/role-sidebar";
 import { ConteudoWrapper } from "@/components/conteudo-wrapper";
-import { FloatingContact } from "@/components/floating-contact";
 import { LembretesAgendaPessoal } from "@/components/lembretes-agenda-pessoal";
 import { GravacaoProvider } from "@/contexts/gravacao-context";
 import { ValoresVisiveisProvider } from "@/contexts/valores-visiveis-context";
@@ -95,7 +94,6 @@ export default async function DashboardLayout({
             <ConteudoWrapper>{children}</ConteudoWrapper>
           </main>
         </div>
-        {!isFamiliaRole && <FloatingContact />}
         {(roleFinal === "adm" || roleFinal === "admin") && <LembretesAgendaPessoal email={user.email || ""} />}
       </div>
       </ValoresVisiveisProvider>
