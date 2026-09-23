@@ -19,14 +19,28 @@ export function LoginForm() {
   const [confirmaSenha, setConfirmaSenha] = useState("");
   const [salvandoSenha, setSalvandoSenha] = useState(false);
   const [feedbackSenha, setFeedbackSenha] = useState<{ tipo: "sucesso" | "erro"; msg: string } | null>(null);
+  // Primeiro acesso com senha provisória: vem do login (state.trocarSenha) ou
+  // do proxy, que devolve pra /login?trocar-senha=1 quem tenta pular a troca.
+  const [primeiroAcesso, setPrimeiroAcesso] = useState(false);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string) => {
       if (event === "PASSWORD_RECOVERY") setModoBloqueio(true);
     });
+    if (new URLSearchParams(window.location.search).has("trocar-senha")) {
+      setPrimeiroAcesso(true);
+      setModoBloqueio(true);
+    }
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (state?.trocarSenha) {
+      setPrimeiroAcesso(true);
+      setModoBloqueio(true);
+    }
+  }, [state]);
 
   async function salvarNovaSenha() {
     if (!novaSenha || novaSenha.length < 6) {
@@ -39,10 +53,13 @@ export function LoginForm() {
     }
     setSalvandoSenha(true);
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.updateUser({ password: novaSenha });
+    const { error } = await supabase.auth.updateUser({ password: novaSenha, data: { trocar_senha: false } });
     setSalvandoSenha(false);
     if (error) {
-      setFeedbackSenha({ tipo: "erro", msg: "Erro ao redefinir: " + error.message });
+      const msg = error.message.includes("different from the old password")
+        ? "A nova senha precisa ser diferente da senha atual."
+        : "Erro ao redefinir: " + error.message;
+      setFeedbackSenha({ tipo: "erro", msg });
     } else {
       setFeedbackSenha({ tipo: "sucesso", msg: "Senha redefinida com sucesso! Redirecionando..." });
       setTimeout(() => { window.location.href = "/"; }, 2000);
@@ -85,8 +102,14 @@ export function LoginForm() {
       {modoBloqueio && (
         <div className="space-y-3">
           <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-            <p className="text-xs font-bold text-blue-700">🔐 Redefina sua senha</p>
-            <p className="text-xs text-blue-500 mt-0.5">Escolha uma nova senha para sua conta.</p>
+            <p className="text-xs font-bold text-blue-700">
+              {primeiroAcesso ? "🔐 Primeiro acesso: crie sua senha" : "🔐 Redefina sua senha"}
+            </p>
+            <p className="text-xs text-blue-500 mt-0.5">
+              {primeiroAcesso
+                ? "Por segurança, troque a senha provisória por uma só sua antes de continuar."
+                : "Escolha uma nova senha para sua conta."}
+            </p>
           </div>
 
           <div className="space-y-1">

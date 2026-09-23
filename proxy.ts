@@ -69,6 +69,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // 3b. Ainda com senha provisória — não deixa abrir nenhuma tela antes de
+  // criar a própria senha (fecha o atalho de digitar a URL do portal direto).
+  if (user.user_metadata?.trocar_senha === true) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "?trocar-senha=1";
+    return NextResponse.redirect(url);
+  }
+
   // 4. Portal errado pra esse role (conta de família abrindo tela da equipe,
   // ou um role da equipe abrindo o portal de outro, tipo atendente em
   // /adm/dashboard) — manda de volta pro próprio portal.

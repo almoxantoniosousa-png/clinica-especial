@@ -11,6 +11,9 @@ import { hojeBrasil, feriadoNacional, ultimoDiaDoMes } from "@/lib/dataUtils";
 // ============================
 export type LoginFormState = {
   error: string | null;
+  // Conta criada com senha provisória (user_metadata.trocar_senha) — o
+  // formulário troca pra tela de "crie sua senha" em vez de seguir pro portal.
+  trocarSenha?: boolean;
 };
 
 export async function loginWithPassword(
@@ -29,6 +32,10 @@ export async function loginWithPassword(
 
   if (authError || !data.user) {
     return { error: "E-mail ou senha incorretos." };
+  }
+
+  if (data.user.user_metadata?.trocar_senha === true) {
+    return { error: null, trocarSenha: true };
   }
 
   // Busca por e-mail ignorando maiúscula/minúscula: o login do Supabase
