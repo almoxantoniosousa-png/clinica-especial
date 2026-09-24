@@ -601,18 +601,22 @@ export default function AdmCriancasPage() {
                         </div>
                       </div>
                     </div>
+                    {/* Sem balão nativo (title) e sem animação de escala: no PC da
+                        Aux. Adm o Chrome "colava" um pedaço da tela Escala por cima da
+                        lista ao passar o mouse no Ficha — falha de redesenho do navegador.
+                        Só troca de cor aqui, que não cria camada gráfica separada. */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button onClick={() => imprimirFicha(c)}
-                        title="Imprimir ficha"
-                        className="h-9 px-3 flex items-center gap-1.5 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 active:scale-95 rounded-lg border border-violet-100 transition-all">
+                        aria-label={`Imprimir ficha de ${c.nome}`}
+                        className="h-9 px-3 flex items-center gap-1.5 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 active:bg-violet-200 rounded-lg border border-violet-100 transition-colors">
                         <Printer className="h-3.5 w-3.5" /> Ficha
                       </button>
                       <button onClick={() => abrirEdicao(c)}
-                        className="h-9 px-3 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95 rounded-lg border border-blue-100 transition-all">
+                        className="h-9 px-3 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 rounded-lg border border-blue-100 transition-colors">
                         Editar
                       </button>
                       <button onClick={() => excluirCrianca(c.id, c.nome)}
-                        className="h-9 px-3 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 rounded-lg border border-red-100 transition-all">
+                        className="h-9 px-3 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 active:bg-red-200 rounded-lg border border-red-100 transition-colors">
                         Excluir
                       </button>
                     </div>
