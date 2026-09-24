@@ -262,7 +262,7 @@ const SUPERVISORA: AjudaConteudo = {
     {
       icone: "🗓️", titulo: "Agenda Simone", mockup: "agenda-semana",
       texto: "A pedido da Simone (Gestão), você tem acesso completo à agenda pessoal dela — a mesma tela que a Auxiliar Administrativa já usa. Está dividida em dois grupos:\n\n• 🏥 Agenda da Clínica — Atendimento (escolha o local: Clínica, Casa ou Escola, dentro do formulário), Treinamento, Supervisão.\n\n• 🤍 Agenda Pessoal — Espiritual, Atividade Física, Médico, Salão, Pet, Feriado/Livre.\n\nClique num card pra abrir o formulário de novo compromisso (data, horário e \"com quem/o quê\"). Abaixo, veja a semana inteira com os compromissos já cadastrados; use \"Editar\"/lixeira pra editar ou excluir. Compromissos marcados como \"não realizados\" aparecem em vermelho com um recado pedindo remarcação.\n\nUse \"Copiar pauta\" para gerar um texto com toda a agenda da semana, pronto para colar no WhatsApp.",
-      reflexo: "Os compromissos cadastrados ou editados aqui aparecem também em \"Minha Agenda\" da própria Simone e em \"Agenda Simone\" da Auxiliar Administrativa — é a mesma agenda vista por todo mundo com acesso a ela."
+      reflexo: "Os compromissos cadastrados ou editados aqui aparecem também em \"Minha Agenda\" da própria Simone e em \"Agenda Simone\" da Auxiliar Administrativa — é a mesma agenda vista por todo mundo com acesso a ela. 👁️ Algumas supervisoras têm acesso só de visualização (sem os cards de adicionar e sem Editar/excluir) e veem apenas a parte profissional; nesse caso aparece o aviso \"Somente visualização\" no topo."
     },
     {
       icone: "📋", titulo: "Plano Terapêutico", mockup: "lista-cards",

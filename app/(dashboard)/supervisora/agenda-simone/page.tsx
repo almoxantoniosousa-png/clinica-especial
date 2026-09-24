@@ -105,6 +105,7 @@ export default function AgendaSimonePage() {
   // Pedido da Gestão: algumas contas só veem/mexem no grupo "clinica"
   // (trabalho), sem acesso à Agenda Pessoal — checado por e-mail em atendentes.
   const [vePessoal, setVePessoal] = useState(true);
+  const [soLeitura, setSoLeitura] = useState(false);
 
   // Modal
   const [tipoSelecionado, setTipoSelecionado] = useState<Tipo | null>(null);
@@ -139,8 +140,10 @@ export default function AgendaSimonePage() {
     async function verificarAcessoPessoal() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.email) return;
-      const { data: atendente } = await supabase.from("atendentes").select("pauta_diretora_ve_pessoal").eq("email", user.email).maybeSingle();
+      const { data: atendente } = await supabase.from("atendentes").select("pauta_diretora_ve_pessoal, pauta_diretora_so_leitura").eq("email", user.email).maybeSingle();
       if (atendente?.pauta_diretora_ve_pessoal === false) setVePessoal(false);
+      // Só leitura: o banco já recusa criar/editar/apagar; aqui só some com os botões
+      if (atendente?.pauta_diretora_so_leitura === true) setSoLeitura(true);
     }
     verificarAcessoPessoal();
   }, []);
@@ -239,7 +242,9 @@ export default function AgendaSimonePage() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Agenda de Simone</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Clique em um card para adicionar à semana</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {soLeitura ? "Compromissos profissionais da semana" : "Clique em um card para adicionar à semana"}
+          </p>
         </div>
         <button onClick={copiar}
           className={`flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-xl border transition ${
@@ -249,7 +254,18 @@ export default function AgendaSimonePage() {
         </button>
       </div>
 
+      {soLeitura && (
+        <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3">
+          <span className="text-lg leading-none">👁️</span>
+          <div>
+            <p className="text-sm font-bold text-blue-900">Somente visualização</p>
+            <p className="text-xs text-blue-700">Você acompanha a agenda profissional da Simone. Para incluir ou mudar algo, fale com a Auxiliar Administrativa.</p>
+          </div>
+        </div>
+      )}
+
       {/* Cards de grupo — clique abre e mostra os tipos dentro */}
+      {!soLeitura && (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {([
           { id: "clinica" as const, label: "Agenda da Clínica", emoji: "🏥", border: "border-blue-100", bg: "bg-blue-50/50", text: "text-blue-900", cards: CARDS_CLINICA },
@@ -278,6 +294,7 @@ export default function AgendaSimonePage() {
           );
         })}
       </div>
+      )}
 
       {/* Navegação de semana */}
       <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
@@ -367,8 +384,8 @@ export default function AgendaSimonePage() {
                           {/* Badge de status */}
                           {realizado && <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex-shrink-0">✓ Feito</span>}
                           {naoFeito  && <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full flex-shrink-0">⚠ Remarcar</span>}
-                          {/* Ações */}
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
+                          {/* Ações (somem pra quem só visualiza) */}
+                          {!soLeitura && <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
                             <button onClick={() => abrirEditar(ev)}
                               className="text-xs px-2 h-7 bg-slate-100 hover:bg-blue-100 hover:text-blue-600 text-slate-500 rounded-lg transition">
                               Editar
@@ -377,7 +394,7 @@ export default function AgendaSimonePage() {
                               className="w-7 h-7 flex items-center justify-center bg-slate-100 hover:bg-red-100 hover:text-red-500 text-slate-400 rounded-lg transition">
                               <Trash2 className="h-3.5 w-3.5"/>
                             </button>
-                          </div>
+                          </div>}
                         </div>
                         {/* Recado de Simone pedindo remarcação */}
                         {naoFeito && (
