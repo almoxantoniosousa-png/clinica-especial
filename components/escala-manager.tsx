@@ -929,12 +929,11 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     }
   }
 
-  // Escala de impressão: só primeiro nome + horário, sempre cabendo numa
-  // página — feita pra imprimir e colar no mural.
-  // Gera em PDF (não Excel) — abre só de clicar duas vezes, sem precisar de
-  // Google Drive/conta nenhuma. Testa a fonte em tamanhos decrescentes até
-  // caber numa página só; se nem na fonte mínima couber, avisa em vez de
-  // silenciosamente sair em mais de uma folha.
+  // Escala de impressão — feita pra colar no mural e ler de pé, de relance.
+  // Antes era a semana inteira numa folha só, e com ~150 atendimentos a fonte
+  // caía até 5 (ilegível no mural). Agora: UMA FOLHA POR DIA (A4 em pé), fonte
+  // 12 e nunca abaixo de 10; se um dia não couber nem em 10, ele continua na
+  // folha seguinte em vez de encolher mais. Gera um PDF só com os 5 dias.
   async function baixarEscalaImpressao() {
     setBaixandoImpressao(true);
     setAvisoImpressao("");
@@ -944,45 +943,93 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
         import("jspdf-autotable"),
       ]);
       const autoTable = autoTableMod.default;
-
-      const horariosLancheGeral = Array.from(new Set(DIAS.slice(0, 5).map((d) => lancheDia[d]).filter(Boolean))) as string[];
-      const horariosGeral = ordenarHorarios([...slots.map((s) => s.horario), ...horariosLancheGeral]);
-      const head = [["Horário", ...DIAS.slice(0, 5).map((d, i) => `${d} · ${dataDoDia(i)}`)]];
-      const body = horariosGeral.map((horario) => {
-        const linha: string[] = [horario];
-        DIAS.slice(0, 5).forEach((d) => {
-          const doDia = slots.filter((s) => s.dia === d && s.horario === horario);
-          const partes = doDia.map((s) => `${s.crianca.split(" ")[0]} — ${s.profissional_nome ? s.profissional_nome.split(" ")[0] : "—"}`);
-          if (lancheDia[d] === horario) partes.unshift("🍎 Lanche");
-          linha.push(partes.join("\n\n"));
-        });
-        return linha;
-      });
-
       const logoDataUrl = await logoComoDataUrl();
 
-      let fontSize = 9;
-      let doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-      while (true) {
-        doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-        if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 8, 6, 12, 12);
-        doc.setFontSize(12);
-        doc.text(`Escala — ${intervaloSemanaAtual()}`, 24, 13);
+      // Dois primeiros nomes, pulando conectivos — só o primeiro confundia
+      // (Ana Carolina × Ana Paula viravam as duas "Ana").
+      const CONECTIVOS = ["da", "de", "do", "das", "dos", "e"];
+      const nomeCurto = (nome: string | null | undefined) => {
+        const partes = (nome || "").trim().split(/\s+/).filter(Boolean);
+        if (partes.length === 0) return "—";
+        const segundo = partes.slice(1).find((p) => !CONECTIVOS.includes(p.toLowerCase()));
+        return segundo ? `${partes[0]} ${segundo}` : partes[0];
+      };
+      const NOMES_DIA: Record<string, string> = {
+        Segunda: "Segunda-feira", Terça: "Terça-feira", Quarta: "Quarta-feira", Quinta: "Quinta-feira", Sexta: "Sexta-feira",
+      };
+
+      // Monta as linhas de um dia: horário aparece uma vez por grupo (rowSpan)
+      const linhasDoDia = (d: string) => {
+        const horarios = ordenarHorarios([...slots.filter((s) => s.dia === d).map((s) => s.horario), ...(lancheDia[d] ? [lancheDia[d]] : [])]);
+        const body: any[] = [];
+        horarios.forEach((horario) => {
+          if (lancheDia[d] === horario) {
+            body.push([{ content: horario, styles: { fontStyle: "bold" } },
+              { content: "LANCHE", colSpan: 3, styles: { fontStyle: "bold", fillColor: [254, 243, 199], textColor: [146, 64, 14], halign: "center" } }]);
+          }
+          const doHorario = slots.filter((s) => s.dia === d && s.horario === horario);
+          doHorario.forEach((s, idx) => {
+            const linha: any[] = [];
+            if (idx === 0) linha.push({ content: horario, rowSpan: doHorario.length, styles: { fontStyle: "bold", valign: "middle" } });
+            linha.push(nomeCurto(s.crianca), nomeCurto(s.profissional_nome), s.servico?.trim() || "—");
+            body.push(linha);
+          });
+        });
+        return body;
+      };
+
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      let diasComMaisDeUmaFolha = 0;
+      DIAS.slice(0, 5).forEach((d, i) => {
+        if (i > 0) doc.addPage();
+        const paginaInicial = doc.getNumberOfPages();
+        if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 12, 10, 16, 16);
+        doc.setFontSize(20);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${NOMES_DIA[d]} · ${dataDoDia(i)}`, 32, 18);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Escala da semana ${intervaloSemanaAtual()} · Clínica Abraço`, 32, 24);
+        doc.setTextColor(0, 0, 0);
+
+        const body = linhasDoDia(d);
+        if (body.length === 0) {
+          doc.setFontSize(14);
+          doc.text("Nenhum atendimento neste dia.", 12, 40);
+          return;
+        }
+
+        // Vai apertando aos poucos até caber numa folha: primeiro a letra
+        // (12 → 11 → 10, nunca menos), depois o espaço entre as linhas.
+        // Testa num rascunho pra não sujar o documento final com tentativas.
+        const TENTATIVAS = [
+          { fontSize: 12, cellPadding: 2 }, { fontSize: 11, cellPadding: 1.8 },
+          { fontSize: 10, cellPadding: 1.6 }, { fontSize: 10, cellPadding: 1.2 }, { fontSize: 10, cellPadding: 0.9 },
+        ];
+        let { fontSize, cellPadding } = TENTATIVAS[TENTATIVAS.length - 1];
+        for (const t of TENTATIVAS) {
+          const rascunho = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+          autoTable(rascunho, { body, startY: 32, margin: { left: 12, right: 12, top: 14 }, styles: { fontSize: t.fontSize, cellPadding: t.cellPadding },
+            columnStyles: { 0: { cellWidth: 34 }, 3: { cellWidth: 44 } }, theme: "grid", head: [["Horário", "Criança", "Profissional", "Serviço"]] });
+          if (rascunho.getNumberOfPages() <= 1) { ({ fontSize, cellPadding } = t); break; }
+        }
+
         autoTable(doc, {
-          head,
+          head: [["Horário", "Criança", "Profissional", "Serviço"]],
           body,
-          startY: 20,
-          margin: { left: 8, right: 8 },
-          styles: { fontSize, cellPadding: 1.2, valign: "top", overflow: "linebreak" },
-          headStyles: { fillColor: [239, 246, 255], textColor: [30, 41, 59], fontStyle: "bold" },
+          startY: 32,
+          margin: { left: 12, right: 12, top: 14 },
+          styles: { fontSize, cellPadding, valign: "middle", overflow: "linebreak", lineColor: [203, 213, 225] },
+          headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: "bold" },
+          columnStyles: { 0: { cellWidth: 34 }, 3: { cellWidth: 44 } },
           theme: "grid",
         });
-        if (doc.getNumberOfPages() <= 1 || fontSize <= 5) break;
-        fontSize -= 1;
-      }
+        if (doc.getNumberOfPages() > paginaInicial) diasComMaisDeUmaFolha++;
+      });
 
-      if (doc.getNumberOfPages() > 1) {
-        setAvisoImpressao("A escala tem atendimentos demais pra caber numa página só, mesmo com a fonte mínima — o arquivo baixou, mas vai sair em mais de uma folha.");
+      if (diasComMaisDeUmaFolha > 0) {
+        setAvisoImpressao(`Baixou! ${diasComMaisDeUmaFolha === 1 ? "Um dia tem" : `${diasComMaisDeUmaFolha} dias têm`} atendimentos demais pra uma folha só — pra manter a letra legível, ${diasComMaisDeUmaFolha === 1 ? "ele continua" : "eles continuam"} na folha seguinte.`);
       }
 
       doc.save(`Escala de Impressão - ${intervaloSemanaAtual().replace(/\//g, "-")}.pdf`);
