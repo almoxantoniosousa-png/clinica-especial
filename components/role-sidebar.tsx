@@ -269,6 +269,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   ];
 
   const menuAuxAdm = [
+    { href: "/auxiliar/inicio",      label: "Início",         icon: "🏠" },
     { href: "/auxiliar/agenda",      label: "Agenda",         icon: "🗓️" },
     { href: "/auxiliar/pauta",       label: "Agenda Simone", icon: "📆" },
     { href: "/escala",               label: "Escala",        icon: "📅" },
@@ -740,6 +741,11 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
               </div>
             </div>
             <nav className="flex items-center gap-1 flex-shrink-0">
+              <Link href="/auxiliar/inicio"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/auxiliar/inicio" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">🏠</span><span>Início</span>
+              </Link>
               <Link href="/auxiliar/agenda"
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
                   ${pathname === "/auxiliar/agenda" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>

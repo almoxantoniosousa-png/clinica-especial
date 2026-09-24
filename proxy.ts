@@ -39,7 +39,7 @@ const HOME_POR_ROLE: Record<string, string> = {
   financeiro: "/adm/financeiro",
   atendente: "/atendente/dashboard",
   at: "/atendente/dashboard",
-  aux_adm: "/auxiliar/agenda",
+  aux_adm: "/auxiliar/inicio",
   apoio: "/apoio/materiais",
 };
 
