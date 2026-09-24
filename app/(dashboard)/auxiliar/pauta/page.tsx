@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, ChevronRight, ChevronDown, Trash2, X, Check, Copy, ClipboardCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, X, Check, Copy, ClipboardCheck } from "lucide-react";
 import { paraISOLocal } from "@/lib/dataUtils";
 
 // ── Cards de tipo de evento ──────────────────────────────────────────────────
@@ -46,8 +46,8 @@ const CARDS_CLINICA = CARDS.filter(c => c.grupo === "clinica" && !c.oculto);
 const CARDS_PESSOAL = CARDS.filter(c => c.grupo === "pessoal" && !c.oculto);
 
 const GRUPOS_AGENDA = [
-  { id: "clinica" as const, label: "Agenda da Clínica", emoji: "🏥", border: "border-blue-100", bg: "bg-blue-50/60", text: "text-blue-900", ativo: "bg-blue-700", cards: CARDS_CLINICA },
-  { id: "pessoal" as const, label: "Agenda Pessoal",     emoji: "🤍", border: "border-rose-100", bg: "bg-rose-50/60", text: "text-rose-900", ativo: "bg-rose-600", cards: CARDS_PESSOAL },
+  { id: "clinica" as const, label: "Agenda da Clínica", curto: "Clínica", emoji: "🏥", border: "border-blue-100", bg: "bg-blue-50/60", text: "text-blue-900", ativo: "bg-blue-700", cards: CARDS_CLINICA },
+  { id: "pessoal" as const, label: "Agenda Pessoal",     curto: "Pessoal", emoji: "🤍", border: "border-rose-100", bg: "bg-rose-50/60", text: "text-rose-900", ativo: "bg-rose-600", cards: CARDS_PESSOAL },
 ];
 
 function ehAtendimento(tipo: string) {
@@ -99,9 +99,8 @@ function fmt(dia: string) {
 export default function AgendaSimonePage() {
   const [semanaBase, setSemanaBase] = useState<Date>(() => getSegunda(new Date()));
   const [grupoAberto, setGrupoAberto] = useState<"clinica" | "pessoal">("clinica");
-  // Só o dia de hoje começa aberto — os outros dias da semana ficam
-  // recolhidos, pra não virar uma lista gigante de rolar. Clica no
-  // cabeçalho do dia pra abrir/fechar.
+  // Dia selecionado na faixa de dias (começa em hoje). Só os compromissos
+  // dele aparecem embaixo, pra não virar uma lista gigante de rolar.
   const [diaAberto, setDiaAberto] = useState<string>(toISO(new Date()));
   const [eventos, setEventos]       = useState<Evento[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -251,8 +250,8 @@ export default function AgendaSimonePage() {
               <button key={grupo.id} type="button" role="tab" aria-selected={ativo} onClick={() => setGrupoAberto(grupo.id)}
                 className={`rounded-2xl px-4 py-3 flex items-center justify-between gap-2 text-sm font-bold border transition-colors
                   ${ativo ? `${grupo.ativo} text-white border-transparent shadow-md` : `${grupo.bg} ${grupo.border} ${grupo.text} hover:brightness-95`}`}>
-                <span className="truncate">{grupo.emoji} {grupo.label}</span>
-                {ativo && <span className="text-[10px] font-extrabold uppercase tracking-wider bg-white/20 rounded-full px-2 py-0.5 flex-shrink-0">em uso</span>}
+                <span className="truncate">{grupo.emoji} <span className="sm:hidden">{grupo.curto}</span><span className="hidden sm:inline">{grupo.label}</span></span>
+                {ativo && <span className="hidden sm:inline text-[10px] font-extrabold uppercase tracking-wider bg-white/20 rounded-full px-2 py-0.5 flex-shrink-0">em uso</span>}
               </button>
             );
           })}
@@ -286,112 +285,117 @@ export default function AgendaSimonePage() {
         </button>
       </div>
 
-      {/* Eventos da semana */}
+      {/* Dias da semana — faixa fixa com os 7 dias, todos do mesmo tamanho;
+          o dia escolhido ganha destaque e os compromissos dele aparecem
+          embaixo, na largura toda. (Antes cada dia abria dentro da própria
+          caixa, a grade ficava com alturas diferentes e buracos, e o título
+          dos compromissos era cortado.) */}
       {loading ? (
         <p className="text-sm text-slate-400 text-center py-10">Carregando...</p>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
-          {diasSemana.map(dia => {
-            const d      = new Date(dia + "T12:00:00");
-            const evs    = eventos.filter(e => e.data === dia);
-            const hoje   = toISO(new Date());
-            const aberto = diaAberto === dia;
-            const semNadaEFuturo = evs.length === 0 && dia >= hoje;
-            return (
-              <div key={dia} className={`rounded-2xl border overflow-hidden ${dia === hoje ? "border-blue-300" : "border-slate-200"}`}>
-                {/* Cabeçalho do dia — clicável, abre/fecha */}
-                <button onClick={() => setDiaAberto(aberto ? "" : dia)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left ${dia === hoje ? "bg-blue-50" : "bg-slate-50"}`}>
-                  <div className={`w-9 h-9 rounded-xl flex flex-col items-center justify-center font-bold text-xs leading-none flex-shrink-0 ${
-                    dia === hoje ? "bg-blue-600 text-white" : "bg-white text-slate-700 border border-slate-200"}`}>
-                    <span className="uppercase text-[10px]">{["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()]}</span>
-                    <span className="text-sm">{d.getDate()}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold ${dia === hoje ? "text-blue-800" : "text-slate-700"}`}>
-                      {DIAS_FULL[d.getDay()]}
-                    </p>
-                    <p className="text-xs text-slate-400">{fmt(dia)}</p>
-                  </div>
-                  {!aberto && (
-                    semNadaEFuturo
-                      ? <span className="text-[11px] font-semibold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full flex-shrink-0">⚠ definir</span>
-                      : evs.length > 0 && <span className="text-[11px] font-semibold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full flex-shrink-0">{evs.length}</span>
-                  )}
-                  <ChevronDown className={`h-4 w-4 text-slate-400 flex-shrink-0 transition-transform ${aberto ? "rotate-180" : ""}`}/>
-                </button>
+      ) : (() => {
+        const hoje = toISO(new Date());
+        const diaSel = diasSemana.includes(diaAberto) ? diaAberto : (diasSemana.includes(hoje) ? hoje : diasSemana[0]);
+        const dSel = new Date(diaSel + "T12:00:00");
+        const evsSel = eventos.filter(e => e.data === diaSel);
+        const selSemNadaEFuturo = evsSel.length === 0 && diaSel >= hoje;
+        return (
+          <div className="space-y-3">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2" role="tablist" aria-label="Dias da semana">
+              {diasSemana.map(dia => {
+                const d = new Date(dia + "T12:00:00");
+                const n = eventos.filter(e => e.data === dia).length;
+                const ativo = dia === diaSel;
+                const ehHoje = dia === hoje;
+                const definir = n === 0 && dia >= hoje;
+                return (
+                  <button key={dia} type="button" role="tab" aria-selected={ativo} onClick={() => setDiaAberto(dia)}
+                    className={`rounded-xl sm:rounded-2xl border px-0.5 sm:px-2 py-2 sm:py-2.5 flex flex-col items-center gap-0.5 transition-colors min-w-0
+                      ${ativo ? "bg-blue-700 border-transparent text-white shadow-md" : ehHoje ? "bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${ativo ? "text-blue-100" : "text-slate-400"}`}>
+                      {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()]}{ehHoje && <span className="hidden sm:inline"> · hoje</span>}
+                    </span>
+                    <span className="text-lg font-extrabold leading-none tabular-nums">{d.getDate()}</span>
+                    <span className={`text-[10px] font-bold rounded-full px-1.5 min-w-[1.25rem] text-center
+                      ${ativo ? "bg-white/20 text-white" : definir ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
+                      {definir ? <><span className="sm:hidden">!</span><span className="hidden sm:inline">definir</span></> : n}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-                {/* Lista de eventos */}
-                {aberto && (
-                <div className="bg-white divide-y divide-slate-50">
-                  {evs.length === 0 ? (
-                    semNadaEFuturo ? (
-                      <div className="flex items-center gap-2 px-4 py-3 bg-amber-50">
-                        <span className="text-amber-500">⚠️</span>
-                        <p className="text-xs text-amber-700 font-medium">Nenhum compromisso definido ainda pra este dia.</p>
-                      </div>
-                    ) : (
-                      <p className="px-4 py-3 text-xs text-slate-400 italic">Nada agendado</p>
-                    )
-                  ) : evs.map(ev => {
-                    const c          = cardInfo(ev.tipo);
-                    const naoFeito   = ev.status === "nao_realizado";
-                    const realizado  = ev.status === "realizado";
-                    return (
-                      <div key={ev.id} className={`px-4 py-3 space-y-2 group ${naoFeito ? "bg-red-50/60" : ""}`}>
-                        <div className="flex items-center gap-3">
-                          <span className={`w-8 h-8 rounded-xl ${c.bg} flex items-center justify-center text-base flex-shrink-0`}>
-                            {c.emoji}
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <p className={`text-sm font-semibold truncate ${realizado ? "line-through text-slate-400" : "text-slate-800"}`}>
-                                {ev.titulo}
-                              </p>
-                              {localAtendimento(ev.tipo) && (
-                                <span className="text-[10px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-full flex-shrink-0">{localAtendimento(ev.tipo)}</span>
-                              )}
-                            </div>
-                            {(ev.hora || ev.hora_fim) && (
-                              <p className="text-xs text-slate-400">
-                                {ev.hora}{ev.hora_fim ? ` às ${ev.hora_fim}` : ""}
-                              </p>
+            <div className="rounded-2xl border border-blue-200 bg-white overflow-hidden" role="tabpanel">
+              <div className="flex items-center justify-between gap-3 px-4 py-3 bg-blue-50 border-b border-blue-100">
+                <p className="text-sm font-bold text-blue-900">{DIAS_FULL[dSel.getDay()]} · {fmt(diaSel)}</p>
+                <span className="text-xs font-semibold text-blue-700">{evsSel.length} compromisso{evsSel.length === 1 ? "" : "s"}</span>
+              </div>
+              <div className="divide-y divide-slate-50">
+                {evsSel.length === 0 ? (
+                  selSemNadaEFuturo ? (
+                    <div className="flex items-center gap-2 px-4 py-3 bg-amber-50">
+                      <span className="text-amber-500">⚠️</span>
+                      <p className="text-xs text-amber-700 font-medium">Nenhum compromisso definido ainda pra este dia.</p>
+                    </div>
+                  ) : (
+                    <p className="px-4 py-3 text-xs text-slate-400 italic">Nada agendado</p>
+                  )
+                ) : evsSel.map(ev => {
+                  const c          = cardInfo(ev.tipo);
+                  const naoFeito   = ev.status === "nao_realizado";
+                  const realizado  = ev.status === "realizado";
+                  return (
+                    <div key={ev.id} className={`px-4 py-3 space-y-2 group ${naoFeito ? "bg-red-50/60" : ""}`}>
+                      <div className="flex items-center gap-3">
+                        <span className={`w-8 h-8 rounded-xl ${c.bg} flex items-center justify-center text-base flex-shrink-0`}>
+                          {c.emoji}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className={`text-sm font-semibold ${realizado ? "line-through text-slate-400" : "text-slate-800"}`}>
+                              {ev.titulo}
+                            </p>
+                            {localAtendimento(ev.tipo) && (
+                              <span className="text-[10px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-full flex-shrink-0">{localAtendimento(ev.tipo)}</span>
                             )}
                           </div>
-                          {/* Badge de status */}
-                          {realizado && <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex-shrink-0">✓ Feito</span>}
-                          {naoFeito  && <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full flex-shrink-0">⚠ Remarcar</span>}
-                          {/* Ações */}
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
-                            <button onClick={() => abrirEditar(ev)}
-                              className="text-xs px-2 h-7 bg-slate-100 hover:bg-blue-100 hover:text-blue-600 text-slate-500 rounded-lg transition">
-                              Editar
-                            </button>
-                            <button onClick={() => deletar(ev.id)}
-                              className="w-7 h-7 flex items-center justify-center bg-slate-100 hover:bg-red-100 hover:text-red-500 text-slate-400 rounded-lg transition">
-                              <Trash2 className="h-3.5 w-3.5"/>
-                            </button>
-                          </div>
-                        </div>
-                        {/* Recado de Simone pedindo remarcação */}
-                        {naoFeito && (
-                          <div className="flex items-start gap-2 px-3 py-2 bg-red-100 rounded-xl">
-                            <span className="text-red-500 text-xs mt-0.5">💬</span>
-                            <p className="text-xs text-red-700 font-medium">
-                              {ev.obs_simone || "Simone não realizou este compromisso. Remarque um novo horário."}
+                          {(ev.hora || ev.hora_fim) && (
+                            <p className="text-xs text-slate-400">
+                              {ev.hora}{ev.hora_fim ? ` às ${ev.hora_fim}` : ""}
                             </p>
-                          </div>
-                        )}
+                          )}
+                        </div>
+                        {/* Badge de status */}
+                        {realizado && <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex-shrink-0">✓ Feito</span>}
+                        {naoFeito  && <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full flex-shrink-0">⚠ Remarcar</span>}
+                        {/* Ações — no celular ficam sempre visíveis (lá não existe "passar o mouse") */}
+                        <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition flex-shrink-0">
+                          <button onClick={() => abrirEditar(ev)}
+                            className="text-xs px-2 h-7 bg-slate-100 hover:bg-blue-100 hover:text-blue-600 text-slate-500 rounded-lg transition">
+                            Editar
+                          </button>
+                          <button onClick={() => deletar(ev.id)} aria-label="Excluir compromisso"
+                            className="w-7 h-7 flex items-center justify-center bg-slate-100 hover:bg-red-100 hover:text-red-500 text-slate-400 rounded-lg transition">
+                            <Trash2 className="h-3.5 w-3.5"/>
+                          </button>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-                )}
+                      {/* Recado de Simone pedindo remarcação */}
+                      {naoFeito && (
+                        <div className="flex items-start gap-2 px-3 py-2 bg-red-100 rounded-xl">
+                          <span className="text-red-500 text-xs mt-0.5">💬</span>
+                          <p className="text-xs text-red-700 font-medium">
+                            {ev.obs_simone || "Simone não realizou este compromisso. Remarque um novo horário."}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Modal */}
       {modal && card && (
