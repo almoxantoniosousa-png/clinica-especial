@@ -112,6 +112,9 @@ export default function MateriaisAdaptadosPage() {
   const [meuNome, setMeuNome] = useState<string>("");
   const [meuEmail, setMeuEmail] = useState<string>("");
   const [podeRevisar, setPodeRevisar] = useState(false);
+  // Gestão (Simone) pode corrigir direto qualquer material, em qualquer
+  // situação — sem mudar o status (aprovado continua aprovado).
+  const [souGestao, setSouGestao] = useState(false);
   const [meuFazAdaptado, setMeuFazAdaptado] = useState(false);
 
   // Navegação por criança
@@ -168,6 +171,7 @@ export default function MateriaisAdaptadosPage() {
         setMeuNome(usuario.nome || user.email || "");
         const role = (usuario.role || "").toLowerCase();
         setPodeRevisar(["adm", "admin", "gestao", "supervisora"].includes(role));
+        setSouGestao(role === "gestao");
         return;
       }
 
@@ -181,6 +185,7 @@ export default function MateriaisAdaptadosPage() {
         setMeuNome(atendente.nome || user.email || "");
         const role = (atendente.role || "").toLowerCase();
         setPodeRevisar(["adm", "admin", "gestao", "supervisora"].includes(role));
+        setSouGestao(role === "gestao");
         setMeuFazAdaptado(!!atendente.faz_adaptado);
       } else {
         setMeuNome(user.email || "");
@@ -271,7 +276,10 @@ export default function MateriaisAdaptadosPage() {
     setFotosPreviews(prev => prev.filter((_, i) => i !== idx));
   }
 
-  async function salvar(novoStatus: "rascunho" | "em_revisao") {
+  // Gestão abrindo material de outra pessoa = correção direta (mantém o status)
+  const correcaoDaGestao = souGestao && !!editando && editando.criado_por !== meuId;
+
+  async function salvar(novoStatus: Material["status"]) {
     if (!tituloLivro.trim()) {
       mostrarFeedback("erro", "Informe o título do livro/material.");
       return;
@@ -308,10 +316,22 @@ export default function MateriaisAdaptadosPage() {
         if (error) throw error;
         await registrarLog(supabase, {
           usuario_email: meuEmail, usuario_nome: meuNome,
-          acao: novoStatus === "em_revisao" ? "Enviou para revisão" : "Atualizou material adaptado",
+          acao: correcaoDaGestao ? "Gestão corrigiu material adaptado"
+            : novoStatus === "em_revisao" ? "Enviou para revisão" : "Atualizou material adaptado",
           tabela: "materiais_adaptados", registro_id: editando.id,
           descricao: `${tituloLivro}`,
         });
+        if (correcaoDaGestao) {
+          // Mesmo esquema do "pedir ajuste": aviso por role, nomeando quem fez
+          await supabase.from("notificacoes").insert({
+            destinatario_role: "atendente",
+            titulo: "✏️ Material adaptado corrigido pela Gestão",
+            mensagem: `${editando.criado_por_nome || "Autor"}, ${meuNome} fez correções em "${tituloLivro.trim()}". Confira como ficou.`,
+            tipo: "alerta",
+            link: "/materiais-adaptados",
+            autor_nome: meuNome,
+          });
+        }
       } else {
         const { data: novo, error } = await supabase.from("materiais_adaptados").insert({
           ...registro,
@@ -327,7 +347,8 @@ export default function MateriaisAdaptadosPage() {
         });
       }
 
-      mostrarFeedback("sucesso", novoStatus === "em_revisao" ? "Enviado para revisão!" : "Rascunho salvo!");
+      mostrarFeedback("sucesso", correcaoDaGestao ? "Correção salva! Quem fez o material foi avisado."
+        : novoStatus === "em_revisao" ? "Enviado para revisão!" : "Rascunho salvo!");
       setModalAberto(false);
       carregar();
     } catch (e: any) {
@@ -744,6 +765,12 @@ export default function MateriaisAdaptadosPage() {
                             ) : <span />}
                             {podeRevisar && (
                               <div className="flex items-center gap-3 shrink-0">
+                                {souGestao && m.criado_por !== meuId && (
+                                  <button onClick={() => abrirEdicao(m)}
+                                    className="text-xs text-violet-700 hover:text-violet-900 font-semibold">
+                                    ✏️ Corrigir
+                                  </button>
+                                )}
                                 <button onClick={() => abrirRevisao(m)}
                                   className="text-xs text-blue-700 hover:text-blue-900 font-semibold">
                                   🔎 {m.status === "rascunho" ? "Ver e comentar" : "Revisar"}
@@ -798,7 +825,7 @@ export default function MateriaisAdaptadosPage() {
           onClick={e => { if (e.target === e.currentTarget) setModalAberto(false); }}>
           <div className="w-full sm:max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="bg-blue-900 px-5 py-4 flex items-center justify-between">
-              <h2 className="font-bold text-white text-sm">{editando ? "Editar material" : "Novo material adaptado"}</h2>
+              <h2 className="font-bold text-white text-sm">{correcaoDaGestao ? "Corrigir material (a situação dele não muda)" : editando ? "Editar material" : "Novo material adaptado"}</h2>
               <button onClick={() => setModalAberto(false)} className="text-white/70 hover:text-white">✕</button>
             </div>
 
@@ -910,14 +937,24 @@ export default function MateriaisAdaptadosPage() {
             </div>
 
             <div className="px-5 py-4 border-t border-slate-100 bg-white flex gap-3">
-              <button onClick={() => salvar("rascunho")} disabled={salvando}
-                className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50">
-                {salvando ? "Salvando..." : "💾 Salvar rascunho"}
-              </button>
-              <button onClick={() => salvar("em_revisao")} disabled={salvando}
-                className="flex-1 h-11 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">
-                {salvando ? "Enviando..." : "📤 Enviar para revisão"}
-              </button>
+              {correcaoDaGestao && editando ? (
+                // Correção da Gestão: salva mantendo a situação do material
+                <button onClick={() => salvar(editando.status)} disabled={salvando}
+                  className="flex-1 h-11 rounded-xl bg-violet-700 text-white text-sm font-bold hover:bg-violet-800 transition disabled:opacity-50">
+                  {salvando ? "Salvando..." : "💾 Salvar correção"}
+                </button>
+              ) : (
+                <>
+                  <button onClick={() => salvar("rascunho")} disabled={salvando}
+                    className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50">
+                    {salvando ? "Salvando..." : "💾 Salvar rascunho"}
+                  </button>
+                  <button onClick={() => salvar("em_revisao")} disabled={salvando}
+                    className="flex-1 h-11 rounded-xl bg-blue-900 text-white text-sm font-bold hover:bg-blue-800 transition disabled:opacity-50">
+                    {salvando ? "Enviando..." : "📤 Enviar para revisão"}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -965,6 +1002,14 @@ export default function MateriaisAdaptadosPage() {
                   className="w-full px-4 py-3 text-sm focus:outline-none resize-none"/>
               </div>
             </div>
+            {souGestao && revisando.criado_por !== meuId && (
+              <div className="px-5 pt-3 bg-white">
+                <button onClick={() => { const m = revisando; setRevisando(null); abrirEdicao(m); }}
+                  className="w-full h-10 rounded-xl border border-violet-200 bg-violet-50 text-violet-700 text-sm font-bold hover:bg-violet-100 transition">
+                  ✏️ Corrigir direto no material
+                </button>
+              </div>
+            )}
             <div className="px-5 py-4 border-t border-slate-100 bg-white flex gap-3">
               <button onClick={solicitarAjustes} disabled={processandoRevisao}
                 className="flex-1 h-11 rounded-xl border border-red-200 text-red-600 text-sm font-bold hover:bg-red-50 transition disabled:opacity-50">
