@@ -80,6 +80,27 @@ function formatarDataLonga(d: Date): string {
   return d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
 }
 
+// Nomes curtos pras escalas impressas. Só o primeiro nome confundia
+// (Ana Carolina × Ana Paula viravam as duas "Ana"), então:
+// nomeCurto → dois primeiros nomes ("Mel Chagas"), pulando da/de/dos;
+// nomeComInicial → primeiro nome + inicial ("Ana C."), pra caber na grade da semana.
+const CONECTIVOS = ["da", "de", "do", "das", "dos", "e"];
+function partesDoNome(nome: string | null | undefined) {
+  const partes = (nome || "").trim().split(/\s+/).filter(Boolean);
+  const segundo = partes.slice(1).find((p) => !CONECTIVOS.includes(p.toLowerCase()));
+  return { primeiro: partes[0], segundo };
+}
+function nomeCurto(nome: string | null | undefined) {
+  const { primeiro, segundo } = partesDoNome(nome);
+  if (!primeiro) return "—";
+  return segundo ? `${primeiro} ${segundo}` : primeiro;
+}
+function nomeComInicial(nome: string | null | undefined) {
+  const { primeiro, segundo } = partesDoNome(nome);
+  if (!primeiro) return "—";
+  return segundo ? `${primeiro} ${segundo[0].toUpperCase()}.` : primeiro;
+}
+
 // Segunda a sexta da semana atual, ex: "20 a 24/07/2026" — usado na impressão.
 function intervaloSemanaAtual(): string {
   const segunda = segundaDaSemanaAtual();
@@ -218,6 +239,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
   const [podeEditar, setPodeEditar] = useState(false);
   const [baixandoCompleta, setBaixandoCompleta] = useState(false);
   const [baixandoImpressao, setBaixandoImpressao] = useState(false);
+  const [baixandoPorDia, setBaixandoPorDia] = useState(false);
   const [avisoImpressao, setAvisoImpressao] = useState("");
   const [usuarioEmail, setUsuarioEmail] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
@@ -929,11 +951,10 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
     }
   }
 
-  // Escala de impressão — feita pra colar no mural e ler de pé, de relance.
-  // Antes era a semana inteira numa folha só, e com ~150 atendimentos a fonte
-  // caía até 5 (ilegível no mural). Agora: UMA FOLHA POR DIA (A4 em pé), fonte
-  // 12 e nunca abaixo de 10; se um dia não couber nem em 10, ele continua na
-  // folha seguinte em vez de encolher mais. Gera um PDF só com os 5 dias.
+  // Escala de impressão — SEMANA TODA numa folha A4 deitada (pedido da ADM
+  // pro mural). A versão antiga deixava uma linha em branco entre cada
+  // atendimento e a letra caía até 5; aqui cada atendimento ocupa uma linha
+  // ("Mel Chagas – Marcia J."), a letra começa em 11 e nunca fica abaixo de 9.
   async function baixarEscalaImpressao() {
     setBaixandoImpressao(true);
     setAvisoImpressao("");
@@ -944,16 +965,77 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
       ]);
       const autoTable = autoTableMod.default;
       const logoDataUrl = await logoComoDataUrl();
+      const dias = DIAS.slice(0, 5);
 
-      // Dois primeiros nomes, pulando conectivos — só o primeiro confundia
-      // (Ana Carolina × Ana Paula viravam as duas "Ana").
-      const CONECTIVOS = ["da", "de", "do", "das", "dos", "e"];
-      const nomeCurto = (nome: string | null | undefined) => {
-        const partes = (nome || "").trim().split(/\s+/).filter(Boolean);
-        if (partes.length === 0) return "—";
-        const segundo = partes.slice(1).find((p) => !CONECTIVOS.includes(p.toLowerCase()));
-        return segundo ? `${partes[0]} ${segundo}` : partes[0];
+      const horariosLanche = Array.from(new Set(dias.map((d) => lancheDia[d]).filter(Boolean))) as string[];
+      const horarios = ordenarHorarios([...slots.filter((s) => dias.includes(s.dia)).map((s) => s.horario), ...horariosLanche]);
+      const head = [["Horário", ...dias.map((d, i) => `${d} · ${dataDoDia(i)}`)]];
+      const body: any[] = horarios.map((horario) => [
+        { content: horario, styles: { fontStyle: "bold" } },
+        ...dias.map((d) => {
+          const linhas = slots.filter((s) => s.dia === d && s.horario === horario)
+            .map((s) => `${nomeCurto(s.crianca)} – ${nomeComInicial(s.profissional_nome)}`);
+          if (lancheDia[d] === horario) {
+            return { content: ["LANCHE", ...linhas].join("\n"), styles: { fillColor: [254, 243, 199], textColor: [146, 64, 14], fontStyle: linhas.length ? "normal" : "bold" } };
+          }
+          return linhas.join("\n");
+        }),
+      ]);
+
+      const desenhar = (doc: any, fontSize: number, cellPadding: number) => {
+        if (logoDataUrl) doc.addImage(logoDataUrl, "PNG", 8, 5, 12, 12);
+        doc.setFontSize(15);
+        doc.setFont("helvetica", "bold");
+        doc.text(`Escala da semana — ${intervaloSemanaAtual()}`, 23, 12.5);
+        doc.setFont("helvetica", "normal");
+        autoTable(doc, {
+          head, body, startY: 19,
+          margin: { left: 8, right: 8, top: 8, bottom: 8 },
+          styles: { fontSize, cellPadding, valign: "top", overflow: "linebreak", lineColor: [203, 213, 225] },
+          headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: "bold", fontSize: fontSize + 1 },
+          columnStyles: { 0: { cellWidth: 25, valign: "middle" } },
+          theme: "grid",
+        });
       };
+
+      // Tenta a maior letra que caiba numa folha; nunca menor que 9
+      const TENTATIVAS = [
+        { fontSize: 11, cellPadding: 1.6 }, { fontSize: 10, cellPadding: 1.4 },
+        { fontSize: 9, cellPadding: 1.2 }, { fontSize: 9, cellPadding: 0.8 },
+      ];
+      let escolhida = TENTATIVAS[TENTATIVAS.length - 1];
+      for (const t of TENTATIVAS) {
+        const rascunho = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+        desenhar(rascunho, t.fontSize, t.cellPadding);
+        if (rascunho.getNumberOfPages() <= 1) { escolhida = t; break; }
+      }
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      desenhar(doc, escolhida.fontSize, escolhida.cellPadding);
+
+      if (doc.getNumberOfPages() > 1) {
+        setAvisoImpressao("Baixou! A semana tem atendimentos demais pra uma folha só com letra legível, então continua na folha seguinte. Se preferir, use \"1 folha por dia\".");
+      }
+      doc.save(`Escala da Semana - ${intervaloSemanaAtual().replace(/\//g, "-")}.pdf`);
+    } finally {
+      setBaixandoImpressao(false);
+    }
+  }
+
+  // Escala de impressão — feita pra colar no mural e ler de pé, de relance.
+  // Antes era a semana inteira numa folha só, e com ~150 atendimentos a fonte
+  // caía até 5 (ilegível no mural). Agora: UMA FOLHA POR DIA (A4 em pé), fonte
+  // 12 e nunca abaixo de 10; se um dia não couber nem em 10, ele continua na
+  // folha seguinte em vez de encolher mais. Gera um PDF só com os 5 dias.
+  async function baixarEscalaPorDia() {
+    setBaixandoPorDia(true);
+    setAvisoImpressao("");
+    try {
+      const [{ default: jsPDF }, autoTableMod] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
+      const autoTable = autoTableMod.default;
+      const logoDataUrl = await logoComoDataUrl();
       const NOMES_DIA: Record<string, string> = {
         Segunda: "Segunda-feira", Terça: "Terça-feira", Quarta: "Quarta-feira", Quinta: "Quinta-feira", Sexta: "Sexta-feira",
       };
@@ -1034,7 +1116,7 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
 
       doc.save(`Escala de Impressão - ${intervaloSemanaAtual().replace(/\//g, "-")}.pdf`);
     } finally {
-      setBaixandoImpressao(false);
+      setBaixandoPorDia(false);
     }
   }
 
@@ -1093,11 +1175,18 @@ export function EscalaManager({ rolesPermitidos, titulo, subtitulo }: EscalaMana
                   <button
                     onClick={() => { baixarEscalaImpressao(); setMenuAcoesAberto(false); }}
                     disabled={baixandoImpressao}
-                    title="Baixar PDF enxuto (só primeiro nome e horário), pronto pra abrir e imprimir — cabe numa página só"
                     className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                   >
                     <FileText className="h-4 w-4 text-slate-400" />
-                    {baixandoImpressao ? "Gerando..." : "Escala de impressão"}
+                    {baixandoImpressao ? "Gerando..." : "Escala de impressão (semana, folha deitada)"}
+                  </button>
+                  <button
+                    onClick={() => { baixarEscalaPorDia(); setMenuAcoesAberto(false); }}
+                    disabled={baixandoPorDia}
+                    className="w-full flex items-center gap-2.5 text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    <FileText className="h-4 w-4 text-slate-400" />
+                    {baixandoPorDia ? "Gerando..." : "Escala de impressão (1 folha por dia)"}
                   </button>
                 </div>
               </>
