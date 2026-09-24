@@ -89,10 +89,25 @@ export default function ReportarDefeitoPage() {
   if (loading) return <div className="text-center py-16 text-slate-400 text-sm">Carregando...</div>;
 
   if (naoEncontrado) return (
-    <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
+    // Chega aqui quem lê a etiqueta (QR) de um bem já excluído, ou reabre um
+    // link/favorito antigo no celular — por isso a saída principal é o início
+    // do próprio portal ("/" redireciona pelo role), não a lista de bens.
+    <div className="text-center py-12 px-6 bg-white rounded-2xl border border-slate-200">
       <span className="text-5xl">❓</span>
-      <p className="text-sm text-slate-400 mt-2">Equipamento não encontrado.</p>
-      <button onClick={() => router.push("/patrimonio")} className="mt-4 text-sm font-semibold text-blue-600 hover:text-blue-800">Ver todos os equipamentos</button>
+      <p className="text-base font-semibold text-slate-700 mt-3">Equipamento não encontrado</p>
+      <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+        Este equipamento não está mais cadastrado — a etiqueta ou o link pode estar desatualizado.
+        Se leu o QR code de uma etiqueta, avise a administração para trocá-la.
+      </p>
+      <button onClick={() => router.push("/")}
+        className="mt-5 h-11 px-6 bg-blue-900 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition active:scale-95">
+        Ir para o início
+      </button>
+      <div>
+        <button onClick={() => router.push("/patrimonio")} className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-800">
+          Ver todos os equipamentos
+        </button>
+      </div>
     </div>
   );
 
