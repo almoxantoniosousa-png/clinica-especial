@@ -45,6 +45,11 @@ const CARDS: CardDef[] = [
 const CARDS_CLINICA = CARDS.filter(c => c.grupo === "clinica" && !c.oculto);
 const CARDS_PESSOAL = CARDS.filter(c => c.grupo === "pessoal" && !c.oculto);
 
+const GRUPOS_AGENDA = [
+  { id: "clinica" as const, label: "Agenda da Clínica", emoji: "🏥", border: "border-blue-100", bg: "bg-blue-50/60", text: "text-blue-900", ativo: "bg-blue-700", cards: CARDS_CLINICA },
+  { id: "pessoal" as const, label: "Agenda Pessoal",     emoji: "🤍", border: "border-rose-100", bg: "bg-rose-50/60", text: "text-rose-900", ativo: "bg-rose-600", cards: CARDS_PESSOAL },
+];
+
 function ehAtendimento(tipo: string) {
   return tipo === "atend_clinica" || tipo === "atend_casa" || tipo === "atend_escola";
 }
@@ -93,7 +98,7 @@ function fmt(dia: string) {
 
 export default function AgendaSimonePage() {
   const [semanaBase, setSemanaBase] = useState<Date>(() => getSegunda(new Date()));
-  const [grupoAberto, setGrupoAberto] = useState<"clinica" | "pessoal" | null>(null);
+  const [grupoAberto, setGrupoAberto] = useState<"clinica" | "pessoal">("clinica");
   // Só o dia de hoje começa aberto — os outros dias da semana ficam
   // recolhidos, pra não virar uma lista gigante de rolar. Clica no
   // cabeçalho do dia pra abrir/fechar.
@@ -235,34 +240,37 @@ export default function AgendaSimonePage() {
         </button>
       </div>
 
-      {/* Cards de grupo — clique abre e mostra os tipos dentro */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {([
-          { id: "clinica" as const, label: "Agenda da Clínica", emoji: "🏥", border: "border-blue-100", bg: "bg-blue-50/50", text: "text-blue-900", cards: CARDS_CLINICA },
-          { id: "pessoal" as const, label: "Agenda Pessoal",     emoji: "🤍", border: "border-rose-100", bg: "bg-rose-50/50", text: "text-rose-900", cards: CARDS_PESSOAL },
-        ]).map(grupo => {
-          const aberto = grupoAberto === grupo.id;
-          return (
-            <div key={grupo.id} className={`rounded-2xl border ${grupo.border} ${grupo.bg} p-3 space-y-3 ${aberto ? "sm:col-span-2" : ""}`}>
-              <button onClick={() => setGrupoAberto(aberto ? null : grupo.id)}
-                className="w-full flex items-center justify-between">
-                <span className={`text-sm font-bold ${grupo.text}`}>{grupo.emoji} {grupo.label}</span>
-                <ChevronDown className={`h-4 w-4 ${grupo.text} transition-transform ${aberto ? "rotate-180" : ""}`}/>
+      {/* Abas Clínica | Pessoal — as duas ficam sempre no lugar, lado a lado;
+          a que está em uso só ganha destaque. (Antes a aberta ocupava a
+          largura toda e empurrava a outra pra baixo, parecendo que sumia.) */}
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3" role="tablist" aria-label="Agenda da clínica ou pessoal">
+          {GRUPOS_AGENDA.map(grupo => {
+            const ativo = grupoAberto === grupo.id;
+            return (
+              <button key={grupo.id} type="button" role="tab" aria-selected={ativo} onClick={() => setGrupoAberto(grupo.id)}
+                className={`rounded-2xl px-4 py-3 flex items-center justify-between gap-2 text-sm font-bold border transition-colors
+                  ${ativo ? `${grupo.ativo} text-white border-transparent shadow-md` : `${grupo.bg} ${grupo.border} ${grupo.text} hover:brightness-95`}`}>
+                <span className="truncate">{grupo.emoji} {grupo.label}</span>
+                {ativo && <span className="text-[10px] font-extrabold uppercase tracking-wider bg-white/20 rounded-full px-2 py-0.5 flex-shrink-0">em uso</span>}
               </button>
-              {aberto && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {grupo.cards.map(c => (
-                    <button key={c.tipo} onClick={() => abrirNovo(c.tipo)}
-                      className={`${c.bg} text-white rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
-                      <span className="text-2xl">{c.emoji}</span>
-                      <span className="text-sm font-bold leading-tight">{c.label}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+            );
+          })}
+        </div>
+        {(() => {
+          const grupo = GRUPOS_AGENDA.find(g => g.id === grupoAberto)!;
+          return (
+            <div className={`rounded-2xl border ${grupo.border} ${grupo.bg} p-3 grid grid-cols-2 sm:grid-cols-4 gap-3`} role="tabpanel">
+              {grupo.cards.map(c => (
+                <button key={c.tipo} onClick={() => abrirNovo(c.tipo)}
+                  className={`${c.bg} text-white rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm hover:opacity-90 active:scale-95 transition-all`}>
+                  <span className="text-2xl">{c.emoji}</span>
+                  <span className="text-sm font-bold leading-tight">{c.label}</span>
+                </button>
+              ))}
             </div>
           );
-        })}
+        })()}
       </div>
 
       {/* Navegação de semana */}
