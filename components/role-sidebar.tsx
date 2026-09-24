@@ -197,6 +197,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   ];
 
   const menuSupervisora = [
+    { href: "/supervisora/inicio", label: "Dashboard", icon: "🏠" },
     ...(userContataFamilia ? [{ href: "/supervisora/comunicados", label: "Comunicados", icon: "📋" }] : []),
     { href: "/supervisora/relatorio",   label: "Registro ABC",      icon: "📝" },
     { href: "/supervisora/agenda-simone", label: "Agenda Simone",   icon: "📆" },
@@ -227,10 +228,11 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   const HREFS_SUP_APOIO = ["/requisicoes", "/materiais-recebidos", "/patrimonio", "/mural", "/reuniao", "/chat", "/ajuda", "/suporte-tecnico"];
   const menuSupervisoraClinico = menuSupervisora.filter((i) => HREFS_SUP_CLINICO.includes(i.href) && i.href !== menuSupervisoraInicial.href);
   const menuSupervisoraApoio = menuSupervisora.filter((i) => HREFS_SUP_APOIO.includes(i.href));
-  const paginaAtualSup = [menuSupervisoraInicial, { href: "/supervisora/relatorio", label: "Registro ABC", icon: "📝" }, { href: "/supervisora/agenda-simone", label: "Agenda Simone", icon: "📆" }, { href: "/escala", label: "Escala", icon: "📅" }, ...menuSupervisoraClinico, ...menuSupervisoraApoio]
+  const paginaAtualSup = [{ href: "/supervisora/inicio", label: "Dashboard", icon: "🏠" }, menuSupervisoraInicial, { href: "/supervisora/relatorio", label: "Registro ABC", icon: "📝" }, { href: "/supervisora/agenda-simone", label: "Agenda Simone", icon: "📆" }, { href: "/escala", label: "Escala", icon: "📅" }, ...menuSupervisoraClinico, ...menuSupervisoraApoio]
     .find((i) => pathname === i.href);
 
   const menuEspecialista = [
+    { href: "/especialista/inicio",      label: "Dashboard",       icon: "🏠" },
     { href: "/especialista/escala",      label: "Minha Escala", icon: "📅" },
     { href: "/especialista/relatorio",   label: "Novo Prontuário", icon: "📋" },
     { href: "/especialista/prontuarios", label: "Histórico",    icon: "📝" },
@@ -269,7 +271,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
   ];
 
   const menuAuxAdm = [
-    { href: "/auxiliar/inicio",      label: "Início",         icon: "🏠" },
+    { href: "/auxiliar/inicio",      label: "Dashboard",         icon: "🏠" },
     { href: "/auxiliar/agenda",      label: "Agenda",         icon: "🗓️" },
     { href: "/auxiliar/pauta",       label: "Agenda Simone", icon: "📆" },
     { href: "/escala",               label: "Escala",        icon: "📅" },
@@ -681,6 +683,11 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
               </div>
             </div>
             <nav className="flex items-center gap-1 flex-shrink-0">
+              <Link href="/supervisora/inicio"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
+                  ${pathname === "/supervisora/inicio" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
+                <span className="text-sm leading-none">🏠</span><span>Dashboard</span>
+              </Link>
               <Link href={menuSupervisoraInicial.href}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
                   ${pathname === menuSupervisoraInicial.href ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
@@ -744,7 +751,7 @@ export function RoleSidebar({ userRole, userCargo, userNome, userContataFamilia 
               <Link href="/auxiliar/inicio"
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200
                   ${pathname === "/auxiliar/inicio" ? "bg-white/20 text-white" : "text-blue-100 hover:bg-white/10 hover:text-white"}`}>
-                <span className="text-sm leading-none">🏠</span><span>Início</span>
+                <span className="text-sm leading-none">🏠</span><span>Dashboard</span>
               </Link>
               <Link href="/auxiliar/agenda"
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200

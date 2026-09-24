@@ -68,8 +68,8 @@ export async function loginWithPassword(
 
     if (role === "adm" || role === "admin") redirect("/adm/dashboard");
     if (role === "gestao") redirect("/gestao/dashboard");
-    if (role === "supervisora") redirect(usuario.contata_familia === false ? "/materiais-adaptados" : "/supervisora/comunicados");
-    if (role === "especialista") redirect("/especialista/escala");
+    if (role === "supervisora") redirect("/supervisora/inicio");
+    if (role === "especialista") redirect("/especialista/inicio");
     if (role === "familia") redirect("/familia");
     if (role === "financeiro") redirect("/adm/financeiro");
     if (role === "at" || role === "atendente") redirect("/atendente/dashboard");
@@ -99,8 +99,8 @@ export async function loginWithPassword(
 
     if (role === "adm" || role === "admin") redirect("/adm/dashboard");
     if (role === "gestao") redirect("/gestao/dashboard");
-    if (role === "supervisora") redirect("/supervisora/comunicados");
-    if (role === "especialista") redirect("/especialista/escala");
+    if (role === "supervisora") redirect("/supervisora/inicio");
+    if (role === "especialista") redirect("/especialista/inicio");
     if (role === "at" || role === "atendente") redirect("/atendente/dashboard");
     if (role === "apoio") redirect("/apoio/materiais");
 

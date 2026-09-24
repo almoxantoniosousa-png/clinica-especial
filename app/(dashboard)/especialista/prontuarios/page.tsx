@@ -40,10 +40,12 @@ export default function RelatorioPage() {
         .from("atendentes").select("id, nome, especialidade").eq("email", user.email).maybeSingle();
       if (!perfil) return;
       setAutor(perfil);
+      // autor_id é o id do LOGIN (FK pra auth.users) — que só coincide com o id
+      // do cadastro em atendentes pra quem já nasceu com login. Busca pelos dois.
       const { data } = await supabase
         .from("prontuarios")
         .select("*, criancas(id, nome)")
-        .eq("autor_id", perfil.id)
+        .in("autor_id", [user.id, perfil.id])
         .order("created_at", { ascending: false });
       setRegistros(data || []);
       const ids = new Set((data || []).map((p: any) => p.crianca_id));
@@ -120,7 +122,7 @@ export default function RelatorioPage() {
       // recarrega lista
       const { data: nova } = await supabase
         .from("prontuarios").select("*, criancas(id, nome)")
-        .eq("autor_id", autor.id).order("created_at", { ascending: false });
+        .in("autor_id", [autorAuthId ?? autor.id, autor.id]).order("created_at", { ascending: false });
       setRegistros(nova || []);
     } else {
       mostrarFeedback("erro", "Erro ao salvar: " + error.message);

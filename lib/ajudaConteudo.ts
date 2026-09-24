@@ -245,6 +245,11 @@ const SUPERVISORA: AjudaConteudo = {
   contato: "Ainda com dúvidas? Use o Chat para falar com a Administração.",
   itens: [
     {
+      icone: "🏠", titulo: "Dashboard", mockup: "dashboard",
+      texto: "Sua tela inicial, que abre logo depois do login: a equipe no dia e o que precisa de acompanhamento.\n\n• Números do dia — atendimentos de hoje (e quantos acontecem agora), Registros ABC feitos hoje, comunicados às famílias dos últimos 7 dias e pendências.\n\n• Equipe em atendimento — a Escala do dia com as trocas daquela data, filtrável por Clínica/Escola/Casa, mostrando quem está atendendo agora.\n\n• Precisa de você — atendimento sem profissional, materiais adaptados aguardando sua revisão e mudanças na escala de hoje.\n\n• Agenda da Simone (compromissos profissionais de hoje) — ou, se você não tem acesso a ela, os últimos Registros ABC. Também: materiais adaptados em aberto e o Mural, além de atalhos no fim.",
+      reflexo: "O Dashboard só mostra informações — tudo vem das telas de origem (Escala, Registro ABC, Materiais Adaptados, Agenda Simone)."
+    },
+    {
       icone: "📋", titulo: "Comunicados", mockup: "abas",
       texto: "Seu painel principal, com 5 abas:\n\n• Dashboard — visão geral do dia: crianças ativas na clínica, comunicados pendentes de revisão, recebidos hoje, já enviados às famílias, agenda do dia e os últimos comunicados.\n\n• Comunicados Diários — lista os formulários enviados pela equipe, com filtros Pendentes/Enviados/Todos. \"Pendentes\" mostra tudo, sem limite de data; \"Enviados\" e \"Todos\" trazem por padrão o dia de hoje, com um seletor de data pra consultar dias anteriores. Abra um registro, escreva uma observação se quiser, e clique em \"📨 Enviar para Família\" para liberá-lo no Portal da Família.\n\n🔁 Pedir correção: mesmo já tendo enviado pra família, dá pra marcar \"🔁 Pedir para a AT refazer\" — marque a(s) seção(ões) que precisam de ajuste (Entrada e Interação / Autonomia e Higiene / Recreio e Socialização / Agenda e Recados) e escreva o que precisa mudar. A AT fica impedida de criar um novo comunicado até corrigir e reenviar esse.\n\n• Momentos — clique em \"📸 Publicar momento\" para postar fotos do dia a dia das crianças (escolha a criança, a foto e uma descrição opcional).\n\n• Evolução — aqui você revisa os Relatórios de Evolução que as especialistas enviam (abas Pendentes/Enviados), não escreve do zero. Abra um relatório pendente, veja o que a especialista escreveu (evolução geral, objetivos alcançados, dificuldades, recomendações), ajuste o título/texto que vai pra família se quiser, e clique em \"📨 Enviar para Família\".\n\n• Avisos — clique em \"📢 Novo aviso\" para publicar um recado para a família de uma criança específica. Use um dos modelos prontos (reunião, troca de AT — versão equipe e versão família, reposição, atraso, mudança de horário, avaliação, documento pendente, recesso, evento, item pra levar, novo protocolo, material p/ revisão) pra preencher o texto rapidinho — os trechos entre [colchetes] precisam ser substituídos antes de publicar.\n\nDica: o alerta amarelo no Dashboard mostra quantos comunicados ainda precisam ser revisados — vale conferir todo dia.",
       reflexo: "O que você envia aqui aparece para a família no Portal da Família: Comunicados Diários enviados → aba Diário; Momentos → aba Momentos; relatórios de evolução enviados → aba Evolução; Avisos → aba Avisos."
@@ -320,6 +325,11 @@ const ESPECIALISTA: AjudaConteudo = {
   intro: "Aqui você encontra uma explicação rápida de cada tela do menu. Clique em um item para abrir os detalhes.",
   contato: "Ainda com dúvidas? Use o Chat para falar com a Supervisora ou a Administração.",
   itens: [
+    {
+      icone: "🏠", titulo: "Dashboard", mockup: "dashboard",
+      texto: "Sua tela inicial, que abre logo depois do login: um resumo do seu dia.\n\n• Números do dia — seus atendimentos de hoje (quantos já foram e quantos faltam), prontuários a fazer, quantas crianças você atende na semana e seus pedidos de material em aberto.\n\n• Minha escala de hoje — seus atendimentos do dia, já com as trocas daquela data, marcados como \"A seguir\", \"Agora\", \"Concluído\" ou \"Trocado hoje\".\n\n• Precisa de você — prontuários que ainda faltam registrar (os do dia útil anterior aparecem como urgentes) e planos terapêuticos das suas crianças com revisão vencida ou nos próximos 7 dias. O botão \"Registrar\" abre direto o Novo Prontuário.\n\n• Últimos prontuários, suas requisições de material e o Mural. No fim, atalhos pro que você mais usa.",
+      reflexo: "O Dashboard só mostra informações. Um prontuário sai da lista de pendências assim que você o registra com a data do atendimento."
+    },
     {
       icone: "📅", titulo: "Minha Escala", mockup: "escala",
       texto: "Seus horários de atendimento da semana (Segunda a Domingo). Navegue entre os dias usando as setas ou clicando no nome do dia. Para cada dia, veja horário, criança e tipo de serviço (cada um com uma cor).\n\nEscolha a data no seletor do topo e marque a presença de cada atendimento: P (presença), F (falta avisada em cima da hora — você recebe mesmo assim) ou FJ (falta avisada com antecedência — não conta pra pagamento). Em F/FJ, escreva o motivo no campo que abre. No final aparece o total de atendimentos da semana.",
@@ -499,9 +509,9 @@ const AUX_ADM: AjudaConteudo = {
   contato: "Ainda com dúvidas? Use o Chat para falar com a Administração ou a Gestão.",
   itens: [
     {
-      icone: "🏠", titulo: "Início", mockup: "dashboard",
+      icone: "🏠", titulo: "Dashboard", mockup: "dashboard",
       texto: "Sua tela inicial, que abre logo depois do login: um resumo do dia antes de você entrar em cada módulo.\n\n• Números do dia — atendimentos de hoje (separados por Clínica, Escola e Casa), compromissos da Simone, crianças ativas e quantas pendências existem.\n\n• Agenda de hoje — a Escala do dia, já com as trocas e cancelamentos daquela data. Cada atendimento mostra se é \"A seguir\", \"Agora\" (em destaque), \"Concluído\", \"Trocado hoje\", \"Cancelado hoje\" ou \"Sem profissional\". Use os botões Todos/Clínica/Escola/Casa pra filtrar.\n\n• Precisa de você — o que pede ação, do mais urgente ao menos urgente: atendimento sem profissional, defeito reportado em equipamento, compromissos da Simone de dias anteriores ainda pendentes e mudanças na escala de hoje. Cada item tem um link direto pra tela onde se resolve.\n\n• Agenda profissional e Agenda pessoal — os compromissos de hoje da Simone, separados do mesmo jeito que na tela Agenda Simone.\n\n• Mural — os últimos avisos. E, no fim, atalhos pras telas mais usadas.",
-      reflexo: "O painel só mostra informações — nada é alterado aqui. Tudo vem das telas de origem (Escala, Agenda Simone, Patrimônio, Mural), então o que você muda lá aparece aqui na próxima vez que abrir o Início."
+      reflexo: "O painel só mostra informações — nada é alterado aqui. Tudo vem das telas de origem (Escala, Agenda Simone, Patrimônio, Mural), então o que você muda lá aparece aqui na próxima vez que abrir o Dashboard."
     },
     {
       icone: "🗓️", titulo: "Agenda Simone", mockup: "agenda-semana",

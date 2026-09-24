@@ -7,8 +7,8 @@ const HOME_POR_ROLE: Record<string, string> = {
   adm: "/adm/dashboard",
   admin: "/adm/dashboard",
   gestao: "/gestao/dashboard",
-  supervisora: "/supervisora/comunicados",
-  especialista: "/especialista/escala",
+  supervisora: "/supervisora/inicio",
+  especialista: "/especialista/inicio",
   familia: "/familia",
   financeiro: "/adm/financeiro",
   atendente: "/atendente/dashboard",
@@ -23,13 +23,12 @@ export default async function Home() {
   if (!user?.email) redirect("/login");
 
   const emailBusca = user.email.trim().toLowerCase().replace(/[%_\\]/g, (c) => "\\" + c);
-  const { data: usuario } = await supabase.from("usuarios").select("role, contata_familia").ilike("email", emailBusca).maybeSingle();
+  const { data: usuario } = await supabase.from("usuarios").select("role").ilike("email", emailBusca).maybeSingle();
   let role = (usuario?.role || "").toString().trim().toLowerCase();
   if (!role) {
     const { data: atendente } = await supabase.from("atendentes").select("role").ilike("email", emailBusca).maybeSingle();
     role = (atendente?.role || "").toString().trim().toLowerCase();
   }
 
-  if (role === "supervisora" && usuario?.contata_familia === false) redirect("/materiais-adaptados");
   redirect(HOME_POR_ROLE[role] || "/login");
 }
